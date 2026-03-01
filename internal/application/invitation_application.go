@@ -28,7 +28,7 @@ type InvitationApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		args *value.PatchInvitationArgs,
-	) (*value.InvitationInfo, error)
+	) error
 	DeleteInvitation(
 		scope util.TraceScope,
 		currentUserID string,
@@ -75,7 +75,12 @@ func (ia *invitationApplication) ListInvitations(
 	scope util.TraceScope,
 	currentUserID string,
 ) ([]*value.InvitationInfo, error) {
-	const fn = "ListInvitations"
+	const fn = "InvitationApplication.ListInvitations"
+
+	if currentUserID == "" {
+		scope.Logger().Warn(fn + ": currentUserID 为空")
+		return nil, errors.New(ErrInternalError)
+	}
 
 	scope.WithField(
 		zap.String("current_user_id", currentUserID),
@@ -115,11 +120,21 @@ func (ia *invitationApplication) CreateInvitation(
 	currentUserID string,
 	args *value.CreateInvitationArgs,
 ) (*value.InvitationInfo, error) {
-	const fn = "CreateInvitation"
+	const fn = "InvitationApplication.CreateInvitation"
+
+	if currentUserID == "" {
+		scope.Logger().Warn(fn + ": currentUserID 为空")
+		return nil, errors.New(ErrInternalError)
+	}
 
 	if args == nil {
 		scope.Logger().Warn(fn + ": args 为空")
 		return nil, errors.New(ErrInternalError)
+	}
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
 	}
 
 	scope.WithField(
@@ -140,6 +155,17 @@ func (ia *invitationApplication) CreateInvitation(
 		return nil, errors.New("没有权限创建邀请")
 	}
 
+	// 检查是否已经有相关 QQ 的成员存在
+	isUserExisting, err := ia.userRepository.ExistsByQQ(nil, args.InviteeQQ)
+	if err != nil {
+		scope.Logger().Error(fn+": 检查用户是否存在失败", zap.Error(err))
+		return nil, errors.New("无法检查用户信息")
+	}
+
+	if isUserExisting {
+		return nil, errors.New("已经有对应 QQ 的成员存在")
+	}
+
 	// 创建邀请信息
 	invitationCode, err := ia.invitationService.GenerateInvitationCode()
 	if err != nil {
@@ -155,7 +181,8 @@ func (ia *invitationApplication) CreateInvitation(
 	)
 
 	// 此处应当使用乐观锁进行更新，不采用事务
-	invitationID, err := ia.invitationRepository.Create(nil, invitationCreation)
+	// 如果有 pending 的同 QQ 邀请存在，则会直接覆盖，不会创建新的邀请记录
+	invitationID, err := ia.invitationRepository.Save(nil, invitationCreation)
 	if err != nil {
 		scope.Logger().Error(fn+": 创建邀请信息失败", zap.Error(err))
 		return nil, errors.New("创建邀请失败")
@@ -166,6 +193,7 @@ func (ia *invitationApplication) CreateInvitation(
 		invitationID,
 		currentUserID,
 		args.InviteeQQ,
+		true,
 		args.Roles,
 		time.Now().UnixMilli(),
 	)
@@ -177,17 +205,22 @@ func (ia *invitationApplication) PatchInvitation(
 	scope util.TraceScope,
 	currentUserID string,
 	args *value.PatchInvitationArgs,
-) (*value.InvitationInfo, error) {
-	const fn = "PatchInvitation"
+) error {
+	const fn = "InvitationApplication.PatchInvitation"
+
+	if currentUserID == "" {
+		scope.Logger().Warn(fn + ": currentUserID 为空")
+		return errors.New(ErrInternalError)
+	}
 
 	if args == nil {
 		scope.Logger().Warn(fn + ": args 为空")
-		return nil, errors.New(ErrInternalError)
+		return errors.New(ErrInternalError)
 	}
 
-	if args.ID == "" {
-		scope.Logger().Warn(fn + ": invitation_id 为空")
-		return nil, errors.New(ErrInternalError)
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return errors.New("参数错误: " + err.Error())
 	}
 
 	scope.WithField(
@@ -200,11 +233,11 @@ func (ia *invitationApplication) PatchInvitation(
 	userInfo, err := ia.userRepository.GetInfoByID(nil, currentUserID)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取用户信息失败", zap.Error(err))
-		return nil, errors.New("无法获取用户信息")
+		return errors.New("无法获取用户信息")
 	}
 
 	if !ia.permissionService.CheckPermission(userInfo, model.PermissionInvitationsPatch) {
-		return nil, errors.New("没有权限修改邀请信息")
+		return errors.New("没有权限修改邀请信息")
 	}
 
 	invitationPatch := model.NewInvitationPatch(
@@ -212,31 +245,13 @@ func (ia *invitationApplication) PatchInvitation(
 		model.UnmaskRoles(args.Roles)...,
 	)
 
-	if err := ia.invitationRepository.UpdateByID(nil, args.ID, invitationPatch); err != nil {
-		scope.Logger().Error(fn+": 更新邀请信息失败", zap.Error(err))
-		return nil, errors.New("更新邀请失败")
-	}
-
-	invitationList, err := ia.invitationRepository.List(nil, query_option.CreatedAtDesc()...)
+	err = ia.invitationRepository.UpdateByID(nil, args.ID, invitationPatch)
 	if err != nil {
-		scope.Logger().Error(fn+": 获取邀请信息列表失败", zap.Error(err))
-		return nil, errors.New("无法获取邀请信息列表")
+		scope.Logger().Error(fn+": 更新邀请信息失败", zap.Error(err))
+		return errors.New("更新邀请失败")
 	}
 
-	var updated *model.InvitationInfo
-	for i := range invitationList {
-		if invitationList[i].ID == args.ID {
-			updated = &invitationList[i]
-			break
-		}
-	}
-
-	if updated == nil {
-		scope.Logger().Warn(fn + ": 更新后的邀请信息未找到")
-		return nil, errors.New("无法获取邀请信息")
-	}
-
-	return value.NewInvitationInfoFromModel(updated), nil
+	return nil
 }
 
 func (ia *invitationApplication) DeleteInvitation(
@@ -244,7 +259,7 @@ func (ia *invitationApplication) DeleteInvitation(
 	currentUserID string,
 	invitationID string,
 ) error {
-	const fn = "DeleteInvitation"
+	const fn = "InvitationApplication.DeleteInvitation"
 
 	scope.WithField(
 		zap.String("current_user_id", currentUserID),

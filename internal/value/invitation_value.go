@@ -1,6 +1,8 @@
 package value
 
 import (
+	"errors"
+
 	"labelplus-next-web-be/internal/domain/model"
 
 	"go.uber.org/zap"
@@ -11,11 +13,29 @@ type CreateInvitationArgs struct {
 	Roles     model.RoleMask `json:"roles"`
 }
 
+func (cia *CreateInvitationArgs) Validate() error {
+	if cia == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if cia.InviteeQQ == "" {
+		return errors.New("被邀请人 QQ 不能为空")
+	}
+
+	if cia.Roles == 0 {
+		return errors.New("分工角色不能为空")
+	}
+
+	return nil
+}
+
 type InvitationInfo struct {
 	ID string `json:"id"`
 
 	InvitorID string `json:"invitor_id"`
 	InviteeQQ string `json:"invitee_qq"`
+
+	Pending bool `json:"pending"`
 
 	Roles model.RoleMask `json:"roles"`
 
@@ -23,18 +43,20 @@ type InvitationInfo struct {
 }
 
 func NewInvitationInfo(
-	ID string,
-	InvitorID string,
-	InviteeQQ string,
-	Roles model.RoleMask,
-	CreatedAt int64,
+	id string,
+	invitorID string,
+	inviteeQQ string,
+	pengding bool,
+	roles model.RoleMask,
+	createdAt int64,
 ) *InvitationInfo {
 	return &InvitationInfo{
-		ID:        ID,
-		InvitorID: InvitorID,
-		InviteeQQ: InviteeQQ,
-		Roles:     Roles,
-		CreatedAt: CreatedAt,
+		ID:        id,
+		InvitorID: invitorID,
+		InviteeQQ: inviteeQQ,
+		Pending:   pengding,
+		Roles:     roles,
+		CreatedAt: createdAt,
 	}
 }
 
@@ -48,6 +70,7 @@ func NewInvitationInfoFromModel(invitation *model.InvitationInfo) *InvitationInf
 		ID:        invitation.ID,
 		InvitorID: invitation.InvitorID,
 		InviteeQQ: invitation.InviteeQQ,
+		Pending: invitation.Pending,
 		Roles:     invitation.RoleMask(),
 		CreatedAt: invitation.CreatedAt.UnixMilli(),
 	}
@@ -56,4 +79,20 @@ func NewInvitationInfoFromModel(invitation *model.InvitationInfo) *InvitationInf
 type PatchInvitationArgs struct {
 	ID    string         `json:"id"`
 	Roles model.RoleMask `json:"roles"`
+}
+
+func (pia *PatchInvitationArgs) Validate() error {
+	if pia == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if pia.ID == "" {
+		return errors.New("邀请 ID 不能为空")
+	}
+
+	if pia.Roles == 0 {
+		return errors.New("分工角色不能为空")
+	}
+
+	return nil
 }

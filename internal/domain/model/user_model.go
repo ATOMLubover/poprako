@@ -1,9 +1,7 @@
 package model
 
 import (
-	"errors"
 	"time"
-	"unicode/utf8"
 )
 
 type UserInfo struct {
@@ -122,43 +120,59 @@ func (u *UserInfo) UnmaskRoles(mask RoleMask) []RoleFlag {
 	return roles
 }
 
+// UserCredentials 仅用于登录时校验，不对外暴露完整用户信息
+type UserCredentials struct {
+	UserID       string
+	PasswordHash string
+}
+
 type UserRegistration struct {
-	Name           string
-	QQ             string
-	Password       string
-	InvitationCode string
+	Name              string
+	QQ                string
+	Password          string
+	ToBePictureSource bool
+	ToBeTranslator    bool
+	ToBeProofreader   bool
+	ToBeTypesetter    bool
+	ToBeReviewer      bool
+	ToBeAdmin         bool
+	ToBeSuperAdmin    bool
 }
 
-func (r *UserRegistration) Validate() error {
-	if err := r.validateUserName(r.Name); err != nil {
-		return err
+func NewUserRegistration(
+	name string,
+	qq string,
+	password string,
+	roles ...RoleFlag,
+) *UserRegistration {
+	registration := &UserRegistration{
+		Name:           name,
+		QQ:             qq,
+		Password:       password,
 	}
 
-	if err := r.validatePassword(r.Password); err != nil {
-		return err
-	}
+	registration.setRoles(roles...)
 
-	return nil
+	return registration
 }
 
-func (*UserRegistration) validateUserName(name string) error {
-	if len := utf8.RuneCountInString(name); len < 2 || len > 20 {
-		return errors.New("用户名长度必须在 2 到 20 个字符之间")
-	}
-
-	return nil
-}
-
-func (*UserRegistration) validatePassword(password string) error {
-	if len := utf8.RuneCountInString(password); len < 6 || len > 20 {
-		return errors.New("密码长度必须在 6 到 20 个字符之间")
-	}
-
-	for _, r := range password {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9') {
-			return errors.New("密码只能包含字母和数字")
+func (ur *UserRegistration) setRoles(roles ...RoleFlag) {
+	for _, role := range roles {
+		switch role {
+		case RolePictureSource:
+			ur.ToBePictureSource = true
+		case RoleTranslator:
+			ur.ToBeTranslator = true
+		case RoleProofreader:
+			ur.ToBeProofreader = true
+		case RoleTypesetter:
+			ur.ToBeTypesetter = true
+		case RoleReviewer:
+			ur.ToBeReviewer = true
+		case RoleAdmin:
+			ur.ToBeAdmin = true
+		case RoleSuperAdmin:
+			ur.ToBeSuperAdmin = true
 		}
 	}
-
-	return nil
 }

@@ -64,6 +64,8 @@ type InvitationInfo struct {
 	InviteeQQ      string
 	InvitationCode string
 
+	Pending bool
+
 	ToBePictureSource bool
 	ToBeTranslator    bool
 	ToBeProofreader   bool
@@ -118,13 +120,13 @@ func NewInvitationPatch(
 	id string,
 	roles ...RoleFlag,
 ) *InvitationPatch {
-	 patch := &InvitationPatch{
+	patch := &InvitationPatch{
 		ID: id,
-	 }
-	
-	 patch.setRoles(roles...)
-	
-	 return patch
+	}
+
+	patch.setRoles(roles...)
+
+	return patch
 }
 
 func (ip *InvitationPatch) setRoles(roles ...RoleFlag) {

@@ -10,3 +10,9 @@ const (
 	PermissionInvitationsDelete Permission = PrefixPermissionInvitation + "delete"
 	PermissionInvitationsPatch  Permission = PrefixPermissionInvitation + "patch"
 )
+
+const (
+	PrefixPermissionUsers Permission = "users:"
+
+	PermissionUsersRemove Permission = PrefixPermissionUsers + "remove"
+)

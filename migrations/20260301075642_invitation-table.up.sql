@@ -20,3 +20,10 @@ CREATE TABLE "invitation_table" (
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX "idx_invitation_created_at" 
+    ON "invitation_table" ("created_at" DESC);
+    
+CREATE UNIQUE INDEX "idx_invitation_invitee_qq_pending" 
+    ON "invitation_table" ("invitee_qq") 
+    WHERE "pending" = TRUE;
