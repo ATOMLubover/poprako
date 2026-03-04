@@ -23,15 +23,15 @@ type UserApplication interface {
 		scope util.TraceScope,
 		args *value.RegisterUserArgs,
 	) (*value.RegisterUserResult, error)
-	GetUserInfoByID(
+	GetUser(
 		scope util.TraceScope,
 		userID string,
 	) (*value.UserInfo, error)
 	ListUsers(
 		scope util.TraceScope,
-		args *value.ListUsersArgs,
+		args *value.ListUserArgs,
 	) ([]*value.UserInfo, error)
-	RemoveUser(
+	RemoveUserByID(
 		scope util.TraceScope,
 		currentUserID string,
 		targetUserID string,
@@ -41,39 +41,32 @@ type UserApplication interface {
 type userApplication struct {
 	authConfig *config.AuthConfig
 
-	userService       service.UserService
-	permissionService service.PermissionService
-
 	userRepository       repository.UserRepository
+	memberRepository     repository.MemberRepository
 	invitationRepository repository.InvitationRepository
 }
 
 func NewUserApplication(
 	authConfig *config.AuthConfig,
-	userService service.UserService,
-	permissionService service.PermissionService,
 	userRepository repository.UserRepository,
+	memberRepository repository.MemberRepository,
 	invitationRepository repository.InvitationRepository,
 ) UserApplication {
 	if authConfig == nil ||
-		userService == nil ||
-		permissionService == nil ||
 		userRepository == nil ||
+		memberRepository == nil ||
 		invitationRepository == nil {
 		zap.L().Panic(
 			"NewUserApplication: 依赖项不能为空",
 			zap.Bool("authConfig_nil", authConfig == nil),
-			zap.Bool("userService_nil", userService == nil),
-			zap.Bool("permissionService_nil", permissionService == nil),
 			zap.Bool("userRepository_nil", userRepository == nil),
+			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("invitationRepository_nil", invitationRepository == nil),
 		)
 	}
 
 	return &userApplication{
 		authConfig:           authConfig,
-		userService:          userService,
-		permissionService:    permissionService,
 		userRepository:       userRepository,
 		invitationRepository: invitationRepository,
 	}
@@ -95,7 +88,7 @@ func (ua *userApplication) LoginUser(
 		return nil, err
 	}
 
-	scope.WithField(
+	scope.WithFields(
 		zap.String("qq", args.QQ),
 	)
 
@@ -109,12 +102,12 @@ func (ua *userApplication) LoginUser(
 	}
 
 	// 用户不存在或密码错误，故意不区分以防止用户枚举
-	if credentials == nil || !ua.userService.VerifyPassword(args.Password, credentials.PasswordHash) {
+	if credentials == nil || !service.VerifyPassword(args.Password, credentials.PasswordHash) {
 		return nil, errors.New("用户不存在或密码错误")
 	}
 
 	// 生成 access token
-	accessToken, err := ua.userService.GenerateAccessToken(
+	accessToken, err := service.GenerateAccessToken(
 		credentials.UserID,
 		[]byte(ua.authConfig.JWTSecretKey),
 		ua.authConfig.ExpirationHours,
@@ -124,10 +117,7 @@ func (ua *userApplication) LoginUser(
 		return nil, errors.New("生成访问令牌失败")
 	}
 
-	return &value.LoginUserResult{
-		UserID:      credentials.UserID,
-		AccessToken: accessToken,
-	}, nil
+	return value.NewLoginUserResult(credentials.UserID, accessToken), nil
 }
 
 func (ua *userApplication) RegisterUser(
@@ -147,7 +137,7 @@ func (ua *userApplication) RegisterUser(
 	}
 
 	// 检查是否有对应的邀请
-	invitationInfo, err := ua.invitationRepository.GetInfoByInviteeQQ(nil, args.QQ)
+	invitationInfo, err := ua.invitationRepository.GetByInviteeQQ(nil, args.QQ)
 	if err != nil {
 		scope.Logger().Error(fn+": 查询邀请信息失败", zap.Error(err))
 		return nil, errors.New("获取邀请信息失败")
@@ -164,14 +154,30 @@ func (ua *userApplication) RegisterUser(
 		return nil, errors.New("邀请码不正确，请检查后重试")
 	}
 
-	// 通过检查后，对密码进行 哈希处理
-	passwordHash, err := ua.userService.HashPassword(args.Password)
+	// 通过检查后，对密码进行哈希处理
+	passwordHash, err := service.HashPassword(args.Password)
 	if err != nil {
 		scope.Logger().Error(fn+": 密码哈希失败", zap.Error(err))
 		return nil, errors.New("创建用户失败")
 	}
 
-	// 通过检查后，创建对应的用户信息
+	// 通过检查后，在一个事务中，先创建用户信息，再创建成员信息，最后标记邀请信息为已使用
+	transactionExecutor := ua.userRepository.BeginTransaction()
+
+	var transactionErr error
+
+	defer func() {
+		if transactionErr != nil {
+			if rollbackErr := transactionExecutor.Rollback().Error; rollbackErr != nil {
+				scope.Logger().Error(
+					fn+": 事务回滚失败",
+					zap.Error(transactionErr),
+					zap.Error(rollbackErr),
+				)
+			}
+		}
+	}()
+
 	userRegistration := model.NewUserRegistration(
 		args.Name,
 		args.QQ,
@@ -179,14 +185,48 @@ func (ua *userApplication) RegisterUser(
 		model.UnmaskRoles(invitationInfo.RoleMask())...,
 	)
 
-	userID, err := ua.userRepository.Create(nil, userRegistration)
-	if err != nil {
+	userID, transactionErr := ua.userRepository.Create(
+		transactionExecutor,
+		userRegistration,
+	)
+	if transactionErr != nil {
 		scope.Logger().Error(fn+": 创建用户信息失败", zap.Error(err))
 		return nil, errors.New("创建用户失败")
 	}
 
+	// 创建成员信息
+	memberCreation := model.NewMemberCreation(
+		userID,
+		invitationInfo.TeamID,
+		model.UnmaskRoles(invitationInfo.RoleMask())...,
+	)
+
+	_, transactionErr = ua.memberRepository.Create(
+		transactionExecutor,
+		memberCreation,
+	)
+	if transactionErr != nil {
+		zap.L().Error(fn+": 创建成员信息失败", zap.Error(transactionErr))
+		return nil, errors.New("创建用户失败")
+	}
+
+	// 标记邀请信息为已使用
+	transactionErr = ua.invitationRepository.Invalidate(
+		transactionExecutor,
+		invitationInfo.ID,
+	)
+	if transactionErr != nil {
+		zap.L().Error(fn+": 标记邀请信息已使用失败", zap.Error(transactionErr))
+		return nil, errors.New("创建用户失败")
+	}
+
+	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {
+		scope.Logger().Error(fn+": 事务提交失败", zap.Error(commitErr))
+		return nil, errors.New("创建用户失败")
+	}
+
 	// 生成 access token
-	accessToken, err := ua.userService.GenerateAccessToken(
+	accessToken, err := service.GenerateAccessToken(
 		userID,
 		[]byte(ua.authConfig.JWTSecretKey),
 		ua.authConfig.ExpirationHours,
@@ -196,19 +236,16 @@ func (ua *userApplication) RegisterUser(
 		return nil, errors.New("生成访问令牌失败")
 	}
 
-	// 构造注册成功的结果值对象
-	result := value.NewRegisterUserResult(userID, accessToken)
-
-	return result, nil
+	return value.NewRegisterUserResult(userID, accessToken), nil
 }
 
-func (ua *userApplication) GetUserInfoByID(
+func (ua *userApplication) GetUser(
 	scope util.TraceScope,
 	userID string,
 ) (*value.UserInfo, error) {
-	const fn = "UserApplication.GetUserInfoByID"
+	const fn = "UserApplication.GetUserByID"
 
-	scope.WithField(
+	scope.WithFields(
 		zap.String("user_id", userID),
 	)
 
@@ -229,7 +266,7 @@ func (ua *userApplication) GetUserInfoByID(
 
 func (ua *userApplication) ListUsers(
 	scope util.TraceScope,
-	args *value.ListUsersArgs,
+	args *value.ListUserArgs,
 ) ([]*value.UserInfo, error) {
 	const fn = "UserApplication.ListUsers"
 
@@ -243,7 +280,7 @@ func (ua *userApplication) ListUsers(
 		return nil, err
 	}
 
-	scope.WithField(
+	scope.WithFields(
 		zap.Any("args", args),
 	)
 
@@ -253,19 +290,14 @@ func (ua *userApplication) ListUsers(
 	opts := make([]repository.QueryOption, 0)
 
 	if args.QQ != "" {
-		opts = append(opts, query_option.FilterByQQ(args.QQ))
+		opts = append(opts, query_option.UserQuery().FilterByQQ(args.QQ))
 	}
-
 	if args.FuzzyName != "" {
-		opts = append(opts, query_option.FuzzyFilterByName(args.FuzzyName))
+		opts = append(opts, query_option.UserQuery().FilterByFuzzyName(args.FuzzyName))
 	}
 
-	if args.Role != 0 {
-		opts = append(opts, query_option.FilterByUserRole(args.Role))
-	}
-
-	opts = append(opts, query_option.CreatedAtDesc()...)
-	opts = append(opts, query_option.Paginate(args.Offset, args.Limit)...)
+	opts = append(opts, query_option.CreatedAtDesc())
+	opts = append(opts, query_option.Paginate(args.Offset, args.Limit))
 
 	// 查询用户列表
 	userList, err := ua.userRepository.List(nil, opts...)
@@ -283,14 +315,14 @@ func (ua *userApplication) ListUsers(
 	return result, nil
 }
 
-func (ua *userApplication) RemoveUser(
+func (ua *userApplication) RemoveUserByID(
 	scope util.TraceScope,
 	currentUserID string,
 	targetUserID string,
 ) error {
-	const fn = "UserApplication.RemoveUser"
+	const fn = "UserApplication.RemoveUserByID"
 
-	scope.WithField(
+	scope.WithFields(
 		zap.String("current_user_id", currentUserID),
 		zap.String("target_user_id", targetUserID),
 	)
@@ -299,12 +331,16 @@ func (ua *userApplication) RemoveUser(
 
 	// 鉴权：仅超级管理员可删除用户
 	currentUser, err := ua.userRepository.GetInfoByID(nil, currentUserID)
-	if err != nil {
+	if currentUser == nil || err != nil {
 		scope.Logger().Error(fn+": 获取当前用户信息失败", zap.Error(err))
 		return errors.New("无法获取用户信息")
 	}
 
-	if !ua.permissionService.CheckPermission(currentUser, model.PermissionUsersRemove) {
+	if !service.CheckUserPermission(
+		currentUser,
+		targetUserID,
+		model.PermissionUserRemove,
+	) {
 		return errors.New("没有权限删除用户")
 	}
 

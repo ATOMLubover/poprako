@@ -9,6 +9,7 @@ import (
 )
 
 type CreateInvitationArgs struct {
+	TeamID    string         `json:"team_id"`
 	InviteeQQ string         `json:"invitee_qq"`
 	Roles     model.RoleMask `json:"roles"`
 }
@@ -70,24 +71,29 @@ func NewInvitationInfoFromModel(invitation *model.InvitationInfo) *InvitationInf
 		ID:        invitation.ID,
 		InvitorID: invitation.InvitorID,
 		InviteeQQ: invitation.InviteeQQ,
-		Pending: invitation.Pending,
+		Pending:   invitation.Pending,
 		Roles:     invitation.RoleMask(),
 		CreatedAt: invitation.CreatedAt.UnixMilli(),
 	}
 }
 
-type PatchInvitationArgs struct {
-	ID    string         `json:"id"`
-	Roles model.RoleMask `json:"roles"`
+type UpdateInvitationArgs struct {
+	ID     string         `json:"id"`
+	TeamID string         `json:"team_id"`
+	Roles  model.RoleMask `json:"roles"`
 }
 
-func (pia *PatchInvitationArgs) Validate() error {
+func (pia *UpdateInvitationArgs) Validate() error {
 	if pia == nil {
 		return errors.New("参数不能为空")
 	}
 
 	if pia.ID == "" {
 		return errors.New("邀请 ID 不能为空")
+	}
+
+	if pia.TeamID == "" {
+		return errors.New("团队 ID 不能为空")
 	}
 
 	if pia.Roles == 0 {

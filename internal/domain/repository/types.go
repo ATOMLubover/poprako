@@ -7,5 +7,6 @@ type Executor = *gorm.DB
 type QueryOption func(executor Executor) Executor
 
 type Transactor interface {
-	Execute(func(executor Executor) error) error
+	BeginTransaction() Executor
+	withTransaction(executor Executor) Executor
 }

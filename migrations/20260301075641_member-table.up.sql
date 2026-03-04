@@ -1,0 +1,46 @@
+CREATE TABLE "member_table" (
+    "id"                      TEXT PRIMARY KEY,
+
+    "team_id"                 TEXT NOT NULL REFERENCES "team_table" ("id") ON DELETE CASCADE,
+
+    "assigned_raw_provider_at"TIMESTAMPTZ,
+    "assigned_translator_at"  TIMESTAMPTZ,
+    "assigned_proofreader_at" TIMESTAMPTZ,
+    "assigned_typesetter_at"  TIMESTAMPTZ,
+    "assigned_reviewer_at"    TIMESTAMPTZ,
+    "assigned_uploader_at"    TIMESTAMPTZ,
+    "assigned_admin_at"       TIMESTAMPTZ,
+
+    "created_at"              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updated_at"              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "deleted_at"              TIMESTAMPTZ
+);
+
+CREATE INDEX "idx_member_raw_provider"
+    ON "member_table" ("assigned_raw_provider_at")
+    WHERE "assigned_raw_provider_at" IS NOT NULL
+      AND "deleted_at" IS NULL;
+CREATE INDEX "idx_member_translator"
+    ON "member_table" ("assigned_translator_at")
+    WHERE "assigned_translator_at" IS NOT NULL
+      AND "deleted_at" IS NULL;
+CREATE INDEX "idx_member_proofreader"
+    ON "member_table" ("assigned_proofreader_at")
+    WHERE "assigned_proofreader_at" IS NOT NULL
+      AND "deleted_at" IS NULL;
+CREATE INDEX "idx_member_typesetter"
+    ON "member_table" ("assigned_typesetter_at")
+    WHERE "assigned_typesetter_at" IS NOT NULL
+      AND "deleted_at" IS NULL;
+CREATE INDEX "idx_member_reviewer"
+    ON "member_table" ("assigned_reviewer_at")
+    WHERE "assigned_reviewer_at" IS NOT NULL
+      AND "deleted_at" IS NULL;
+CRAETE INDEX "idx_member_uploader"
+    ON "member_table" ("assigned_uploader_at")
+    WHERE "assigned_uploader_at" IS NOT NULL
+      AND "deleted_at" IS NULL;
+CREATE INDEX "idx_member_admin"
+    ON "member_table" ("assigned_admin_at")
+    WHERE "assigned_admin_at" IS NOT NULL
+      AND "deleted_at" IS NULL;

@@ -7,14 +7,13 @@ type RoleMask int32
 // 语义化的成员分工角色
 // 兼容掩码
 const (
-	RolePictureSource RoleFlag = 2 << iota
+	RoleRawProvider RoleFlag = 1 << iota
 	RoleTranslator
 	RoleProofreader
 	RoleTypesetter
 	RoleReviewer
-
+	RoleUploader
 	RoleAdmin
-	RoleSuperAdmin
 )
 
 func MaskRoles(roles []RoleFlag) RoleMask {
@@ -30,8 +29,8 @@ func MaskRoles(roles []RoleFlag) RoleMask {
 func UnmaskRoles(mask RoleMask) []RoleFlag {
 	roles := make([]RoleFlag, 0, 6)
 
-	if mask&RoleMask(RolePictureSource) != 0 {
-		roles = append(roles, RolePictureSource)
+	if mask&RoleMask(RoleRawProvider) != 0 {
+		roles = append(roles, RoleRawProvider)
 	}
 	if mask&RoleMask(RoleTranslator) != 0 {
 		roles = append(roles, RoleTranslator)
@@ -45,11 +44,11 @@ func UnmaskRoles(mask RoleMask) []RoleFlag {
 	if mask&RoleMask(RoleReviewer) != 0 {
 		roles = append(roles, RoleReviewer)
 	}
+	if mask&RoleMask(RoleUploader) != 0 {
+		roles = append(roles, RoleUploader)
+	}
 	if mask&RoleMask(RoleAdmin) != 0 {
 		roles = append(roles, RoleAdmin)
-	}
-	if mask&RoleMask(RoleSuperAdmin) != 0 {
-		roles = append(roles, RoleSuperAdmin)
 	}
 
 	return roles

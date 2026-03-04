@@ -1,29 +1,25 @@
 CREATE TABLE "invitation_table" (
-    "id" TEXT PRIMARY KEY,
+    "id"                    TEXT PRIMARY KEY,
 
-    -- 考虑到邀请不应该因为用户被删除而丢失，因此设置为 ON DELETE SET NULL
-    "invitor_id" TEXT REFERENCES "user_table" ("id") ON DELETE SET NULL,
-    "invitee_qq" TEXT NOT NULL,
+    "invitor_id"            TEXT NOT NULL REFERENCES "user_table" ("id") ON DELETE CASCADE,
+    "target_team_id"        TEXT NOT NULL REFERENCES "team_table" ("id") ON DELETE CASCADE,
+    "invitee_qq"            TEXT NOT NULL,
 
-    "invitation_code" TEXT UNIQUE NOT NULL,
+    "invitation_code"       TEXT UNIQUE NOT NULL,
 
-    "to_be_picture_source" BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_translator" BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_proofreader" BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_typesetter" BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_reviewer" BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_admin" BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_super_admin" BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_raw_provider"    BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_translator"      BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_proofreader"     BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_typesetter"      BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_reviewer"        BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_admin"           BOOLEAN NOT NULL DEFAULT FALSE,
 
-    "pending" BOOLEAN NOT NULL DEFAULT TRUE,
+    "pending"               BOOLEAN NOT NULL DEFAULT TRUE,
 
-    "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX "idx_invitation_created_at" 
-    ON "invitation_table" ("created_at" DESC);
-    
-CREATE UNIQUE INDEX "idx_invitation_invitee_qq_pending" 
-    ON "invitation_table" ("invitee_qq") 
-    WHERE "pending" = TRUE;
+CREATE INDEX "idx_invitation_target_team_created_at_desc"
+    ON "invitation_table" ("target_team_id", "created_at" DESC)
+    WHERE "pending" IS FALSE;

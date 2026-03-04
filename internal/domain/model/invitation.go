@@ -10,13 +10,13 @@ type InvitationCreation struct {
 
 	InvitationCode string
 
-	ToBePictureSource bool
-	ToBeTranslator    bool
-	ToBeProofreader   bool
-	ToBeTypesetter    bool
-	ToBeReviewer      bool
-	ToBeAdmin         bool
-	ToBeSuperAdmin    bool
+	ToBeRawProvider bool
+	ToBeTranslator  bool
+	ToBeProofreader bool
+	ToBeTypesetter  bool
+	ToBeReviewer    bool
+	ToBeUploader    bool
+	ToBeAdmin       bool
 }
 
 func NewInvitationCreation(
@@ -39,8 +39,8 @@ func NewInvitationCreation(
 func (ic *InvitationCreation) setRoles(roles ...RoleFlag) {
 	for _, role := range roles {
 		switch role {
-		case RolePictureSource:
-			ic.ToBePictureSource = true
+		case RoleRawProvider:
+			ic.ToBeRawProvider = true
 		case RoleTranslator:
 			ic.ToBeTranslator = true
 		case RoleProofreader:
@@ -49,10 +49,10 @@ func (ic *InvitationCreation) setRoles(roles ...RoleFlag) {
 			ic.ToBeTypesetter = true
 		case RoleReviewer:
 			ic.ToBeReviewer = true
+		case RoleUploader:
+			ic.ToBeUploader = true
 		case RoleAdmin:
 			ic.ToBeAdmin = true
-		case RoleSuperAdmin:
-			ic.ToBeSuperAdmin = true
 		}
 	}
 }
@@ -62,17 +62,18 @@ type InvitationInfo struct {
 
 	InvitorID      string
 	InviteeQQ      string
+	TeamID         string
 	InvitationCode string
 
 	Pending bool
 
-	ToBePictureSource bool
-	ToBeTranslator    bool
-	ToBeProofreader   bool
-	ToBeTypesetter    bool
-	ToBeReviewer      bool
-	ToBeAdmin         bool
-	ToBeSuperAdmin    bool
+	ToBeRawProvider bool
+	ToBeTranslator  bool
+	ToBeProofreader bool
+	ToBeTypesetter  bool
+	ToBeReviewer    bool
+	ToBeUploader    bool
+	ToBeAdmin       bool
 
 	CreatedAt time.Time
 }
@@ -80,8 +81,8 @@ type InvitationInfo struct {
 func (ii *InvitationInfo) RoleMask() RoleMask {
 	mask := RoleMask(0)
 
-	if ii.ToBePictureSource {
-		mask |= RoleMask(RolePictureSource)
+	if ii.ToBeRawProvider {
+		mask |= RoleMask(RoleRawProvider)
 	}
 	if ii.ToBeTranslator {
 		mask |= RoleMask(RoleTranslator)
@@ -95,32 +96,32 @@ func (ii *InvitationInfo) RoleMask() RoleMask {
 	if ii.ToBeReviewer {
 		mask |= RoleMask(RoleReviewer)
 	}
+	if ii.ToBeUploader {
+		mask |= RoleMask(RoleUploader)
+	}
 	if ii.ToBeAdmin {
 		mask |= RoleMask(RoleAdmin)
-	}
-	if ii.ToBeSuperAdmin {
-		mask |= RoleMask(RoleSuperAdmin)
 	}
 
 	return mask
 }
 
-type InvitationPatch struct {
-	ID                string
-	ToBePictureSource bool
-	ToBeTranslator    bool
-	ToBeProofreader   bool
-	ToBeTypesetter    bool
-	ToBeReviewer      bool
-	ToBeAdmin         bool
-	ToBeSuperAdmin    bool
+type InvitationUpdate struct {
+	ID              string
+	ToBeRawProvider bool
+	ToBeTranslator  bool
+	ToBeProofreader bool
+	ToBeTypesetter  bool
+	ToBeReviewer    bool
+	ToBeUploader    bool
+	ToBeAdmin       bool
 }
 
-func NewInvitationPatch(
+func NewInvitationUpdate(
 	id string,
 	roles ...RoleFlag,
-) *InvitationPatch {
-	patch := &InvitationPatch{
+) *InvitationUpdate {
+	patch := &InvitationUpdate{
 		ID: id,
 	}
 
@@ -129,11 +130,11 @@ func NewInvitationPatch(
 	return patch
 }
 
-func (ip *InvitationPatch) setRoles(roles ...RoleFlag) {
+func (ip *InvitationUpdate) setRoles(roles ...RoleFlag) {
 	for _, role := range roles {
 		switch role {
-		case RolePictureSource:
-			ip.ToBePictureSource = true
+		case RoleRawProvider:
+			ip.ToBeRawProvider = true
 		case RoleTranslator:
 			ip.ToBeTranslator = true
 		case RoleProofreader:
@@ -142,10 +143,10 @@ func (ip *InvitationPatch) setRoles(roles ...RoleFlag) {
 			ip.ToBeTypesetter = true
 		case RoleReviewer:
 			ip.ToBeReviewer = true
+		case RoleUploader:
+			ip.ToBeUploader = true
 		case RoleAdmin:
 			ip.ToBeAdmin = true
-		case RoleSuperAdmin:
-			ip.ToBeSuperAdmin = true
 		}
 	}
 }

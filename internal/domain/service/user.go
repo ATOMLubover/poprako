@@ -10,41 +10,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService interface {
-	GenerateAccessToken(
-		userID string,
-		secretKey []byte,
-		expirationHours int,
-	) (string, error)
-	ParseAccessToken(
-		tokenString string,
-		secretKey []byte,
-	) (*model.TokenClaims, error)
-	VerifyPassword(
-		plainPassword,
-		hashedPassword string,
-	) bool
-	HashPassword(
-		plainPassword string,
-	) (string, error)
-}
-
-type userService struct{}
-
-func NewUserService() UserService {
-	return &userService{}
-}
-
-func (us *userService) GenerateAccessToken(
+func GenerateAccessToken(
 	userID string,
 	secretKey []byte,
 	expirationHours int,
 ) (string, error) {
+	now := time.Now()
+
 	claims := &model.TokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expirationHours) * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(expirationHours) * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    "labelplus-next-web",
 			Subject:   "user-auth",
 		},
@@ -61,7 +38,7 @@ func (us *userService) GenerateAccessToken(
 	return tokenString, nil
 }
 
-func (us *userService) ParseAccessToken(
+func ParseAccessToken(
 	tokenString string,
 	secretKey []byte,
 ) (*model.TokenClaims, error) {
@@ -88,13 +65,13 @@ func (us *userService) ParseAccessToken(
 	return claims, nil
 }
 
-func (us *userService) VerifyPassword(plainPassword, hashedPassword string) bool {
+func VerifyPassword(plainPassword, hashedPassword string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
 
 	return err == nil
 }
 
-func (us *userService) HashPassword(plainPassword string) (string, error) {
+func HashPassword(plainPassword string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
 	if err != nil {
 		zap.L().Error("HashPassword: 哈希密码失败", zap.Error(err))

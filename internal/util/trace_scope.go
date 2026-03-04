@@ -9,8 +9,8 @@ type TraceScope struct {
 	logger *zap.Logger
 }
 
-func NewTraceScope(logger *zap.Logger) TraceScope {
-	return TraceScope{
+func NewTraceScope(logger *zap.Logger) *TraceScope {
+	return &TraceScope{
 		logger: logger,
 	}
 }
@@ -23,6 +23,8 @@ func (ts *TraceScope) Logger() *zap.Logger {
 	return ts.logger
 }
 
-func (ts *TraceScope) WithField(fields ...zap.Field) {
+func (ts *TraceScope) WithFields(fields ...zap.Field) *TraceScope {
 	ts.logger = ts.Logger().With(fields...)
+
+	return ts
 }

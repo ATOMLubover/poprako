@@ -3,16 +3,34 @@ package model
 type Permission string
 
 const (
-	PrefixPermissionInvitation Permission = "invitations:"
+	PrefixPermissionInvitation Permission = "permission:invitation:"
 
-	PermissionInvitationsList   Permission = PrefixPermissionInvitation + "list"
-	PermissionInvitationsCreate Permission = PrefixPermissionInvitation + "create"
-	PermissionInvitationsDelete Permission = PrefixPermissionInvitation + "delete"
-	PermissionInvitationsPatch  Permission = PrefixPermissionInvitation + "patch"
+	PermissionInvitationList   Permission = PrefixPermissionInvitation + "list"
+	PermissionInvitationCreate Permission = PrefixPermissionInvitation + "create"
+	PermissionInvitationDelete Permission = PrefixPermissionInvitation + "delete"
+	PermissionInvitationUpdate Permission = PrefixPermissionInvitation + "update"
 )
 
 const (
-	PrefixPermissionUsers Permission = "users:"
+	PrefixPermissionUser Permission = "permission:user:"
 
-	PermissionUsersRemove Permission = PrefixPermissionUsers + "remove"
+	PermissionUserRemove Permission = PrefixPermissionUser + "remove"
+)
+
+const (
+	PrefixPermissionTeam Permission = "permission:team:"
+
+	PermissionTeamListMine Permission = PrefixPermissionTeam + "list:mine"
+	PermissionTeamListAll  Permission = PrefixPermissionTeam + "list:all"
+	PermissionTeamCreate   Permission = PrefixPermissionTeam + "create"
+	PermissionTeamUpdate   Permission = PrefixPermissionTeam + "update"
+	PermissionTeamDelete   Permission = PrefixPermissionTeam + "delete"
+)
+
+const (
+	PrefixPermissionMember Permission = "permission:member:"
+
+	PermissionMemberList   Permission = PrefixPermissionMember + "list"
+	PermissionMemberUpdate Permission = PrefixPermissionMember + "update"
+	PermissionMemberDelete Permission = PrefixPermissionMember + "delete"
 )
