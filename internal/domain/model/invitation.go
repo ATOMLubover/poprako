@@ -5,8 +5,9 @@ import (
 )
 
 type InvitationCreation struct {
-	InvitorID string
-	InviteeQQ string
+	InvitorID    string
+	TargetTeamID string
+	InviteeQQ    string
 
 	InvitationCode string
 
@@ -21,12 +22,14 @@ type InvitationCreation struct {
 
 func NewInvitationCreation(
 	invitorID,
+	targetTeamID,
 	inviteeQQ string,
 	invitationCode string,
 	roles ...RoleFlag,
 ) *InvitationCreation {
 	creation := &InvitationCreation{
 		InvitorID:      invitorID,
+		TargetTeamID:   targetTeamID,
 		InviteeQQ:      inviteeQQ,
 		InvitationCode: invitationCode,
 	}

@@ -8,5 +8,4 @@ type QueryOption func(executor Executor) Executor
 
 type Transactor interface {
 	BeginTransaction() Executor
-	withTransaction(executor Executor) Executor
 }

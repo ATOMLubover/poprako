@@ -179,6 +179,7 @@ func (ia *invitationApplication) CreateInvitation(
 
 	invitationCreation := model.NewInvitationCreation(
 		currentUserID,
+		args.TeamID,
 		args.InviteeQQ,
 		invitationCode,
 		model.UnmaskRoles(args.Roles)...,

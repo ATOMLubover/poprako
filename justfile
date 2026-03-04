@@ -2,11 +2,14 @@ set shell := ["pwsh.exe", "-c"]
 
 default:
     just --list
+    
+swag:
+    swag init
 
-dev:
+dev: swag
     go run main.go
     
-build: 
+build:
     $env:GOOS="linux";$env:GOARCH="amd64";go build -o output/labelplus-next-server
     
 mgr-add script-name:

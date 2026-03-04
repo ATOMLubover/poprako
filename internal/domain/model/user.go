@@ -31,9 +31,9 @@ func NewUserCredentials(userID string, passwordHash string) *UserCredentials {
 }
 
 type UserRegistration struct {
-	Name     string
-	QQ       string
-	Password string
+	Name         string
+	QQ           string
+	PasswordHash string
 
 	Roles RoleMask
 }
@@ -41,14 +41,14 @@ type UserRegistration struct {
 func NewUserRegistration(
 	name string,
 	qq string,
-	password string,
+	passwordHash string,
 	roles ...RoleFlag,
 ) *UserRegistration {
 	registration := &UserRegistration{
-		Name:     name,
-		QQ:       qq,
-		Password: password,
-		Roles:    MaskRoles(roles),
+		Name:         name,
+		QQ:           qq,
+		PasswordHash: passwordHash,
+		Roles:        MaskRoles(roles),
 	}
 
 	return registration

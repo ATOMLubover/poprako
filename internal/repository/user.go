@@ -1,1 +1,104 @@
 package repository
+
+import (
+	"time"
+
+	"labelplus-next-web-be/internal/domain/model"
+	intf "labelplus-next-web-be/internal/domain/repository"
+	"labelplus-next-web-be/internal/repository/entity"
+	"labelplus-next-web-be/internal/util"
+)
+
+type userRepository struct {
+	executor intf.Executor
+}
+
+func NewUserRepository(executor intf.Executor) intf.UserRepository {
+	return &userRepository{executor: executor}
+}
+
+func (r *userRepository) withTransaction(executor intf.Executor) intf.Executor {
+	if executor != nil {
+		return executor
+	}
+	return r.executor
+}
+
+func (r *userRepository) BeginTransaction() intf.Executor {
+	return r.executor.Begin()
+}
+
+func (r *userRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.UserInfo, error) {
+	executor = r.withTransaction(executor)
+
+	db := executor.Model(&entity.UserInfoRow{})
+	for _, opt := range options {
+		db = opt(db)
+	}
+
+	var rows []entity.UserInfoRow
+	if err := db.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]model.UserInfo, len(rows))
+	for i, row := range rows {
+		result[i] = entity.ToUserInfo(row)
+	}
+	return result, nil
+}
+
+func (r *userRepository) GetInfoByID(executor intf.Executor, userID string) (*model.UserInfo, error) {
+	executor = r.withTransaction(executor)
+
+	var row entity.UserInfoRow
+	err := executor.
+		Model(&entity.UserInfoRow{}).
+		Where("id = ? AND deleted_at IS NULL", userID).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	info := entity.ToUserInfo(row)
+	return &info, nil
+}
+
+func (r *userRepository) GetCredentialsByQQ(executor intf.Executor, qq string) (*model.UserCredentials, error) {
+	executor = r.withTransaction(executor)
+
+	var row entity.UserCredentialsRow
+	err := executor.
+		Model(&entity.UserCredentialsRow{}).
+		Where("qq = ? AND deleted_at IS NULL", qq).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return model.NewUserCredentials(row.ID, row.PasswordHash), nil
+}
+
+func (r *userRepository) Create(executor intf.Executor, registration *model.UserRegistration) (string, error) {
+	executor = r.withTransaction(executor)
+
+	row := entity.UserInsertRow{
+		ID:           util.GenerateUUID(),
+		Name:         registration.Name,
+		QQ:           registration.QQ,
+		AvatarURL:    "",
+		PasswordHash: registration.PasswordHash,
+		IsSuperAdmin: false,
+	}
+	if err := executor.Create(&row).Error; err != nil {
+		return "", err
+	}
+	return row.ID, nil
+}
+
+func (r *userRepository) DeleteByID(executor intf.Executor, userID string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Model(&entity.UserInfoRow{}).
+		Where("id = ?", userID).
+		Update("deleted_at", time.Now()).Error
+}
