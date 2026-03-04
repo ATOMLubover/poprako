@@ -1,9 +1,10 @@
 {
-  "http_config": {
-    "host": "127.0.0.1",
-    "port": 8080
+  "server_address": "127.0.0.1:8080",
+  "auth": {
+    "expiration_hours": 144
   },
-  "database_config": {
-    "min_idle_connections": 5
+  "database": {
+    "min_idle_connections": 5,
+    "max_open_connections": 20
   }
 }

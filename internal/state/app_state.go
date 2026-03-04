@@ -6,10 +6,26 @@ import (
 )
 
 type AppState struct {
-    Config *config.AppConfig
+	AppConfig *config.AppConfig
 
 	UserApplication       application.UserApplication
 	InvitationApplication application.InvitationApplication
 	TeamApplication       application.TeamApplication
 	MemberApplication     application.MemberApplication
+}
+
+func NewAppState(
+	appConfig *config.AppConfig,
+	userApplication application.UserApplication,
+	invitationApplication application.InvitationApplication,
+	teamApplication application.TeamApplication,
+	memberApplication application.MemberApplication,
+) *AppState {
+	return &AppState{
+		AppConfig:             appConfig,
+		UserApplication:       userApplication,
+		InvitationApplication: invitationApplication,
+		TeamApplication:       teamApplication,
+		MemberApplication:     memberApplication,
+	}
 }

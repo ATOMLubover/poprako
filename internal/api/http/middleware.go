@@ -13,7 +13,7 @@ import (
 )
 
 func LogMiddleware(appState *state.AppState) iris.Handler {
-	isDevelopment := appState.Config.IsDevelopment()
+	isDevelopment := appState.AppConfig.IsDevelopment()
 
 	return func(ctx iris.Context) {
 		// 记录请求处理时间
@@ -45,7 +45,7 @@ func LogMiddleware(appState *state.AppState) iris.Handler {
 }
 
 func AuthorizeMiddleware(appState *state.AppState) iris.Handler {
-	secretKey := []byte(appState.Config.AuthConfig.JWTSecretKey)
+	secretKey := []byte(appState.AppConfig.AuthConfig.JWTSecretKey)
 
 	return func(ctx iris.Context) {
 		authHeader := ctx.GetHeader("Authorization")

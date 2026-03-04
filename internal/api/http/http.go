@@ -13,8 +13,18 @@ import (
 	_ "labelplus-next-web-be/docs"
 )
 
+func StartServer(appState *state.AppState) error {
+	app := initialize(appState)
+
+	if err := app.Listen(appState.AppConfig.ServerAddress); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func initialize(appState *state.AppState) *iris.Application {
-	app := iris.New()
+	app := iris.Default()
 
 	// 启用 request ID 和 panic 恢复中间件
 	app.Use(requestid.New())
@@ -73,7 +83,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	}
 
 	// 初始化 Swagger UI
-	initializeSwagger(app, appState.Config)
+	initializeSwagger(app, appState.AppConfig)
 
 	return app
 }
@@ -86,11 +96,9 @@ func initializeSwagger(app *iris.Application, appConfig *config.AppConfig) {
 	// 在非生产环境中启用 Swagger UI
 	app.Get(
 		"/swagger/{any:path}",
-		swagger.WrapHandler(
-			swaggerFiles.Handler,
-			func(config *swagger.Config) {
-				config.URL = "/swagger/doc.json"
-			},
-		),
+		swagger.WrapHandler(swaggerFiles.Handler, func(c *swagger.Config) {
+			// 指定获取 Swagger 文档的 URL
+			c.URL = "/swagger/doc.json" // Modified to relative path
+		}),
 	)
 }
