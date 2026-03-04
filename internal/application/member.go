@@ -81,7 +81,7 @@ func (ma *memberApplication) ListMembers(
 		return nil, errors.New("无法获取成员信息")
 	}
 
-	// 鉴权：检查当前用户在指定汉化组是否有权限查看成员列表
+	// 检查当前用户在指定汉化组是否有权限查看成员列表
 	if !service.CheckMemberPermission(
 		teamID,
 		currentUserMemberships,
@@ -93,6 +93,7 @@ func (ma *memberApplication) ListMembers(
 	// 获取成员列表（含用户信息）
 	memberList, err := ma.memberRepository.ListWithUserInfo(
 		nil,
+		query_option.CreatedAtDesc(),
 		query_option.MemberQuery().FilterByTeamID(teamID),
 		query_option.Paginate(paginationParams.Offset, paginationParams.Limit),
 	)
@@ -229,4 +230,3 @@ func (ma *memberApplication) RemoveMember(
 
 	return nil
 }
-

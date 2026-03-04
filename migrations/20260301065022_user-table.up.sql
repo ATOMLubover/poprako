@@ -30,3 +30,15 @@ CREATE INDEX "idx_user_created_at_desc"
 CREATE INDEX "idx_user_updated_at_desc"
     ON "user_table" ("updated_at" DESC)
     WHERE "deleted_at" IS NULL;
+
+-- 预插入一个超级管理员账号，密码为 123456
+INSERT INTO "user_table" (
+    "id", "name", "qq", "avatar_url", "password_hash", "is_super_admin"
+) VALUES (
+    '00000000-0000-0000-0000-000000000001',
+    '超级管理员',
+    '123456789',
+    '',
+    '$2a$10$N9qo8uLOickgx2ZMRZo5i.ej3c3w9uQZrL6Bq4t7Yq4UstP8yW', -- 123456
+    TRUE
+);

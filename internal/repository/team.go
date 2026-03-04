@@ -31,13 +31,14 @@ func (r *teamRepository) BeginTransaction() intf.Executor {
 func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]*model.TeamInfo, error) {
 	executor = r.withTransaction(executor)
 
-	db := executor.Model(&entity.TeamRow{}).Where("deleted_at IS NULL")
+	executor = executor.Table(entity.TeamTable).Where("deleted_at IS NULL")
 	for _, opt := range options {
-		db = opt(db)
+		executor = opt(executor)
 	}
 
 	var rows []entity.TeamRow
-	if err := db.Find(&rows).Error; err != nil {
+
+	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
@@ -45,6 +46,7 @@ func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOptio
 	for i, row := range rows {
 		result[i] = entity.ToTeamInfo(row)
 	}
+
 	return result, nil
 }
 
@@ -66,6 +68,7 @@ func (r *teamRepository) Update(executor intf.Executor, update *model.TeamUpdate
 	executor = r.withTransaction(executor)
 
 	updates := map[string]any{}
+
 	if update.Name.State() == util.OptionSome {
 		updates["name"] = update.Name.Unwrap()
 	}
@@ -78,7 +81,7 @@ func (r *teamRepository) Update(executor intf.Executor, update *model.TeamUpdate
 	}
 
 	return executor.
-		Model(&entity.TeamRow{}).
+		Table(entity.TeamTable).
 		Where("id = ?", update.ID).
 		Updates(updates).Error
 }
@@ -87,7 +90,7 @@ func (r *teamRepository) DeleteByID(executor intf.Executor, teamID string) error
 	executor = r.withTransaction(executor)
 
 	return executor.
-		Model(&entity.TeamRow{}).
+		Table(entity.TeamTable).
 		Where("id = ?", teamID).
 		Update("deleted_at", time.Now()).Error
 }

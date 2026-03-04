@@ -6,6 +6,8 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 )
 
+const MemberTable = "member_table"
+
 type MemberRow struct {
 	ID     string `gorm:"column:id"`
 	UserID string `gorm:"column:user_id"`
@@ -24,7 +26,7 @@ type MemberRow struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at"`
 }
 
-func (MemberRow) TableName() string { return "member_table" }
+func (MemberRow) TableName() string { return MemberTable }
 
 type MemberWithUserRow struct {
 	MemberRow

@@ -36,7 +36,7 @@ CREATE INDEX "idx_member_reviewer"
     ON "member_table" ("assigned_reviewer_at")
     WHERE "assigned_reviewer_at" IS NOT NULL
       AND "deleted_at" IS NULL;
-CRAETE INDEX "idx_member_uploader"
+CREATE INDEX "idx_member_uploader"
     ON "member_table" ("assigned_uploader_at")
     WHERE "assigned_uploader_at" IS NOT NULL
       AND "deleted_at" IS NULL;

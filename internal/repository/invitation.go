@@ -19,6 +19,7 @@ func (r *invitationRepository) withTransaction(executor intf.Executor) intf.Exec
 	if executor != nil {
 		return executor
 	}
+
 	return r.executor
 }
 
@@ -29,13 +30,14 @@ func (r *invitationRepository) BeginTransaction() intf.Executor {
 func (r *invitationRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.InvitationInfo, error) {
 	executor = r.withTransaction(executor)
 
-	db := executor.Model(&entity.InvitationRow{})
+	executor = executor.Table(entity.InvitationTable)
 	for _, opt := range options {
-		db = opt(db)
+		executor = opt(executor)
 	}
 
 	var rows []entity.InvitationRow
-	if err := db.Find(&rows).Error; err != nil {
+
+	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
@@ -50,11 +52,10 @@ func (r *invitationRepository) GetByID(executor intf.Executor, invitationID stri
 	executor = r.withTransaction(executor)
 
 	var row entity.InvitationRow
-	err := executor.
-		Model(&entity.InvitationRow{}).
+	if err := executor.
+		Table(entity.InvitationTable).
 		Where("id = ?", invitationID).
-		First(&row).Error
-	if err != nil {
+		First(&row).Error; err != nil {
 		return nil, err
 	}
 	info := entity.ToInvitationInfo(row)
@@ -65,11 +66,10 @@ func (r *invitationRepository) GetByInviteeQQ(executor intf.Executor, inviteeQQ 
 	executor = r.withTransaction(executor)
 
 	var row entity.InvitationRow
-	err := executor.
-		Model(&entity.InvitationRow{}).
+	if err := executor.
+		Table(entity.InvitationTable).
 		Where("invitee_qq = ? AND pending = TRUE", inviteeQQ).
-		First(&row).Error
-	if err != nil {
+		First(&row).Error; err != nil {
 		return nil, err
 	}
 	info := entity.ToInvitationInfo(row)
@@ -104,7 +104,7 @@ func (r *invitationRepository) Update(executor intf.Executor, update *model.Invi
 	executor = r.withTransaction(executor)
 
 	return executor.
-		Model(&entity.InvitationRow{}).
+		Table(entity.InvitationTable).
 		Where("id = ?", update.ID).
 		Updates(map[string]any{
 			"to_be_raw_provider": update.ToBeRawProvider,
@@ -121,7 +121,7 @@ func (r *invitationRepository) Invalidate(executor intf.Executor, invitationID s
 	executor = r.withTransaction(executor)
 
 	return executor.
-		Model(&entity.InvitationRow{}).
+		Table(entity.InvitationTable).
 		Where("id = ?", invitationID).
 		Update("pending", false).Error
 }

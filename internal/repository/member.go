@@ -31,13 +31,15 @@ func (r *memberRepository) BeginTransaction() intf.Executor {
 func (r *memberRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberProfile, error) {
 	executor = r.withTransaction(executor)
 
-	db := executor.Model(&entity.MemberRow{}).Where("member_table.deleted_at IS NULL")
+	executor = executor.Table(entity.MemberTable).
+		Where("member_table.deleted_at IS NULL")
 	for _, opt := range options {
-		db = opt(db)
+		executor = opt(executor)
 	}
 
 	var rows []entity.MemberRow
-	if err := db.Find(&rows).Error; err != nil {
+
+	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
@@ -51,7 +53,7 @@ func (r *memberRepository) List(executor intf.Executor, options ...intf.QueryOpt
 func (r *memberRepository) ListWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberProfile, error) {
 	executor = r.withTransaction(executor)
 
-	db := executor.Table("member_table").
+	executor = executor.Table("member_table").
 		Select(`member_table.*,
 			user_table.name           AS user_name,
 			user_table.qq             AS user_qq,
@@ -62,12 +64,12 @@ func (r *memberRepository) ListWithUserInfo(executor intf.Executor, options ...i
 		Joins("LEFT JOIN user_table ON user_table.id = member_table.user_id AND user_table.deleted_at IS NULL").
 		Where("member_table.deleted_at IS NULL")
 	for _, opt := range options {
-		db = opt(db)
+		executor = opt(executor)
 	}
 
 	var rows []entity.MemberWithUserRow
 
-	if err := db.Find(&rows).Error; err != nil {
+	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
@@ -90,15 +92,17 @@ func (r *memberRepository) ListWithUserInfo(executor intf.Executor, options ...i
 func (r *memberRepository) Exist(executor intf.Executor, options ...intf.QueryOption) (bool, error) {
 	executor = r.withTransaction(executor)
 
-	db := executor.Model(&entity.MemberRow{}).Where("deleted_at IS NULL")
+	executor = executor.Table(entity.MemberTable).Where("deleted_at IS NULL")
 	for _, opt := range options {
-		db = opt(db)
+		executor = opt(executor)
 	}
 
 	var count int64
-	if err := db.Count(&count).Error; err != nil {
+
+	if err := executor.Count(&count).Error; err != nil {
 		return false, err
 	}
+
 	return count > 0, nil
 }
 
@@ -106,14 +110,16 @@ func (r *memberRepository) GetByID(executor intf.Executor, memberID string) (*mo
 	executor = r.withTransaction(executor)
 
 	var row entity.MemberRow
-	err := executor.
-		Model(&entity.MemberRow{}).
+
+	if err := executor.
+		Table(entity.MemberTable).
 		Where("id = ? AND deleted_at IS NULL", memberID).
-		First(&row).Error
-	if err != nil {
+		First(&row).Error; err != nil {
 		return nil, err
 	}
+
 	profile := entity.ToMemberProfile(row, nil)
+
 	return &profile, nil
 }
 
@@ -121,11 +127,13 @@ func (r *memberRepository) Create(executor intf.Executor, creation *model.Member
 	executor = r.withTransaction(executor)
 
 	now := time.Now()
+
 	row := entity.MemberRow{
 		ID:     util.GenerateUUID(),
 		UserID: creation.UserID,
 		TeamID: creation.TeamID,
 	}
+
 	if creation.ToBeRawProvider {
 		row.AssignedRawProviderAt = &now
 	}
@@ -151,6 +159,7 @@ func (r *memberRepository) Create(executor intf.Executor, creation *model.Member
 	if err := executor.Create(&row).Error; err != nil {
 		return "", err
 	}
+
 	return row.ID, nil
 }
 
@@ -158,6 +167,7 @@ func (r *memberRepository) Update(executor intf.Executor, update *model.MemberUp
 	executor = r.withTransaction(executor)
 
 	updates := map[string]any{}
+
 	if update.AssignRawProvider.State() == util.OptionSome {
 		v := update.AssignRawProvider.Unwrap()
 		updates["assigned_raw_provider_at"] = &v
@@ -192,7 +202,7 @@ func (r *memberRepository) Update(executor intf.Executor, update *model.MemberUp
 	}
 
 	return executor.
-		Model(&entity.MemberRow{}).
+		Table(entity.MemberTable).
 		Where("id = ?", update.ID).
 		Updates(updates).Error
 }
@@ -201,7 +211,7 @@ func (r *memberRepository) DeleteByID(executor intf.Executor, memberID string) e
 	executor = r.withTransaction(executor)
 
 	return executor.
-		Model(&entity.MemberRow{}).
+		Table(entity.MemberTable).
 		Where("id = ?", memberID).
 		Update("deleted_at", time.Now()).Error
 }

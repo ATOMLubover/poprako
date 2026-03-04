@@ -226,25 +226,26 @@ func (ta *teamApplication) ListMyTeams(
 		return nil, nil
 	}
 
-	// 构建用户所在汉化组的 ID 集合
-	teamIDSet := make(map[string]struct{}, len(currentUserMemberships))
-	for _, membership := range currentUserMemberships {
-		teamIDSet[membership.TeamID] = struct{}{}
+	// 构建用户所在汉化组 ID 的数组
+	teamIDs := make([]string, len(currentUserMemberships))
+	for i, membership := range currentUserMemberships {
+		teamIDs[i] = membership.TeamID
 	}
 
-	// 获取所有汉化组，再过滤出用户所在的汉化组
-	allTeams, err := ta.teamRepository.List(nil)
+	// 由于用户所在汉化组数量较少，直接采用 N + 1 查询方式获取汉化组信息
+	teams, err := ta.teamRepository.List(
+		nil,
+		query_option.TeamQuery().FilterByIDs(teamIDs),
+	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取汉化组列表失败", zap.Error(err))
 		return nil, errors.New("无法获取汉化组列表")
 	}
 
-	result := make([]*value.TeamInfo, 0, len(currentUserMemberships))
+	result := make([]*value.TeamInfo, len(teams))
 
-	for _, team := range allTeams {
-		if _, ok := teamIDSet[team.ID]; ok {
-			result = append(result, value.NewTeamInfoFromModel(team))
-		}
+	for i, team := range teams {
+		result[i] = value.NewTeamInfoFromModel(team)
 	}
 
 	return result, nil

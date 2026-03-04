@@ -6,6 +6,8 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 )
 
+const InvitationTable = "invitation_table"
+
 type InvitationRow struct {
 	ID             string `gorm:"column:id"`
 	InvitorID      string `gorm:"column:invitor_id"`
@@ -26,7 +28,7 @@ type InvitationRow struct {
 	CreatedAt time.Time `gorm:"column:created_at"`
 }
 
-func (InvitationRow) TableName() string { return "invitation_table" }
+func (InvitationRow) TableName() string { return InvitationTable }
 
 func ToInvitationInfo(row InvitationRow) model.InvitationInfo {
 	return model.InvitationInfo{

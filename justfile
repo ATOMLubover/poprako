@@ -14,6 +14,9 @@ build:
     
 mgr-add script-name:
     sqlx migrate add -r {{script-name}}
+    
+mgr-run:
+    sqlx migrate run
 
 mgr-rvt mode="step":
     {{if mode == "all" {

@@ -31,13 +31,14 @@ func (r *userRepository) BeginTransaction() intf.Executor {
 func (r *userRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.UserInfo, error) {
 	executor = r.withTransaction(executor)
 
-	db := executor.Model(&entity.UserInfoRow{})
+	executor = executor.Table(entity.UserTable)
 	for _, opt := range options {
-		db = opt(db)
+		executor = opt(executor)
 	}
 
 	var rows []entity.UserInfoRow
-	if err := db.Find(&rows).Error; err != nil {
+
+	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
@@ -52,11 +53,10 @@ func (r *userRepository) GetInfoByID(executor intf.Executor, userID string) (*mo
 	executor = r.withTransaction(executor)
 
 	var row entity.UserInfoRow
-	err := executor.
-		Model(&entity.UserInfoRow{}).
+	if err := executor.
+		Table(entity.UserTable).
 		Where("id = ? AND deleted_at IS NULL", userID).
-		First(&row).Error
-	if err != nil {
+		First(&row).Error; err != nil {
 		return nil, err
 	}
 	info := entity.ToUserInfo(row)
@@ -67,11 +67,10 @@ func (r *userRepository) GetCredentialsByQQ(executor intf.Executor, qq string) (
 	executor = r.withTransaction(executor)
 
 	var row entity.UserCredentialsRow
-	err := executor.
-		Model(&entity.UserCredentialsRow{}).
+	if err := executor.
+		Table(entity.UserTable).
 		Where("qq = ? AND deleted_at IS NULL", qq).
-		First(&row).Error
-	if err != nil {
+		First(&row).Error; err != nil {
 		return nil, err
 	}
 	return model.NewUserCredentials(row.ID, row.PasswordHash), nil

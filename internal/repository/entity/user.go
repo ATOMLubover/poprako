@@ -6,6 +6,8 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 )
 
+const UserTable = "user_table"
+
 // UserInfoRow 用于 List、GetInfoByID，不含密码字段
 type UserInfoRow struct {
 	ID           string    `gorm:"column:id"`
@@ -17,7 +19,7 @@ type UserInfoRow struct {
 	UpdatedAt    time.Time `gorm:"column:updated_at"`
 }
 
-func (UserInfoRow) TableName() string { return "user_table" }
+func (UserInfoRow) TableName() string { return UserTable }
 
 func ToUserInfo(row UserInfoRow) model.UserInfo {
 	return model.UserInfo{
@@ -37,7 +39,7 @@ type UserCredentialsRow struct {
 	PasswordHash string `gorm:"column:password_hash"`
 }
 
-func (UserCredentialsRow) TableName() string { return "user_table" }
+func (UserCredentialsRow) TableName() string { return UserTable }
 
 // UserInsertRow 用于 Create，含所有需要写入的字段
 type UserInsertRow struct {
@@ -49,4 +51,4 @@ type UserInsertRow struct {
 	IsSuperAdmin bool   `gorm:"column:is_super_admin"`
 }
 
-func (UserInsertRow) TableName() string { return "user_table" }
+func (UserInsertRow) TableName() string { return UserTable }
