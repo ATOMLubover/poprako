@@ -108,7 +108,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 
 // UpdateTeam godoc
 // @Summary 	更新汉化组信息
-// @Description 更新指定汉化组的信息，超级管理员或团队管理员有权限
+// @Description 更新指定汉化组的信息，超级管理员或汉化组管理员有权限
 //
 // @Tags 		team
 // @Security 	ApiKeyAuth
@@ -154,7 +154,7 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 
 // DeleteTeam godoc
 // @Summary 	删除汉化组
-// @Description 删除指定汉化组，超级管理员或团队管理员有权限
+// @Description 删除指定汉化组，超级管理员或汉化组管理员有权限
 //
 // @Tags 		team
 // @Security 	ApiKeyAuth

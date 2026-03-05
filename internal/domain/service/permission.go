@@ -22,7 +22,7 @@ func CheckInvitationPermission(
 
 	if targetMemberInfo == nil {
 		zap.L().Warn(
-			"checkInvitationPermission: 未找到目标团队下的成员信息",
+			"checkInvitationPermission: 未找到目标汉化组下的成员信息",
 			zap.String("targetTeamID", targetTeamID),
 		)
 		return false
@@ -92,7 +92,7 @@ func CheckTeamPermission(
 
 	case model.PermissionTeamUpdate,
 		model.PermissionTeamDelete:
-		// 目前仅超级管理员、团队管理员有权限更新或删除团队
+		// 目前仅超级管理员、汉化组管理员有权限更新或删除汉化组
 		if currentUser.IsSuperAdmin {
 			return true
 		}
@@ -108,7 +108,7 @@ func CheckTeamPermission(
 
 		if targetMemberInfo == nil {
 			zap.L().Warn(
-				"checkTeamPermission: 未找到目标团队下的成员信息",
+				"checkTeamPermission: 未找到目标汉化组下的成员信息",
 				zap.String("targetTeamID", targetTeamID),
 			)
 			return false
@@ -153,7 +153,7 @@ func CheckMemberPermission(
 
 	if targetMemberInfo == nil {
 		zap.L().Warn(
-			"checkMemberPermission: 未找到目标团队下的成员信息",
+			"checkMemberPermission: 未找到目标汉化组下的成员信息",
 			zap.String("targetTeamID", targetTeamID),
 		)
 		return false

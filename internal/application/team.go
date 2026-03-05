@@ -286,7 +286,7 @@ func (ta *teamApplication) UpdateTeam(
 		return errors.New("无法获取成员信息")
 	}
 
-	// 鉴权：检查当前用户是否有权限更新汉化组（超级管理员或团队管理员）
+	// 鉴权：检查当前用户是否有权限更新汉化组（超级管理员或汉化组管理员）
 	if !service.CheckTeamPermission(
 		args.ID,
 		currentUser,
@@ -344,7 +344,7 @@ func (ta *teamApplication) DeleteTeam(
 		return errors.New("无法获取成员信息")
 	}
 
-	// 鉴权：检查当前用户是否有权限删除汉化组（超级管理员或团队管理员）
+	// 鉴权：检查当前用户是否有权限删除汉化组（超级管理员或汉化组管理员）
 	if !service.CheckTeamPermission(
 		teamID,
 		currentUser,

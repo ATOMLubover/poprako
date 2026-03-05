@@ -128,11 +128,11 @@ definitions:
   value.UpdateTeamArgs:
     properties:
       description:
-        $ref: '#/definitions/util.Option-string'
+        $ref: "#/definitions/util.Option-string"
       id:
         type: string
       name:
-        $ref: '#/definitions/util.Option-string'
+        $ref: "#/definitions/util.Option-string"
     type: object
   value.UserInfo:
     properties:
@@ -158,417 +158,417 @@ paths:
   /auth/login:
     post:
       consumes:
-      - application/json
+        - application/json
       description: 使用 QQ 和密码进行登录，成功返回访问令牌
       parameters:
-      - description: 登录参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.LoginUserArgs'
+        - description: 登录参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.LoginUserArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/value.LoginUserResult'
+            $ref: "#/definitions/value.LoginUserResult"
       summary: 用户登录
       tags:
-      - auth
+        - auth
   /auth/register:
     post:
       consumes:
-      - application/json
+        - application/json
       description: 使用 QQ、密码、名字和邀请码进行注册，成功返回访问令牌
       parameters:
-      - description: 注册参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.RegisterUserArgs'
+        - description: 注册参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.RegisterUserArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/value.RegisterUserResult'
+            $ref: "#/definitions/value.RegisterUserResult"
       summary: 用户注册
       tags:
-      - auth
+        - auth
   /invitations:
     get:
       description: 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
       parameters:
-      - description: 汉化组 ID
-        in: query
-        name: team_id
-        required: true
-        type: string
+        - description: 汉化组 ID
+          in: query
+          name: team_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.InvitationInfo'
+              $ref: "#/definitions/value.InvitationInfo"
             type: array
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 获取邀请列表
       tags:
-      - invitation
+        - invitation
     post:
       consumes:
-      - application/json
+        - application/json
       description: 在指定汉化组中创建一个新的邀请
       parameters:
-      - description: 汉化组 ID
-        in: query
-        name: team_id
-        required: true
-        type: string
-      - description: 创建邀请参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.CreateInvitationArgs'
+        - description: 汉化组 ID
+          in: query
+          name: team_id
+          required: true
+          type: string
+        - description: 创建邀请参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.CreateInvitationArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/value.InvitationInfo'
+            $ref: "#/definitions/value.InvitationInfo"
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 创建邀请
       tags:
-      - invitation
+        - invitation
   /invitations/{invitation_id}:
     delete:
       description: 删除指定的邀请
       parameters:
-      - description: 邀请 ID
-        in: path
-        name: invitation_id
-        required: true
-        type: string
+        - description: 邀请 ID
+          in: path
+          name: invitation_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 删除邀请
       tags:
-      - invitation
+        - invitation
     patch:
       consumes:
-      - application/json
+        - application/json
       description: 更新指定邀请的信息
       parameters:
-      - description: 邀请 ID
-        in: path
-        name: invitation_id
-        required: true
-        type: string
-      - description: 更新邀请参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.UpdateInvitationArgs'
+        - description: 邀请 ID
+          in: path
+          name: invitation_id
+          required: true
+          type: string
+        - description: 更新邀请参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.UpdateInvitationArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 更新邀请
       tags:
-      - invitation
+        - invitation
   /members:
     get:
       description: 获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组
       parameters:
-      - description: 汉化组 ID
-        in: query
-        name: team_id
-        required: true
-        type: string
-      - description: 偏移量，默认值为 0
-        in: query
-        name: offset
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: limit
-        type: integer
+        - description: 汉化组 ID
+          in: query
+          name: team_id
+          required: true
+          type: string
+        - description: 偏移量，默认值为 0
+          in: query
+          name: offset
+          type: integer
+        - description: 每页数量，默认值为 10
+          in: query
+          name: limit
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.MemberProfile'
+              $ref: "#/definitions/value.MemberProfile"
             type: array
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 获取指定汉化组的成员列表
       tags:
-      - member
+        - member
     post:
       consumes:
-      - application/json
+        - application/json
       description: 由超级管理员直接创建成员记录
       parameters:
-      - description: 创建成员参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.CreateMemberArgs'
+        - description: 创建成员参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.CreateMemberArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/value.CreateMemberResult'
+            $ref: "#/definitions/value.CreateMemberResult"
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 创建成员
       tags:
-      - member
+        - member
   /members/{member_id}:
     delete:
       description: 从汉化组中移除指定成员
       parameters:
-      - description: 成员 ID
-        in: path
-        name: member_id
-        required: true
-        type: string
+        - description: 成员 ID
+          in: path
+          name: member_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 移除成员
       tags:
-      - member
+        - member
     patch:
       consumes:
-      - application/json
+        - application/json
       description: 更新指定成员的分工角色
       parameters:
-      - description: 成员 ID
-        in: path
-        name: member_id
-        required: true
-        type: string
-      - description: 更新成员角色参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.UpdateMemberRoleArgs'
+        - description: 成员 ID
+          in: path
+          name: member_id
+          required: true
+          type: string
+        - description: 更新成员角色参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.UpdateMemberRoleArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 更新成员角色
       tags:
-      - member
+        - member
   /teams:
     get:
       description: 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.TeamInfo'
+              $ref: "#/definitions/value.TeamInfo"
             type: array
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 获取所有汉化组列表
       tags:
-      - team
+        - team
     post:
       consumes:
-      - application/json
+        - application/json
       description: 创建一个新的汉化组，仅超级管理员有权限
       parameters:
-      - description: 创建汉化组参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.CreateTeamArgs'
+        - description: 创建汉化组参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.CreateTeamArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/value.TeamInfo'
+            $ref: "#/definitions/value.TeamInfo"
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 创建汉化组
       tags:
-      - team
+        - team
   /teams/{team_id}:
     delete:
-      description: 删除指定汉化组，超级管理员或团队管理员有权限
+      description: 删除指定汉化组，超级管理员或汉化组管理员有权限
       parameters:
-      - description: 汉化组 ID
-        in: path
-        name: team_id
-        required: true
-        type: string
+        - description: 汉化组 ID
+          in: path
+          name: team_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 删除汉化组
       tags:
-      - team
+        - team
     patch:
       consumes:
-      - application/json
-      description: 更新指定汉化组的信息，超级管理员或团队管理员有权限
+        - application/json
+      description: 更新指定汉化组的信息，超级管理员或汉化组管理员有权限
       parameters:
-      - description: 汉化组 ID
-        in: path
-        name: team_id
-        required: true
-        type: string
-      - description: 更新汉化组参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/value.UpdateTeamArgs'
+        - description: 汉化组 ID
+          in: path
+          name: team_id
+          required: true
+          type: string
+        - description: 更新汉化组参数
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/value.UpdateTeamArgs"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 更新汉化组信息
       tags:
-      - team
+        - team
   /teams/mine:
     get:
       description: 获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.TeamInfo'
+              $ref: "#/definitions/value.TeamInfo"
             type: array
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 获取当前用户所在的汉化组列表
       tags:
-      - team
+        - team
   /users:
     get:
       description: 根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组
       parameters:
-      - description: QQ 号
-        in: query
-        name: qq
-        type: string
-      - description: 模糊名称
-        in: query
-        name: fuzzy_name
-        type: string
-      - description: 偏移量，默认值为 0
-        in: query
-        name: offset
-        type: integer
-      - description: 每页数量，默认值为 10
-        in: query
-        name: limit
-        type: integer
+        - description: QQ 号
+          in: query
+          name: qq
+          type: string
+        - description: 模糊名称
+          in: query
+          name: fuzzy_name
+          type: string
+        - description: 偏移量，默认值为 0
+          in: query
+          name: offset
+          type: integer
+        - description: 每页数量，默认值为 10
+          in: query
+          name: limit
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.UserInfo'
+              $ref: "#/definitions/value.UserInfo"
             type: array
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 获取用户列表
       tags:
-      - user
+        - user
   /users/{user_id}:
     delete:
       description: 根据用户 ID 删除用户
       parameters:
-      - description: 用户 ID
-        in: path
-        name: user_id
-        required: true
-        type: string
+        - description: 用户 ID
+          in: path
+          name: user_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 删除用户
       tags:
-      - user
+        - user
     get:
       description: 根据用户 ID 获取用户详细信息
       parameters:
-      - description: 用户 ID
-        in: path
-        name: user_id
-        required: true
-        type: string
+        - description: 用户 ID
+          in: path
+          name: user_id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/value.UserInfo'
+            $ref: "#/definitions/value.UserInfo"
       security:
-      - ApiKeyAuth: []
+        - ApiKeyAuth: []
       summary: 根据 ID 获取用户信息
       tags:
-      - user
+        - user
 securityDefinitions:
   ApiKeyAuth:
     in: header

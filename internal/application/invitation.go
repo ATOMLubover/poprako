@@ -294,7 +294,7 @@ func (ia *invitationApplication) DeleteInvitation(
 		return errors.New("无法获取邀请信息")
 	}
 
-	// 只有 invitation 所对应的团队的管理员才有权限删除邀请
+	// 只有 invitation 所对应的汉化组的管理员才有权限删除邀请
 	if !service.CheckInvitationPermission(
 		invitation.TeamID,
 		currentUserMemberships,

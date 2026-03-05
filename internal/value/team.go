@@ -22,12 +22,12 @@ func (cta *CreateTeamArgs) Validate() error {
 
 	nameLen := utf8.RuneCountInString(cta.Name)
 	if nameLen <= 0 || nameLen > 20 {
-		return errors.New("团队名称长度必须在 1~20 字符之间")
+		return errors.New("汉化组名称长度必须在 1~20 字符之间")
 	}
 
 	descriptionLen := utf8.RuneCountInString(cta.Description)
 	if descriptionLen > 100 {
-		return errors.New("团队描述长度不能超过 100 字符")
+		return errors.New("汉化组描述长度不能超过 100 字符")
 	}
 
 	return nil
@@ -73,7 +73,7 @@ func (uta *UpdateTeamArgs) Validate() error {
 	if uta.Name.State() == util.OptionSome {
 		nameLen := utf8.RuneCountInString(uta.Name.Unwrap())
 		if nameLen <= 0 || nameLen > 20 {
-			return errors.New("团队名称长度必须在 1~20 字符之间")
+			return errors.New("汉化组名称长度必须在 1~20 字符之间")
 		}
 	}
 
@@ -81,7 +81,7 @@ func (uta *UpdateTeamArgs) Validate() error {
 		descriptionLen := utf8.RuneCountInString(uta.Description.Unwrap())
 
 		if descriptionLen > 100 {
-			return errors.New("团队描述长度不能超过 100 字符")
+			return errors.New("汉化组描述长度不能超过 100 字符")
 		}
 	}
 
