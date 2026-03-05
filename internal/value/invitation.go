@@ -93,7 +93,7 @@ func (pia *UpdateInvitationArgs) Validate() error {
 	}
 
 	if pia.TeamID == "" {
-		return errors.New("团队 ID 不能为空")
+		return errors.New("汉化组 ID 不能为空")
 	}
 
 	if pia.Roles == 0 {

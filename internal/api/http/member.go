@@ -7,11 +7,55 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// CreateMember godoc
+// @Summary 	创建成员
+// @Description 由超级管理员直接创建成员记录
+//
+// @Tags 		member
+// @Security 	ApiKeyAuth
+// @Accept 		json
+// @Produce 	json
+// @Param 		body body value.CreateMemberArgs true "创建成员参数"
+//
+// @Success 	201 {object} value.CreateMemberResult
+//
+// @Router 		/members [post]
+func CreateMember(appState *state.AppState) iris.Handler {
+	memberApplication := appState.MemberApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		var args value.CreateMemberArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		result, err := memberApplication.CreateMember(
+			*buildTraceScope(ctx),
+			currentUserID,
+			&args,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "创建成员成功", result)
+	}
+}
+
 // ListMembers godoc
 // @Summary 	获取指定汉化组的成员列表
 // @Description 获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		member
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
 // @Param 		offset query int false "偏移量，默认值为 0"
@@ -19,7 +63,7 @@ import (
 //
 // @Success 	200 {object} []value.MemberProfile
 //
-// @Router 		/api/v1/members [get]
+// @Router 		/members [get]
 func ListMembers(appState *state.AppState) iris.Handler {
 	memberApplication := appState.MemberApplication
 
@@ -29,14 +73,9 @@ func ListMembers(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		teamID := ctx.URLParam("team_id")
-		if teamID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 team_id 查询参数")
-			return
-		}
+		var args value.ListTeamMemberArgs
 
-		var paginationParams value.PaginationParams
-		if err := ctx.ReadQuery(&paginationParams); err != nil {
+		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
 		}
@@ -44,8 +83,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 		result, err := memberApplication.ListMembers(
 			*buildTraceScope(ctx),
 			currentUserID,
-			teamID,
-			paginationParams,
+			&args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
@@ -61,6 +99,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 // @Description 更新指定成员的分工角色
 //
 // @Tags 		member
+// @Security 	ApiKeyAuth
 // @Accept 		json
 // @Produce 	json
 // @Param 		member_id path string true "成员 ID"
@@ -68,7 +107,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/api/v1/members/{member_id} [patch]
+// @Router 		/members/{member_id} [patch]
 func UpdateMemberRole(appState *state.AppState) iris.Handler {
 	memberApplication := appState.MemberApplication
 
@@ -113,12 +152,13 @@ func UpdateMemberRole(appState *state.AppState) iris.Handler {
 // @Description 从汉化组中移除指定成员
 //
 // @Tags 		member
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		member_id path string true "成员 ID"
 //
 // @Success 	200
 //
-// @Router 		/api/v1/members/{member_id} [delete]
+// @Router 		/members/{member_id} [delete]
 func RemoveMember(appState *state.AppState) iris.Handler {
 	memberApplication := appState.MemberApplication
 

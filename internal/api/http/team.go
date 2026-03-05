@@ -12,13 +12,14 @@ import (
 // @Description 创建一个新的汉化组，仅超级管理员有权限
 //
 // @Tags 		team
+// @Security 	ApiKeyAuth
 // @Accept 		json
 // @Produce 	json
 // @Param 		body body value.CreateTeamArgs true "创建汉化组参数"
 //
 // @Success 	200 {object} value.TeamInfo
 //
-// @Router 		/api/v1/teams [post]
+// @Router 		/teams [post]
 func CreateTeam(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 
@@ -50,11 +51,12 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 // @Description 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		team
+// @Security 	ApiKeyAuth
 // @Produce 	json
 //
 // @Success 	200 {object} []value.TeamInfo
 //
-// @Router 		/api/v1/teams [get]
+// @Router 		/teams [get]
 func ListAllTeams(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 
@@ -79,11 +81,12 @@ func ListAllTeams(appState *state.AppState) iris.Handler {
 // @Description 获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		team
+// @Security 	ApiKeyAuth
 // @Produce 	json
 //
 // @Success 	200 {object} []value.TeamInfo
 //
-// @Router 		/api/v1/teams/mine [get]
+// @Router 		/teams/mine [get]
 func ListMyTeams(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 
@@ -108,6 +111,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 // @Description 更新指定汉化组的信息，超级管理员或团队管理员有权限
 //
 // @Tags 		team
+// @Security 	ApiKeyAuth
 // @Accept 		json
 // @Produce 	json
 // @Param 		team_id path string true "汉化组 ID"
@@ -115,7 +119,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/api/v1/teams/{team_id} [patch]
+// @Router 		/teams/{team_id} [patch]
 func UpdateTeam(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 
@@ -153,12 +157,13 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 // @Description 删除指定汉化组，超级管理员或团队管理员有权限
 //
 // @Tags 		team
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id path string true "汉化组 ID"
 //
 // @Success 	200
 //
-// @Router 		/api/v1/teams/{team_id} [delete]
+// @Router 		/teams/{team_id} [delete]
 func DeleteTeam(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 

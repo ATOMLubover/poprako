@@ -18,7 +18,7 @@ func (memberQuery) FilterByUserID(userID string) intf.QueryOption {
 }
 
 // FilterByUserQQ 精确匹配成员的 QQ
-func (memberQuery) FilterByUserQQ(qq string) intf.QueryOption {
+func (memberQuery) FilterOnUserQQ(qq string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
 		return executor.Where("user_table.qq = ?", qq)
 	}

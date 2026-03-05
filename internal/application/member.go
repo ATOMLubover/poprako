@@ -14,11 +14,15 @@ import (
 )
 
 type MemberApplication interface {
+	CreateMember(
+		scope util.TraceScope,
+		currentUserID string,
+		args *value.CreateMemberArgs,
+	) (*value.CreateMemberResult, error)
 	ListMembers(
 		scope util.TraceScope,
 		currentUserID string,
-		teamID string,
-		paginationParams value.PaginationParams,
+		args *value.ListTeamMemberArgs,
 	) ([]*value.MemberProfile, error)
 	UpdateMemberRole(
 		scope util.TraceScope,
@@ -33,29 +37,105 @@ type MemberApplication interface {
 }
 
 type memberApplication struct {
+	userRepository   repository.UserRepository
 	memberRepository repository.MemberRepository
 }
 
 func NewMemberApplication(
+	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
 ) MemberApplication {
-	if memberRepository == nil {
+	if userRepository == nil || memberRepository == nil {
 		zap.L().Panic(
 			"NewMemberApplication: 依赖项不能为空",
+			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 		)
 	}
 
 	return &memberApplication{
+		userRepository:   userRepository,
 		memberRepository: memberRepository,
 	}
+}
+
+// 特供超级管理员使用的接口，允许直接创建成员记录
+func (ma *memberApplication) CreateMember(
+	scope util.TraceScope,
+	currentUserID string,
+	args *value.CreateMemberArgs,
+) (*value.CreateMemberResult, error) {
+	const fn = "MemberApplication.CreateMember"
+
+	if currentUserID == "" {
+		scope.Logger().Warn(fn + ": currentUserID 为空")
+		return nil, errors.New(ErrInternalError)
+	}
+
+	if args == nil {
+		scope.Logger().Warn(fn + ": args 为空")
+		return nil, errors.New(ErrInternalError)
+	}
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
+	}
+
+	scope.WithFields(
+		zap.String("current_user_id", currentUserID),
+		zap.Any("args", args),
+	)
+
+	scope.Logger().Debug(fn + ": 被调用")
+
+	currentUser, err := ma.userRepository.GetInfoByID(nil, currentUserID)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取当前用户信息失败", zap.Error(err))
+		return nil, errors.New("无法获取用户信息")
+	}
+
+	if !service.CheckMemberPermission(
+		args.TeamID,
+		currentUser,
+		nil,
+		model.PermissionMemberCreate,
+	) {
+		return nil, errors.New("没有权限创建成员")
+	}
+
+	isMemberExisting, err := ma.memberRepository.Exist(
+		nil,
+		query_option.MemberQuery().FilterByTeamID(args.TeamID),
+		query_option.MemberQuery().FilterByUserID(args.UserID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 检查成员信息失败", zap.Error(err))
+		return nil, errors.New("无法检查成员信息")
+	}
+
+	if isMemberExisting {
+		return nil, errors.New("该用户已经加入该汉化组")
+	}
+
+	memberID, err := ma.memberRepository.Create(
+		nil,
+		model.NewMemberCreation(args.UserID, args.TeamID, model.UnmaskRoles(args.Roles)...),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 创建成员失败", zap.Error(err))
+		return nil, errors.New("创建成员失败")
+	}
+
+	result := value.NewCreateMemberResult(memberID)
+
+	return result, nil
 }
 
 func (ma *memberApplication) ListMembers(
 	scope util.TraceScope,
 	currentUserID string,
-	teamID string,
-	paginationParams value.PaginationParams,
+	args *value.ListTeamMemberArgs,
 ) ([]*value.MemberProfile, error) {
 	const fn = "MemberApplication.ListMembers"
 
@@ -64,9 +144,14 @@ func (ma *memberApplication) ListMembers(
 		return nil, errors.New(ErrInternalError)
 	}
 
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
+	}
+
 	scope.WithFields(
 		zap.String("current_user_id", currentUserID),
-		zap.String("team_id", teamID),
+		zap.Any("args", args),
 	)
 
 	scope.Logger().Debug(fn + ": 被调用")
@@ -83,7 +168,8 @@ func (ma *memberApplication) ListMembers(
 
 	// 检查当前用户在指定汉化组是否有权限查看成员列表
 	if !service.CheckMemberPermission(
-		teamID,
+		args.TeamID,
+		nil,
 		currentUserMemberships,
 		model.PermissionMemberList,
 	) {
@@ -94,8 +180,8 @@ func (ma *memberApplication) ListMembers(
 	memberList, err := ma.memberRepository.ListWithUserInfo(
 		nil,
 		query_option.CreatedAtDesc(),
-		query_option.MemberQuery().FilterByTeamID(teamID),
-		query_option.Paginate(paginationParams.Offset, paginationParams.Limit),
+		query_option.MemberQuery().FilterByTeamID(args.TeamID),
+		query_option.Paginate(args.Offset, args.Limit),
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取成员列表失败", zap.Error(err))
@@ -160,6 +246,7 @@ func (ma *memberApplication) UpdateMemberRole(
 	// 鉴权：使用从数据库查询到的可信 TeamID 进行权限检查
 	if !service.CheckMemberPermission(
 		targetMember.TeamID,
+		nil,
 		currentUserMemberships,
 		model.PermissionMemberUpdate,
 	) {
@@ -216,6 +303,7 @@ func (ma *memberApplication) RemoveMember(
 	// 鉴权：使用从数据库查询到的可信 TeamID 进行权限检查
 	if !service.CheckMemberPermission(
 		targetMember.TeamID,
+		nil,
 		currentUserMemberships,
 		model.PermissionMemberDelete,
 	) {

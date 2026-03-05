@@ -70,15 +70,21 @@ func CheckTeamPermission(
 	currentUserMemberships []model.MemberProfile,
 	permission model.Permission,
 ) bool {
-	switch permission {
-	case model.PermissionTeamListMine:
-		// 只要是成员就可以查看自己加入的团队列表
-		return true
+	if currentUser == nil {
+		zap.L().Warn(
+			"checkTeamPermission: currentUser 为空",
+			zap.String("targetTeamID", targetTeamID),
+			zap.String("permission", string(permission)),
+		)
 
+		return false
+	}
+
+	switch permission {
 	case model.PermissionTeamCreate,
 		model.PermissionTeamListAll:
 		// 只有超级管理员可以创建汉化组和查看所有汉化组
-		if currentUser == nil || !currentUser.IsSuperAdmin {
+		if !currentUser.IsSuperAdmin {
 			return false
 		}
 
@@ -87,7 +93,7 @@ func CheckTeamPermission(
 	case model.PermissionTeamUpdate,
 		model.PermissionTeamDelete:
 		// 目前仅超级管理员、团队管理员有权限更新或删除团队
-		if currentUser != nil && currentUser.IsSuperAdmin {
+		if currentUser.IsSuperAdmin {
 			return true
 		}
 
@@ -121,9 +127,21 @@ func CheckTeamPermission(
 
 func CheckMemberPermission(
 	targetTeamID string,
+	currentUser *model.UserInfo,
 	currentUserMemberships []model.MemberProfile,
 	permission model.Permission,
 ) bool {
+	switch permission {
+	case model.PermissionMemberCreate:
+		// 仅有超级管理员才可以直接添加成员
+		if currentUser == nil {
+			zap.L().Warn("checkMemberPermission: currentUser 为空")
+			return false
+		}
+
+		return currentUser.IsSuperAdmin
+	}
+
 	var targetMemberInfo *model.MemberProfile
 
 	for i := range currentUserMemberships {

@@ -21,6 +21,7 @@ func (r *userRepository) withTransaction(executor intf.Executor) intf.Executor {
 	if executor != nil {
 		return executor
 	}
+
 	return r.executor
 }
 
@@ -46,6 +47,7 @@ func (r *userRepository) List(executor intf.Executor, options ...intf.QueryOptio
 	for i, row := range rows {
 		result[i] = entity.ToUserInfo(row)
 	}
+
 	return result, nil
 }
 
@@ -53,13 +55,16 @@ func (r *userRepository) GetInfoByID(executor intf.Executor, userID string) (*mo
 	executor = r.withTransaction(executor)
 
 	var row entity.UserInfoRow
+
 	if err := executor.
 		Table(entity.UserTable).
 		Where("id = ? AND deleted_at IS NULL", userID).
 		First(&row).Error; err != nil {
 		return nil, err
 	}
+
 	info := entity.ToUserInfo(row)
+
 	return &info, nil
 }
 
@@ -67,6 +72,7 @@ func (r *userRepository) GetCredentialsByQQ(executor intf.Executor, qq string) (
 	executor = r.withTransaction(executor)
 
 	var row entity.UserCredentialsRow
+
 	if err := executor.
 		Table(entity.UserTable).
 		Where("qq = ? AND deleted_at IS NULL", qq).
@@ -90,6 +96,7 @@ func (r *userRepository) Create(executor intf.Executor, registration *model.User
 	if err := executor.Create(&row).Error; err != nil {
 		return "", err
 	}
+
 	return row.ID, nil
 }
 

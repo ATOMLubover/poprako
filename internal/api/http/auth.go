@@ -18,7 +18,7 @@ import (
 //
 // @Success 	200 {object} value.LoginUserResult
 //
-// @Router 		/api/v1/auth/login [post]
+// @Router 		/auth/login [post]
 func Login(appState *state.AppState) iris.Handler {
 	userApplication := appState.UserApplication
 
@@ -50,7 +50,7 @@ func Login(appState *state.AppState) iris.Handler {
 //
 // @Success 	200 {object} value.RegisterUserResult
 //
-// @Router 		/api/v1/auth/register [post]
+// @Router 		/auth/register [post]
 func Register(appState *state.AppState) iris.Handler {
 	userApplication := appState.UserApplication
 

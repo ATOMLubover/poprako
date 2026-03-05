@@ -1,9 +1,19 @@
+// Package main
+// @title LabelPlus Next Web API
+// @version 0.1.0
+// @description LabelPlus Next Web 后端 API 文档
+// @BasePath /api/v1
+//
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 package main
 
 import (
 	"labelplus-next-web-be/internal/api/http"
 	"labelplus-next-web-be/internal/application"
 	"labelplus-next-web-be/internal/config"
+	"labelplus-next-web-be/internal/log"
 	repository_infra "labelplus-next-web-be/internal/repository"
 	"labelplus-next-web-be/internal/state"
 
@@ -20,6 +30,8 @@ func main() {
 	if err != nil {
 		panic("加载应用配置失败: " + err.Error())
 	}
+
+	log.Init(appConfig)
 
 	databaseExecutor, err := repository_infra.NewDatabaseExecutor(
 		&appConfig.DatabaseConfig,
@@ -50,6 +62,7 @@ func main() {
 		invitationRepository,
 	)
 	memberApplication := application.NewMemberApplication(
+		userRepository,
 		memberRepository,
 	)
 

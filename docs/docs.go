@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/auth/login": {
+        "/auth/login": {
             "post": {
                 "description": "使用 QQ 和密码进行登录，成功返回访问令牌",
                 "consumes": [
@@ -49,7 +49,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/auth/register": {
+        "/auth/register": {
             "post": {
                 "description": "使用 QQ、密码、名字和邀请码进行注册，成功返回访问令牌",
                 "consumes": [
@@ -83,8 +83,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/invitations": {
+        "/invitations": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
@@ -115,6 +120,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "在指定汉化组中创建一个新的邀请",
                 "consumes": [
                     "application/json"
@@ -154,8 +164,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/invitations/{invitation_id}": {
+        "/invitations/{invitation_id}": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "删除指定的邀请",
                 "produces": [
                     "application/json"
@@ -180,6 +195,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "更新指定邀请的信息",
                 "consumes": [
                     "application/json"
@@ -216,8 +236,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/members": {
+        "/members": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
@@ -258,10 +283,52 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "由超级管理员直接创建成员记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "创建成员",
+                "parameters": [
+                    {
+                        "description": "创建成员参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateMemberArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateMemberResult"
+                        }
+                    }
+                }
             }
         },
-        "/api/v1/members/{member_id}": {
+        "/members/{member_id}": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "从汉化组中移除指定成员",
                 "produces": [
                     "application/json"
@@ -286,6 +353,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "更新指定成员的分工角色",
                 "consumes": [
                     "application/json"
@@ -322,8 +394,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/teams": {
+        "/teams": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
@@ -345,6 +422,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "创建一个新的汉化组，仅超级管理员有权限",
                 "consumes": [
                     "application/json"
@@ -377,8 +459,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/teams/mine": {
+        "/teams/mine": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
@@ -400,8 +487,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/teams/{team_id}": {
+        "/teams/{team_id}": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "删除指定汉化组，超级管理员或团队管理员有权限",
                 "produces": [
                     "application/json"
@@ -426,6 +518,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "更新指定汉化组的信息，超级管理员或团队管理员有权限",
                 "consumes": [
                     "application/json"
@@ -462,8 +559,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users": {
+        "/users": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
@@ -511,8 +613,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/users/{user_id}": {
+        "/users/{user_id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "根据用户 ID 获取用户详细信息",
                 "produces": [
                     "application/json"
@@ -540,6 +647,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "根据用户 ID 删除用户",
                 "produces": [
                     "application/json"
@@ -579,6 +691,28 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "team_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.CreateMemberArgs": {
+            "type": "object",
+            "properties": {
+                "roles": {
+                    "type": "integer"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.CreateMemberResult": {
+            "type": "object",
+            "properties": {
+                "member_id": {
                     "type": "string"
                 }
             }
@@ -775,17 +909,24 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "0.1.0",
 	Host:             "",
-	BasePath:         "",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "LabelPlus Next Web API",
+	Description:      "LabelPlus Next Web 后端 API 文档",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

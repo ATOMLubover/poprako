@@ -202,16 +202,6 @@ func (ta *teamApplication) ListMyTeams(
 
 	scope.Logger().Debug(fn + ": 被调用")
 
-	// 鉴权：检查当前用户是否有权限查看所在汉化组列表（所有成员均可）
-	if !service.CheckTeamPermission(
-		"",
-		nil,
-		nil,
-		model.PermissionTeamListMine,
-	) {
-		return nil, errors.New("没有权限查看所在汉化组列表")
-	}
-
 	// 获取当前用户的所有成员记录
 	currentUserMemberships, err := ta.memberRepository.List(
 		nil,
@@ -235,7 +225,7 @@ func (ta *teamApplication) ListMyTeams(
 	// 由于用户所在汉化组数量较少，直接采用 N + 1 查询方式获取汉化组信息
 	teams, err := ta.teamRepository.List(
 		nil,
-		query_option.TeamQuery().FilterByIDs(teamIDs),
+		query_option.FilterByIDs(teamIDs),
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取汉化组列表失败", zap.Error(err))

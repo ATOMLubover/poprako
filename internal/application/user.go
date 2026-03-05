@@ -7,6 +7,7 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
+	repository_infra "labelplus-next-web-be/internal/repository"
 	"labelplus-next-web-be/internal/repository/query_option"
 	"labelplus-next-web-be/internal/util"
 	"labelplus-next-web-be/internal/value"
@@ -96,9 +97,9 @@ func (ua *userApplication) LoginUser(
 
 	// 获取用户登录凭根（含密码哈希）
 	credentials, err := ua.userRepository.GetCredentialsByQQ(nil, args.QQ)
-	if err != nil {
+	if err != nil && !errors.Is(err, repository_infra.ErrRecordNotFound) {
 		scope.Logger().Error(fn+": 获取用户凭证失败", zap.Error(err))
-		return nil, errors.New("获取用户信息失败")
+		return nil, errors.New("用户不存在或密码错误")
 	}
 
 	// 用户不存在或密码错误，故意不区分以防止用户枚举

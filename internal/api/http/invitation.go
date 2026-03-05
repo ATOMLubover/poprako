@@ -12,12 +12,13 @@ import (
 // @Description 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		invitation
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
 //
 // @Success 	200 {object} []value.InvitationInfo
 //
-// @Router 		/api/v1/invitations [get]
+// @Router 		/invitations [get]
 func ListInvitations(appState *state.AppState) iris.Handler {
 	invitationApplication := appState.InvitationApplication
 
@@ -53,6 +54,7 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 // @Description 在指定汉化组中创建一个新的邀请
 //
 // @Tags 		invitation
+// @Security 	ApiKeyAuth
 // @Accept 		json
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
@@ -60,7 +62,7 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 //
 // @Success 	201 {object} value.InvitationInfo
 //
-// @Router 		/api/v1/invitations [post]
+// @Router 		/invitations [post]
 func CreateInvitation(appState *state.AppState) iris.Handler {
 	invitationApplication := appState.InvitationApplication
 
@@ -104,6 +106,7 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 // @Description 更新指定邀请的信息
 //
 // @Tags 		invitation
+// @Security 	ApiKeyAuth
 // @Accept 		json
 // @Produce 	json
 // @Param 		invitation_id path string true "邀请 ID"
@@ -111,7 +114,7 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/api/v1/invitations/{invitation_id} [patch]
+// @Router 		/invitations/{invitation_id} [patch]
 func PatchInvitation(appState *state.AppState) iris.Handler {
 	invitationApplication := appState.InvitationApplication
 
@@ -153,12 +156,13 @@ func PatchInvitation(appState *state.AppState) iris.Handler {
 // @Description 删除指定的邀请
 //
 // @Tags 		invitation
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		invitation_id path string true "邀请 ID"
 //
 // @Success 	200
 //
-// @Router 		/api/v1/invitations/{invitation_id} [delete]
+// @Router 		/invitations/{invitation_id} [delete]
 func DeleteInvitation(appState *state.AppState) iris.Handler {
 	invitationApplication := appState.InvitationApplication
 

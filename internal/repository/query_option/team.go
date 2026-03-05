@@ -8,12 +8,6 @@ func TeamQuery() teamQuery {
 	return teamQuery{}
 }
 
-func (teamQuery) FilterByIDs(teamIDs []string) func(executor intf.Executor) intf.Executor {
-	return func(executor intf.Executor) intf.Executor {
-		return executor.Where("team_id IN ?", teamIDs)
-	}
-}
-
 func (teamQuery) FilterByTeamID(teamID string) func(executor intf.Executor) intf.Executor {
 	return func(executor intf.Executor) intf.Executor {
 		return executor.Where("team_id = ?", teamID)

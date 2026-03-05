@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/domain/model"
+	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
 	"labelplus-next-web-be/internal/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -11,14 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func (ia *invitationApplication) checkCurrentUserPermissionInTeam(
+func checkCurrentUserPermissionInTeam(
 	scope util.TraceScope,
+	memberRepository repository.MemberRepository,
 	currentUserID string,
 	targetTeamID string,
 	permission model.Permission,
 ) error {
 	// 鉴权：检查当前用户在指定的汉化组是否有权限执行相关操作
-	currentUserMemberships, err := ia.memberRepository.List(
+	currentUserMemberships, err := memberRepository.List(
 		nil,
 		query_option.MemberQuery().FilterByTeamID(targetTeamID),
 		query_option.MemberQuery().FilterByUserID(currentUserID),

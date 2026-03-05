@@ -12,12 +12,13 @@ import (
 // @Description 根据用户 ID 获取用户详细信息
 //
 // @Tags 		user
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		user_id path string true "用户 ID"
 //
 // @Success 	200 {object} value.UserInfo
 //
-// @Router 		/api/v1/users/{user_id} [get]
+// @Router 		/users/{user_id} [get]
 func GetUserByID(appState *state.AppState) iris.Handler {
 	userApplication := appState.UserApplication
 
@@ -46,6 +47,7 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 // @Description 根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		user
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		qq query string false "QQ 号"
 // @Param 		fuzzy_name query string false "模糊名称"
@@ -54,7 +56,7 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 //
 // @Success 	200 {object} []value.UserInfo
 //
-// @Router 		/api/v1/users [get]
+// @Router 		/users [get]
 func ListUsers(appState *state.AppState) iris.Handler {
 	userApplication := appState.UserApplication
 
@@ -81,12 +83,13 @@ func ListUsers(appState *state.AppState) iris.Handler {
 // @Description 根据用户 ID 删除用户
 //
 // @Tags 		user
+// @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		user_id path string true "用户 ID"
 //
 // @Success 	200
 //
-// @Router 		/api/v1/users/{user_id} [delete]
+// @Router 		/users/{user_id} [delete]
 func RemoveUserByID(appState *state.AppState) iris.Handler {
 	userApplication := appState.UserApplication
 

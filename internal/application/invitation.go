@@ -85,8 +85,9 @@ func (ia *invitationApplication) ListInvitations(
 	scope.Logger().Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户在指定的汉化组是否有权限查看邀请信息
-	if err := ia.checkCurrentUserPermissionInTeam(
+	if err := checkCurrentUserPermissionInTeam(
 		scope,
+		ia.memberRepository,
 		currentUserID,
 		targetTeamID,
 		model.PermissionInvitationList,
@@ -145,8 +146,9 @@ func (ia *invitationApplication) CreateInvitation(
 	scope.Logger().Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户是否有权限创建邀请
-	if err := ia.checkCurrentUserPermissionInTeam(
+	if err := checkCurrentUserPermissionInTeam(
 		scope,
+		ia.memberRepository,
 		currentUserID,
 		args.TeamID,
 		model.PermissionInvitationCreate,
@@ -159,7 +161,7 @@ func (ia *invitationApplication) CreateInvitation(
 	isMemberExisting, err := ia.memberRepository.Exist(
 		nil,
 		query_option.MemberQuery().FilterByTeamID(args.TeamID),
-		query_option.MemberQuery().FilterByUserQQ(args.InviteeQQ),
+		query_option.MemberQuery().FilterOnUserQQ(args.InviteeQQ),
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 检查成员信息失败", zap.Error(err))
@@ -235,8 +237,9 @@ func (ia *invitationApplication) UpdateInvitation(
 	scope.Logger().Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户是否有权限修改邀请
-	if err := ia.checkCurrentUserPermissionInTeam(
+	if err := checkCurrentUserPermissionInTeam(
 		scope,
+		ia.memberRepository,
 		currentUserID,
 		args.TeamID,
 		model.PermissionInvitationUpdate,

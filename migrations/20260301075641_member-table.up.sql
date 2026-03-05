@@ -1,6 +1,7 @@
 CREATE TABLE "member_table" (
     "id"                      TEXT PRIMARY KEY,
 
+    "user_id"                 TEXT NOT NULL REFERENCES "user_table" ("id") ON DELETE CASCADE,
     "team_id"                 TEXT NOT NULL REFERENCES "team_table" ("id") ON DELETE CASCADE,
 
     "assigned_raw_provider_at"TIMESTAMPTZ,
@@ -15,6 +16,13 @@ CREATE TABLE "member_table" (
     "updated_at"              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "deleted_at"              TIMESTAMPTZ
 );
+
+CREATE INDEX "idx_member_user_id"
+    ON "member_table" ("user_id")
+    WHERE "deleted_at" IS NULL;
+CREATE INDEX "idx_member_team_id"
+    ON "member_table" ("team_id")
+    WHERE "deleted_at" IS NULL;
 
 CREATE INDEX "idx_member_raw_provider"
     ON "member_table" ("assigned_raw_provider_at")

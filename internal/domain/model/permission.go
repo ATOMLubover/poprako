@@ -20,17 +20,17 @@ const (
 const (
 	PrefixPermissionTeam Permission = "permission:team:"
 
-	PermissionTeamListMine Permission = PrefixPermissionTeam + "list:mine"
-	PermissionTeamListAll  Permission = PrefixPermissionTeam + "list:all"
-	PermissionTeamCreate   Permission = PrefixPermissionTeam + "create"
-	PermissionTeamUpdate   Permission = PrefixPermissionTeam + "update"
-	PermissionTeamDelete   Permission = PrefixPermissionTeam + "delete"
+	PermissionTeamListAll Permission = PrefixPermissionTeam + "list:all"
+	PermissionTeamCreate  Permission = PrefixPermissionTeam + "create"
+	PermissionTeamUpdate  Permission = PrefixPermissionTeam + "update"
+	PermissionTeamDelete  Permission = PrefixPermissionTeam + "delete"
 )
 
 const (
 	PrefixPermissionMember Permission = "permission:member:"
 
 	PermissionMemberList   Permission = PrefixPermissionMember + "list"
+	PermissionMemberCreate Permission = PrefixPermissionMember + "create"
 	PermissionMemberUpdate Permission = PrefixPermissionMember + "update"
 	PermissionMemberDelete Permission = PrefixPermissionMember + "delete"
 )
