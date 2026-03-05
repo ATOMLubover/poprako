@@ -92,7 +92,8 @@ func (r *memberRepository) ListWithUserInfo(executor intf.Executor, options ...i
 func (r *memberRepository) Exist(executor intf.Executor, options ...intf.QueryOption) (bool, error) {
 	executor = r.withTransaction(executor)
 
-	executor = executor.Table(entity.MemberTable).Where("deleted_at IS NULL")
+	executor = executor.Table(entity.MemberTable).
+		Where("member_table.deleted_at IS NULL")
 	for _, opt := range options {
 		executor = opt(executor)
 	}

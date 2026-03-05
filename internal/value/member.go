@@ -115,3 +115,19 @@ func NewCreateMemberResult(memberID string) *CreateMemberResult {
 		MemberID: memberID,
 	}
 }
+
+type JoinTeamArgs struct {
+	InvitationCode string `json:"invitation_code"`
+}
+
+func (jta *JoinTeamArgs) Validate() error {
+	if jta == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if jta.InvitationCode == "" {
+		return errors.New("邀请码不能为空")
+	}
+
+	return nil
+}

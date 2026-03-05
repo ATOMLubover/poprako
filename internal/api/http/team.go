@@ -8,7 +8,7 @@ import (
 )
 
 // CreateTeam godoc
-// @Summary 	创建汉化组
+// @Summary 	创建汉化组（已测试）
 // @Description 创建一个新的汉化组，仅超级管理员有权限
 //
 // @Tags 		team
@@ -47,7 +47,7 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 }
 
 // ListAllTeams godoc
-// @Summary 	获取所有汉化组列表
+// @Summary 	获取所有汉化组列表（已测试）
 // @Description 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		team
@@ -77,7 +77,7 @@ func ListAllTeams(appState *state.AppState) iris.Handler {
 }
 
 // ListMyTeams godoc
-// @Summary 	获取当前用户所在的汉化组列表
+// @Summary 	获取当前用户所在的汉化组列表（已测试）
 // @Description 获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		team

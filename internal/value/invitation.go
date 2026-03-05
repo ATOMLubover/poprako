@@ -33,8 +33,9 @@ func (cia *CreateInvitationArgs) Validate() error {
 type InvitationInfo struct {
 	ID string `json:"id"`
 
-	InvitorID string `json:"invitor_id"`
-	InviteeQQ string `json:"invitee_qq"`
+	InvitorID      string `json:"invitor_id"`
+	InviteeQQ      string `json:"invitee_qq"`
+	InvitationCode string `json:"invitation_code"`
 
 	Pending bool `json:"pending"`
 
@@ -47,17 +48,19 @@ func NewInvitationInfo(
 	id string,
 	invitorID string,
 	inviteeQQ string,
+	invitationCode string,
 	pengding bool,
 	roles model.RoleMask,
 	createdAt int64,
 ) *InvitationInfo {
 	return &InvitationInfo{
-		ID:        id,
-		InvitorID: invitorID,
-		InviteeQQ: inviteeQQ,
-		Pending:   pengding,
-		Roles:     roles,
-		CreatedAt: createdAt,
+		ID:             id,
+		InvitorID:      invitorID,
+		InviteeQQ:      inviteeQQ,
+		InvitationCode: invitationCode,
+		Pending:        pengding,
+		Roles:          roles,
+		CreatedAt:      createdAt,
 	}
 }
 

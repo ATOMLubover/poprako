@@ -99,7 +99,7 @@ func (ia *invitationApplication) ListInvitations(
 	// 获取邀请信息列表
 	invitationList, err := ia.invitationRepository.List(
 		nil,
-		query_option.MemberQuery().FilterByTeamID(targetTeamID),
+		query_option.InvitationQuery().FilterByTeamID(targetTeamID),
 		query_option.CreatedAtDesc(),
 	)
 	if err != nil {
@@ -160,6 +160,7 @@ func (ia *invitationApplication) CreateInvitation(
 	// 检查是否已经有相关 QQ 的成员存在
 	isMemberExisting, err := ia.memberRepository.Exist(
 		nil,
+		query_option.MemberQuery().JoinUser(),
 		query_option.MemberQuery().FilterByTeamID(args.TeamID),
 		query_option.MemberQuery().FilterOnUserQQ(args.InviteeQQ),
 	)
@@ -199,6 +200,7 @@ func (ia *invitationApplication) CreateInvitation(
 		invitationID,
 		currentUserID,
 		args.InviteeQQ,
+		invitationCode,
 		true,
 		args.Roles,
 		util.NowMillis(),

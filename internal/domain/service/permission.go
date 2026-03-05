@@ -50,16 +50,37 @@ func CheckUserPermission(
 	targetUserID string,
 	permission model.Permission,
 ) bool {
+	if currentUser == nil {
+		zap.L().Warn(
+			"checkUserPermission: currentUser 为空",
+			zap.String("targetUserID", targetUserID),
+			zap.String("permission", string(permission)),
+		)
+
+		return false
+	}
+
 	switch permission {
 	case model.PermissionUserRemove:
 		// 目前仅超级管理员有权限删除用户，且不能删除自己
 		return currentUser.ID != targetUserID &&
 			currentUser.IsSuperAdmin
+
+	case model.PermissionUserView:
+		// 目前用户可以查看自己的信息，超级管理员可以查看所有用户的信息
+		return currentUser.ID == targetUserID ||
+			currentUser.IsSuperAdmin
+
+	case model.PermissionUserList:
+		// 目前仅超级管理员有权限查看用户列表
+		return currentUser.IsSuperAdmin
+
 	default:
 		zap.L().Warn(
 			"CheckUserPermission: 无法识别的权限",
 			zap.String("permission", string(permission)),
 		)
+
 		return false
 	}
 }

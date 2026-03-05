@@ -8,7 +8,7 @@ import (
 )
 
 // Login godoc
-// @Summary 	用户登录
+// @Summary 	用户登录（已测试）
 // @Description 使用 QQ 和密码进行登录，成功返回访问令牌
 //
 // @Tags 		auth

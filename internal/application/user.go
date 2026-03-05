@@ -30,6 +30,7 @@ type UserApplication interface {
 	) (*value.UserInfo, error)
 	ListUsers(
 		scope util.TraceScope,
+		currentUserID string,
 		args *value.ListUserArgs,
 	) ([]*value.UserInfo, error)
 	RemoveUserByID(
@@ -137,22 +138,16 @@ func (ua *userApplication) RegisterUser(
 		return nil, err
 	}
 
-	// 检查是否有对应的邀请
-	invitationInfo, err := ua.invitationRepository.GetByInviteeQQ(nil, args.QQ)
-	if err != nil {
+	// 根据 QQ 和邀请码精确查找邀请，同时支持多邀请场景
+	invitationInfo, err := ua.invitationRepository.GetByInviteeQQAndCode(nil, args.QQ, args.InvitationCode)
+	if err != nil && !errors.Is(err, repository_infra.ErrRecordNotFound) {
 		scope.Logger().Error(fn+": 查询邀请信息失败", zap.Error(err))
 		return nil, errors.New("获取邀请信息失败")
 	}
 
 	if invitationInfo == nil {
 		scope.Logger().Error(fn + ": 没有找到对应的邀请信息")
-		return nil, errors.New("没有找到对应的邀请信息，请确保您已被邀请")
-	}
-
-	// 检查邀请码是否匹配
-	if invitationInfo.InvitationCode != args.InvitationCode {
-		scope.Logger().Error(fn + ": 邀请码不匹配")
-		return nil, errors.New("邀请码不正确，请检查后重试")
+		return nil, errors.New("没有找到对应的邀请信息，请确保邀请码正确")
 	}
 
 	// 通过检查后，对密码进行哈希处理
@@ -244,13 +239,28 @@ func (ua *userApplication) GetUser(
 	scope util.TraceScope,
 	userID string,
 ) (*value.UserInfo, error) {
-	const fn = "UserApplication.GetUserByID"
+	const fn = "UserApplication.GetUser"
 
 	scope.WithFields(
 		zap.String("user_id", userID),
 	)
 
 	scope.Logger().Debug(fn + ": 被调用")
+
+	// 鉴权：用户只能查看自己的信息，超级管理员可以查看所有用户的信息
+	currentUser, err := ua.userRepository.GetInfoByID(nil, userID)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取当前用户信息失败", zap.Error(err))
+		return nil, errors.New("无法获取用户信息")
+	}
+
+	if !service.CheckUserPermission(
+		currentUser,
+		userID,
+		model.PermissionUserView,
+	) {
+		return nil, errors.New("没有权限查看用户信息")
+	}
 
 	userInfo, err := ua.userRepository.GetInfoByID(nil, userID)
 	if err != nil {
@@ -267,6 +277,7 @@ func (ua *userApplication) GetUser(
 
 func (ua *userApplication) ListUsers(
 	scope util.TraceScope,
+	currentUserID string,
 	args *value.ListUserArgs,
 ) ([]*value.UserInfo, error) {
 	const fn = "UserApplication.ListUsers"
@@ -286,6 +297,21 @@ func (ua *userApplication) ListUsers(
 	)
 
 	scope.Logger().Debug(fn + ": 被调用")
+
+	// 鉴权：仅超级管理员有权限查看用户列表
+	currentUser, err := ua.userRepository.GetInfoByID(nil, currentUserID)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取当前用户信息失败", zap.Error(err))
+		return nil, errors.New("无法获取用户信息")
+	}
+
+	if !service.CheckUserPermission(
+		currentUser,
+		"",
+		model.PermissionUserList,
+	) {
+		return nil, errors.New("没有权限查看用户列表")
+	}
 
 	// 构建动态查询选项
 	opts := make([]repository.QueryOption, 0)

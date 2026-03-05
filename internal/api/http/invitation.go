@@ -8,7 +8,7 @@ import (
 )
 
 // ListInvitations godoc
-// @Summary 	获取邀请列表
+// @Summary 	获取邀请列表（已测试）
 // @Description 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		invitation
@@ -50,14 +50,13 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 }
 
 // CreateInvitation godoc
-// @Summary 	创建邀请
+// @Summary 	创建邀请（已测试）
 // @Description 在指定汉化组中创建一个新的邀请
 //
 // @Tags 		invitation
 // @Security 	ApiKeyAuth
 // @Accept 		json
 // @Produce 	json
-// @Param 		team_id query string true "汉化组 ID"
 // @Param 		body body value.CreateInvitationArgs true "创建邀请参数"
 //
 // @Success 	201 {object} value.InvitationInfo
@@ -79,13 +78,6 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		// 从 query param 中获取 team_id 参数
-		teamID := ctx.URLParam("team_id")
-		if teamID == "" || args.TeamID != teamID {
-			reject(ctx, iris.StatusBadRequest, "缺少 team_id 查询参数，或与请求体中的 TeamID 不匹配")
-			return
-		}
-
 		result, err := invitationApplication.CreateInvitation(
 			*buildTraceScope(ctx),
 			currentUserID,
@@ -102,8 +94,8 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 }
 
 // PatchInvitation godoc
-// @Summary 	更新邀请
-// @Description 更新指定邀请的信息
+// @Summary 	更新未被使用的邀请
+// @Description 更新指定待处理邀请的信息，无法更新已被使用或已失效的邀请
 //
 // @Tags 		invitation
 // @Security 	ApiKeyAuth

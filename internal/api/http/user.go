@@ -8,7 +8,7 @@ import (
 )
 
 // GetUserByID godoc
-// @Summary 	根据 ID 获取用户信息
+// @Summary 	根据 ID 获取用户信息（已测试）
 // @Description 根据用户 ID 获取用户详细信息
 //
 // @Tags 		user
@@ -43,7 +43,7 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 }
 
 // ListUsers godoc
-// @Summary 	获取用户列表
+// @Summary 	获取用户列表（已测试）
 // @Description 根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		user
@@ -51,8 +51,8 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 // @Produce 	json
 // @Param 		qq query string false "QQ 号"
 // @Param 		fuzzy_name query string false "模糊名称"
-// @Param 		offset query int false "偏移量，默认值为 0"
-// @Param 		limit query int false "每页数量，默认值为 10"
+// @Param 		offset query int true "偏移量"
+// @Param 		limit query int true "每页数量"
 //
 // @Success 	200 {object} []value.UserInfo
 //
@@ -61,6 +61,11 @@ func ListUsers(appState *state.AppState) iris.Handler {
 	userApplication := appState.UserApplication
 
 	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
 		var args value.ListUserArgs
 
 		if err := ctx.ReadQuery(&args); err != nil {
@@ -68,7 +73,11 @@ func ListUsers(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := userApplication.ListUsers(*buildTraceScope(ctx), &args)
+		result, err := userApplication.ListUsers(
+			*buildTraceScope(ctx),
+			currentUserID,
+			&args,
+		)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return

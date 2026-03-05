@@ -8,7 +8,7 @@ import (
 )
 
 // CreateMember godoc
-// @Summary 	创建成员
+// @Summary 	创建成员（已测试）
 // @Description 由超级管理员直接创建成员记录
 //
 // @Tags 		member
@@ -51,15 +51,15 @@ func CreateMember(appState *state.AppState) iris.Handler {
 }
 
 // ListMembers godoc
-// @Summary 	获取指定汉化组的成员列表
+// @Summary 	获取指定汉化组的成员列表（已测试）
 // @Description 获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		member
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
-// @Param 		offset query int false "偏移量，默认值为 0"
-// @Param 		limit query int false "每页数量，默认值为 10"
+// @Param 		offset query int true "偏移量"
+// @Param 		limit query int true "每页数量"
 //
 // @Success 	200 {object} []value.MemberProfile
 //
@@ -144,6 +144,48 @@ func UpdateMemberRole(appState *state.AppState) iris.Handler {
 		}
 
 		accept(ctx, "更新成员角色成功", nil)
+	}
+}
+
+// JoinTeam godoc
+// @Summary 	通过邀请码加入汉化组
+// @Description 已登录用户使用邀请码加入对应汉化组
+//
+// @Tags 		member
+// @Security 	ApiKeyAuth
+// @Accept 		json
+// @Produce 	json
+// @Param 		body body value.JoinTeamArgs true "加入勇化组参数"
+//
+// @Success 	200
+//
+// @Router 		/members/join [post]
+func JoinTeam(appState *state.AppState) iris.Handler {
+	memberApplication := appState.MemberApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		var args value.JoinTeamArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		if err := memberApplication.JoinTeam(
+			*buildTraceScope(ctx),
+			currentUserID,
+			&args,
+		); err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "加入汉化组成功", nil)
 	}
 }
 

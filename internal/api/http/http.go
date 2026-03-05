@@ -69,6 +69,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	memberParty := authorizedParty.Party("/members")
 	{
 		memberParty.Post("/", CreateMember(appState))
+		memberParty.Post("/join", JoinTeam(appState))
 		memberParty.Get("/", ListMembers(appState))
 		memberParty.Patch("/{member_id}", UpdateMemberRole(appState))
 		memberParty.Delete("/{member_id}", RemoveMember(appState))

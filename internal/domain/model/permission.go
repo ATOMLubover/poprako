@@ -14,6 +14,8 @@ const (
 const (
 	PrefixPermissionUser Permission = "permission:user:"
 
+	PermissionUserView   Permission = PrefixPermissionUser + "view"
+	PermissionUserList   Permission = PrefixPermissionUser + "list"
 	PermissionUserRemove Permission = PrefixPermissionUser + "remove"
 )
 

@@ -62,13 +62,13 @@ func (r *invitationRepository) GetByID(executor intf.Executor, invitationID stri
 	return &info, nil
 }
 
-func (r *invitationRepository) GetByInviteeQQ(executor intf.Executor, inviteeQQ string) (*model.InvitationInfo, error) {
+func (r *invitationRepository) GetByInviteeQQAndCode(executor intf.Executor, inviteeQQ string, code string) (*model.InvitationInfo, error) {
 	executor = r.withTransaction(executor)
 
 	var row entity.InvitationRow
 	if err := executor.
 		Table(entity.InvitationTable).
-		Where("invitee_qq = ? AND pending = TRUE", inviteeQQ).
+		Where("invitee_qq = ? AND invitation_code = ? AND pending = TRUE", inviteeQQ, code).
 		First(&row).Error; err != nil {
 		return nil, err
 	}
@@ -97,6 +97,7 @@ func (r *invitationRepository) Create(executor intf.Executor, creation *model.In
 	if err := executor.Create(&row).Error; err != nil {
 		return "", err
 	}
+
 	return row.ID, nil
 }
 

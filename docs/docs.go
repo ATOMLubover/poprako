@@ -27,7 +27,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "用户登录",
+                "summary": "用户登录（已测试）",
                 "parameters": [
                     {
                         "description": "登录参数",
@@ -138,13 +138,6 @@ const docTemplate = `{
                 "summary": "创建邀请",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "description": "创建邀请参数",
                         "name": "body",
                         "in": "body",
@@ -250,7 +243,7 @@ const docTemplate = `{
                 "tags": [
                     "member"
                 ],
-                "summary": "获取指定汉化组的成员列表",
+                "summary": "获取指定汉化组的成员列表（已测试）",
                 "parameters": [
                     {
                         "type": "string",
@@ -261,15 +254,17 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "偏移量，默认值为 0",
+                        "description": "偏移量",
                         "name": "offset",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认值为 10",
+                        "description": "每页数量",
                         "name": "limit",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -300,7 +295,7 @@ const docTemplate = `{
                 "tags": [
                     "member"
                 ],
-                "summary": "创建成员",
+                "summary": "创建成员（已测试）",
                 "parameters": [
                     {
                         "description": "创建成员参数",
@@ -318,6 +313,42 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/value.CreateMemberResult"
                         }
+                    }
+                }
+            }
+        },
+        "/members/join": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "已登录用户使用邀请码加入对应汉化组",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "通过邀请码加入汉化组",
+                "parameters": [
+                    {
+                        "description": "加入勇化组参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.JoinTeamArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -408,7 +439,7 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "获取所有汉化组列表",
+                "summary": "获取所有汉化组列表（已测试）",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -437,7 +468,7 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "创建汉化组",
+                "summary": "创建汉化组（已测试）",
                 "parameters": [
                     {
                         "description": "创建汉化组参数",
@@ -473,7 +504,7 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "获取当前用户所在的汉化组列表",
+                "summary": "获取当前用户所在的汉化组列表（已测试）",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -573,7 +604,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "获取用户列表",
+                "summary": "获取用户列表（已测试）",
                 "parameters": [
                     {
                         "type": "string",
@@ -589,15 +620,17 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "偏移量，默认值为 0",
+                        "description": "偏移量",
                         "name": "offset",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认值为 10",
+                        "description": "每页数量",
                         "name": "limit",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -627,7 +660,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "根据 ID 获取用户信息",
+                "summary": "根据 ID 获取用户信息（已测试）",
                 "parameters": [
                     {
                         "type": "string",
@@ -737,6 +770,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "invitation_code": {
+                    "type": "string"
+                },
                 "invitee_qq": {
                     "type": "string"
                 },
@@ -748,6 +784,14 @@ const docTemplate = `{
                 },
                 "roles": {
                     "type": "integer"
+                }
+            }
+        },
+        "value.JoinTeamArgs": {
+            "type": "object",
+            "properties": {
+                "invitation_code": {
+                    "type": "string"
                 }
             }
         },

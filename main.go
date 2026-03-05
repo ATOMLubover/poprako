@@ -64,6 +64,7 @@ func main() {
 	memberApplication := application.NewMemberApplication(
 		userRepository,
 		memberRepository,
+		invitationRepository,
 	)
 
 	appState := state.NewAppState(
