@@ -8,7 +8,8 @@ import (
 
 const ComicTable = "comic_table"
 
-type ComicRow struct {
+// ComicInfoRow 用于 List、GetByID，映射完整漫画信息。
+type ComicInfoRow struct {
 	ID string `gorm:"column:id"`
 
 	TeamID string `gorm:"column:team_id"`
@@ -29,9 +30,23 @@ type ComicRow struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at"`
 }
 
-func (ComicRow) TableName() string { return ComicTable }
+func (ComicInfoRow) TableName() string { return ComicTable }
 
-func ToComicInfo(row ComicRow) *model.ComicInfo {
+// ComicInsertRow 用于 Create，仅包含写入所需字段。
+type ComicInsertRow struct {
+	ID          string `gorm:"column:id"`
+	TeamID      string `gorm:"column:team_id"`
+	Index       int    `gorm:"column:index"`
+	Title       string `gorm:"column:title"`
+	Author      string `gorm:"column:author"`
+	Description string `gorm:"column:description"`
+	CoverURL    string `gorm:"column:cover_url"`
+	CreatorID   string `gorm:"column:creator_id"`
+}
+
+func (ComicInsertRow) TableName() string { return ComicTable }
+
+func ToComicInfo(row ComicInfoRow) *model.ComicInfo {
 	return &model.ComicInfo{
 		ID:           row.ID,
 		TeamID:       row.TeamID,

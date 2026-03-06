@@ -8,7 +8,8 @@ import (
 
 const TeamTable = "team_table"
 
-type TeamRow struct {
+// TeamInfoRow 用于 List 查询汉化组信息。
+type TeamInfoRow struct {
 	ID          string     `gorm:"column:id"`
 	Name        string     `gorm:"column:name"`
 	Description string     `gorm:"column:description"`
@@ -17,9 +18,18 @@ type TeamRow struct {
 	DeletedAt   *time.Time `gorm:"column:deleted_at"`
 }
 
-func (TeamRow) TableName() string { return TeamTable }
+func (TeamInfoRow) TableName() string { return TeamTable }
 
-func ToTeamInfo(row TeamRow) *model.TeamInfo {
+// TeamInsertRow 用于 Create，仅包含写入所需字段。
+type TeamInsertRow struct {
+	ID          string `gorm:"column:id"`
+	Name        string `gorm:"column:name"`
+	Description string `gorm:"column:description"`
+}
+
+func (TeamInsertRow) TableName() string { return TeamTable }
+
+func ToTeamInfo(row TeamInfoRow) *model.TeamInfo {
 	return &model.TeamInfo{
 		ID:          row.ID,
 		Name:        row.Name,

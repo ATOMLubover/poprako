@@ -255,7 +255,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/value.RegisterUserResult'
-      summary: 用户注册
+      summary: 用户注册（已测试）
       tags:
       - auth
   /comics:
@@ -373,6 +373,16 @@ paths:
         name: team_id
         required: true
         type: string
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
       produces:
       - application/json
       responses:

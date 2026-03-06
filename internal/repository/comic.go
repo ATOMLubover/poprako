@@ -7,6 +7,8 @@ import (
 	intf "labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/repository/entity"
 	"labelplus-next-web-be/internal/util"
+
+	"gorm.io/gorm/clause"
 )
 
 type comicRepository struct {
@@ -25,6 +27,10 @@ func (r *comicRepository) withTransaction(executor intf.Executor) intf.Executor 
 	return r.executor
 }
 
+func (r *comicRepository) BeginTransaction() intf.Executor {
+	return r.executor.Begin()
+}
+
 func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]*model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
 
@@ -33,7 +39,7 @@ func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOpti
 		executor = opt(executor)
 	}
 
-	var rows []entity.ComicRow
+	var rows []entity.ComicInfoRow
 
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
@@ -47,12 +53,54 @@ func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOpti
 	return result, nil
 }
 
+func (r *comicRepository) GetByID(executor intf.Executor, comicID string) (*model.ComicInfo, error) {
+	executor = r.withTransaction(executor)
+
+	var row entity.ComicInfoRow
+	if err := executor.
+		Table(entity.ComicTable).
+		Where("id = ? AND deleted_at IS NULL", comicID).
+		First(&row).Error; err != nil {
+		return nil, err
+	}
+
+	info := entity.ToComicInfo(row)
+	return info, nil
+}
+
+func (r *comicRepository) LockByTeamID(executor intf.Executor, teamID string) error {
+	executor = r.withTransaction(executor)
+
+	var lockedIDs []string
+
+	return executor.
+		Table(entity.ComicTable).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("team_id = ? AND deleted_at IS NULL", teamID).
+		Pluck("id", &lockedIDs).Error
+}
+
+func (r *comicRepository) CountByTeamID(executor intf.Executor, teamID string) (int64, error) {
+	executor = r.withTransaction(executor)
+
+	var count int64
+	if err := executor.
+		Table(entity.ComicTable).
+		Where("team_id = ? AND deleted_at IS NULL", teamID).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func (r *comicRepository) Create(executor intf.Executor, creation *model.ComicCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
-	row := entity.ComicRow{
+	row := entity.ComicInsertRow{
 		ID:          util.GenerateUUID(),
 		TeamID:      creation.TeamID,
+		Index:       creation.Index,
 		Title:       creation.Title,
 		Author:      creation.Author,
 		Description: creation.Description,

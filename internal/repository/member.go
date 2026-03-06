@@ -37,8 +37,7 @@ func (r *memberRepository) List(executor intf.Executor, options ...intf.QueryOpt
 		executor = opt(executor)
 	}
 
-	var rows []entity.MemberRow
-
+	var rows []entity.MemberProfileRow
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -84,7 +83,7 @@ func (r *memberRepository) ListWithUserInfo(executor intf.Executor, options ...i
 			CreatedAt:    row.UserCreatedAt,
 			UpdatedAt:    row.UserUpdatedAt,
 		}
-		result[i] = entity.ToMemberProfile(row.MemberRow, userInfo)
+		result[i] = entity.ToMemberProfile(row.MemberProfileRow, userInfo)
 	}
 	return result, nil
 }
@@ -110,8 +109,7 @@ func (r *memberRepository) Exist(executor intf.Executor, options ...intf.QueryOp
 func (r *memberRepository) GetByID(executor intf.Executor, memberID string) (*model.MemberProfile, error) {
 	executor = r.withTransaction(executor)
 
-	var row entity.MemberRow
-
+	var row entity.MemberProfileRow
 	if err := executor.
 		Table(entity.MemberTable).
 		Where("id = ? AND deleted_at IS NULL", memberID).
@@ -129,7 +127,7 @@ func (r *memberRepository) Create(executor intf.Executor, creation *model.Member
 
 	now := time.Now()
 
-	row := entity.MemberRow{
+	row := entity.MemberInsertRow{
 		ID:     util.GenerateUUID(),
 		UserID: creation.UserID,
 		TeamID: creation.TeamID,

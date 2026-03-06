@@ -32,7 +32,6 @@ type ComicApplication interface {
 	DeleteComic(
 		scope util.TraceScope,
 		currentUserID string,
-		teamID string,
 		comicID string,
 	) error
 }
@@ -174,20 +173,55 @@ func (ca *comicApplication) CreateComic(
 		return nil, errors.New("没有权限创建漫画")
 	}
 
+	transactionExecutor := ca.comicRepository.BeginTransaction()
+	if transactionExecutor.Error != nil {
+		scope.Logger().Error(fn+": 开启事务失败", zap.Error(transactionExecutor.Error))
+		return nil, errors.New("创建漫画失败")
+	}
+
+	var transactionErr error
+
+	defer func() {
+		if transactionErr != nil {
+			if rollbackErr := transactionExecutor.Rollback().Error; rollbackErr != nil {
+				scope.Logger().Error(fn+": 回滚事务失败", zap.Error(rollbackErr))
+			}
+		}
+	}()
+
+	transactionErr = ca.comicRepository.LockByTeamID(transactionExecutor, args.TeamID)
+	if transactionErr != nil {
+		scope.Logger().Error(fn+": 锁定漫画记录失败", zap.Error(transactionErr))
+		return nil, errors.New("创建漫画失败")
+	}
+
+	comicCount, transactionErr := ca.comicRepository.CountByTeamID(transactionExecutor, args.TeamID)
+	if transactionErr != nil {
+		scope.Logger().Error(fn+": 统计漫画数量失败", zap.Error(transactionErr))
+		return nil, errors.New("创建漫画失败")
+	}
+
 	// 创建漫画
 	comicCreation := model.NewComicCreation(
 		args.TeamID,
+		int(comicCount)+1,
 		args.Title,
 		args.Author,
 		args.Description,
 		currentUserID,
 	)
 
-	comicID, err := ca.comicRepository.Create(nil, comicCreation)
-	if err != nil {
-		scope.Logger().Error(fn+": 创建漫画失败", zap.Error(err))
+	comicID, transactionErr := ca.comicRepository.Create(transactionExecutor, comicCreation)
+	if transactionErr != nil {
+		scope.Logger().Error(fn+": 创建漫画失败", zap.Error(transactionErr))
 		return nil, errors.New("创建漫画失败")
 	}
+
+	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {
+		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitErr))
+		return nil, errors.New("创建漫画失败")
+	}
+	transactionErr = nil
 
 	return &value.CreateComicResult{ID: comicID}, nil
 }
@@ -221,6 +255,12 @@ func (ca *comicApplication) UpdateComic(
 
 	scope.Logger().Debug(fn + ": 被调用")
 
+	targetComic, err := ca.comicRepository.GetByID(nil, args.ID)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取目标漫画信息失败", zap.Error(err))
+		return errors.New("无法获取漫画信息")
+	}
+
 	// 鉴权：获取当前用户在各汉化组的成员信息
 	currentUserMemberships, err := ca.memberRepository.List(
 		nil,
@@ -232,7 +272,7 @@ func (ca *comicApplication) UpdateComic(
 	}
 
 	// 鉴权：仅对应汉化组管理员有权限更新漫画
-	if !service.CheckComicPermission(args.TeamID, currentUserMemberships, model.PermissionComicUpdate) {
+	if !service.CheckComicPermission(targetComic.TeamID, currentUserMemberships, model.PermissionComicUpdate) {
 		return errors.New("没有权限更新漫画")
 	}
 
@@ -255,7 +295,6 @@ func (ca *comicApplication) UpdateComic(
 func (ca *comicApplication) DeleteComic(
 	scope util.TraceScope,
 	currentUserID string,
-	teamID string,
 	comicID string,
 ) error {
 	const fn = "ComicApplication.DeleteComic"
@@ -265,18 +304,23 @@ func (ca *comicApplication) DeleteComic(
 		return errors.New(ErrInternalError)
 	}
 
-	if teamID == "" {
-		scope.Logger().Warn(fn + ": teamID 为空")
+	if comicID == "" {
+		scope.Logger().Warn(fn + ": comicID 为空")
 		return errors.New(ErrInternalError)
 	}
 
 	scope.WithFields(
 		zap.String("current_user_id", currentUserID),
-		zap.String("team_id", teamID),
 		zap.String("comic_id", comicID),
 	)
 
 	scope.Logger().Debug(fn + ": 被调用")
+
+	targetComic, err := ca.comicRepository.GetByID(nil, comicID)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取目标漫画信息失败", zap.Error(err))
+		return errors.New("无法获取漫画信息")
+	}
 
 	// 鉴权：获取当前用户在各汉化组的成员信息
 	currentUserMemberships, err := ca.memberRepository.List(
@@ -289,7 +333,7 @@ func (ca *comicApplication) DeleteComic(
 	}
 
 	// 鉴权：仅对应汉化组管理员有权限删除漫画
-	if !service.CheckComicPermission(teamID, currentUserMemberships, model.PermissionComicDelete) {
+	if !service.CheckComicPermission(targetComic.TeamID, currentUserMemberships, model.PermissionComicDelete) {
 		return errors.New("没有权限删除漫画")
 	}
 

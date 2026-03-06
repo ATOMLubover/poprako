@@ -40,7 +40,7 @@ func Login(appState *state.AppState) iris.Handler {
 }
 
 // Register godoc
-// @Summary 	用户注册
+// @Summary 	用户注册（已测试）
 // @Description 使用 QQ、密码、名字和邀请码进行注册，成功返回访问令牌
 //
 // @Tags 		auth

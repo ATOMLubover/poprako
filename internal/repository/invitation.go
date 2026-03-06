@@ -35,7 +35,7 @@ func (r *invitationRepository) List(executor intf.Executor, options ...intf.Quer
 		executor = opt(executor)
 	}
 
-	var rows []entity.InvitationRow
+	var rows []entity.InvitationInfoRow
 
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *invitationRepository) List(executor intf.Executor, options ...intf.Quer
 func (r *invitationRepository) GetByID(executor intf.Executor, invitationID string) (*model.InvitationInfo, error) {
 	executor = r.withTransaction(executor)
 
-	var row entity.InvitationRow
+	var row entity.InvitationInfoRow
 	if err := executor.
 		Table(entity.InvitationTable).
 		Where("id = ?", invitationID).
@@ -65,7 +65,7 @@ func (r *invitationRepository) GetByID(executor intf.Executor, invitationID stri
 func (r *invitationRepository) GetByInviteeQQAndCode(executor intf.Executor, inviteeQQ string, code string) (*model.InvitationInfo, error) {
 	executor = r.withTransaction(executor)
 
-	var row entity.InvitationRow
+	var row entity.InvitationInfoRow
 	if err := executor.
 		Table(entity.InvitationTable).
 		Where("invitee_qq = ? AND invitation_code = ? AND pending = TRUE", inviteeQQ, code).
@@ -79,7 +79,7 @@ func (r *invitationRepository) GetByInviteeQQAndCode(executor intf.Executor, inv
 func (r *invitationRepository) Create(executor intf.Executor, creation *model.InvitationCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
-	row := entity.InvitationRow{
+	row := entity.InvitationInsertRow{
 		ID:              util.GenerateUUID(),
 		InvitorID:       creation.InvitorID,
 		TargetTeamID:    creation.TargetTeamID,
@@ -132,5 +132,5 @@ func (r *invitationRepository) DeleteByID(executor intf.Executor, invitationID s
 
 	return executor.
 		Where("id = ?", invitationID).
-		Delete(&entity.InvitationRow{}).Error
+		Delete(&entity.InvitationInfoRow{}).Error
 }

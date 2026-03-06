@@ -61,7 +61,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "用户注册",
+                "summary": "用户注册（已测试）",
                 "parameters": [
                     {
                         "description": "注册参数",
@@ -270,6 +270,20 @@ const docTemplate = `{
                         "type": "string",
                         "description": "汉化组 ID",
                         "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
                         "in": "query",
                         "required": true
                     }

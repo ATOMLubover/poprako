@@ -17,7 +17,7 @@ type InvitationApplication interface {
 	ListInvitations(
 		scope util.TraceScope,
 		currentUserID string,
-		teamID string,
+		args *value.ListTeamInvitationArgs,
 	) ([]*value.InvitationInfo, error)
 	CreateInvitation(
 		scope util.TraceScope,
@@ -68,7 +68,7 @@ func NewInvitationApplication(
 func (ia *invitationApplication) ListInvitations(
 	scope util.TraceScope,
 	currentUserID string,
-	targetTeamID string,
+	args *value.ListTeamInvitationArgs,
 ) ([]*value.InvitationInfo, error) {
 	const fn = "InvitationApplication.ListInvitations"
 
@@ -77,9 +77,14 @@ func (ia *invitationApplication) ListInvitations(
 		return nil, errors.New(ErrInternalError)
 	}
 
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
+	}
+
 	scope.WithFields(
 		zap.String("current_user_id", currentUserID),
-		zap.String("target_team_id", targetTeamID),
+		zap.Any("args", args),
 	)
 
 	scope.Logger().Debug(fn + ": 被调用")
@@ -89,7 +94,7 @@ func (ia *invitationApplication) ListInvitations(
 		scope,
 		ia.memberRepository,
 		currentUserID,
-		targetTeamID,
+		args.TeamID,
 		model.PermissionInvitationList,
 	); err != nil {
 		scope.Logger().Warn(fn+": 权限检查不通过", zap.Error(err))
@@ -99,8 +104,9 @@ func (ia *invitationApplication) ListInvitations(
 	// 获取邀请信息列表
 	invitationList, err := ia.invitationRepository.List(
 		nil,
-		query_option.InvitationQuery().FilterByTeamID(targetTeamID),
+		query_option.InvitationQuery().FilterByTeamID(args.TeamID),
 		query_option.CreatedAtDesc(),
+		query_option.Paginate(args.Offset, args.Limit),
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取指定汉化组邀请信息列表失败", zap.Error(err))

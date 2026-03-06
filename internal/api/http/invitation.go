@@ -15,6 +15,8 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
+// @Param 		offset query int true "偏移量"
+// @Param 		limit query int true "每页数量"
 //
 // @Success 	200 {object} []value.InvitationInfo
 //
@@ -28,17 +30,17 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		// 从 query param 中获取 team_id 参数
-		teamID := ctx.URLParam("team_id")
-		if teamID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 team_id 查询参数")
+		var args value.ListTeamInvitationArgs
+
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
 		}
 
 		result, err := invitationApplication.ListInvitations(
 			*buildTraceScope(ctx),
 			currentUserID,
-			teamID,
+			&args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

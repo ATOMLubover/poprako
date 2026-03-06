@@ -51,6 +51,7 @@ func NewComicInfo(
 
 type ComicCreation struct {
 	TeamID      string
+	Index       int
 	Title       string
 	Author      string
 	Description string
@@ -59,6 +60,7 @@ type ComicCreation struct {
 
 func NewComicCreation(
 	teamID string,
+	index int,
 	title string,
 	author string,
 	description string,
@@ -66,6 +68,7 @@ func NewComicCreation(
 ) *ComicCreation {
 	return &ComicCreation{
 		TeamID:      teamID,
+		Index:       index,
 		Title:       title,
 		Author:      author,
 		Description: description,

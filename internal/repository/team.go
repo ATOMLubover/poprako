@@ -36,7 +36,7 @@ func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOptio
 		executor = opt(executor)
 	}
 
-	var rows []entity.TeamRow
+	var rows []entity.TeamInfoRow
 
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOptio
 func (r *teamRepository) Create(executor intf.Executor, creation *model.TeamCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
-	row := entity.TeamRow{
+	row := entity.TeamInsertRow{
 		ID:          util.GenerateUUID(),
 		Name:        creation.Name,
 		Description: creation.Description,

@@ -8,7 +8,8 @@ import (
 
 const MemberTable = "member_table"
 
-type MemberRow struct {
+// MemberProfileRow 用于 List、GetByID，映射成员信息。
+type MemberProfileRow struct {
 	ID     string `gorm:"column:id"`
 	UserID string `gorm:"column:user_id"`
 	TeamID string `gorm:"column:team_id"`
@@ -26,10 +27,27 @@ type MemberRow struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at"`
 }
 
-func (MemberRow) TableName() string { return MemberTable }
+func (MemberProfileRow) TableName() string { return MemberTable }
+
+// MemberInsertRow 用于 Create，仅包含写入所需字段。
+type MemberInsertRow struct {
+	ID     string `gorm:"column:id"`
+	UserID string `gorm:"column:user_id"`
+	TeamID string `gorm:"column:team_id"`
+
+	AssignedRawProviderAt *time.Time `gorm:"column:assigned_raw_provider_at"`
+	AssignedTranslatorAt  *time.Time `gorm:"column:assigned_translator_at"`
+	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
+	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
+	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
+	AssignedUploaderAt    *time.Time `gorm:"column:assigned_uploader_at"`
+	AssignedAdminAt       *time.Time `gorm:"column:assigned_admin_at"`
+}
+
+func (MemberInsertRow) TableName() string { return MemberTable }
 
 type MemberWithUserRow struct {
-	MemberRow
+	MemberProfileRow
 	UserName         string    `gorm:"column:user_name"`
 	UserQQ           string    `gorm:"column:user_qq"`
 	UserAvatarURL    string    `gorm:"column:user_avatar_url"`
@@ -38,7 +56,7 @@ type MemberWithUserRow struct {
 	UserUpdatedAt    time.Time `gorm:"column:user_updated_at"`
 }
 
-func ToMemberProfile(row MemberRow, userInfo *model.UserInfo) model.MemberProfile {
+func ToMemberProfile(row MemberProfileRow, userInfo *model.UserInfo) model.MemberProfile {
 	return model.MemberProfile{
 		ID:                    row.ID,
 		UserInfo:              userInfo,

@@ -14,6 +14,27 @@ type CreateInvitationArgs struct {
 	Roles     model.RoleMask `json:"roles"`
 }
 
+type ListTeamInvitationArgs struct {
+	TeamID string `url:"team_id"`
+	PaginationParams
+}
+
+func (ltia *ListTeamInvitationArgs) Validate() error {
+	if ltia == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if ltia.TeamID == "" {
+		return errors.New("汉化组 ID 不能为空")
+	}
+
+	if err := ltia.PaginationParams.Validate(); err != nil {
+		return errors.New("分页参数无效: " + err.Error())
+	}
+
+	return nil
+}
+
 func (cia *CreateInvitationArgs) Validate() error {
 	if cia == nil {
 		return errors.New("参数不能为空")

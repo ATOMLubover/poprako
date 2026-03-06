@@ -154,7 +154,6 @@ func PatchComic(appState *state.AppState) iris.Handler {
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		comic_id path string true "漫画 ID"
-// @Param 		team_id query string true "汉化组 ID"
 //
 // @Success 	200
 //
@@ -174,16 +173,9 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		teamID := ctx.URLParam("team_id")
-		if teamID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 team_id 查询参数")
-			return
-		}
-
 		if err := comicApplication.DeleteComic(
 			*buildTraceScope(ctx),
 			currentUserID,
-			teamID,
 			comicID,
 		); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

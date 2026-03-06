@@ -100,7 +100,6 @@ type CreateComicResult struct {
 
 type UpdateComicArgs struct {
 	ID          string `json:"id"`
-	TeamID      string `json:"team_id"`
 	Title       string `json:"title"`
 	Author      string `json:"author"`
 	Description string `json:"description"`
@@ -113,10 +112,6 @@ func (uca *UpdateComicArgs) Validate() error {
 
 	if uca.ID == "" {
 		return errors.New("漫画 ID 不能为空")
-	}
-
-	if uca.TeamID == "" {
-		return errors.New("汉化组 ID 不能为空")
 	}
 
 	titleLen := utf8.RuneCountInString(uca.Title)
