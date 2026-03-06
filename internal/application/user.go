@@ -70,6 +70,7 @@ func NewUserApplication(
 	return &userApplication{
 		authConfig:           authConfig,
 		userRepository:       userRepository,
+		memberRepository:     memberRepository,
 		invitationRepository: invitationRepository,
 	}
 }
@@ -137,6 +138,13 @@ func (ua *userApplication) RegisterUser(
 		scope.Logger().Error(fn+": 参数验证失败", zap.Error(err))
 		return nil, err
 	}
+
+	scope.WithFields(
+		zap.String("qq", args.QQ),
+		zap.String("invitation_code", args.InvitationCode),
+	)
+
+	scope.Logger().Debug(fn + ": 被调用")
 
 	// 根据 QQ 和邀请码精确查找邀请，同时支持多邀请场景
 	invitationInfo, err := ua.invitationRepository.GetByInviteeQQAndCode(nil, args.QQ, args.InvitationCode)

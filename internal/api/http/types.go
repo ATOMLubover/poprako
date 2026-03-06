@@ -1,7 +1,7 @@
 package http
 
 type FormatResponse struct {
-	Code    int `json:"code"`
+	Code    int    `json:"code"`
 	Message string `json:"message"`
 	Data    any    `json:"data,omitempty"`
 }
