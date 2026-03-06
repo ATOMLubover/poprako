@@ -2,6 +2,45 @@ basePath: /api/v1
 definitions:
   util.Option-string:
     type: object
+  value.ComicInfo:
+    properties:
+      author:
+        type: string
+      chapter_count:
+        type: integer
+      coverUrl:
+        type: string
+      created_at:
+        type: integer
+      creator_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  value.CreateComicArgs:
+    properties:
+      author:
+        type: string
+      description:
+        type: string
+      team_id:
+        type: string
+      title:
+        type: string
+    type: object
+  value.CreateComicResult:
+    properties:
+      id:
+        type: string
+    type: object
   value.CreateInvitationArgs:
     properties:
       invitee_qq:
@@ -116,6 +155,19 @@ definitions:
       updated_at:
         type: integer
     type: object
+  value.UpdateComicArgs:
+    properties:
+      author:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      team_id:
+        type: string
+      title:
+        type: string
+    type: object
   value.UpdateInvitationArgs:
     properties:
       id:
@@ -206,6 +258,112 @@ paths:
       summary: 用户注册
       tags:
       - auth
+  /comics:
+    get:
+      description: 获取指定汉化组的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - description: 汉化组 ID
+        in: query
+        name: team_id
+        required: true
+        type: string
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.ComicInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取指定汉化组的漫画列表
+      tags:
+      - comic
+    post:
+      consumes:
+      - application/json
+      description: 在指定汉化组中创建漫画
+      parameters:
+      - description: 创建漫画参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.CreateComicArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/value.CreateComicResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建漫画
+      tags:
+      - comic
+  /comics/{comic_id}:
+    delete:
+      description: 删除指定漫画
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: 汉化组 ID
+        in: query
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 删除漫画
+      tags:
+      - comic
+    patch:
+      consumes:
+      - application/json
+      description: 更新指定漫画的信息
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: 更新漫画参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.UpdateComicArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 更新漫画
+      tags:
+      - comic
   /invitations:
     get:
       description: 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
@@ -226,7 +384,7 @@ paths:
             type: array
       security:
       - ApiKeyAuth: []
-      summary: 获取邀请列表
+      summary: 获取邀请列表（已测试）
       tags:
       - invitation
     post:
@@ -249,7 +407,7 @@ paths:
             $ref: '#/definitions/value.InvitationInfo'
       security:
       - ApiKeyAuth: []
-      summary: 创建邀请
+      summary: 创建邀请（已测试）
       tags:
       - invitation
   /invitations/{invitation_id}:
@@ -274,7 +432,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: 更新指定邀请的信息
+      description: 更新指定待处理邀请的信息，无法更新已被使用或已失效的邀请
       parameters:
       - description: 邀请 ID
         in: path
@@ -294,7 +452,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: 更新邀请
+      summary: 更新未被使用的邀请
       tags:
       - invitation
   /members:

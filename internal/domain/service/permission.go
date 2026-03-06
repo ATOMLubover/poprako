@@ -195,3 +195,45 @@ func CheckMemberPermission(
 		return false
 	}
 }
+
+func CheckComicPermission(
+	targetTeamID string,
+	currentUserMemberships []model.MemberProfile,
+	permission model.Permission,
+) bool {
+	var targetMemberInfo *model.MemberProfile
+
+	for i := range currentUserMemberships {
+		if currentUserMemberships[i].TeamID == targetTeamID {
+			targetMemberInfo = &currentUserMemberships[i]
+			break
+		}
+	}
+
+	if targetMemberInfo == nil {
+		zap.L().Warn(
+			"checkComicPermission: 未找到目标汉化组下的成员信息",
+			zap.String("targetTeamID", targetTeamID),
+		)
+		return false
+	}
+
+	switch permission {
+	case model.PermissionComicList:
+		// 所有成员都可以查看漫画列表
+		return true
+
+	case model.PermissionComicCreate,
+		model.PermissionComicUpdate,
+		model.PermissionComicDelete:
+		// 目前仅管理员有权限管理漫画
+		return targetMemberInfo.HasAnyRole(model.RoleAdmin)
+
+	default:
+		zap.L().Warn(
+			"CheckComicPermission: 无法识别的权限",
+			zap.String("permission", string(permission)),
+		)
+		return false
+	}
+}

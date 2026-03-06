@@ -44,6 +44,7 @@ func main() {
 	teamRepository := repository_infra.NewTeamRepository(databaseExecutor)
 	invitationRepository := repository_infra.NewInvitationRepository(databaseExecutor)
 	memberRepository := repository_infra.NewMemberRepository(databaseExecutor)
+	comicRepository := repository_infra.NewComicRepository(databaseExecutor)
 
 	userApplication := application.NewUserApplication(
 		&appConfig.AuthConfig,
@@ -66,6 +67,11 @@ func main() {
 		memberRepository,
 		invitationRepository,
 	)
+	comicApplication := application.NewComicApplication(
+		userRepository,
+		memberRepository,
+		comicRepository,
+	)
 
 	appState := state.NewAppState(
 		appConfig,
@@ -73,6 +79,7 @@ func main() {
 		invitationApplication,
 		teamApplication,
 		memberApplication,
+		comicApplication,
 	)
 
 	zap.L().Info("应用状态初始化完成，HTTP 服务器启动")

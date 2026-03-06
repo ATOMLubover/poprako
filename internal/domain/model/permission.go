@@ -36,3 +36,12 @@ const (
 	PermissionMemberUpdate Permission = PrefixPermissionMember + "update"
 	PermissionMemberDelete Permission = PrefixPermissionMember + "delete"
 )
+
+const (
+	PrefixPermissionComic Permission = "permission:comic:"
+
+	PermissionComicList   Permission = PrefixPermissionComic + "list"
+	PermissionComicCreate Permission = PrefixPermissionComic + "create"
+	PermissionComicUpdate Permission = PrefixPermissionComic + "update"
+	PermissionComicDelete Permission = PrefixPermissionComic + "delete"
+)

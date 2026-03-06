@@ -1,0 +1,22 @@
+CREATE TABLE "chapter_table" (
+    "id"                    TEXT PRIMARY KEY,
+
+    "comic_id"              TEXT NOT NULL REFERENCES "comic_table" ("id") ON DELETE CASCADE,
+
+    "index"                 INTEGER NOT NULL DEFAULT 0,
+    "subtitle"              TEXT NOT NULL,
+    "description"           TEXT,
+    
+    "page_count"            INTEGER NOT NULL DEFAULT 0,
+    "cover_url"             TEXT,
+    
+    "creator_id"            TEXT NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
+
+    "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "deleted_at"            TIMESTAMPTZ
+);
+
+CREATE INDEX "idx_chapter_comic_id"
+    ON "chapter_table" ("comic_id")
+    WHERE "deleted_at" IS NULL;

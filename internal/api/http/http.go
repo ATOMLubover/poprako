@@ -84,6 +84,15 @@ func initialize(appState *state.AppState) *iris.Application {
 		invitationParty.Delete("/{invitation_id}", DeleteInvitation(appState))
 	}
 
+	// 漫画相关路由
+	comicParty := authorizedParty.Party("/comics")
+	{
+		comicParty.Get("/", ListTeamComics(appState))
+		comicParty.Post("/", CreateComic(appState))
+		comicParty.Patch("/{comic_id}", PatchComic(appState))
+		comicParty.Delete("/{comic_id}", DeleteComic(appState))
+	}
+
 	// 初始化 Swagger UI
 	initializeSwagger(app, appState.AppConfig)
 
