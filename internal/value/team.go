@@ -43,13 +43,13 @@ type TeamInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewTeamInfoFromModel(team *model.TeamInfo) *TeamInfo {
-	if team == nil {
+func NewTeamInfoFromModel(team model.TeamInfo) TeamInfo {
+	if team.ID == "" {
 		zap.L().Warn("NewTeamInfoFromModel: team 为空")
-		return nil
+		return TeamInfo{}
 	}
 
-	return &TeamInfo{
+	return TeamInfo{
 		ID:          team.ID,
 		Name:        team.Name,
 		Description: team.Description,

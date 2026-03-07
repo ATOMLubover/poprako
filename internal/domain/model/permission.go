@@ -2,6 +2,8 @@ package model
 
 type Permission string
 
+const InvalidPermission Permission = ""
+
 const (
 	PrefixPermissionInvitation Permission = "permission:invitation:"
 

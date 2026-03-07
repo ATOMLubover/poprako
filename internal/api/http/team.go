@@ -35,7 +35,7 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApplication.CreateTeam(*buildTraceScope(ctx), currentUserID, &args)
+		result, err := teamApplication.CreateTeam(*buildTraceScope(ctx), currentUserID, args)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
@@ -143,7 +143,7 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 
 		args.ID = teamID
 
-		if err := teamApplication.UpdateTeam(*buildTraceScope(ctx), currentUserID, &args); err != nil {
+		if err := teamApplication.UpdateTeam(*buildTraceScope(ctx), currentUserID, args); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
 		}

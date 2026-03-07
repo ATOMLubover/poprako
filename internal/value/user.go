@@ -36,8 +36,8 @@ type LoginUserResult struct {
 	AccessToken string `json:"access_token"`
 }
 
-func NewLoginUserResult(userID string, accessToken string) *LoginUserResult {
-	return &LoginUserResult{
+func NewLoginUserResult(userID string, accessToken string) LoginUserResult {
+	return LoginUserResult{
 		UserID:      userID,
 		AccessToken: accessToken,
 	}
@@ -85,8 +85,8 @@ type RegisterUserResult struct {
 	AccessToken string `json:"access_token"`
 }
 
-func NewRegisterUserResult(userID string, accessToken string) *RegisterUserResult {
-	return &RegisterUserResult{
+func NewRegisterUserResult(userID string, accessToken string) RegisterUserResult {
+	return RegisterUserResult{
 		UserID:      userID,
 		AccessToken: accessToken,
 	}
@@ -104,13 +104,15 @@ type UserInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewUserInfoFromModel(user *model.UserInfo) *UserInfo {
-	if user == nil {
+
+
+func NewUserInfoFromModel(user model.UserInfo) UserInfo {
+	if user.ID == "" {
 		zap.L().Warn("NewUserInfoFromModel: user 为空")
-		return nil
+		return UserInfo{}
 	}
 
-	return &UserInfo{
+	return UserInfo{
 		ID:        user.ID,
 		Name:      user.Name,
 		QQ:        user.QQ,

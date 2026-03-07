@@ -2,8 +2,6 @@ package model
 
 import (
 	"time"
-
-	"labelplus-next-web-be/internal/util"
 )
 
 type MemberCreation struct {
@@ -19,8 +17,8 @@ type MemberCreation struct {
 	ToBeAdmin       bool
 }
 
-func NewMemberCreation(userID, teamID string, roles ...RoleFlag) *MemberCreation {
-	mc := &MemberCreation{
+func NewMemberCreation(userID, teamID string, roles ...RoleFlag) MemberCreation {
+	mc := MemberCreation{
 		UserID: userID,
 		TeamID: teamID,
 	}
@@ -127,67 +125,136 @@ func (mp *MemberProfile) Roles() []RoleFlag {
 	return roles
 }
 
-/* func (mi *MemberInfo) RoleMask() RoleMask {
-	mask := RoleMask(0)
-
-	if mi.AssignedRawProviderAt != nil {
-		mask |= RoleMask(RoleRawProvider)
-	}
-	if mi.AssignedTranslatorAt != nil {
-		mask |= RoleMask(RoleTranslator)
-	}
-	if mi.AssignedProofreaderAt != nil {
-		mask |= RoleMask(RoleProofreader)
-	}
-	if mi.AssignedTypesetterAt != nil {
-		mask |= RoleMask(RoleTypesetter)
-	}
-	if mi.AssignedReviewerAt != nil {
-		mask |= RoleMask(RoleReviewer)
-	}
-	if mi.AssignedUploaderAt != nil {
-		mask |= RoleMask(RoleUploader)
-	}
-	if mi.AssignedAdminAt != nil {
-		mask |= RoleMask(RoleAdmin)
-	}
-
-	return mask
-} */
-
-type MemberUpdate struct {
-	ID string
-
-	AssignRawProvider util.Option[time.Time]
-	AssignTranslator  util.Option[time.Time]
-	AssignProofreader util.Option[time.Time]
-	AssignTypesetter  util.Option[time.Time]
-	AssignReviewer    util.Option[time.Time]
-	AssignUploader    util.Option[time.Time]
-	AssignAdmin       util.Option[time.Time]
+type RoleWithTime struct {
+	Role       RoleFlag
+	AssignedAt time.Time
 }
 
-func NewMemberUpdate(id string, roles ...RoleFlag) *MemberUpdate {
-	mu := &MemberUpdate{
+type MemberInfo struct {
+	ID string
+
+	UserID string
+
+	AssignRawProvider *time.Time
+	AssignTranslator  *time.Time
+	AssignProofreader *time.Time
+	AssignTypesetter  *time.Time
+	AssignReviewer    *time.Time
+	AssignUploader    *time.Time
+	AssignAdmin       *time.Time
+}
+
+func NewMemberInfo(id string, userID string, roles ...RoleWithTime) MemberInfo {
+	memberInfo := MemberInfo{
+		ID:     id,
+		UserID: userID,
+	}
+
+	for _, role := range roles {
+		switch role.Role {
+		case RoleRawProvider:
+			t := role.AssignedAt
+			memberInfo.AssignRawProvider = &t
+		case RoleTranslator:
+			t := role.AssignedAt
+			memberInfo.AssignTranslator = &t
+		case RoleProofreader:
+			t := role.AssignedAt
+			memberInfo.AssignProofreader = &t
+		case RoleTypesetter:
+			t := role.AssignedAt
+			memberInfo.AssignTypesetter = &t
+		case RoleReviewer:
+			t := role.AssignedAt
+			memberInfo.AssignReviewer = &t
+		case RoleUploader:
+			t := role.AssignedAt
+			memberInfo.AssignUploader = &t
+		case RoleAdmin:
+			t := role.AssignedAt
+			memberInfo.AssignAdmin = &t
+		}
+	}
+
+	return memberInfo
+}
+
+func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
+	for _, role := range roles {
+		switch role {
+		case RoleRawProvider:
+			if mi.AssignRawProvider != nil {
+				return true
+			}
+		case RoleTranslator:
+			if mi.AssignTranslator != nil {
+				return true
+			}
+		case RoleProofreader:
+			if mi.AssignProofreader != nil {
+				return true
+			}
+		case RoleTypesetter:
+			if mi.AssignTypesetter != nil {
+				return true
+			}
+		case RoleReviewer:
+			if mi.AssignReviewer != nil {
+				return true
+			}
+		case RoleUploader:
+			if mi.AssignUploader != nil {
+				return true
+			}
+		case RoleAdmin:
+			if mi.AssignAdmin != nil {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+type MemberUpdate struct {
+	ID                string
+	AssignRawProvider *time.Time
+	AssignTranslator  *time.Time
+	AssignProofreader *time.Time
+	AssignTypesetter  *time.Time
+	AssignReviewer    *time.Time
+	AssignUploader    *time.Time
+	AssignAdmin       *time.Time
+}
+
+func NewMemberUpdate(id string, roles ...RoleWithTime) MemberUpdate {
+	mu := MemberUpdate{
 		ID: id,
 	}
 
 	for _, role := range roles {
-		switch role {
+		switch role.Role {
 		case RoleRawProvider:
-			mu.AssignRawProvider = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignRawProvider = &t
 		case RoleTranslator:
-			mu.AssignTranslator = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignTranslator = &t
 		case RoleProofreader:
-			mu.AssignProofreader = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignProofreader = &t
 		case RoleTypesetter:
-			mu.AssignTypesetter = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignTypesetter = &t
 		case RoleReviewer:
-			mu.AssignReviewer = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignReviewer = &t
 		case RoleUploader:
-			mu.AssignUploader = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignUploader = &t
 		case RoleAdmin:
-			mu.AssignAdmin = util.NewSomeOption(time.Now())
+			t := role.AssignedAt
+			mu.AssignAdmin = &t
 		}
 	}
 

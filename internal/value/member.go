@@ -37,26 +37,22 @@ type MemberProfile struct {
 	Roles model.RoleMask `json:"roles"`
 }
 
-func NewMemberProfile(userInfo UserInfo, roles ...model.RoleFlag) *MemberProfile {
-	return &MemberProfile{
+func NewMemberProfile(userInfo UserInfo, roles ...model.RoleFlag) MemberProfile {
+	return MemberProfile{
 		UserInfo: userInfo,
 		Roles:    model.MaskRoles(roles),
 	}
 }
 
-func NewMemberProfileFromModel(mp *model.MemberProfile) *MemberProfile {
-	if mp == nil {
-		zap.L().Warn("NewMemberProfileFromModel: mp 为空")
-		return nil
+func NewMemberProfileFromModel(mp model.MemberProfile) MemberProfile {
+	if mp.UserInfo.ID == "" {
+		zap.L().Warn("NewMemberProfileFromModel: mp 为空或用户信息为空")
+		return MemberProfile{}
 	}
 
-	userInfo := NewUserInfoFromModel(mp.UserInfo)
-	if userInfo == nil {
-		zap.L().Warn("NewMemberProfileFromModel: 用户信息为空")
-		return nil
-	}
+	userInfo := NewUserInfoFromModel(*mp.UserInfo)
 
-	return NewMemberProfile(*userInfo, mp.Roles()...)
+	return NewMemberProfile(userInfo, mp.Roles()...)
 }
 
 type ListTeamMemberArgs struct {
@@ -110,8 +106,8 @@ type CreateMemberResult struct {
 	MemberID string `json:"member_id"`
 }
 
-func NewCreateMemberResult(memberID string) *CreateMemberResult {
-	return &CreateMemberResult{
+func NewCreateMemberResult(memberID string) CreateMemberResult {
+	return CreateMemberResult{
 		MemberID: memberID,
 	}
 }

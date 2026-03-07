@@ -8,7 +8,7 @@ import (
 )
 
 // ListTeamComics godoc
-// @Summary 	获取指定汉化组的漫画列表
+// @Summary 	获取指定汉化组的漫画列表（已测试）
 // @Description 获取指定汉化组的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		comic
@@ -39,7 +39,7 @@ func ListTeamComics(appState *state.AppState) iris.Handler {
 		result, err := comicApplication.ListTeamComics(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
@@ -51,7 +51,7 @@ func ListTeamComics(appState *state.AppState) iris.Handler {
 }
 
 // CreateComic godoc
-// @Summary 	创建漫画
+// @Summary 	创建漫画（已测试）
 // @Description 在指定汉化组中创建漫画
 //
 // @Tags 		comic
@@ -81,7 +81,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 		result, err := comicApplication.CreateComic(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -94,7 +94,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 }
 
 // PatchComic godoc
-// @Summary 	更新漫画
+// @Summary 	更新漫画（已测试）
 // @Description 更新指定漫画的信息
 //
 // @Tags 		comic
@@ -136,7 +136,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 		if err := comicApplication.UpdateComic(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
@@ -147,7 +147,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 }
 
 // DeleteComic godoc
-// @Summary 	删除漫画
+// @Summary 	删除漫画（已测试）
 // @Description 删除指定漫画
 //
 // @Tags 		comic

@@ -65,16 +65,8 @@ type InvitationInfo struct {
 	CreatedAt int64 `json:"created_at"`
 }
 
-func NewInvitationInfo(
-	id string,
-	invitorID string,
-	inviteeQQ string,
-	invitationCode string,
-	pengding bool,
-	roles model.RoleMask,
-	createdAt int64,
-) *InvitationInfo {
-	return &InvitationInfo{
+func NewInvitationInfo(id string, invitorID string, inviteeQQ string, invitationCode string, pengding bool, roles model.RoleMask, createdAt int64) InvitationInfo {
+	return InvitationInfo{
 		ID:             id,
 		InvitorID:      invitorID,
 		InviteeQQ:      inviteeQQ,
@@ -85,13 +77,13 @@ func NewInvitationInfo(
 	}
 }
 
-func NewInvitationInfoFromModel(invitation *model.InvitationInfo) *InvitationInfo {
-	if invitation == nil {
+func NewInvitationInfoFromModel(invitation model.InvitationInfo) InvitationInfo {
+	if invitation.ID == "" {
 		zap.L().Warn("NewInvitationInfoFromModel: invitation 为空")
-		return nil
+		return InvitationInfo{}
 	}
 
-	return &InvitationInfo{
+	return InvitationInfo{
 		ID:        invitation.ID,
 		InvitorID: invitation.InvitorID,
 		InviteeQQ: invitation.InviteeQQ,

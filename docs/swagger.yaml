@@ -163,8 +163,6 @@ definitions:
         type: string
       id:
         type: string
-      team_id:
-        type: string
       title:
         type: string
     type: object
@@ -321,11 +319,6 @@ paths:
       - description: 漫画 ID
         in: path
         name: comic_id
-        required: true
-        type: string
-      - description: 汉化组 ID
-        in: query
-        name: team_id
         required: true
         type: string
       produces:

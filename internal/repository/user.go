@@ -32,7 +32,7 @@ func (r *userRepository) BeginTransaction() intf.Executor {
 func (r *userRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.UserInfo, error) {
 	executor = r.withTransaction(executor)
 
-	executor = executor.Table(entity.UserTable)
+	executor = executor.Table(entity.UserTable).Where("deleted_at IS NULL")
 	for _, opt := range options {
 		executor = opt(executor)
 	}
@@ -51,38 +51,40 @@ func (r *userRepository) List(executor intf.Executor, options ...intf.QueryOptio
 	return result, nil
 }
 
-func (r *userRepository) GetInfoByID(executor intf.Executor, userID string) (*model.UserInfo, error) {
+func (r *userRepository) GetByID(executor intf.Executor, options ...intf.QueryOption) (model.UserInfo, error) {
 	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.UserTable).Where("deleted_at IS NULL")
+	for _, opt := range options {
+		executor = opt(executor)
+	}
 
 	var row entity.UserInfoRow
 
-	if err := executor.
-		Table(entity.UserTable).
-		Where("id = ? AND deleted_at IS NULL", userID).
-		First(&row).Error; err != nil {
-		return nil, err
+	if err := executor.First(&row).Error; err != nil {
+		return model.UserInfo{}, err
 	}
 
 	info := entity.ToUserInfo(row)
 
-	return &info, nil
+	return info, nil
 }
 
-func (r *userRepository) GetCredentialsByQQ(executor intf.Executor, qq string) (*model.UserCredentials, error) {
+func (r *userRepository) GetCredentials(executor intf.Executor, options ...intf.QueryOption) (model.UserCredentials, error) {
 	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.UserTable).Where("deleted_at IS NULL")
+	for _, opt := range options {
+		executor = opt(executor)
+	}
 
 	var row entity.UserCredentialsRow
 
-	if err := executor.
-		Table(entity.UserTable).
-		Where("qq = ? AND deleted_at IS NULL", qq).
-		First(&row).Error; err != nil {
-		return nil, err
+	if err := executor.First(&row).Error; err != nil {
+		return model.UserCredentials{}, err
 	}
 	return model.NewUserCredentials(row.ID, row.PasswordHash), nil
 }
 
-func (r *userRepository) Create(executor intf.Executor, registration *model.UserRegistration) (string, error) {
+func (r *userRepository) Create(executor intf.Executor, registration model.UserRegistration) (string, error) {
 	executor = r.withTransaction(executor)
 
 	row := entity.UserInsertRow{

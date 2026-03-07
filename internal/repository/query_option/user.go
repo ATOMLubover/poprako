@@ -15,7 +15,7 @@ func UserQuery() userQuery {
 // FilterByQQ 精确匹配用户 QQ 号
 func (userQuery) FilterByQQ(qq string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
-		return executor.Where("qq = ?", qq)
+		return executor.Where("user_table.qq = ?", qq)
 	}
 }
 
@@ -24,6 +24,6 @@ func (userQuery) FilterByFuzzyName(fuzzyName string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
 		pattern := fmt.Sprintf("%%%s%%", fuzzyName) // 在 name 前后添加 % 以实现模糊匹配
 
-		return executor.Where("name LIKE ?", pattern)
+		return executor.Where("user_table.name LIKE ?", pattern)
 	}
 }

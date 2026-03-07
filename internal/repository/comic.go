@@ -31,7 +31,7 @@ func (r *comicRepository) BeginTransaction() intf.Executor {
 	return r.executor.Begin()
 }
 
-func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]*model.ComicInfo, error) {
+func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
 
 	executor = executor.Table(entity.ComicTable).Where("deleted_at IS NULL")
@@ -45,27 +45,27 @@ func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOpti
 		return nil, err
 	}
 
-	result := make([]*model.ComicInfo, len(rows))
+	result := make([]model.ComicInfo, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToComicInfo(row)
+		result[i] = *entity.ToComicInfo(row)
 	}
 
 	return result, nil
 }
 
-func (r *comicRepository) GetByID(executor intf.Executor, comicID string) (*model.ComicInfo, error) {
+func (r *comicRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
-
-	var row entity.ComicInfoRow
-	if err := executor.
-		Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", comicID).
-		First(&row).Error; err != nil {
-		return nil, err
+	executor = executor.Table(entity.ComicTable).Where("deleted_at IS NULL")
+	for _, opt := range options {
+		executor = opt(executor)
 	}
 
-	info := entity.ToComicInfo(row)
-	return info, nil
+	var row entity.ComicInfoRow
+	if err := executor.First(&row).Error; err != nil {
+		return model.ComicInfo{}, err
+	}
+
+	return *entity.ToComicInfo(row), nil
 }
 
 func (r *comicRepository) LockByTeamID(executor intf.Executor, teamID string) error {
@@ -80,21 +80,22 @@ func (r *comicRepository) LockByTeamID(executor intf.Executor, teamID string) er
 		Pluck("id", &lockedIDs).Error
 }
 
-func (r *comicRepository) CountByTeamID(executor intf.Executor, teamID string) (int64, error) {
+func (r *comicRepository) Count(executor intf.Executor, options ...intf.QueryOption) (int64, error) {
 	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.ComicTable).Where("deleted_at IS NULL")
+	for _, opt := range options {
+		executor = opt(executor)
+	}
 
 	var count int64
-	if err := executor.
-		Table(entity.ComicTable).
-		Where("team_id = ? AND deleted_at IS NULL", teamID).
-		Count(&count).Error; err != nil {
+	if err := executor.Count(&count).Error; err != nil {
 		return 0, err
 	}
 
 	return count, nil
 }
 
-func (r *comicRepository) Create(executor intf.Executor, creation *model.ComicCreation) (string, error) {
+func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
 	row := entity.ComicInsertRow{
@@ -115,7 +116,7 @@ func (r *comicRepository) Create(executor intf.Executor, creation *model.ComicCr
 	return row.ID, nil
 }
 
-func (r *comicRepository) Update(executor intf.Executor, update *model.ComicUpdate) error {
+func (r *comicRepository) Update(executor intf.Executor, update model.ComicUpdate) error {
 	executor = r.withTransaction(executor)
 
 	updates := map[string]any{}

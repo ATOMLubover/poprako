@@ -23,8 +23,8 @@ type UserCredentials struct {
 	PasswordHash string
 }
 
-func NewUserCredentials(userID string, passwordHash string) *UserCredentials {
-	return &UserCredentials{
+func NewUserCredentials(userID string, passwordHash string) UserCredentials {
+	return UserCredentials{
 		UserID:       userID,
 		PasswordHash: passwordHash,
 	}
@@ -43,8 +43,8 @@ func NewUserRegistration(
 	qq string,
 	passwordHash string,
 	roles ...RoleFlag,
-) *UserRegistration {
-	registration := &UserRegistration{
+) UserRegistration {
+	registration := UserRegistration{
 		Name:         name,
 		QQ:           qq,
 		PasswordHash: passwordHash,

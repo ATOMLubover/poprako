@@ -24,8 +24,8 @@ type ComicInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewComicInfoFromModel(comicInfo *model.ComicInfo) *ComicInfo {
-	return &ComicInfo{
+func NewComicInfoFromModel(comicInfo model.ComicInfo) ComicInfo {
+	return ComicInfo{
 		ID:           comicInfo.ID,
 		Index:        comicInfo.Index,
 		Title:        comicInfo.Title,
@@ -96,6 +96,12 @@ func (cca *CreateComicArgs) Validate() error {
 
 type CreateComicResult struct {
 	ID string `json:"id"`
+}
+
+func NewCreateComicResultFromModel(comicID string) CreateComicResult {
+	return CreateComicResult{
+		ID: comicID,
+	}
 }
 
 type UpdateComicArgs struct {

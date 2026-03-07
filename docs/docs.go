@@ -193,13 +193,6 @@ const docTemplate = `{
                         "name": "comic_id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "query",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1142,9 +1135,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "team_id": {
                     "type": "string"
                 },
                 "title": {

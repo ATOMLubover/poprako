@@ -40,7 +40,7 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 		result, err := invitationApplication.ListInvitations(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
@@ -83,7 +83,7 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 		result, err := invitationApplication.CreateInvitation(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -135,7 +135,7 @@ func PatchInvitation(appState *state.AppState) iris.Handler {
 		if err := invitationApplication.UpdateInvitation(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return

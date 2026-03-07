@@ -48,35 +48,22 @@ func (r *invitationRepository) List(executor intf.Executor, options ...intf.Quer
 	return result, nil
 }
 
-func (r *invitationRepository) GetByID(executor intf.Executor, invitationID string) (*model.InvitationInfo, error) {
+func (r *invitationRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.InvitationInfo, error) {
 	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.InvitationTable)
+	for _, opt := range options {
+		executor = opt(executor)
+	}
 
 	var row entity.InvitationInfoRow
-	if err := executor.
-		Table(entity.InvitationTable).
-		Where("id = ?", invitationID).
-		First(&row).Error; err != nil {
-		return nil, err
+	if err := executor.First(&row).Error; err != nil {
+		return model.InvitationInfo{}, err
 	}
-	info := entity.ToInvitationInfo(row)
-	return &info, nil
+
+	return entity.ToInvitationInfo(row), nil
 }
 
-func (r *invitationRepository) GetByInviteeQQAndCode(executor intf.Executor, inviteeQQ string, code string) (*model.InvitationInfo, error) {
-	executor = r.withTransaction(executor)
-
-	var row entity.InvitationInfoRow
-	if err := executor.
-		Table(entity.InvitationTable).
-		Where("invitee_qq = ? AND invitation_code = ? AND pending = TRUE", inviteeQQ, code).
-		First(&row).Error; err != nil {
-		return nil, err
-	}
-	info := entity.ToInvitationInfo(row)
-	return &info, nil
-}
-
-func (r *invitationRepository) Create(executor intf.Executor, creation *model.InvitationCreation) (string, error) {
+func (r *invitationRepository) Create(executor intf.Executor, creation model.InvitationCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
 	row := entity.InvitationInsertRow{
@@ -101,7 +88,7 @@ func (r *invitationRepository) Create(executor intf.Executor, creation *model.In
 	return row.ID, nil
 }
 
-func (r *invitationRepository) Update(executor intf.Executor, update *model.InvitationUpdate) error {
+func (r *invitationRepository) Update(executor intf.Executor, update model.InvitationUpdate) error {
 	executor = r.withTransaction(executor)
 
 	return executor.
@@ -127,7 +114,7 @@ func (r *invitationRepository) Invalidate(executor intf.Executor, invitationID s
 		Update("pending", false).Error
 }
 
-func (r *invitationRepository) DeleteByID(executor intf.Executor, invitationID string) error {
+func (r *invitationRepository) Delete(executor intf.Executor, invitationID string) error {
 	executor = r.withTransaction(executor)
 
 	return executor.

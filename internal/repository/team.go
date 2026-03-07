@@ -28,7 +28,7 @@ func (r *teamRepository) BeginTransaction() intf.Executor {
 	return r.executor.Begin()
 }
 
-func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]*model.TeamInfo, error) {
+func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.TeamInfo, error) {
 	executor = r.withTransaction(executor)
 
 	executor = executor.Table(entity.TeamTable).Where("deleted_at IS NULL")
@@ -42,15 +42,15 @@ func (r *teamRepository) List(executor intf.Executor, options ...intf.QueryOptio
 		return nil, err
 	}
 
-	result := make([]*model.TeamInfo, len(rows))
+	result := make([]model.TeamInfo, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToTeamInfo(row)
+		result[i] = *entity.ToTeamInfo(row)
 	}
 
 	return result, nil
 }
 
-func (r *teamRepository) Create(executor intf.Executor, creation *model.TeamCreation) (string, error) {
+func (r *teamRepository) Create(executor intf.Executor, creation model.TeamCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
 	row := entity.TeamInsertRow{
@@ -64,7 +64,7 @@ func (r *teamRepository) Create(executor intf.Executor, creation *model.TeamCrea
 	return row.ID, nil
 }
 
-func (r *teamRepository) Update(executor intf.Executor, update *model.TeamUpdate) error {
+func (r *teamRepository) Update(executor intf.Executor, update model.TeamUpdate) error {
 	executor = r.withTransaction(executor)
 
 	updates := map[string]any{}
@@ -86,7 +86,7 @@ func (r *teamRepository) Update(executor intf.Executor, update *model.TeamUpdate
 		Updates(updates).Error
 }
 
-func (r *teamRepository) DeleteByID(executor intf.Executor, teamID string) error {
+func (r *teamRepository) Delete(executor intf.Executor, teamID string) error {
 	executor = r.withTransaction(executor)
 
 	return executor.

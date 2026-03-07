@@ -28,28 +28,45 @@ func (r *memberRepository) BeginTransaction() intf.Executor {
 	return r.executor.Begin()
 }
 
-func (r *memberRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberProfile, error) {
+func (r *memberRepository) ListProfiles(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberProfile, error) {
 	executor = r.withTransaction(executor)
 
-	executor = executor.Table(entity.MemberTable).
+	executor = executor.Table("member_table").
+		Select(`member_table.*,
+			user_table.name           AS user_name,
+			user_table.qq             AS user_qq,
+			user_table.avatar_url     AS user_avatar_url,
+			user_table.is_super_admin AS user_is_super_admin,
+			user_table.created_at     AS user_created_at,
+			user_table.updated_at     AS user_updated_at`).
+		Joins("LEFT JOIN user_table ON user_table.id = member_table.user_id AND user_table.deleted_at IS NULL").
 		Where("member_table.deleted_at IS NULL")
 	for _, opt := range options {
 		executor = opt(executor)
 	}
 
-	var rows []entity.MemberProfileRow
+	var rows []entity.MemberWithUserRow
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
 	result := make([]model.MemberProfile, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToMemberProfile(row, nil)
+		userInfo := &model.UserInfo{
+			ID:           row.UserID,
+			Name:         row.UserName,
+			QQ:           row.UserQQ,
+			AvatarURL:    row.UserAvatarURL,
+			IsSuperAdmin: row.UserIsSuperAdmin,
+			CreatedAt:    row.UserCreatedAt,
+			UpdatedAt:    row.UserUpdatedAt,
+		}
+		result[i] = entity.ToMemberProfile(row.MemberProfileRow, userInfo)
 	}
 	return result, nil
 }
 
-func (r *memberRepository) ListWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberProfile, error) {
+func (r *memberRepository) ListProfilesWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberProfile, error) {
 	executor = r.withTransaction(executor)
 
 	executor = executor.Table("member_table").
@@ -106,23 +123,47 @@ func (r *memberRepository) Exist(executor intf.Executor, options ...intf.QueryOp
 	return count > 0, nil
 }
 
-func (r *memberRepository) GetByID(executor intf.Executor, memberID string) (*model.MemberProfile, error) {
+func (r *memberRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.MemberInfo, error) {
 	executor = r.withTransaction(executor)
-
-	var row entity.MemberProfileRow
-	if err := executor.
-		Table(entity.MemberTable).
-		Where("id = ? AND deleted_at IS NULL", memberID).
-		First(&row).Error; err != nil {
-		return nil, err
+	executor = executor.Table(entity.MemberTable).Where("member_table.deleted_at IS NULL")
+	for _, opt := range options {
+		executor = opt(executor)
 	}
 
-	profile := entity.ToMemberProfile(row, nil)
+	var row entity.MemberProfileRow
+	if err := executor.First(&row).Error; err != nil {
+		return model.MemberInfo{}, err
+	}
 
-	return &profile, nil
+	return model.MemberInfo{
+		ID:                row.ID,
+		UserID:            row.UserID,
+		AssignRawProvider: row.AssignedRawProviderAt,
+		AssignTranslator:  row.AssignedTranslatorAt,
+		AssignProofreader: row.AssignedProofreaderAt,
+		AssignTypesetter:  row.AssignedTypesetterAt,
+		AssignReviewer:    row.AssignedReviewerAt,
+		AssignUploader:    row.AssignedUploaderAt,
+		AssignAdmin:       row.AssignedAdminAt,
+	}, nil
 }
 
-func (r *memberRepository) Create(executor intf.Executor, creation *model.MemberCreation) (string, error) {
+func (r *memberRepository) GetProfile(executor intf.Executor, options ...intf.QueryOption) (model.MemberProfile, error) {
+	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.MemberTable).Where("member_table.deleted_at IS NULL")
+	for _, opt := range options {
+		executor = opt(executor)
+	}
+
+	var row entity.MemberProfileRow
+	if err := executor.First(&row).Error; err != nil {
+		return model.MemberProfile{}, err
+	}
+
+	return entity.ToMemberProfile(row, nil), nil
+}
+
+func (r *memberRepository) Create(executor intf.Executor, creation model.MemberCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
 	now := time.Now()
@@ -162,38 +203,31 @@ func (r *memberRepository) Create(executor intf.Executor, creation *model.Member
 	return row.ID, nil
 }
 
-func (r *memberRepository) Update(executor intf.Executor, update *model.MemberUpdate) error {
+func (r *memberRepository) Update(executor intf.Executor, update model.MemberUpdate) error {
 	executor = r.withTransaction(executor)
 
 	updates := map[string]any{}
 
-	if update.AssignRawProvider.State() == util.OptionSome {
-		v := update.AssignRawProvider.Unwrap()
-		updates["assigned_raw_provider_at"] = &v
+	if update.AssignRawProvider != nil {
+		updates["assigned_raw_provider_at"] = update.AssignRawProvider
 	}
-	if update.AssignTranslator.State() == util.OptionSome {
-		v := update.AssignTranslator.Unwrap()
-		updates["assigned_translator_at"] = &v
+	if update.AssignTranslator != nil {
+		updates["assigned_translator_at"] = update.AssignTranslator
 	}
-	if update.AssignProofreader.State() == util.OptionSome {
-		v := update.AssignProofreader.Unwrap()
-		updates["assigned_proofreader_at"] = &v
+	if update.AssignProofreader != nil {
+		updates["assigned_proofreader_at"] = update.AssignProofreader
 	}
-	if update.AssignTypesetter.State() == util.OptionSome {
-		v := update.AssignTypesetter.Unwrap()
-		updates["assigned_typesetter_at"] = &v
+	if update.AssignTypesetter != nil {
+		updates["assigned_typesetter_at"] = update.AssignTypesetter
 	}
-	if update.AssignReviewer.State() == util.OptionSome {
-		v := update.AssignReviewer.Unwrap()
-		updates["assigned_reviewer_at"] = &v
+	if update.AssignReviewer != nil {
+		updates["assigned_reviewer_at"] = update.AssignReviewer
 	}
-	if update.AssignUploader.State() == util.OptionSome {
-		v := update.AssignUploader.Unwrap()
-		updates["assigned_uploader_at"] = &v
+	if update.AssignUploader != nil {
+		updates["assigned_uploader_at"] = update.AssignUploader
 	}
-	if update.AssignAdmin.State() == util.OptionSome {
-		v := update.AssignAdmin.Unwrap()
-		updates["assigned_admin_at"] = &v
+	if update.AssignAdmin != nil {
+		updates["assigned_admin_at"] = update.AssignAdmin
 	}
 
 	if len(updates) == 0 {
@@ -206,7 +240,7 @@ func (r *memberRepository) Update(executor intf.Executor, update *model.MemberUp
 		Updates(updates).Error
 }
 
-func (r *memberRepository) DeleteByID(executor intf.Executor, memberID string) error {
+func (r *memberRepository) Delete(executor intf.Executor, memberID string) error {
 	executor = r.withTransaction(executor)
 
 	return executor.

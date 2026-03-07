@@ -76,7 +76,7 @@ func ListUsers(appState *state.AppState) iris.Handler {
 		result, err := userApplication.ListUsers(
 			*buildTraceScope(ctx),
 			currentUserID,
-			&args,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())

@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type RoleFlag int32
 
 type RoleMask int32
@@ -49,6 +51,21 @@ func UnmaskRoles(mask RoleMask) []RoleFlag {
 	}
 	if mask&RoleMask(RoleAdmin) != 0 {
 		roles = append(roles, RoleAdmin)
+	}
+
+	return roles
+}
+
+func UnmaskRolesWithTime(mask RoleMask) []RoleWithTime {
+	flags := UnmaskRoles(mask)
+	roles := make([]RoleWithTime, len(flags))
+	now := time.Now()
+
+	for i, flag := range flags {
+		roles[i] = RoleWithTime{
+			Role:       flag,
+			AssignedAt: now,
+		}
 	}
 
 	return roles
