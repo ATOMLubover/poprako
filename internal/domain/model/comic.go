@@ -81,16 +81,16 @@ func NewComicCreation(
 
 type ComicUpdate struct {
 	ID          string
-	Title       *string
-	Author      *string
-	Description *string
+	Title       string
+	Author      string
+	Description string
 }
 
 func NewComicUpdate(
 	id string,
-	title *string,
-	author *string,
-	description *string,
+	title string,
+	author string,
+	description string,
 ) ComicUpdate {
 	return ComicUpdate{
 		ID:          id,

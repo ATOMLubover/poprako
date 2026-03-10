@@ -1,9 +1,11 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"labelplus-next-web-be/internal/domain/model"
+	"labelplus-next-web-be/internal/util"
 
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
@@ -79,4 +81,8 @@ func HashPassword(plainPassword string) (string, error) {
 	}
 
 	return string(hash), nil
+}
+
+func GenerateUserAvatarOSSKey(userID string) string {
+	return strings.Join([]string{"user_avatar", userID, util.GenerateUUID()}, "/")
 }

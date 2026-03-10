@@ -87,6 +87,97 @@ func ListUsers(appState *state.AppState) iris.Handler {
 	}
 }
 
+// ReserveUserAvatar godoc
+// @Summary 	预留用户头像上传
+// @Description 为指定用户头像生成预签名 PUT URL，并预留 avatar_oss_key
+//
+// @Tags 		user
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		user_id path string true "用户 ID"
+//
+// @Success 	200 {object} value.ReserveUserAvatarResult
+//
+// @Router 		/users/{user_id}/avatar [post]
+func ReserveUserAvatar(appState *state.AppState) iris.Handler {
+	userApplication := appState.UserApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		targetUserID := ctx.Params().Get("user_id")
+		if targetUserID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 user_id 路径参数")
+			return
+		}
+
+		result, err := userApplication.ReserveUserAvatar(
+			*buildTraceScope(ctx),
+			currentUserID,
+			targetUserID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "预留用户头像成功", result)
+	}
+}
+
+// UpdateUserByID godoc
+// @Summary 	更新用户
+// @Description 更新指定用户的信息
+//
+// @Tags 		user
+// @Security 	ApiKeyAuth
+// @Accept 		json
+// @Produce 	json
+// @Param 		user_id path string true "用户 ID"
+// @Param 		body body value.UpdateUserArgs true "更新用户参数"
+//
+// @Success 	200
+//
+// @Router 		/users/{user_id} [put]
+func UpdateUserByID(appState *state.AppState) iris.Handler {
+	userApplication := appState.UserApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		targetUserID := ctx.Params().Get("user_id")
+		if targetUserID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 user_id 路径参数")
+			return
+		}
+
+		var args value.UpdateUserArgs
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		args.UserID = targetUserID
+
+		if err := userApplication.UpdateUser(
+			*buildTraceScope(ctx),
+			currentUserID,
+			args,
+		); err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "更新用户成功", nil)
+	}
+}
+
 // RemoveUserByID godoc
 // @Summary 	删除用户
 // @Description 根据用户 ID 删除用户
@@ -114,7 +205,7 @@ func RemoveUserByID(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := userApplication.RemoveUserByID(*buildTraceScope(ctx), currentUserID, targetUserID); err != nil {
+		if err := userApplication.RemoveUser(*buildTraceScope(ctx), currentUserID, targetUserID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

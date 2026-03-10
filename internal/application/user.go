@@ -5,6 +5,7 @@ import (
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/config"
+	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
@@ -34,7 +35,17 @@ type UserApplication interface {
 		currentUserID string,
 		args value.ListUserArgs,
 	) ([]value.UserInfo, error)
-	RemoveUserByID(
+	ReserveUserAvatar(
+		scope util.TraceScope,
+		currentUserID string,
+		targetUserID string,
+	) (value.ReserveUserAvatarResult, error)
+	UpdateUser(
+		scope util.TraceScope,
+		currentUserID string,
+		args value.UpdateUserArgs,
+	) error
+	RemoveUser(
 		scope util.TraceScope,
 		currentUserID string,
 		targetUserID string,
@@ -43,6 +54,7 @@ type UserApplication interface {
 
 type userApplication struct {
 	authConfig *config.AuthConfig
+	ossClient   external.OSSClient
 
 	userRepository       repository.UserRepository
 	memberRepository     repository.MemberRepository
@@ -51,17 +63,20 @@ type userApplication struct {
 
 func NewUserApplication(
 	authConfig *config.AuthConfig,
+	ossClient external.OSSClient,
 	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
 	invitationRepository repository.InvitationRepository,
 ) UserApplication {
 	if authConfig == nil ||
+		ossClient == nil ||
 		userRepository == nil ||
 		memberRepository == nil ||
 		invitationRepository == nil {
 		zap.L().Panic(
 			"NewUserApplication: 依赖项不能为空",
 			zap.Bool("authConfig_nil", authConfig == nil),
+			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("invitationRepository_nil", invitationRepository == nil),
@@ -70,6 +85,7 @@ func NewUserApplication(
 
 	return &userApplication{
 		authConfig:           authConfig,
+		ossClient:            ossClient,
 		userRepository:       userRepository,
 		memberRepository:     memberRepository,
 		invitationRepository: invitationRepository,
@@ -339,7 +355,103 @@ func (ua *userApplication) ListUsers(
 	return result, nil
 }
 
-func (ua *userApplication) RemoveUserByID(
+func (ua *userApplication) ReserveUserAvatar(
+	scope util.TraceScope,
+	currentUserID string,
+	targetUserID string,
+) (value.ReserveUserAvatarResult, error) {
+	const fn = "UserApplication.ReserveUserAvatar"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+			zap.String("target_user_id", targetUserID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if targetUserID == "" {
+		return value.ReserveUserAvatarResult{}, errors.New("用户 ID 不能为空")
+	}
+
+	if !model.PermUserUpdate().Check(
+		currentUserID,
+		targetUserID,
+		adapter.HandleLoadUserInfo(ua.userRepository),
+	) {
+		scope.Logger().Warn(fn + ": 权限检查不通过")
+		return value.ReserveUserAvatarResult{}, errors.New("没有权限预留用户头像")
+	}
+
+	avatarOSSKey := service.GenerateUserAvatarOSSKey(targetUserID)
+
+	putURL, err := ua.ossClient.GeneratePutPresignedURL(avatarOSSKey)
+	if err != nil {
+		scope.Logger().Error(fn+": 生成预签名 URL 失败", zap.Error(err))
+		return value.ReserveUserAvatarResult{}, errors.New("预留用户头像失败")
+	}
+
+	if err := ua.userRepository.ReserveAvatar(nil, targetUserID, avatarOSSKey); err != nil {
+		scope.Logger().Error(fn+": 写入头像 OSS Key 失败", zap.Error(err))
+		return value.ReserveUserAvatarResult{}, errors.New("预留用户头像失败")
+	}
+
+	return value.NewReserveUserAvatarResult(avatarOSSKey, putURL), nil
+}
+
+func (ua *userApplication) UpdateUser(
+	scope util.TraceScope,
+	currentUserID string,
+	args value.UpdateUserArgs,
+) error {
+	const fn = "UserApplication.UpdateUser"
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return err
+	}
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+			zap.String("target_user_id", args.UserID),
+			zap.Any("args", args),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if !model.PermUserUpdate().Check(
+		currentUserID,
+		args.UserID,
+		adapter.HandleLoadUserInfo(ua.userRepository),
+	) {
+		scope.Logger().Warn(fn + ": 权限检查不通过")
+		return errors.New("没有权限更新用户")
+	}
+
+	hashedPassword, err := service.HashPassword(args.Password)
+	if err != nil {
+		scope.Logger().Error(fn+": 密码哈希失败", zap.Error(err))
+		return errors.New("更新用户失败")
+	}
+
+	userUpdate := model.NewUserUpdate(
+		args.UserID,
+		args.Name,
+		args.QQ,
+		hashedPassword,
+		args.IsAvatarUploaded,
+	)
+
+	if err := ua.userRepository.Update(nil, userUpdate); err != nil {
+		scope.Logger().Error(fn+": 更新用户失败", zap.Error(err))
+		return errors.New("更新用户失败")
+	}
+
+	return nil
+}
+
+func (ua *userApplication) RemoveUser(
 	scope util.TraceScope,
 	currentUserID string,
 	targetUserID string,

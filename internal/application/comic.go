@@ -245,9 +245,9 @@ func (ca *comicApplication) UpdateComic(
 	// 构建更新对象
 	comicUpdate := model.NewComicUpdate(
 		args.ID,
-		&args.Title,
-		&args.Author,
-		&args.Description,
+		args.Title,
+		args.Author,
+		args.Description,
 	)
 
 	if err := ca.comicRepository.Update(nil, comicUpdate); err != nil {

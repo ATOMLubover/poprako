@@ -881,6 +881,81 @@ const docTemplate = `{
                         "description": "OK"
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "更新指定用户的信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "更新用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新用户参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.UpdateUserArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/avatar": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "为指定用户头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "预留用户头像上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/value.ReserveUserAvatarResult"
+                        }
+                    }
+                }
             }
         }
     },
@@ -913,6 +988,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "index": {
+                    "type": "integer"
+                },
+                "last_active_at": {
                     "type": "integer"
                 },
                 "title": {
@@ -1054,7 +1132,7 @@ const docTemplate = `{
         "value.MemberProfile": {
             "type": "object",
             "properties": {
-                "avatar_url": {
+                "avatar_oss_key": {
                     "type": "string"
                 },
                 "created_at": {
@@ -1062,6 +1140,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_avatar_uploaded": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
@@ -1101,6 +1182,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.ReserveUserAvatarResult": {
+            "type": "object",
+            "properties": {
+                "avatar_oss_key": {
+                    "type": "string"
+                },
+                "put_url": {
                     "type": "string"
                 }
             }
@@ -1181,10 +1273,30 @@ const docTemplate = `{
                 }
             }
         },
+        "value.UpdateUserArgs": {
+            "type": "object",
+            "properties": {
+                "is_avatar_uploaded": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "qq": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "value.UserInfo": {
             "type": "object",
             "properties": {
-                "avatar_url": {
+                "avatar_oss_key": {
                     "type": "string"
                 },
                 "created_at": {
@@ -1192,6 +1304,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_avatar_uploaded": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

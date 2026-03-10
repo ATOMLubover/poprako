@@ -5,7 +5,6 @@ import (
 	"unicode/utf8"
 
 	"labelplus-next-web-be/internal/domain/model"
-	"labelplus-next-web-be/internal/util"
 
 	"go.uber.org/zap"
 )
@@ -61,8 +60,8 @@ func NewTeamInfoFromModel(team model.TeamInfo) TeamInfo {
 type UpdateTeamArgs struct {
 	ID string
 
-	Name        util.Option[string] `json:"name"`
-	Description util.Option[string] `json:"description"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 func (uta *UpdateTeamArgs) Validate() error {
@@ -70,19 +69,18 @@ func (uta *UpdateTeamArgs) Validate() error {
 		return errors.New("参数不能为空")
 	}
 
-	if uta.Name.State() == util.OptionSome {
-		nameLen := utf8.RuneCountInString(uta.Name.Unwrap())
-		if nameLen <= 0 || nameLen > 20 {
-			return errors.New("汉化组名称长度必须在 1~20 字符之间")
-		}
+	if uta.ID == "" {
+		return errors.New("汉化组 ID 不能为空")
 	}
 
-	if uta.Description.State() == util.OptionSome {
-		descriptionLen := utf8.RuneCountInString(uta.Description.Unwrap())
+	nameLen := utf8.RuneCountInString(uta.Name)
+	if nameLen <= 0 || nameLen > 20 {
+		return errors.New("汉化组名称长度必须在 1~20 字符之间")
+	}
 
-		if descriptionLen > 100 {
-			return errors.New("汉化组描述长度不能超过 100 字符")
-		}
+	descriptionLen := utf8.RuneCountInString(uta.Description)
+	if descriptionLen > 100 {
+		return errors.New("汉化组描述长度不能超过 100 字符")
 	}
 
 	return nil

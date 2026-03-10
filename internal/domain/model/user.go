@@ -9,7 +9,8 @@ type UserInfo struct {
 
 	Name      string
 	QQ        string
-	AvatarURL string
+	AvatarOSSKey string
+	IsAvatarUploaded bool
 
 	IsSuperAdmin bool
 
@@ -55,19 +56,25 @@ func NewUserRegistration(
 }
 
 type UserUpdate struct {
+	ID           string
 	Name         string
 	QQ           string
 	PasswordHash string
+	IsAvatarUploaded bool
 }
 
 func NewUserUpdate(
+	id string,
 	name string,
 	qq string,
 	passwordHash string,
+	isAvatarUploaded bool,
 ) UserUpdate {
 	return UserUpdate{
-		Name:         name,
-		QQ:           qq,
-		PasswordHash: passwordHash,
+		ID:               id,
+		Name:             name,
+		QQ:               qq,
+		PasswordHash:     passwordHash,
+		IsAvatarUploaded: isAvatarUploaded,
 	}
 }

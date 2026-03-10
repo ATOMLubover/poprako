@@ -108,7 +108,7 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/invitations/{invitation_id} [patch]
+// @Router 		/invitations/{invitation_id} [put]
 func PatchInvitation(appState *state.AppState) iris.Handler {
 	invitationApplication := appState.InvitationApplication
 
@@ -173,7 +173,7 @@ func DeleteInvitation(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := invitationApplication.DeleteInvitation(*buildTraceScope(ctx), currentUserID, invitationID); err != nil {
+		if err := invitationApplication.RemoveInvitation(*buildTraceScope(ctx), currentUserID, invitationID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

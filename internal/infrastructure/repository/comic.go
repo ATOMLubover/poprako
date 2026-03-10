@@ -119,25 +119,14 @@ func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCre
 func (r *comicRepository) Update(executor intf.Executor, update model.ComicUpdate) error {
 	executor = r.withTransaction(executor)
 
-	updates := map[string]any{}
-	if update.Title != nil {
-		updates["title"] = *update.Title
-	}
-	if update.Author != nil {
-		updates["author"] = *update.Author
-	}
-	if update.Description != nil {
-		updates["description"] = *update.Description
-	}
-
-	if len(updates) == 0 {
-		return nil
-	}
-
 	return executor.
 		Table(entity.ComicTable).
 		Where("id = ? AND deleted_at IS NULL", update.ID).
-		Updates(updates).Error
+		Updates(map[string]any{
+			"title":       update.Title,
+			"author":      update.Author,
+			"description": update.Description,
+		}).Error
 }
 
 func (r *comicRepository) Delete(executor intf.Executor, comicID string) error {

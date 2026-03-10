@@ -5,7 +5,6 @@ import (
 	"unicode/utf8"
 
 	"labelplus-next-web-be/internal/domain/model"
-	"labelplus-next-web-be/internal/util"
 
 	"go.uber.org/zap"
 )
@@ -98,7 +97,8 @@ type UserInfo struct {
 	Name string `json:"name"`
 	QQ   string `json:"qq"`
 
-	AvatarURL string `json:"avatar_url"`
+	AvatarOSSKey     string `json:"avatar_oss_key"`
+	IsAvatarUploaded bool   `json:"is_avatar_uploaded"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
@@ -111,12 +111,25 @@ func NewUserInfoFromModel(user model.UserInfo) UserInfo {
 	}
 
 	return UserInfo{
-		ID:        user.ID,
-		Name:      user.Name,
-		QQ:        user.QQ,
-		AvatarURL: user.AvatarURL,
-		CreatedAt: user.CreatedAt.UnixMilli(),
-		UpdatedAt: user.UpdatedAt.UnixMilli(),
+		ID:               user.ID,
+		Name:             user.Name,
+		QQ:               user.QQ,
+		AvatarOSSKey:     user.AvatarOSSKey,
+		IsAvatarUploaded: user.IsAvatarUploaded,
+		CreatedAt:        user.CreatedAt.UnixMilli(),
+		UpdatedAt:        user.UpdatedAt.UnixMilli(),
+	}
+}
+
+type ReserveUserAvatarResult struct {
+	AvatarOSSKey string `json:"avatar_oss_key"`
+	PutURL       string `json:"put_url"`
+}
+
+func NewReserveUserAvatarResult(avatarOSSKey string, putURL string) ReserveUserAvatarResult {
+	return ReserveUserAvatarResult{
+		AvatarOSSKey: avatarOSSKey,
+		PutURL:       putURL,
 	}
 }
 
@@ -146,9 +159,10 @@ func (lua *ListUserArgs) Validate() error {
 type UpdateUserArgs struct {
 	UserID string `json:"user_id"`
 
-	Name     util.Option[string] `json:"name"`
-	QQ       util.Option[string] `json:"qq"`
-	Password util.Option[string] `json:"password"`
+	Name             string `json:"name"`
+	QQ               string `json:"qq"`
+	Password         string `json:"password"`
+	IsAvatarUploaded bool   `json:"is_avatar_uploaded"`
 }
 
 func (uua *UpdateUserArgs) Validate() error {
@@ -156,36 +170,38 @@ func (uua *UpdateUserArgs) Validate() error {
 		return errors.New("参数不能为空")
 	}
 
-	if uua.Name.State() == util.OptionSome {
-		nameLen := utf8.RuneCountInString(uua.Name.Unwrap())
-
-		if nameLen < 2 || nameLen > 20 {
-			return errors.New("名字长度必须在 2 到 20 个字之间")
-		}
+	if uua.UserID == "" {
+		return errors.New("用户 ID 不能为空")
 	}
 
-	if uua.QQ.State() == util.OptionSome {
-		if uua.QQ.Unwrap() == "" {
-			return errors.New("QQ 不能为空")
-		}
-
-		qqLen := utf8.RuneCountInString(uua.QQ.Unwrap())
-
-		if qqLen < 5 || qqLen > 20 {
-			return errors.New("QQ 长度必须在 5 到 20 个字符之间")
-		}
+	if uua.Name == "" {
+		return errors.New("名字不能为空")
 	}
 
-	if uua.Password.State() == util.OptionSome {
-		if uua.Password.Unwrap() == "" {
-			return errors.New("密码不能为空，或包含非数字字母的特殊字符")
-		}
+	nameLen := utf8.RuneCountInString(uua.Name)
 
-		nameLen := utf8.RuneCountInString(uua.Password.Unwrap())
+	if nameLen < 2 || nameLen > 20 {
+		return errors.New("名字长度必须在 2 到 20 个字之间")
+	}
 
-		if nameLen < 6 || nameLen > 30 {
-			return errors.New("密码长度必须在 6 到 30 个字符之间")
-		}
+	if uua.QQ == "" {
+		return errors.New("QQ 不能为空")
+	}
+
+	qqLen := utf8.RuneCountInString(uua.QQ)
+
+	if qqLen < 5 || qqLen > 20 {
+		return errors.New("QQ 长度必须在 5 到 20 个字符之间")
+	}
+
+	if uua.Password == "" {
+		return errors.New("密码不能为空，或包含非数字字母的特殊字符")
+	}
+
+	passwordLen := utf8.RuneCountInString(uua.Password)
+
+	if passwordLen < 6 || passwordLen > 30 {
+		return errors.New("密码长度必须在 6 到 30 个字符之间")
 	}
 
 	return nil

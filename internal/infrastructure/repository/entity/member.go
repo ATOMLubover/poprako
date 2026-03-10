@@ -48,12 +48,13 @@ func (MemberInsertRow) TableName() string { return MemberTable }
 
 type MemberWithUserRow struct {
 	MemberProfileRow
-	UserName         string    `gorm:"column:user_name"`
-	UserQQ           string    `gorm:"column:user_qq"`
-	UserAvatarURL    string    `gorm:"column:user_avatar_url"`
-	UserIsSuperAdmin bool      `gorm:"column:user_is_super_admin"`
-	UserCreatedAt    time.Time `gorm:"column:user_created_at"`
-	UserUpdatedAt    time.Time `gorm:"column:user_updated_at"`
+	UserName             string    `gorm:"column:user_name"`
+	UserQQ               string    `gorm:"column:user_qq"`
+	UserAvatarOSSKey     string    `gorm:"column:user_avatar_oss_key"`
+	UserIsAvatarUploaded bool      `gorm:"column:user_is_avatar_uploaded"`
+	UserIsSuperAdmin     bool      `gorm:"column:user_is_super_admin"`
+	UserCreatedAt        time.Time `gorm:"column:user_created_at"`
+	UserUpdatedAt        time.Time `gorm:"column:user_updated_at"`
 }
 
 func ToMemberProfile(row MemberProfileRow, userInfo *model.UserInfo) model.MemberProfile {

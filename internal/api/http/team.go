@@ -119,7 +119,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/teams/{team_id} [patch]
+// @Router 		/teams/{team_id} [put]
 func UpdateTeam(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 
@@ -179,7 +179,7 @@ func DeleteTeam(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := teamApplication.DeleteTeam(*buildTraceScope(ctx), currentUserID, teamID); err != nil {
+		if err := teamApplication.RemoveTeam(*buildTraceScope(ctx), currentUserID, teamID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

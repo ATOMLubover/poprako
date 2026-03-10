@@ -52,6 +52,8 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		userParty.Get("/{user_id}", GetUserByID(appState))
 		userParty.Get("/", ListUsers(appState))
+		userParty.Post("/{user_id}/avatar", ReserveUserAvatar(appState))
+		userParty.Put("/{user_id}", UpdateUserByID(appState))
 		userParty.Delete("/{user_id}", RemoveUserByID(appState))
 	}
 
@@ -61,7 +63,7 @@ func initialize(appState *state.AppState) *iris.Application {
 		teamParty.Post("/", CreateTeam(appState))
 		teamParty.Get("/", ListAllTeams(appState))
 		teamParty.Get("/mine", ListMyTeams(appState))
-		teamParty.Patch("/{team_id}", UpdateTeam(appState))
+		teamParty.Put("/{team_id}", UpdateTeam(appState))
 		teamParty.Delete("/{team_id}", DeleteTeam(appState))
 	}
 
@@ -71,7 +73,7 @@ func initialize(appState *state.AppState) *iris.Application {
 		memberParty.Post("/", CreateMember(appState))
 		memberParty.Post("/join", JoinTeam(appState))
 		memberParty.Get("/", ListMembers(appState))
-		memberParty.Patch("/{member_id}", UpdateMemberRole(appState))
+		memberParty.Put("/{member_id}", UpdateMemberRole(appState))
 		memberParty.Delete("/{member_id}", RemoveMember(appState))
 	}
 
@@ -80,7 +82,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		invitationParty.Get("/", ListInvitations(appState))
 		invitationParty.Post("/", CreateInvitation(appState))
-		invitationParty.Patch("/{invitation_id}", PatchInvitation(appState))
+		invitationParty.Put("/{invitation_id}", PatchInvitation(appState))
 		invitationParty.Delete("/{invitation_id}", DeleteInvitation(appState))
 	}
 
@@ -89,7 +91,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		comicParty.Get("/", ListTeamComics(appState))
 		comicParty.Post("/", CreateComic(appState))
-		comicParty.Patch("/{comic_id}", PatchComic(appState))
+		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))
 	}
 

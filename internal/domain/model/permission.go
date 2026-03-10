@@ -209,11 +209,13 @@ func (permInvitationUpdate) Check(
 type (
 	permUserList   struct{}
 	permUserView   struct{}
+	permUserUpdate struct{}
 	permUserRemove struct{} // remove 是硬删除，而 delete 是软删除
 )
 
 func PermUserList() permUserList     { return permUserList{} }
 func PermUserView() permUserView     { return permUserView{} }
+func PermUserUpdate() permUserUpdate { return permUserUpdate{} }
 func PermUserRemove() permUserRemove { return permUserRemove{} }
 
 func (permUserList) Check(
@@ -231,6 +233,18 @@ func (permUserView) Check(
 	// 才能查看 targetUser 的信息，否则只能查看自己的信息
 	// 当前暂时不设置权限管理
 	return true
+}
+
+func (permUserUpdate) Check(
+	userID string,
+	targetUserID string,
+	onLoadUserInfo OnLoadUserInfo,
+) bool {
+	if userID == targetUserID {
+		return true
+	}
+
+	return isSuperAdmin("PermUserUpdate.Check", userID, onLoadUserInfo)
 }
 
 func (permUserRemove) Check(

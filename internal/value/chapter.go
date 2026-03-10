@@ -118,8 +118,7 @@ func NewCreateChapterResultFromModel(chapterID string) CreateChapterResult {
 
 type UpdateChapterArgs struct {
 	ChapterID string `json:"chapter_id"`
-	ChapterNo string `json:"chapter_no,omitempty"`
-	
+	ChapterNo string `json:"chapter_no"`
 
 }
 
@@ -132,9 +131,13 @@ func (args *UpdateChapterArgs) Validate() error {
 		return errors.New("章节 ID 不能为空")
 	}
 
+	if args.ChapterNo == "" {
+		return errors.New("章节编号不能为空")
+	}
+
 	chapterNoLen := utf8.RuneCountInString(args.ChapterNo)
 
-	if args.ChapterNo != "" && chapterNoLen > 10 {
+	if chapterNoLen > 10 {
 		return errors.New("章节编号长度不能超过 10 字符")
 	}
 

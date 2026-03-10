@@ -1,10 +1,6 @@
 package model
 
-import (
-	"time"
-
-	"labelplus-next-web-be/internal/util"
-)
+import "time"
 
 type TeamInfo struct {
 	ID string
@@ -31,12 +27,14 @@ func NewTeamCreation(name, description string) *TeamCreation {
 type TeamUpdate struct {
 	ID string
 
-	Name        util.Option[string]
-	Description util.Option[string]
+	Name        string
+	Description string
 }
 
-func NewTeamUpdate(id string) *TeamUpdate {
-	return &TeamUpdate{
-		ID: id,
+func NewTeamUpdate(id string, name string, description string) TeamUpdate {
+	return TeamUpdate{
+		ID:          id,
+		Name:        name,
+		Description: description,
 	}
 }

@@ -8,6 +8,7 @@ type PageInfo struct {
 	ChapterID string
 	Index     int
 	OSSKey    string
+	IsUploaded bool
 
 	TotalUnitCount      int
 	TranslatedUnitCount int
@@ -22,6 +23,7 @@ func NewPageInfo(
 	chapterID string,
 	index int,
 	ossKey string,
+	isUploaded bool,
 	totalUnitCount int,
 	translatedUnitCount int,
 	proofreadUnitCount int,
@@ -33,6 +35,7 @@ func NewPageInfo(
 		ChapterID:           chapterID,
 		Index:               index,
 		OSSKey:              ossKey,
+		IsUploaded:          isUploaded,
 		TotalUnitCount:      totalUnitCount,
 		TranslatedUnitCount: translatedUnitCount,
 		ProofreadUnitCount:  proofreadUnitCount,
@@ -69,25 +72,25 @@ func NewPageCreation(
 type PageUpdate struct {
 	ID string
 
-	Index  *int
-	OSSKey *string
+	Index  int
+	OSSKey string
 
-	IsUploaded *bool
+	IsUploaded bool
 
 	// 仅用于 unit save 时更新页面的统计数据
-	TotalUnitCount      *int
-	TranslatedUnitCount *int
-	ProofreadUnitCount  *int
+	TotalUnitCount      int
+	TranslatedUnitCount int
+	ProofreadUnitCount  int
 }
 
 func NewPageUpdate(
 	id string,
-	index *int,
-	ossKey *string,
-	isUploaded *bool,
-	totalUnitCount *int,
-	translatedUnitCount *int,
-	proofreadUnitCount *int,
+	index int,
+	ossKey string,
+	isUploaded bool,
+	totalUnitCount int,
+	translatedUnitCount int,
+	proofreadUnitCount int,
 ) PageUpdate {
 	return PageUpdate{
 		ID:                  id,

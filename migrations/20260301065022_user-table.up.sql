@@ -3,7 +3,8 @@ CREATE TABLE "user_table" (
 
     "name"                  TEXT NOT NULL,
     "qq"                    TEXT UNIQUE NOT NULL,
-    "avatar_url"            TEXT NOT NULL,
+    "avatar_oss_key"        TEXT NOT NULL,
+    "is_avatar_uploaded"    BOOLEAN NOT NULL DEFAULT FALSE,
 
     "password_hash"         TEXT NOT NULL,
     
@@ -33,10 +34,10 @@ CREATE INDEX "idx_user_updated_at_desc"
 
 -- 预插入一个超级管理员账号，密码为 123456
 INSERT INTO "user_table" (
-    "id", "name", "qq", "avatar_url", "password_hash", "is_super_admin"
+    "id", "name", "qq", "avatar_oss_key", "password_hash", "is_super_admin"
 ) VALUES (
     '00000000-0000-0000-0000-000000000001',
-    '超级管理员',
+    'SuperAdmin OvO',
     '123456789',
     '',
     '$2a$10$N9qo8uLOickgx2ZMRZo5i.ej3c3w9uQZrL6Bq4t7Yq4UstP8yW', -- 123456

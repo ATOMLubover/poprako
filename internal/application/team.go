@@ -34,7 +34,7 @@ type TeamApplication interface {
 		currentUserID string,
 		args value.UpdateTeamArgs,
 	) error
-	DeleteTeam(
+	RemoveTeam(
 		scope util.TraceScope,
 		currentUserID string,
 		teamID string,
@@ -238,12 +238,9 @@ func (ta *teamApplication) UpdateTeam(
 		return errors.New("权限不足")
 	}
 
-	// 构建更新对象，仅传入有值的字段
-	teamUpdate := model.NewTeamUpdate(args.ID)
-	teamUpdate.Name = args.Name
-	teamUpdate.Description = args.Description
+	teamUpdate := model.NewTeamUpdate(args.ID, args.Name, args.Description)
 
-	if err := ta.teamRepository.Update(nil, *teamUpdate); err != nil {
+	if err := ta.teamRepository.Update(nil, teamUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新汉化组信息失败", zap.Error(err))
 		return errors.New("更新汉化组失败")
 	}
@@ -251,7 +248,7 @@ func (ta *teamApplication) UpdateTeam(
 	return nil
 }
 
-func (ta *teamApplication) DeleteTeam(
+func (ta *teamApplication) RemoveTeam(
 	scope util.TraceScope,
 	currentUserID string,
 	teamID string,

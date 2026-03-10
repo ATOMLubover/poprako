@@ -103,10 +103,10 @@ func NewChapterCreation(
 
 type ChapterUpdate struct {
 	ID        string
-	ChapterNo *string
+	ChapterNo string
 }
 
-func NewChapterUpdate(id string, chapterNo *string) ChapterUpdate {
+func NewChapterUpdate(id string, chapterNo string) ChapterUpdate {
 	return ChapterUpdate{
 		ID:        id,
 		ChapterNo: chapterNo,

@@ -11,3 +11,5 @@ value 对象是 API 层和 APP 层的数据传输对象，model 对象是领域�
 权限校验使用 Perm 开头而不是 CheckPermission 的函数，因为使用字符串而不是类型的权限管理方式是老版本即将被重构的内容。
 
 每次修改后，必须使用 get_errors MCP 检查代码是否符合规范、有静态错误。
+
+无须更新 swagger 文档，这是自动生成的。但是 handler 上的 godoc 需要更新，以保持文档的准确性和完整性。

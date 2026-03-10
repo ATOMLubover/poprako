@@ -90,18 +90,45 @@ func (r *userRepository) Create(executor intf.Executor, registration model.UserC
 	executor = r.withTransaction(executor)
 
 	row := entity.UserInsertRow{
-		ID:           util.GenerateUUID(),
-		Name:         registration.Name,
-		QQ:           registration.QQ,
-		AvatarURL:    "",
-		PasswordHash: registration.PasswordHash,
-		IsSuperAdmin: false,
+		ID:               util.GenerateUUID(),
+		Name:             registration.Name,
+		QQ:               registration.QQ,
+		AvatarOSSKey:     "",
+		IsAvatarUploaded: false,
+		PasswordHash:     registration.PasswordHash,
+		IsSuperAdmin:     false,
 	}
 	if err := executor.Create(&row).Error; err != nil {
 		return "", err
 	}
 
 	return row.ID, nil
+}
+
+func (r *userRepository) ReserveAvatar(executor intf.Executor, id string, avatarOSSKey string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.UserTable).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"avatar_oss_key":     avatarOSSKey,
+			"is_avatar_uploaded": false,
+		}).Error
+}
+
+func (r *userRepository) Update(executor intf.Executor, update model.UserUpdate) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.UserTable).
+		Where("id = ? AND deleted_at IS NULL", update.ID).
+		Updates(map[string]any{
+			"name":               update.Name,
+			"qq":                 update.QQ,
+			"password_hash":      update.PasswordHash,
+			"is_avatar_uploaded": update.IsAvatarUploaded,
+		}).Error
 }
 
 func (r *userRepository) Delete(executor intf.Executor, id string) error {

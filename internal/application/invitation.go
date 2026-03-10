@@ -31,7 +31,7 @@ type InvitationApplication interface {
 		currentUserID string,
 		args value.UpdateInvitationArgs,
 	) error
-	DeleteInvitation(
+	RemoveInvitation(
 		scope util.TraceScope,
 		currentUserID string,
 		invitationID string,
@@ -246,7 +246,7 @@ func (ia invitationApplication) UpdateInvitation(
 	return nil
 }
 
-func (ia invitationApplication) DeleteInvitation(
+func (ia invitationApplication) RemoveInvitation(
 	scope util.TraceScope,
 	currentUserID string,
 	invitationID string,

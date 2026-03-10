@@ -77,6 +77,7 @@ func ToPageInfo(row PageInfoRow) model.PageInfo {
 		row.ChapterID,
 		row.Index,
 		row.OSSKey,
+		row.IsUploaded,
 		row.TotalUnitCount,
 		row.TranslatedUnitCount,
 		row.ProofreadUnitCount,

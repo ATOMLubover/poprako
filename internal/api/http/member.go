@@ -107,7 +107,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/members/{member_id} [patch]
+// @Router 		/members/{member_id} [put]
 func UpdateMemberRole(appState *state.AppState) iris.Handler {
 	memberApplication := appState.MemberApplication
 

@@ -20,6 +20,8 @@ definitions:
         type: string
       index:
         type: integer
+      last_active_at:
+        type: integer
       title:
         type: string
       updated_at:
@@ -109,12 +111,14 @@ definitions:
     type: object
   value.MemberProfile:
     properties:
-      avatar_url:
+      avatar_oss_key:
         type: string
       created_at:
         type: integer
       id:
         type: string
+      is_avatar_uploaded:
+        type: boolean
       name:
         type: string
       qq:
@@ -140,6 +144,13 @@ definitions:
       access_token:
         type: string
       user_id:
+        type: string
+    type: object
+  value.ReserveUserAvatarResult:
+    properties:
+      avatar_oss_key:
+        type: string
+      put_url:
         type: string
     type: object
   value.TeamInfo:
@@ -191,14 +202,29 @@ definitions:
       name:
         $ref: '#/definitions/util.Option-string'
     type: object
+  value.UpdateUserArgs:
+    properties:
+      is_avatar_uploaded:
+        type: boolean
+      name:
+        type: string
+      password:
+        type: string
+      qq:
+        type: string
+      user_id:
+        type: string
+    type: object
   value.UserInfo:
     properties:
-      avatar_url:
+      avatar_oss_key:
         type: string
       created_at:
         type: integer
       id:
         type: string
+      is_avatar_uploaded:
+        type: boolean
       name:
         type: string
       qq:
@@ -756,6 +782,53 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 根据 ID 获取用户信息（已测试）
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      description: 更新指定用户的信息
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: 更新用户参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.UpdateUserArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 更新用户
+      tags:
+      - user
+  /users/{user_id}/avatar:
+    post:
+      description: 为指定用户头像生成预签名 PUT URL，并预留 avatar_oss_key
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/value.ReserveUserAvatarResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 预留用户头像上传
       tags:
       - user
 securityDefinitions:

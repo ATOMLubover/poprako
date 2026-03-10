@@ -67,23 +67,13 @@ func (r *teamRepository) Create(executor intf.Executor, creation model.TeamCreat
 func (r *teamRepository) Update(executor intf.Executor, update model.TeamUpdate) error {
 	executor = r.withTransaction(executor)
 
-	updates := map[string]any{}
-
-	if update.Name.State() == util.OptionSome {
-		updates["name"] = update.Name.Unwrap()
-	}
-	if update.Description.State() == util.OptionSome {
-		updates["description"] = update.Description.Unwrap()
-	}
-
-	if len(updates) == 0 {
-		return nil
-	}
-
 	return executor.
 		Table(entity.TeamTable).
 		Where("id = ?", update.ID).
-		Updates(updates).Error
+		Updates(map[string]any{
+			"name":        update.Name,
+			"description": update.Description,
+		}).Error
 }
 
 func (r *teamRepository) Delete(executor intf.Executor, teamID string) error {

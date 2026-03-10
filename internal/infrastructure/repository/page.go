@@ -113,35 +113,17 @@ func (r *pageRepository) CreateBatch(executor intf.Executor, pages []model.PageC
 func (r *pageRepository) Update(executor intf.Executor, update model.PageUpdate) error {
 	executor = r.withTransaction(executor)
 
-	updates := map[string]any{}
-
-	if update.Index != nil {
-		updates["index"] = *update.Index
-	}
-	if update.OSSKey != nil {
-		updates["oss_key"] = *update.OSSKey
-	}
-	if update.IsUploaded != nil {
-		updates["uploaded"] = *update.IsUploaded
-	}
-	if update.TotalUnitCount != nil {
-		updates["total_unit_count"] = *update.TotalUnitCount
-	}
-	if update.TranslatedUnitCount != nil {
-		updates["translated_unit_count"] = *update.TranslatedUnitCount
-	}
-	if update.ProofreadUnitCount != nil {
-		updates["proved_unit_count"] = *update.ProofreadUnitCount
-	}
-
-	if len(updates) == 0 {
-		return nil
-	}
-
 	return executor.
 		Table(entity.PageTable).
 		Where("id = ?", update.ID).
-		Updates(updates).Error
+		Updates(map[string]any{
+			"index":                 update.Index,
+			"oss_key":               update.OSSKey,
+			"uploaded":              update.IsUploaded,
+			"total_unit_count":      update.TotalUnitCount,
+			"translated_unit_count": update.TranslatedUnitCount,
+			"proved_unit_count":     update.ProofreadUnitCount,
+		}).Error
 }
 
 func (r *pageRepository) Delete(executor intf.Executor, id string) error {

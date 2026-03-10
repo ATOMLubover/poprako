@@ -117,19 +117,12 @@ func (r *chapterRepository) Create(executor intf.Executor, creation model.Chapte
 func (r *chapterRepository) Update(executor intf.Executor, update model.ChapterUpdate) error {
 	executor = r.withTransaction(executor)
 
-	updates := map[string]any{}
-	if update.ChapterNo != nil {
-		updates["subtitle"] = *update.ChapterNo
-	}
-
-	if len(updates) == 0 {
-		return nil
-	}
-
 	return executor.
 		Table(entity.ChapterTable).
 		Where("id = ? AND deleted_at IS NULL", update.ID).
-		Updates(updates).Error
+		Updates(map[string]any{
+			"subtitle": update.ChapterNo,
+		}).Error
 }
 
 func (r *chapterRepository) Delete(executor intf.Executor, id string) error {

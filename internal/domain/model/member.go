@@ -218,13 +218,13 @@ func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 
 type MemberUpdate struct {
 	ID                string
-	AssignRawProvider *time.Time
-	AssignTranslator  *time.Time
-	AssignProofreader *time.Time
-	AssignTypesetter  *time.Time
-	AssignReviewer    *time.Time
-	AssignUploader    *time.Time
-	AssignAdmin       *time.Time
+	AssignRawProvider time.Time
+	AssignTranslator  time.Time
+	AssignProofreader time.Time
+	AssignTypesetter  time.Time
+	AssignReviewer    time.Time
+	AssignUploader    time.Time
+	AssignAdmin       time.Time
 }
 
 func NewMemberUpdate(id string, roles ...RoleWithTime) MemberUpdate {
@@ -235,26 +235,19 @@ func NewMemberUpdate(id string, roles ...RoleWithTime) MemberUpdate {
 	for _, role := range roles {
 		switch role.Role {
 		case RoleRawProvider:
-			t := role.AssignedAt
-			mu.AssignRawProvider = &t
+			mu.AssignRawProvider = role.AssignedAt
 		case RoleTranslator:
-			t := role.AssignedAt
-			mu.AssignTranslator = &t
+			mu.AssignTranslator = role.AssignedAt
 		case RoleProofreader:
-			t := role.AssignedAt
-			mu.AssignProofreader = &t
+			mu.AssignProofreader = role.AssignedAt
 		case RoleTypesetter:
-			t := role.AssignedAt
-			mu.AssignTypesetter = &t
+			mu.AssignTypesetter = role.AssignedAt
 		case RoleReviewer:
-			t := role.AssignedAt
-			mu.AssignReviewer = &t
+			mu.AssignReviewer = role.AssignedAt
 		case RolePublisher:
-			t := role.AssignedAt
-			mu.AssignUploader = &t
+			mu.AssignUploader = role.AssignedAt
 		case RoleAdmin:
-			t := role.AssignedAt
-			mu.AssignAdmin = &t
+			mu.AssignAdmin = role.AssignedAt
 		}
 	}
 

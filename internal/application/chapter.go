@@ -236,12 +236,7 @@ func (ca *chapterApplication) UpdateChapter(
 		return errors.New("权限不足")
 	}
 
-	var chapterNo *string
-	if args.ChapterNo != "" {
-		chapterNo = &args.ChapterNo
-	}
-
-	chapterUpdate := model.NewChapterUpdate(args.ChapterID, chapterNo)
+	chapterUpdate := model.NewChapterUpdate(args.ChapterID, args.ChapterNo)
 
 	if err := ca.chapterRepository.Update(nil, chapterUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新章节失败", zap.Error(err))

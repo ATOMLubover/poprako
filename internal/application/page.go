@@ -263,7 +263,24 @@ func (pa *pageApplication) UpdatePage(
 		return errors.New("权限不足")
 	}
 
-	pageUpdate := model.NewPageUpdate(args.ID, nil, nil, &args.IsUploaded, nil, nil, nil)
+	pageInfo, err := pa.pageRepository.Get(
+		nil,
+		query_option.FilterByID(repository_infra.PageTable, args.ID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取目标页面信息失败", zap.Error(err))
+		return errors.New("无法获取页面信息")
+	}
+
+	pageUpdate := model.NewPageUpdate(
+		args.ID,
+		pageInfo.Index,
+		pageInfo.OSSKey,
+		args.IsUploaded,
+		pageInfo.TotalUnitCount,
+		pageInfo.TranslatedUnitCount,
+		pageInfo.ProofreadUnitCount,
+	)
 
 	if err := pa.pageRepository.Update(nil, pageUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新页面失败", zap.Error(err))

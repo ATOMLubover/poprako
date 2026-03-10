@@ -106,7 +106,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/comics/{comic_id} [patch]
+// @Router 		/comics/{comic_id} [put]
 func PatchComic(appState *state.AppState) iris.Handler {
 	comicApplication := appState.ComicApplication
 

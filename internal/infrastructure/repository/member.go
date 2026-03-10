@@ -35,7 +35,8 @@ func (r *memberRepository) ListProfiles(executor intf.Executor, options ...intf.
 		Select(`member_table.*,
 			user_table.name           AS user_name,
 			user_table.qq             AS user_qq,
-			user_table.avatar_url     AS user_avatar_url,
+			user_table.avatar_oss_key AS user_avatar_oss_key,
+			user_table.is_avatar_uploaded AS user_is_avatar_uploaded,
 			user_table.is_super_admin AS user_is_super_admin,
 			user_table.created_at     AS user_created_at,
 			user_table.updated_at     AS user_updated_at`).
@@ -53,13 +54,14 @@ func (r *memberRepository) ListProfiles(executor intf.Executor, options ...intf.
 	result := make([]model.MemberProfile, len(rows))
 	for i, row := range rows {
 		userInfo := &model.UserInfo{
-			ID:           row.UserID,
-			Name:         row.UserName,
-			QQ:           row.UserQQ,
-			AvatarURL:    row.UserAvatarURL,
-			IsSuperAdmin: row.UserIsSuperAdmin,
-			CreatedAt:    row.UserCreatedAt,
-			UpdatedAt:    row.UserUpdatedAt,
+			ID:               row.UserID,
+			Name:             row.UserName,
+			QQ:               row.UserQQ,
+			AvatarOSSKey:     row.UserAvatarOSSKey,
+			IsAvatarUploaded: row.UserIsAvatarUploaded,
+			IsSuperAdmin:     row.UserIsSuperAdmin,
+			CreatedAt:        row.UserCreatedAt,
+			UpdatedAt:        row.UserUpdatedAt,
 		}
 		result[i] = entity.ToMemberProfile(row.MemberProfileRow, userInfo)
 	}
@@ -73,7 +75,8 @@ func (r *memberRepository) ListProfilesWithUserInfo(executor intf.Executor, opti
 		Select(`member_table.*,
 			user_table.name           AS user_name,
 			user_table.qq             AS user_qq,
-			user_table.avatar_url     AS user_avatar_url,
+			user_table.avatar_oss_key AS user_avatar_oss_key,
+			user_table.is_avatar_uploaded AS user_is_avatar_uploaded,
 			user_table.is_super_admin AS user_is_super_admin,
 			user_table.created_at     AS user_created_at,
 			user_table.updated_at     AS user_updated_at`).
@@ -92,13 +95,14 @@ func (r *memberRepository) ListProfilesWithUserInfo(executor intf.Executor, opti
 	result := make([]model.MemberProfile, len(rows))
 	for i, row := range rows {
 		userInfo := &model.UserInfo{
-			ID:           row.UserID,
-			Name:         row.UserName,
-			QQ:           row.UserQQ,
-			AvatarURL:    row.UserAvatarURL,
-			IsSuperAdmin: row.UserIsSuperAdmin,
-			CreatedAt:    row.UserCreatedAt,
-			UpdatedAt:    row.UserUpdatedAt,
+			ID:               row.UserID,
+			Name:             row.UserName,
+			QQ:               row.UserQQ,
+			AvatarOSSKey:     row.UserAvatarOSSKey,
+			IsAvatarUploaded: row.UserIsAvatarUploaded,
+			IsSuperAdmin:     row.UserIsSuperAdmin,
+			CreatedAt:        row.UserCreatedAt,
+			UpdatedAt:        row.UserUpdatedAt,
 		}
 		result[i] = entity.ToMemberProfile(row.MemberProfileRow, userInfo)
 	}
@@ -206,38 +210,28 @@ func (r *memberRepository) Create(executor intf.Executor, creation model.MemberC
 func (r *memberRepository) Update(executor intf.Executor, update model.MemberUpdate) error {
 	executor = r.withTransaction(executor)
 
-	updates := map[string]any{}
-
-	if update.AssignRawProvider != nil {
-		updates["assigned_raw_provider_at"] = update.AssignRawProvider
-	}
-	if update.AssignTranslator != nil {
-		updates["assigned_translator_at"] = update.AssignTranslator
-	}
-	if update.AssignProofreader != nil {
-		updates["assigned_proofreader_at"] = update.AssignProofreader
-	}
-	if update.AssignTypesetter != nil {
-		updates["assigned_typesetter_at"] = update.AssignTypesetter
-	}
-	if update.AssignReviewer != nil {
-		updates["assigned_reviewer_at"] = update.AssignReviewer
-	}
-	if update.AssignUploader != nil {
-		updates["assigned_publisher_at"] = update.AssignUploader
-	}
-	if update.AssignAdmin != nil {
-		updates["assigned_admin_at"] = update.AssignAdmin
-	}
-
-	if len(updates) == 0 {
-		return nil
+	updates := map[string]any{
+		"assigned_raw_provider_at": timeOrNil(update.AssignRawProvider),
+		"assigned_translator_at":   timeOrNil(update.AssignTranslator),
+		"assigned_proofreader_at":  timeOrNil(update.AssignProofreader),
+		"assigned_typesetter_at":   timeOrNil(update.AssignTypesetter),
+		"assigned_reviewer_at":     timeOrNil(update.AssignReviewer),
+		"assigned_publisher_at":    timeOrNil(update.AssignUploader),
+		"assigned_admin_at":        timeOrNil(update.AssignAdmin),
 	}
 
 	return executor.
 		Table(entity.MemberTable).
 		Where("id = ?", update.ID).
 		Updates(updates).Error
+}
+
+func timeOrNil(value time.Time) any {
+	if value.IsZero() {
+		return nil
+	}
+
+	return value
 }
 
 func (r *memberRepository) Delete(executor intf.Executor, memberID string) error {

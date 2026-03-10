@@ -13,6 +13,7 @@ import (
 	"labelplus-next-web-be/internal/api/http"
 	"labelplus-next-web-be/internal/application"
 	"labelplus-next-web-be/internal/config"
+	external_infra "labelplus-next-web-be/internal/infrastructure/external"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/log"
 	"labelplus-next-web-be/internal/state"
@@ -46,9 +47,11 @@ func main() {
 	memberRepository := repository_infra.NewMemberRepository(databaseExecutor)
 	comicRepository := repository_infra.NewComicRepository(databaseExecutor)
 	chapterRepository := repository_infra.NewChapterRepository(databaseExecutor)
+	ossClient := external_infra.NewR2OSSClient()
 
 	userApplication := application.NewUserApplication(
 		&appConfig.AuthConfig,
+		ossClient,
 		userRepository,
 		memberRepository,
 		invitationRepository,
