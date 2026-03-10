@@ -35,7 +35,7 @@ func NewMemberCreation(userID, teamID string, roles ...RoleFlag) MemberCreation 
 			mc.ToBeTypesetter = true
 		case RoleReviewer:
 			mc.ToBeReviewer = true
-		case RoleUploader:
+		case RolePublisher:
 			mc.ToBeUploader = true
 		case RoleAdmin:
 			mc.ToBeAdmin = true
@@ -116,7 +116,7 @@ func (mp *MemberProfile) Roles() []RoleFlag {
 		roles = append(roles, RoleReviewer)
 	}
 	if mp.AssignedUploaderAt != nil {
-		roles = append(roles, RoleUploader)
+		roles = append(roles, RolePublisher)
 	}
 	if mp.AssignedAdminAt != nil {
 		roles = append(roles, RoleAdmin)
@@ -167,7 +167,7 @@ func NewMemberInfo(id string, userID string, roles ...RoleWithTime) MemberInfo {
 		case RoleReviewer:
 			t := role.AssignedAt
 			memberInfo.AssignReviewer = &t
-		case RoleUploader:
+		case RolePublisher:
 			t := role.AssignedAt
 			memberInfo.AssignUploader = &t
 		case RoleAdmin:
@@ -202,7 +202,7 @@ func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 			if mi.AssignReviewer != nil {
 				return true
 			}
-		case RoleUploader:
+		case RolePublisher:
 			if mi.AssignUploader != nil {
 				return true
 			}
@@ -249,7 +249,7 @@ func NewMemberUpdate(id string, roles ...RoleWithTime) MemberUpdate {
 		case RoleReviewer:
 			t := role.AssignedAt
 			mu.AssignReviewer = &t
-		case RoleUploader:
+		case RolePublisher:
 			t := role.AssignedAt
 			mu.AssignUploader = &t
 		case RoleAdmin:

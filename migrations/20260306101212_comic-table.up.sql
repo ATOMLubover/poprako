@@ -12,6 +12,8 @@ CREATE TABLE "comic_table" (
     "chapter_count"         INTEGER NOT NULL DEFAULT 0,
 
     "creator_id"            TEXT NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
+    
+    "last_active_at"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -24,4 +26,8 @@ CREATE INDEX "idx_comic_team_created_at_desc"
 
 CREATE INDEX "idx_comic_creator_id"
     ON "comic_table" ("creator_id")
+    WHERE "deleted_at" IS NULL;
+    
+CREATE INDEX "idx_comic_last_active_at_desc"
+    ON "comic_table" ("team_id", "last_active_at" DESC)
     WHERE "deleted_at" IS NULL;

@@ -21,7 +21,7 @@ type InvitationInfoRow struct {
 	ToBeProofreader bool `gorm:"column:to_be_proofreader"`
 	ToBeTypesetter  bool `gorm:"column:to_be_typesetter"`
 	ToBeReviewer    bool `gorm:"column:to_be_reviewer"`
-	ToBeUploader    bool `gorm:"column:to_be_uploader"`
+	ToBeUploader    bool `gorm:"column:to_be_publisher"`
 	ToBeAdmin       bool `gorm:"column:to_be_admin"`
 
 	Pending bool `gorm:"column:pending"`
@@ -44,7 +44,7 @@ type InvitationInsertRow struct {
 	ToBeProofreader bool `gorm:"column:to_be_proofreader"`
 	ToBeTypesetter  bool `gorm:"column:to_be_typesetter"`
 	ToBeReviewer    bool `gorm:"column:to_be_reviewer"`
-	ToBeUploader    bool `gorm:"column:to_be_uploader"`
+	ToBePublisher   bool `gorm:"column:to_be_publisher"`
 	ToBeAdmin       bool `gorm:"column:to_be_admin"`
 
 	Pending bool `gorm:"column:pending"`

@@ -286,7 +286,7 @@ paths:
             type: array
       security:
       - ApiKeyAuth: []
-      summary: 获取指定汉化组的漫画列表
+      summary: 获取指定汉化组的漫画列表（已测试）
       tags:
       - comic
     post:
@@ -309,7 +309,7 @@ paths:
             $ref: '#/definitions/value.CreateComicResult'
       security:
       - ApiKeyAuth: []
-      summary: 创建漫画
+      summary: 创建漫画（已测试）
       tags:
       - comic
   /comics/{comic_id}:
@@ -328,7 +328,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: 删除漫画
+      summary: 删除漫画（已测试）
       tags:
       - comic
     patch:
@@ -354,7 +354,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: 更新漫画
+      summary: 更新漫画（已测试）
       tags:
       - comic
   /invitations:

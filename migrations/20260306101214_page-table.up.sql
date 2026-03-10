@@ -6,6 +6,8 @@ CREATE TABLE "page_table" (
     "index"                 INTEGER NOT NULL DEFAULT 0,
     "oss_key"               TEXT,
     
+    "uploaded"              BOOLEAN NOT NULL DEFAULT FALSE,
+    
     "total_unit_count"      INTEGER NOT NULL DEFAULT 0,
     "translated_unit_count" INTEGER NOT NULL DEFAULT 0,
     "proved_unit_count"     INTEGER NOT NULL DEFAULT 0,
@@ -13,10 +15,8 @@ CREATE TABLE "page_table" (
     "creator_id"            TEXT NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "deleted_at"            TIMESTAMPTZ
+    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX "idx_page_chapter_id"
-    ON "page_table" ("chapter_id")
-    WHERE "deleted_at" IS NULL;
+    ON "page_table" ("chapter_id");

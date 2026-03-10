@@ -5,7 +5,7 @@ import (
 
 	"labelplus-next-web-be/internal/domain/model"
 	intf "labelplus-next-web-be/internal/domain/repository"
-	"labelplus-next-web-be/internal/repository/entity"
+	"labelplus-next-web-be/internal/infrastructure/repository/entity"
 	"labelplus-next-web-be/internal/util"
 
 	"gorm.io/gorm/clause"

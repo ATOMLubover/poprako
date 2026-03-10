@@ -23,3 +23,10 @@ func (comicQuery) FilterByTeamID(teamID string) intf.QueryOption {
 		return executor.Where("comic_table.team_id = ?", teamID)
 	}
 }
+
+// OrderByLastActiveAtDesc 根据漫画的最后活跃时间降序排序
+func (comicQuery) OrderByLastActiveAtDesc() intf.QueryOption {
+	return func(executor intf.Executor) intf.Executor {
+		return executor.Order("comic_table.last_active_at DESC")
+	}
+}

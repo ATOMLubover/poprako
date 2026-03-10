@@ -97,7 +97,7 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "获取指定汉化组的漫画列表",
+                "summary": "获取指定汉化组的漫画列表（已测试）",
                 "parameters": [
                     {
                         "type": "string",
@@ -149,7 +149,7 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "创建漫画",
+                "summary": "创建漫画（已测试）",
                 "parameters": [
                     {
                         "description": "创建漫画参数",
@@ -185,7 +185,7 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "删除漫画",
+                "summary": "删除漫画（已测试）",
                 "parameters": [
                     {
                         "type": "string",
@@ -217,7 +217,7 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "更新漫画",
+                "summary": "更新漫画（已测试）",
                 "parameters": [
                     {
                         "type": "string",

@@ -52,7 +52,7 @@ func (ic *InvitationCreation) setRoles(roles ...RoleFlag) {
 			ic.ToBeTypesetter = true
 		case RoleReviewer:
 			ic.ToBeReviewer = true
-		case RoleUploader:
+		case RolePublisher:
 			ic.ToBeUploader = true
 		case RoleAdmin:
 			ic.ToBeAdmin = true
@@ -100,7 +100,7 @@ func (ii *InvitationInfo) RoleMask() RoleMask {
 		mask |= RoleMask(RoleReviewer)
 	}
 	if ii.ToBeUploader {
-		mask |= RoleMask(RoleUploader)
+		mask |= RoleMask(RolePublisher)
 	}
 	if ii.ToBeAdmin {
 		mask |= RoleMask(RoleAdmin)
@@ -116,7 +116,7 @@ type InvitationUpdate struct {
 	ToBeProofreader bool
 	ToBeTypesetter  bool
 	ToBeReviewer    bool
-	ToBeUploader    bool
+	ToBePublisher    bool
 	ToBeAdmin       bool
 }
 
@@ -146,8 +146,8 @@ func (ip *InvitationUpdate) setRoles(roles ...RoleFlag) {
 			ip.ToBeTypesetter = true
 		case RoleReviewer:
 			ip.ToBeReviewer = true
-		case RoleUploader:
-			ip.ToBeUploader = true
+		case RolePublisher:
+			ip.ToBePublisher = true
 		case RoleAdmin:
 			ip.ToBeAdmin = true
 		}

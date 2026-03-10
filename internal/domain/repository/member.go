@@ -10,5 +10,5 @@ type MemberRepository interface {
 	Exist(executor Executor, options ...QueryOption) (bool, error)
 	Create(executor Executor, creation model.MemberCreation) (string, error) // 如果成功，返回主键 ID
 	Update(executor Executor, update model.MemberUpdate) error
-	Delete(executor Executor, memberID string) error
+	Delete(executor Executor, id string) error
 }

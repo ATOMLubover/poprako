@@ -8,8 +8,8 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
-	repository_infra "labelplus-next-web-be/internal/repository"
-	"labelplus-next-web-be/internal/repository/query_option"
+	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
+	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
 	"labelplus-next-web-be/internal/value"
 

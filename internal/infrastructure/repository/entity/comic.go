@@ -21,9 +21,10 @@ type ComicInfoRow struct {
 
 	CoverURL string `gorm:"column:cover_url"`
 
-	ChapterCount int `gorm:"column:chapter_count"`
+	ChapterCount int    `gorm:"column:chapter_count"`
+	CreatorID    string `gorm:"column:creator_id"`
 
-	CreatorID string `gorm:"column:creator_id"`
+	LastActiveAt time.Time `gorm:"column:last_active_at"`
 
 	CreatedAt time.Time  `gorm:"column:created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at"`
@@ -47,17 +48,18 @@ type ComicInsertRow struct {
 func (ComicInsertRow) TableName() string { return ComicTable }
 
 func ToComicInfo(row ComicInfoRow) *model.ComicInfo {
-	return &model.ComicInfo{
-		ID:           row.ID,
-		TeamID:       row.TeamID,
-		Index:        row.Index,
-		Title:        row.Title,
-		Author:       row.Author,
-		Description:  row.Description,
-		CoverURL:     row.CoverURL,
-		ChapterCount: row.ChapterCount,
-		CreatorID:    row.CreatorID,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
-	}
+	return model.NewComicInfo(
+		row.ID,
+		row.TeamID,
+		row.Index,
+		row.Title,
+		row.Author,
+		row.Description,
+		row.CoverURL,
+		row.ChapterCount,
+		row.CreatorID,
+		row.LastActiveAt,
+		row.CreatedAt,
+		row.UpdatedAt,
+	)
 }

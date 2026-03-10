@@ -104,8 +104,6 @@ type UserInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-
-
 func NewUserInfoFromModel(user model.UserInfo) UserInfo {
 	if user.ID == "" {
 		zap.L().Warn("NewUserInfoFromModel: user 为空")

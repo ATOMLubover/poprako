@@ -12,7 +12,7 @@ CREATE TABLE "invitation_table" (
     "to_be_proofreader"     BOOLEAN NOT NULL DEFAULT FALSE,
     "to_be_typesetter"      BOOLEAN NOT NULL DEFAULT FALSE,
     "to_be_reviewer"        BOOLEAN NOT NULL DEFAULT FALSE,
-    "to_be_uploader"        BOOLEAN NOT NULL DEFAULT FALSE,
+    "to_be_publisher"       BOOLEAN NOT NULL DEFAULT FALSE,
     "to_be_admin"           BOOLEAN NOT NULL DEFAULT FALSE,
 
     "pending"               BOOLEAN NOT NULL DEFAULT TRUE,

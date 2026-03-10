@@ -14,8 +14,9 @@ type ComicInfo struct {
 	CoverURL string
 
 	ChapterCount int
+	CreatorID    string
 
-	CreatorID string
+	LastActiveAt time.Time
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -31,10 +32,11 @@ func NewComicInfo(
 	coverURL string,
 	chapterCount int,
 	creatorID string,
+	lastActiveAt time.Time,
 	createdAt time.Time,
 	updatedAt time.Time,
-) *ComicInfo {
-	return &ComicInfo{
+) ComicInfo {
+	return ComicInfo{
 		ID:           id,
 		TeamID:       teamID,
 		Index:        index,
@@ -44,6 +46,7 @@ func NewComicInfo(
 		CoverURL:     coverURL,
 		ChapterCount: chapterCount,
 		CreatorID:    creatorID,
+		LastActiveAt: lastActiveAt,
 		CreatedAt:    createdAt,
 		UpdatedAt:    updatedAt,
 	}
@@ -88,8 +91,8 @@ func NewComicUpdate(
 	title *string,
 	author *string,
 	description *string,
-) *ComicUpdate {
-	return &ComicUpdate{
+) ComicUpdate {
+	return ComicUpdate{
 		ID:          id,
 		Title:       title,
 		Author:      author,

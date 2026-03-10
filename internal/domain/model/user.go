@@ -54,18 +54,18 @@ func NewUserRegistration(
 	return registration
 }
 
-type UserPatch struct {
+type UserUpdate struct {
 	Name         string
 	QQ           string
 	PasswordHash string
 }
 
-func NewUserPatch(
+func NewUserUpdate(
 	name string,
 	qq string,
 	passwordHash string,
-) *UserPatch {
-	return &UserPatch{
+) UserUpdate {
+	return UserUpdate{
 		Name:         name,
 		QQ:           qq,
 		PasswordHash: passwordHash,

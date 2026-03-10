@@ -8,5 +8,5 @@ type UserRepository interface {
 	GetByID(executor Executor, options ...QueryOption) (model.UserInfo, error)
 	GetCredentials(executor Executor, options ...QueryOption) (model.UserCredentials, error)
 	Create(executor Executor, registration model.UserRegistration) (string, error) // 如果成功，返回主键 ID
-	DeleteByID(executor Executor, userID string) error
+	DeleteByID(executor Executor, id string) error
 }

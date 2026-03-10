@@ -20,6 +20,8 @@ type ComicInfo struct {
 	ChapterCount int    `json:"chapter_count"`
 	CreatorID    string `json:"creator_id"`
 
+	LastActiveAt int64 `json:"last_active_at"`
+
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
 }
@@ -34,6 +36,7 @@ func NewComicInfoFromModel(comicInfo model.ComicInfo) ComicInfo {
 		CoverURL:     comicInfo.CoverURL,
 		ChapterCount: comicInfo.ChapterCount,
 		CreatorID:    comicInfo.CreatorID,
+		LastActiveAt: comicInfo.LastActiveAt.Unix(),
 		CreatedAt:    comicInfo.CreatedAt.Unix(),
 		UpdatedAt:    comicInfo.UpdatedAt.Unix(),
 	}

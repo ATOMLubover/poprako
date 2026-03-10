@@ -13,8 +13,8 @@ import (
 	"labelplus-next-web-be/internal/api/http"
 	"labelplus-next-web-be/internal/application"
 	"labelplus-next-web-be/internal/config"
+	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/log"
-	repository_infra "labelplus-next-web-be/internal/repository"
 	"labelplus-next-web-be/internal/state"
 
 	"github.com/joho/godotenv"

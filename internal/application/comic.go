@@ -7,8 +7,8 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
-	repository_infra "labelplus-next-web-be/internal/repository"
-	"labelplus-next-web-be/internal/repository/query_option"
+	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
+	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
 	"labelplus-next-web-be/internal/value"
 
@@ -102,7 +102,7 @@ func (ca *comicApplication) ListTeamComics(
 	comicList, err := ca.comicRepository.List(
 		nil,
 		query_option.ComicQuery().FilterByTeamID(args.TeamID),
-		query_option.CreatedAtDesc(repository_infra.ComicTable),
+		query_option.ComicQuery().OrderByLastActiveAtDesc(),
 		query_option.Paginate(args.Offset, args.Limit),
 	)
 	if err != nil {

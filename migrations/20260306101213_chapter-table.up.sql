@@ -5,7 +5,6 @@ CREATE TABLE "chapter_table" (
 
     "index"                 INTEGER NOT NULL DEFAULT 0,
     "subtitle"              TEXT NOT NULL,
-    "description"           TEXT,
     
     "page_count"            INTEGER NOT NULL DEFAULT 0,
     "cover_url"             TEXT,

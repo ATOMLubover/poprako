@@ -9,7 +9,7 @@ CREATE TABLE "member_table" (
     "assigned_proofreader_at" TIMESTAMPTZ,
     "assigned_typesetter_at"  TIMESTAMPTZ,
     "assigned_reviewer_at"    TIMESTAMPTZ,
-    "assigned_uploader_at"    TIMESTAMPTZ,
+    "assigned_publisher_at"   TIMESTAMPTZ,
     "assigned_admin_at"       TIMESTAMPTZ,
 
     "created_at"              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -44,9 +44,9 @@ CREATE INDEX "idx_member_reviewer"
     ON "member_table" ("assigned_reviewer_at")
     WHERE "assigned_reviewer_at" IS NOT NULL
       AND "deleted_at" IS NULL;
-CREATE INDEX "idx_member_uploader"
-    ON "member_table" ("assigned_uploader_at")
-    WHERE "assigned_uploader_at" IS NOT NULL
+CREATE INDEX "idx_member_publisher"
+    ON "member_table" ("assigned_publisher_at")
+    WHERE "assigned_publisher_at" IS NOT NULL
       AND "deleted_at" IS NULL;
 CREATE INDEX "idx_member_admin"
     ON "member_table" ("assigned_admin_at")

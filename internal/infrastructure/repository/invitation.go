@@ -3,7 +3,7 @@ package repository
 import (
 	"labelplus-next-web-be/internal/domain/model"
 	intf "labelplus-next-web-be/internal/domain/repository"
-	"labelplus-next-web-be/internal/repository/entity"
+	"labelplus-next-web-be/internal/infrastructure/repository/entity"
 	"labelplus-next-web-be/internal/util"
 )
 
@@ -77,7 +77,7 @@ func (r *invitationRepository) Create(executor intf.Executor, creation model.Inv
 		ToBeProofreader: creation.ToBeProofreader,
 		ToBeTypesetter:  creation.ToBeTypesetter,
 		ToBeReviewer:    creation.ToBeReviewer,
-		ToBeUploader:    creation.ToBeUploader,
+		ToBePublisher:   creation.ToBeUploader,
 		ToBeAdmin:       creation.ToBeAdmin,
 		Pending:         true,
 	}
@@ -100,7 +100,7 @@ func (r *invitationRepository) Update(executor intf.Executor, update model.Invit
 			"to_be_proofreader":  update.ToBeProofreader,
 			"to_be_typesetter":   update.ToBeTypesetter,
 			"to_be_reviewer":     update.ToBeReviewer,
-			"to_be_uploader":     update.ToBeUploader,
+			"to_be_publisher":    update.ToBePublisher,
 			"to_be_admin":        update.ToBeAdmin,
 		}).Error
 }

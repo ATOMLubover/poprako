@@ -5,7 +5,7 @@ import (
 
 	"labelplus-next-web-be/internal/domain/model"
 	intf "labelplus-next-web-be/internal/domain/repository"
-	"labelplus-next-web-be/internal/repository/entity"
+	"labelplus-next-web-be/internal/infrastructure/repository/entity"
 	"labelplus-next-web-be/internal/util"
 )
 
@@ -224,7 +224,7 @@ func (r *memberRepository) Update(executor intf.Executor, update model.MemberUpd
 		updates["assigned_reviewer_at"] = update.AssignReviewer
 	}
 	if update.AssignUploader != nil {
-		updates["assigned_uploader_at"] = update.AssignUploader
+		updates["assigned_publisher_at"] = update.AssignUploader
 	}
 	if update.AssignAdmin != nil {
 		updates["assigned_admin_at"] = update.AssignAdmin

@@ -19,7 +19,7 @@ type MemberProfileRow struct {
 	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
 	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
 	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
-	AssignedUploaderAt    *time.Time `gorm:"column:assigned_uploader_at"`
+	AssignedUploaderAt    *time.Time `gorm:"column:assigned_publisher_at"`
 	AssignedAdminAt       *time.Time `gorm:"column:assigned_admin_at"`
 
 	CreatedAt time.Time  `gorm:"column:created_at"`
@@ -40,7 +40,7 @@ type MemberInsertRow struct {
 	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
 	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
 	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
-	AssignedUploaderAt    *time.Time `gorm:"column:assigned_uploader_at"`
+	AssignedUploaderAt    *time.Time `gorm:"column:assigned_publisher_at"`
 	AssignedAdminAt       *time.Time `gorm:"column:assigned_admin_at"`
 }
 

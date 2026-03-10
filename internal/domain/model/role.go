@@ -14,7 +14,7 @@ const (
 	RoleProofreader
 	RoleTypesetter
 	RoleReviewer
-	RoleUploader
+	RolePublisher
 	RoleAdmin
 )
 
@@ -46,8 +46,8 @@ func UnmaskRoles(mask RoleMask) []RoleFlag {
 	if mask&RoleMask(RoleReviewer) != 0 {
 		roles = append(roles, RoleReviewer)
 	}
-	if mask&RoleMask(RoleUploader) != 0 {
-		roles = append(roles, RoleUploader)
+	if mask&RoleMask(RolePublisher) != 0 {
+		roles = append(roles, RolePublisher)
 	}
 	if mask&RoleMask(RoleAdmin) != 0 {
 		roles = append(roles, RoleAdmin)
