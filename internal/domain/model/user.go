@@ -30,7 +30,7 @@ func NewUserCredentials(userID string, passwordHash string) UserCredentials {
 	}
 }
 
-type UserRegistration struct {
+type UserCreation struct {
 	Name         string
 	QQ           string
 	PasswordHash string
@@ -43,8 +43,8 @@ func NewUserRegistration(
 	qq string,
 	passwordHash string,
 	roles ...RoleFlag,
-) UserRegistration {
-	registration := UserRegistration{
+) UserCreation {
+	registration := UserCreation{
 		Name:         name,
 		QQ:           qq,
 		PasswordHash: passwordHash,

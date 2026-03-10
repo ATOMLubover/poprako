@@ -13,6 +13,7 @@ type AppState struct {
 	TeamApplication       application.TeamApplication
 	MemberApplication     application.MemberApplication
 	ComicApplication      application.ComicApplication
+	ChapterApplication    application.ChapterApplication
 }
 
 func NewAppState(
@@ -22,6 +23,7 @@ func NewAppState(
 	teamApplication application.TeamApplication,
 	memberApplication application.MemberApplication,
 	comicApplication application.ComicApplication,
+	chapterApplication application.ChapterApplication,
 ) *AppState {
 	return &AppState{
 		AppConfig:             appConfig,
@@ -30,5 +32,6 @@ func NewAppState(
 		TeamApplication:       teamApplication,
 		MemberApplication:     memberApplication,
 		ComicApplication:      comicApplication,
+		ChapterApplication:    chapterApplication,
 	}
 }

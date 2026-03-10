@@ -1,0 +1,142 @@
+package repository
+
+import (
+	"time"
+
+	"labelplus-next-web-be/internal/domain/model"
+	intf "labelplus-next-web-be/internal/domain/repository"
+	"labelplus-next-web-be/internal/infrastructure/repository/entity"
+	"labelplus-next-web-be/internal/util"
+
+	"gorm.io/gorm/clause"
+)
+
+type chapterRepository struct {
+	executor intf.Executor
+}
+
+func NewChapterRepository(executor intf.Executor) intf.ChapterRepository {
+	return &chapterRepository{executor: executor}
+}
+
+func (r *chapterRepository) withTransaction(executor intf.Executor) intf.Executor {
+	if executor != nil {
+		return executor
+	}
+
+	return r.executor
+}
+
+func (r *chapterRepository) BeginTransaction() intf.Executor {
+	return r.executor.Begin()
+}
+
+func (r *chapterRepository) LockByComicID(executor intf.Executor, comicID string) error {
+	executor = r.withTransaction(executor)
+
+	var lockedIDs []string
+
+	return executor.
+		Table(entity.ChapterTable).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("comic_id = ? AND deleted_at IS NULL", comicID).
+		Pluck("id", &lockedIDs).Error
+}
+
+func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ChapterInfo, error) {
+	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+
+	for _, opt := range options {
+		executor = opt(executor)
+	}
+
+	var rows []entity.ChapterInfoRow
+	if err := executor.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	result := make([]model.ChapterInfo, len(rows))
+	for i, row := range rows {
+		result[i] = entity.ToChapterInfo(row)
+	}
+
+	return result, nil
+}
+
+func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ChapterInfo, error) {
+	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+
+	for _, opt := range options {
+		executor = opt(executor)
+	}
+
+	var row entity.ChapterInfoRow
+	if err := executor.First(&row).Error; err != nil {
+		return model.ChapterInfo{}, err
+	}
+
+	return entity.ToChapterInfo(row), nil
+}
+
+func (r *chapterRepository) Count(executor intf.Executor, options ...intf.QueryOption) (int64, error) {
+	executor = r.withTransaction(executor)
+	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+
+	for _, opt := range options {
+		executor = opt(executor)
+	}
+
+	var count int64
+	if err := executor.Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r *chapterRepository) Create(executor intf.Executor, creation model.ChapterCreation) (string, error) {
+	executor = r.withTransaction(executor)
+
+	row := entity.ChapterInsertRow{
+		ID:        util.GenerateUUID(),
+		ComicID:   creation.ComicID,
+		Index:     creation.Index,
+		ChapterNo: creation.ChapterNo,
+		CreatorID: creation.CreatorID,
+	}
+
+	if err := executor.Create(&row).Error; err != nil {
+		return "", err
+	}
+
+	return row.ID, nil
+}
+
+func (r *chapterRepository) Update(executor intf.Executor, update model.ChapterUpdate) error {
+	executor = r.withTransaction(executor)
+
+	updates := map[string]any{}
+	if update.ChapterNo != nil {
+		updates["subtitle"] = *update.ChapterNo
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return executor.
+		Table(entity.ChapterTable).
+		Where("id = ? AND deleted_at IS NULL", update.ID).
+		Updates(updates).Error
+}
+
+func (r *chapterRepository) Delete(executor intf.Executor, id string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.ChapterTable).
+		Where("id = ?", id).
+		Update("deleted_at", time.Now()).Error
+}

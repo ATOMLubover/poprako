@@ -13,7 +13,9 @@ CREATE TABLE "chapter_table" (
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "deleted_at"            TIMESTAMPTZ
+    "deleted_at"            TIMESTAMPTZ,
+
+    UNIQUE ("comic_id", "index") WHERE "deleted_at" IS NULL
 );
 
 CREATE INDEX "idx_chapter_comic_id"

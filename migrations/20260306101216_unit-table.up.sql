@@ -20,7 +20,9 @@ CREATE TABLE "unit_table" (
     "prover_comment" TEXT,
     
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    UNIQUE ("page_id", "index")
 );
 
 CREATE INDEX "unit_table_page_id_index" ON "unit_table" ("page_id");

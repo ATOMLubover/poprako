@@ -6,7 +6,6 @@ import (
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
-	"labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -91,12 +90,9 @@ func (ma *memberApplication) CreateMember(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	if !service.CheckMemberPermission(
+	if !model.PermMemberCreate().Check(
 		currentUserID,
-		args.TeamID,
 		adapter.HandleLoadUserInfo(ma.userRepository),
-		adapter.HandleLoadMemberInfo(ma.memberRepository),
-		model.PermissionMemberCreate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return value.CreateMemberResult{}, errors.New("权限不足")
@@ -151,12 +147,10 @@ func (ma *memberApplication) ListMembers(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户在指定汉化组是否有查看成员列表权限
-	if !service.CheckMemberPermission(
+	if !model.PermMemberList().Check(
 		currentUserID,
 		args.TeamID,
-		adapter.HandleLoadUserInfo(ma.userRepository),
 		adapter.HandleLoadMemberInfo(ma.memberRepository),
-		model.PermissionMemberList,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return nil, errors.New("权限不足")
@@ -214,12 +208,10 @@ func (ma *memberApplication) UpdateMemberRole(
 	}
 
 	// 鉴权：使用从数据库查询到的可信 TeamID 进行权限检查
-	if !service.CheckMemberPermission(
+	if !model.PermMemberUpdate().Check(
 		currentUserID,
 		targetMember.TeamID,
-		adapter.HandleLoadUserInfo(ma.userRepository),
 		adapter.HandleLoadMemberInfo(ma.memberRepository),
-		model.PermissionMemberUpdate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")
@@ -262,12 +254,10 @@ func (ma *memberApplication) RemoveMember(
 	}
 
 	// 鉴权：使用从数据库查询到的可信 TeamID 进行权限检查
-	if !service.CheckMemberPermission(
+	if !model.PermMemberRemove().Check(
 		currentUserID,
 		targetMember.TeamID,
-		adapter.HandleLoadUserInfo(ma.userRepository),
 		adapter.HandleLoadMemberInfo(ma.memberRepository),
-		model.PermissionMemberDelete,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")
@@ -303,7 +293,7 @@ func (ma *memberApplication) JoinTeam(
 		Debug(fn + ": 被调用")
 
 	// 获取当前用户信息，提取 QQ
-	currentUser, err := ma.userRepository.GetByID(
+	currentUser, err := ma.userRepository.Get(
 		nil,
 		query_option.FilterByID(repository_infra.UserTable, currentUserID),
 	)

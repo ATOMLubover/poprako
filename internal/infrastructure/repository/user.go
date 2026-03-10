@@ -51,8 +51,9 @@ func (r *userRepository) List(executor intf.Executor, options ...intf.QueryOptio
 	return result, nil
 }
 
-func (r *userRepository) GetByID(executor intf.Executor, options ...intf.QueryOption) (model.UserInfo, error) {
+func (r *userRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.UserInfo, error) {
 	executor = r.withTransaction(executor)
+
 	executor = executor.Table(entity.UserTable).Where("deleted_at IS NULL")
 	for _, opt := range options {
 		executor = opt(executor)
@@ -71,6 +72,7 @@ func (r *userRepository) GetByID(executor intf.Executor, options ...intf.QueryOp
 
 func (r *userRepository) GetCredentials(executor intf.Executor, options ...intf.QueryOption) (model.UserCredentials, error) {
 	executor = r.withTransaction(executor)
+
 	executor = executor.Table(entity.UserTable).Where("deleted_at IS NULL")
 	for _, opt := range options {
 		executor = opt(executor)
@@ -84,7 +86,7 @@ func (r *userRepository) GetCredentials(executor intf.Executor, options ...intf.
 	return model.NewUserCredentials(row.ID, row.PasswordHash), nil
 }
 
-func (r *userRepository) Create(executor intf.Executor, registration model.UserRegistration) (string, error) {
+func (r *userRepository) Create(executor intf.Executor, registration model.UserCreation) (string, error) {
 	executor = r.withTransaction(executor)
 
 	row := entity.UserInsertRow{
@@ -102,11 +104,11 @@ func (r *userRepository) Create(executor intf.Executor, registration model.UserR
 	return row.ID, nil
 }
 
-func (r *userRepository) DeleteByID(executor intf.Executor, userID string) error {
+func (r *userRepository) Delete(executor intf.Executor, id string) error {
 	executor = r.withTransaction(executor)
 
 	return executor.
 		Model(&entity.UserInfoRow{}).
-		Where("id = ?", userID).
+		Where("id = ?", id).
 		Update("deleted_at", time.Now()).Error
 }

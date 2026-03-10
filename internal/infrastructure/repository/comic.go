@@ -47,7 +47,7 @@ func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOpti
 
 	result := make([]model.ComicInfo, len(rows))
 	for i, row := range rows {
-		result[i] = *entity.ToComicInfo(row)
+		result[i] = entity.ToComicInfo(row)
 	}
 
 	return result, nil
@@ -65,7 +65,7 @@ func (r *comicRepository) Get(executor intf.Executor, options ...intf.QueryOptio
 		return model.ComicInfo{}, err
 	}
 
-	return *entity.ToComicInfo(row), nil
+	return entity.ToComicInfo(row), nil
 }
 
 func (r *comicRepository) LockByTeamID(executor intf.Executor, teamID string) error {

@@ -88,11 +88,10 @@ func (ia invitationApplication) ListInvitations(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户在指定的汉化组是否有权限查看邀请信息
-	if !service.CheckInvitationPermission(
+	if !model.PermInvitationList().Check(
 		currentUserID,
 		args.TeamID,
 		adapter.HandleLoadMemberInfo(ia.memberRepository),
-		model.PermissionInvitationList,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查不通过")
 		return nil, errors.New("没有权限查看邀请信息")
@@ -140,11 +139,10 @@ func (ia invitationApplication) CreateInvitation(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户是否有权限创建邀请
-	if !service.CheckInvitationPermission(
+	if !model.PermInvitationCreate().Check(
 		currentUserID,
 		args.TeamID,
 		adapter.HandleLoadMemberInfo(ia.memberRepository),
-		model.PermissionInvitationCreate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查不通过")
 		return value.InvitationInfo{}, errors.New("没有权限创建邀请")
@@ -223,11 +221,10 @@ func (ia invitationApplication) UpdateInvitation(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户是否有权限修改邀请
-	if !service.CheckInvitationPermission(
+	if !model.PermInvitationUpdate().Check(
 		currentUserID,
 		args.TeamID,
 		adapter.HandleLoadMemberInfo(ia.memberRepository),
-		model.PermissionInvitationUpdate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查不通过")
 		return errors.New("没有权限修改邀请")
@@ -274,11 +271,10 @@ func (ia invitationApplication) DeleteInvitation(
 	}
 
 	// 鉴权：检查当前用户在邀请所属汉化组是否有删除邀请权限
-	if !service.CheckInvitationPermission(
+	if !model.PermInvitationDelete().Check(
 		currentUserID,
 		invitation.TeamID,
 		adapter.HandleLoadMemberInfo(ia.memberRepository),
-		model.PermissionInvitationDelete,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查不通过")
 		return errors.New("没有权限删除邀请")

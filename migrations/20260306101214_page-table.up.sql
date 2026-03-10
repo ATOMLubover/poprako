@@ -15,7 +15,9 @@ CREATE TABLE "page_table" (
     "creator_id"            TEXT NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    UNIQUE ("chapter_id", "index")
 );
 
 CREATE INDEX "idx_page_chapter_id"

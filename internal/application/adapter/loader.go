@@ -9,7 +9,7 @@ import (
 
 func HandleLoadUserInfo(userRepository repository.UserRepository) model.OnLoadUserInfo {
 	return func(userID string) (model.UserInfo, error) {
-		return userRepository.GetByID(nil, query_option.FilterByID(repository_infra.UserTable, userID))
+		return userRepository.Get(nil, query_option.FilterByID(repository_infra.UserTable, userID))
 	}
 }
 

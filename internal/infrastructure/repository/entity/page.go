@@ -24,11 +24,22 @@ type ChapterInfoRow struct {
 
 	CreatorID string `gorm:"column:creator_id"`
 
-	CreatedAt time.Time `gorm:"column:created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at"`
+	CreatedAt time.Time  `gorm:"column:created_at"`
+	UpdatedAt time.Time  `gorm:"column:updated_at"`
+	DeletedAt *time.Time `gorm:"column:deleted_at"`
 }
 
 func (ChapterInfoRow) TableName() string { return ChapterTable }
+
+type ChapterInsertRow struct {
+	ID        string `gorm:"column:id"`
+	ComicID   string `gorm:"column:comic_id"`
+	Index     int    `gorm:"column:index"`
+	ChapterNo string `gorm:"column:subtitle"`
+	CreatorID string `gorm:"column:creator_id"`
+}
+
+func (ChapterInsertRow) TableName() string { return ChapterTable }
 
 type PageInfoRow struct {
 	ID string `gorm:"column:id"`

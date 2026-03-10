@@ -100,3 +100,15 @@ func NewChapterCreation(
 		CreatorID: creatorID,
 	}
 }
+
+type ChapterUpdate struct {
+	ID        string
+	ChapterNo *string
+}
+
+func NewChapterUpdate(id string, chapterNo *string) ChapterUpdate {
+	return ChapterUpdate{
+		ID:        id,
+		ChapterNo: chapterNo,
+	}
+}

@@ -5,8 +5,8 @@ import "labelplus-next-web-be/internal/domain/model"
 type UserRepository interface {
 	Transactor
 	List(executor Executor, options ...QueryOption) ([]model.UserInfo, error)
-	GetByID(executor Executor, options ...QueryOption) (model.UserInfo, error)
+	Get(executor Executor, options ...QueryOption) (model.UserInfo, error)
 	GetCredentials(executor Executor, options ...QueryOption) (model.UserCredentials, error)
-	Create(executor Executor, registration model.UserRegistration) (string, error) // 如果成功，返回主键 ID
-	DeleteByID(executor Executor, id string) error
+	Create(executor Executor, creation model.UserCreation) (string, error) // 如果成功，返回主键 ID
+	Delete(executor Executor, id string) error
 }

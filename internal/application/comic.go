@@ -6,7 +6,6 @@ import (
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
-	"labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -88,11 +87,10 @@ func (ca *comicApplication) ListTeamComics(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户在指定的汉化组是否有权限查看漫画列表
-	if !service.CheckComicPermission(
+	if !model.PermComicList().Check(
 		currentUserID,
 		args.TeamID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
-		model.PermissionComicList,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return nil, errors.New("权限不足")
@@ -139,11 +137,10 @@ func (ca *comicApplication) CreateComic(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：检查当前用户在指定汉化组是否有创建漫画权限
-	if !service.CheckComicPermission(
+	if !model.PermComicCreate().Check(
 		currentUserID,
 		args.TeamID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
-		model.PermissionComicCreate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return value.CreateComicResult{}, errors.New("权限不足")
@@ -236,11 +233,10 @@ func (ca *comicApplication) UpdateComic(
 	}
 
 	// 鉴权：检查当前用户在目标漫画所属汉化组是否有更新权限
-	if !service.CheckComicPermission(
+	if !model.PermComicUpdate().Check(
 		currentUserID,
 		targetComic.TeamID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
-		model.PermissionComicUpdate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")
@@ -254,7 +250,7 @@ func (ca *comicApplication) UpdateComic(
 		&args.Description,
 	)
 
-	if err := ca.comicRepository.Update(nil, *comicUpdate); err != nil {
+	if err := ca.comicRepository.Update(nil, comicUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新漫画失败", zap.Error(err))
 		return errors.New("更新漫画失败")
 	}
@@ -292,11 +288,10 @@ func (ca *comicApplication) DeleteComic(
 	}
 
 	// 鉴权：检查当前用户在目标漫画所属汉化组是否有删除权限
-	if !service.CheckComicPermission(
+	if !model.PermComicDelete().Check(
 		currentUserID,
 		targetComic.TeamID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
-		model.PermissionComicDelete,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")

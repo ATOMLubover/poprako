@@ -47,7 +47,7 @@ type ComicInsertRow struct {
 
 func (ComicInsertRow) TableName() string { return ComicTable }
 
-func ToComicInfo(row ComicInfoRow) *model.ComicInfo {
+func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 	return model.NewComicInfo(
 		row.ID,
 		row.TeamID,

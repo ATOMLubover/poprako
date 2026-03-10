@@ -258,17 +258,15 @@ func (ua *userApplication) GetUser(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：用户只能查看自己的信息，超级管理员可以查看所有用户的信息
-	if !service.CheckUserPermission(
+	if !model.PermUserView().Check(
 		userID,
 		userID,
-		adapter.HandleLoadUserInfo(ua.userRepository),
-		model.PermissionUserView,
 	) {
 		scope.Logger().Warn(fn + ":权限检查不通过")
 		return value.UserInfo{}, errors.New("没有权限查看用户信息")
 	}
 
-	userInfo, err := ua.userRepository.GetByID(
+	userInfo, err := ua.userRepository.Get(
 		nil,
 		query_option.FilterByID(repository_infra.UserTable, userID),
 	)
@@ -304,11 +302,9 @@ func (ua *userApplication) ListUsers(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：仅超级管理员有权限查看用户列表
-	if !service.CheckUserPermission(
+	if !model.PermUserList().Check(
 		currentUserID,
-		"",
 		adapter.HandleLoadUserInfo(ua.userRepository),
-		model.PermissionUserList,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查不通过")
 		return nil, errors.New("没有权限查看用户列表")
@@ -359,11 +355,10 @@ func (ua *userApplication) RemoveUserByID(
 		Debug(fn + ": 被调用")
 
 	// 鉴权：仅超级管理员可删除用户
-	if !service.CheckUserPermission(
+	if !model.PermUserRemove().Check(
 		currentUserID,
 		targetUserID,
 		adapter.HandleLoadUserInfo(ua.userRepository),
-		model.PermissionUserRemove,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查不通过")
 		return errors.New("没有权限删除用户")
@@ -374,7 +369,7 @@ func (ua *userApplication) RemoveUserByID(
 		return errors.New("无法删除自己")
 	}
 
-	if err := ua.userRepository.DeleteByID(nil, targetUserID); err != nil {
+	if err := ua.userRepository.Delete(nil, targetUserID); err != nil {
 		scope.Logger().Error(fn+": 删除用户失败", zap.Error(err))
 		return errors.New("删除用户失败")
 	}

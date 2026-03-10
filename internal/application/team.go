@@ -7,7 +7,6 @@ import (
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
-	"labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -91,12 +90,9 @@ func (ta *teamApplication) CreateTeam(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	if !service.CheckTeamPermission(
+	if !model.PermTeamCreate().Check(
 		currentUserID,
-		"",
 		adapter.HandleLoadUserInfo(ta.userRepository),
-		adapter.HandleLoadMemberInfo(ta.memberRepository),
-		model.PermissionTeamCreate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return value.TeamInfo{}, errors.New("权限不足")
@@ -136,12 +132,9 @@ func (ta *teamApplication) ListAllTeams(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	if !service.CheckTeamPermission(
+	if !model.PermTeamListAll().Check(
 		currentUserID,
-		"",
 		adapter.HandleLoadUserInfo(ta.userRepository),
-		adapter.HandleLoadMemberInfo(ta.memberRepository),
-		model.PermissionTeamListAll,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return nil, errors.New("权限不足")
@@ -235,12 +228,11 @@ func (ta *teamApplication) UpdateTeam(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	if !service.CheckTeamPermission(
+	if !model.PermTeamUpdate().Check(
 		currentUserID,
 		args.ID,
 		adapter.HandleLoadUserInfo(ta.userRepository),
 		adapter.HandleLoadMemberInfo(ta.memberRepository),
-		model.PermissionTeamUpdate,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")
@@ -274,12 +266,11 @@ func (ta *teamApplication) DeleteTeam(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	if !service.CheckTeamPermission(
+	if !model.PermTeamRemove().Check(
 		currentUserID,
 		teamID,
 		adapter.HandleLoadUserInfo(ta.userRepository),
 		adapter.HandleLoadMemberInfo(ta.memberRepository),
-		model.PermissionTeamDelete,
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")

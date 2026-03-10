@@ -12,7 +12,9 @@ CREATE TABLE "assignment_table" (
     "assigned_publisher_at"     TIMESTAMPTZ,
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    UNIQUE ("chapter_id", "user_id")
 );
 
 CREATE INDEX "idx_assignment_chapter_id"
