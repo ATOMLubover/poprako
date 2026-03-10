@@ -83,6 +83,166 @@ const docTemplate = `{
                 }
             }
         },
+        "/chapters": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定漫画的章节列表，支持分页，注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "获取漫画章节列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/value.ChapterDetail"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在指定漫画中创建章节",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "创建漫画章节",
+                "parameters": [
+                    {
+                        "description": "创建章节参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateChapterResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "更新指定章节的信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "更新章节",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新章节参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.UpdateChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定章节",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "删除章节",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/comics": {
             "get": {
                 "security": [
@@ -172,36 +332,7 @@ const docTemplate = `{
             }
         },
         "/comics/{comic_id}": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "删除指定漫画",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "comic"
-                ],
-                "summary": "删除漫画（已测试）",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "漫画 ID",
-                        "name": "comic_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -234,6 +365,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/value.UpdateComicArgs"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定漫画",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "删除漫画（已测试）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -332,36 +492,7 @@ const docTemplate = `{
             }
         },
         "/invitations/{invitation_id}": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "删除指定的邀请",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "invitation"
-                ],
-                "summary": "删除邀请",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "邀请 ID",
-                        "name": "invitation_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -394,6 +525,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/value.UpdateInvitationArgs"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定的邀请",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invitation"
+                ],
+                "summary": "删除邀请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "邀请 ID",
+                        "name": "invitation_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -528,36 +688,7 @@ const docTemplate = `{
             }
         },
         "/members/{member_id}": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "从汉化组中移除指定成员",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "member"
-                ],
-                "summary": "移除成员",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "成员 ID",
-                        "name": "member_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -589,6 +720,183 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/value.UpdateMemberRoleArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "从汉化组中移除指定成员",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "移除成员",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "成员 ID",
+                        "name": "member_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/pages": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定章节的所有页面，注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "page"
+                ],
+                "summary": "获取章节页面列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/value.PageInfo"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "为指定章节批量创建页面，返回每个页面的预签名上传地址",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "page"
+                ],
+                "summary": "创建章节页面",
+                "parameters": [
+                    {
+                        "description": "创建页面参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateChapterPagesArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateChapterPagesResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/pages/{chapter_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定章节的所有页面",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "page"
+                ],
+                "summary": "删除章节所有页面",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/pages/{page_id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "更新指定页面的信息，例如标记页面已上传完成",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "page"
+                ],
+                "summary": "更新页面",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "页面 ID",
+                        "name": "page_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新页面参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.UpdatePageArgs"
                         }
                     }
                 ],
@@ -693,36 +1001,7 @@ const docTemplate = `{
             }
         },
         "/teams/{team_id}": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "删除指定汉化组，超级管理员或汉化组管理员有权限",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "team"
-                ],
-                "summary": "删除汉化组",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -755,6 +1034,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/value.UpdateTeamArgs"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定汉化组，超级管理员或汉化组管理员有权限",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team"
+                ],
+                "summary": "删除汉化组",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "汉化组 ID",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -853,36 +1161,7 @@ const docTemplate = `{
                     }
                 }
             },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "根据用户 ID 删除用户",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "删除用户",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "用户 ID",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -915,6 +1194,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/value.UpdateUserArgs"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "根据用户 ID 删除用户",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -960,8 +1268,73 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "util.Option-string": {
-            "type": "object"
+        "value.ChapterDetail": {
+            "type": "object",
+            "properties": {
+                "chapter_no": {
+                    "type": "string"
+                },
+                "comic_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "creator_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "page_count": {
+                    "type": "integer"
+                },
+                "proofread_at": {
+                    "type": "integer"
+                },
+                "proofread_unit_count": {
+                    "type": "integer"
+                },
+                "proofreading_at": {
+                    "type": "integer"
+                },
+                "published_at": {
+                    "type": "integer"
+                },
+                "reviewed_at": {
+                    "type": "integer"
+                },
+                "total_unit_count": {
+                    "type": "integer"
+                },
+                "transalating_at": {
+                    "type": "integer"
+                },
+                "translated_at": {
+                    "type": "integer"
+                },
+                "translated_unit_count": {
+                    "type": "integer"
+                },
+                "typeset_at": {
+                    "type": "integer"
+                },
+                "typesetting_at": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "uploaded_at": {
+                    "type": "integer"
+                }
+            }
         },
         "value.ComicInfo": {
             "type": "object",
@@ -998,6 +1371,47 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                }
+            }
+        },
+        "value.CreateChapterArgs": {
+            "type": "object",
+            "properties": {
+                "chapter_no": {
+                    "type": "string"
+                },
+                "comic_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.CreateChapterPagesArgs": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "type": "string"
+                },
+                "page_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "value.CreateChapterPagesResult": {
+            "type": "object",
+            "properties": {
+                "creations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/value.PageCreationResult"
+                    }
+                }
+            }
+        },
+        "value.CreateChapterResult": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
                 }
             }
         },
@@ -1158,6 +1572,46 @@ const docTemplate = `{
                 }
             }
         },
+        "value.PageCreationResult": {
+            "type": "object",
+            "properties": {
+                "page_id": {
+                    "type": "string"
+                },
+                "put_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.PageInfo": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "proofread_unit_count": {
+                    "type": "integer"
+                },
+                "total_unit_count": {
+                    "type": "integer"
+                },
+                "translated_unit_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "value.RegisterUserArgs": {
             "type": "object",
             "properties": {
@@ -1217,6 +1671,17 @@ const docTemplate = `{
                 }
             }
         },
+        "value.UpdateChapterArgs": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "type": "string"
+                },
+                "chapter_no": {
+                    "type": "string"
+                }
+            }
+        },
         "value.UpdateComicArgs": {
             "type": "object",
             "properties": {
@@ -1259,17 +1724,29 @@ const docTemplate = `{
                 }
             }
         },
+        "value.UpdatePageArgs": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_uploaded": {
+                    "description": "由于采用预签名方式让客户端上传，所以在客户端上传后，\n必须让其主动调用一次更新接口来告诉后端该页面已经上传完成了",
+                    "type": "boolean"
+                }
+            }
+        },
         "value.UpdateTeamArgs": {
             "type": "object",
             "properties": {
                 "description": {
-                    "$ref": "#/definitions/util.Option-string"
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
                 "name": {
-                    "$ref": "#/definitions/util.Option-string"
+                    "type": "string"
                 }
             }
         },

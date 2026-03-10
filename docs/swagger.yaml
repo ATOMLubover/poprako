@@ -1,6 +1,49 @@
 basePath: /api/v1
 definitions:
-  util.Option-string:
+  value.ChapterDetail:
+    properties:
+      chapter_no:
+        type: string
+      comic_id:
+        type: string
+      cover_url:
+        type: string
+      created_at:
+        type: integer
+      creator_id:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      page_count:
+        type: integer
+      proofread_at:
+        type: integer
+      proofread_unit_count:
+        type: integer
+      proofreading_at:
+        type: integer
+      published_at:
+        type: integer
+      reviewed_at:
+        type: integer
+      total_unit_count:
+        type: integer
+      transalating_at:
+        type: integer
+      translated_at:
+        type: integer
+      translated_unit_count:
+        type: integer
+      typeset_at:
+        type: integer
+      typesetting_at:
+        type: integer
+      updated_at:
+        type: integer
+      uploaded_at:
+        type: integer
     type: object
   value.ComicInfo:
     properties:
@@ -26,6 +69,32 @@ definitions:
         type: string
       updated_at:
         type: integer
+    type: object
+  value.CreateChapterArgs:
+    properties:
+      chapter_no:
+        type: string
+      comic_id:
+        type: string
+    type: object
+  value.CreateChapterPagesArgs:
+    properties:
+      chapter_id:
+        type: string
+      page_count:
+        type: integer
+    type: object
+  value.CreateChapterPagesResult:
+    properties:
+      creations:
+        items:
+          $ref: '#/definitions/value.PageCreationResult'
+        type: array
+    type: object
+  value.CreateChapterResult:
+    properties:
+      id:
+        type: string
     type: object
   value.CreateComicArgs:
     properties:
@@ -128,6 +197,32 @@ definitions:
       updated_at:
         type: integer
     type: object
+  value.PageCreationResult:
+    properties:
+      page_id:
+        type: string
+      put_url:
+        type: string
+    type: object
+  value.PageInfo:
+    properties:
+      chapter_id:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      index:
+        type: integer
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+      updated_at:
+        type: integer
+    type: object
   value.RegisterUserArgs:
     properties:
       invitation_code:
@@ -166,6 +261,13 @@ definitions:
       updated_at:
         type: integer
     type: object
+  value.UpdateChapterArgs:
+    properties:
+      chapter_id:
+        type: string
+      chapter_no:
+        type: string
+    type: object
   value.UpdateComicArgs:
     properties:
       author:
@@ -193,14 +295,24 @@ definitions:
       roles:
         type: integer
     type: object
+  value.UpdatePageArgs:
+    properties:
+      id:
+        type: string
+      is_uploaded:
+        description: |-
+          由于采用预签名方式让客户端上传，所以在客户端上传后，
+          必须让其主动调用一次更新接口来告诉后端该页面已经上传完成了
+        type: boolean
+    type: object
   value.UpdateTeamArgs:
     properties:
       description:
-        $ref: '#/definitions/util.Option-string'
+        type: string
       id:
         type: string
       name:
-        $ref: '#/definitions/util.Option-string'
+        type: string
     type: object
   value.UpdateUserArgs:
     properties:
@@ -282,6 +394,107 @@ paths:
       summary: 用户注册（已测试）
       tags:
       - auth
+  /chapters:
+    get:
+      description: 获取指定漫画的章节列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - description: 漫画 ID
+        in: query
+        name: comic_id
+        required: true
+        type: string
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.ChapterDetail'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取漫画章节列表
+      tags:
+      - chapter
+    post:
+      consumes:
+      - application/json
+      description: 在指定漫画中创建章节
+      parameters:
+      - description: 创建章节参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.CreateChapterArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/value.CreateChapterResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建漫画章节
+      tags:
+      - chapter
+  /chapters/{chapter_id}:
+    delete:
+      description: 删除指定章节
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 删除章节
+      tags:
+      - chapter
+    put:
+      consumes:
+      - application/json
+      description: 更新指定章节的信息
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: 更新章节参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.UpdateChapterArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 更新章节
+      tags:
+      - chapter
   /comics:
     get:
       description: 获取指定汉化组的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组
@@ -357,7 +570,7 @@ paths:
       summary: 删除漫画（已测试）
       tags:
       - comic
-    patch:
+    put:
       consumes:
       - application/json
       description: 更新指定漫画的信息
@@ -458,7 +671,7 @@ paths:
       summary: 删除邀请
       tags:
       - invitation
-    patch:
+    put:
       consumes:
       - application/json
       description: 更新指定待处理邀请的信息，无法更新已被使用或已失效的邀请
@@ -559,7 +772,7 @@ paths:
       summary: 移除成员
       tags:
       - member
-    patch:
+    put:
       consumes:
       - application/json
       description: 更新指定成员的分工角色
@@ -607,6 +820,98 @@ paths:
       summary: 通过邀请码加入汉化组
       tags:
       - member
+  /pages:
+    get:
+      description: 获取指定章节的所有页面，注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - description: 章节 ID
+        in: query
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.PageInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取章节页面列表
+      tags:
+      - page
+    post:
+      consumes:
+      - application/json
+      description: 为指定章节批量创建页面，返回每个页面的预签名上传地址
+      parameters:
+      - description: 创建页面参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.CreateChapterPagesArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/value.CreateChapterPagesResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建章节页面
+      tags:
+      - page
+  /pages/{chapter_id}:
+    delete:
+      description: 删除指定章节的所有页面
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 删除章节所有页面
+      tags:
+      - page
+  /pages/{page_id}:
+    put:
+      consumes:
+      - application/json
+      description: 更新指定页面的信息，例如标记页面已上传完成
+      parameters:
+      - description: 页面 ID
+        in: path
+        name: page_id
+        required: true
+        type: string
+      - description: 更新页面参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.UpdatePageArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 更新页面
+      tags:
+      - page
   /teams:
     get:
       description: 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
@@ -666,7 +971,7 @@ paths:
       summary: 删除汉化组
       tags:
       - team
-    patch:
+    put:
       consumes:
       - application/json
       description: 更新指定汉化组的信息，超级管理员或汉化组管理员有权限
@@ -784,7 +1089,7 @@ paths:
       summary: 根据 ID 获取用户信息（已测试）
       tags:
       - user
-    patch:
+    put:
       consumes:
       - application/json
       description: 更新指定用户的信息

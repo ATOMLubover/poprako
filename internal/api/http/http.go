@@ -95,6 +95,24 @@ func initialize(appState *state.AppState) *iris.Application {
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))
 	}
 
+	// 章节相关路由
+	chapterParty := authorizedParty.Party("/chapters")
+	{
+		chapterParty.Get("/", ListComicChapters(appState))
+		chapterParty.Post("/", CreateComicChapter(appState))
+		chapterParty.Put("/{chapter_id}", UpdateChapter(appState))
+		chapterParty.Delete("/{chapter_id}", DeleteComicChapter(appState))
+	}
+
+	// 页面相关路由
+	pageParty := authorizedParty.Party("/pages")
+	{
+		pageParty.Get("/", ListChapterPages(appState))
+		pageParty.Post("/", CreateChapterPages(appState))
+		pageParty.Put("/{page_id}", UpdatePage(appState))
+		pageParty.Delete("/{chapter_id}", DeletePages(appState))
+	}
+
 	// 初始化 Swagger UI
 	initializeSwagger(app, appState.AppConfig)
 

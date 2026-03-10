@@ -6,12 +6,12 @@ import (
 	"labelplus-next-web-be/internal/domain/model"
 )
 
-type CreateChapterPagesArgs struct {
+type ReserveChapterPagesArgs struct {
 	ChapterID string `json:"chapter_id"`
 	PageCount int    `json:"page_count"`
 }
 
-func (args *CreateChapterPagesArgs) Validate() error {
+func (args *ReserveChapterPagesArgs) Validate() error {
 	if args == nil {
 		return errors.New("参数不能为空")
 	}
@@ -27,12 +27,12 @@ func (args *CreateChapterPagesArgs) Validate() error {
 	return nil
 }
 
-type CreateChapterPagesResult struct {
+type ReserveChapterPagesResult struct {
 	Creations []PageCreationResult `json:"creations"`
 }
 
-func NewCreateChapterPagesResult(creations []PageCreationResult) CreateChapterPagesResult {
-	return CreateChapterPagesResult{
+func NewCreateChapterPagesResult(creations []PageCreationResult) ReserveChapterPagesResult {
+	return ReserveChapterPagesResult{
 		Creations: creations,
 	}
 }

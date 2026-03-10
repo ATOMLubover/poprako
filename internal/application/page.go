@@ -17,11 +17,11 @@ import (
 )
 
 type PageApplication interface {
-	CreateChapterPages(
+	ReserveChapterPages(
 		scope util.TraceScope,
 		currentUserID string,
-		args value.CreateChapterPagesArgs,
-	) (value.CreateChapterPagesResult, error)
+		args value.ReserveChapterPagesArgs,
+	) (value.ReserveChapterPagesResult, error)
 	ListChapterPages(
 		scope util.TraceScope,
 		currentUserID string,
@@ -78,16 +78,16 @@ func NewPageApplication(
 	}
 }
 
-func (pa *pageApplication) CreateChapterPages(
+func (pa *pageApplication) ReserveChapterPages(
 	scope util.TraceScope,
 	currentUserID string,
-	args value.CreateChapterPagesArgs,
-) (value.CreateChapterPagesResult, error) {
+	args value.ReserveChapterPagesArgs,
+) (value.ReserveChapterPagesResult, error) {
 	const fn = "PageApplication.CreateChapterPages"
 
 	if err := args.Validate(); err != nil {
 		scope.Logger().Error(fn+": 参数验证失败", zap.Error(err))
-		return value.CreateChapterPagesResult{}, err
+		return value.ReserveChapterPagesResult{}, err
 	}
 
 	scope.
@@ -104,14 +104,14 @@ func (pa *pageApplication) CreateChapterPages(
 		adapter.HandleLoadAssignmentInfo(pa.assignmentRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
-		return value.CreateChapterPagesResult{}, errors.New("权限不足")
+		return value.ReserveChapterPagesResult{}, errors.New("权限不足")
 	}
 
 	// 先在数据库中创建页面记录，随后再根据 ID 创建预签名 PUT URL，最后返回页面 ID 和预签名 URL 列表
 	transactionExecutor := pa.pageRepository.BeginTransaction()
 	if transactionExecutor.Error != nil {
 		scope.Logger().Error(fn+": 开始事务失败", zap.Error(transactionExecutor.Error))
-		return value.CreateChapterPagesResult{}, errors.New("创建漫画页失败")
+		return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 	}
 
 	var transactionErr error
@@ -127,7 +127,7 @@ func (pa *pageApplication) CreateChapterPages(
 	transactionErr = pa.pageRepository.LockByChapterID(transactionExecutor, args.ChapterID)
 	if transactionErr != nil {
 		scope.Logger().Error(fn+": 锁定章节记录失败", zap.Error(transactionErr))
-		return value.CreateChapterPagesResult{}, errors.New("创建漫画页失败")
+		return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 	}
 
 	// 生成所有的主键和 OSS Key
@@ -146,7 +146,7 @@ func (pa *pageApplication) CreateChapterPages(
 	transactionErr = pa.pageRepository.CreateBatch(transactionExecutor, pageCreations)
 	if transactionErr != nil {
 		scope.Logger().Error(fn+": 创建页面记录失败", zap.Error(transactionErr))
-		return value.CreateChapterPagesResult{}, errors.New("创建漫画页失败")
+		return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 	}
 
 	// 生成预签名 URL
@@ -158,7 +158,7 @@ func (pa *pageApplication) CreateChapterPages(
 			transactionErr = err
 			scope.Logger().Error(fn+": 生成预签名 URL 失败", zap.Error(transactionErr))
 
-			return value.CreateChapterPagesResult{}, errors.New("创建漫画页失败")
+			return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 		}
 
 		creationResults[i] = value.NewPageCreationResult(pageCreations[i].ID, presignedURL)
@@ -166,7 +166,7 @@ func (pa *pageApplication) CreateChapterPages(
 
 	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {
 		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitErr))
-		return value.CreateChapterPagesResult{}, errors.New("创建漫画页失败")
+		return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 	}
 
 	result := value.NewCreateChapterPagesResult(creationResults)

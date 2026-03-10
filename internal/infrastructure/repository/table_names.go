@@ -11,4 +11,5 @@ const (
 	ChapterTable    = entity.ChapterTable
 	PageTable       = entity.PageTable
 	InvitationTable = entity.InvitationTable
+	AssignmentTable = entity.AssignmentTable
 )
