@@ -37,7 +37,7 @@ func ListComicChapters(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := chapterApplication.ListComicChapters(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -79,7 +79,7 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := chapterApplication.CreateComicChapter(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -134,7 +134,7 @@ func UpdateChapter(appState *state.AppState) iris.Handler {
 		}
 
 		if err := chapterApplication.UpdateChapter(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		); err != nil {
@@ -174,7 +174,7 @@ func DeleteComicChapter(appState *state.AppState) iris.Handler {
 		}
 
 		if err := chapterApplication.DeleteComicChapter(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			chapterID,
 		); err != nil {

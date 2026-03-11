@@ -29,7 +29,7 @@ func Login(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := userApplication.LoginUser(*buildTraceScope(ctx), args)
+		result, err := userApplication.LoginUser(buildTraceScope(ctx), args)
 		if err != nil {
 			reject(ctx, iris.StatusUnauthorized, err.Error())
 			return
@@ -61,7 +61,7 @@ func Register(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := userApplication.RegisterUser(*buildTraceScope(ctx), args)
+		result, err := userApplication.RegisterUser(buildTraceScope(ctx), args)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return

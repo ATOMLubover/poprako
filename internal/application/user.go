@@ -40,6 +40,11 @@ type UserApplication interface {
 		currentUserID string,
 		targetUserID string,
 	) (value.ReserveUserAvatarResult, error)
+	ConfirmUserAvatarUploaded(
+		scope util.TraceScope,
+		currentUserID string,
+		targetUserID string,
+	) error
 	UpdateUser(
 		scope util.TraceScope,
 		currentUserID string,
@@ -54,7 +59,7 @@ type UserApplication interface {
 
 type userApplication struct {
 	authConfig *config.AuthConfig
-	ossClient   external.OSSClient
+	ossClient  external.OSSClient
 
 	userRepository       repository.UserRepository
 	memberRepository     repository.MemberRepository
@@ -440,12 +445,47 @@ func (ua *userApplication) UpdateUser(
 		args.Name,
 		args.QQ,
 		hashedPassword,
-		args.IsAvatarUploaded,
 	)
 
 	if err := ua.userRepository.Update(nil, userUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新用户失败", zap.Error(err))
 		return errors.New("更新用户失败")
+	}
+
+	return nil
+}
+
+func (ua *userApplication) ConfirmUserAvatarUploaded(
+	scope util.TraceScope,
+	currentUserID string,
+	targetUserID string,
+) error {
+	const fn = "UserApplication.ConfirmUserAvatarUploaded"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+			zap.String("target_user_id", targetUserID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if targetUserID == "" {
+		return errors.New("用户 ID 不能为空")
+	}
+
+	if !model.PermUserUpdate().Check(
+		currentUserID,
+		targetUserID,
+		adapter.HandleLoadUserInfo(ua.userRepository),
+	) {
+		scope.Logger().Warn(fn + ": 权限检查不通过")
+		return errors.New("没有权限确认用户头像上传")
+	}
+
+	if err := ua.userRepository.ConfirmAvatarUploaded(nil, targetUserID); err != nil {
+		scope.Logger().Error(fn+": 确认用户头像上传失败", zap.Error(err))
+		return errors.New("确认用户头像上传失败")
 	}
 
 	return nil

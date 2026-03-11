@@ -159,10 +159,9 @@ func (lua *ListUserArgs) Validate() error {
 type UpdateUserArgs struct {
 	UserID string `json:"user_id"`
 
-	Name             string `json:"name"`
-	QQ               string `json:"qq"`
-	Password         string `json:"password"`
-	IsAvatarUploaded bool   `json:"is_avatar_uploaded"`
+	Name     string `json:"name"`
+	QQ       string `json:"qq"`
+	Password string `json:"password"`
 }
 
 func (uua *UpdateUserArgs) Validate() error {

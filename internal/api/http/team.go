@@ -35,7 +35,7 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApplication.CreateTeam(*buildTraceScope(ctx), currentUserID, args)
+		result, err := teamApplication.CreateTeam(buildTraceScope(ctx), currentUserID, args)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
@@ -66,7 +66,7 @@ func ListAllTeams(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApplication.ListAllTeams(*buildTraceScope(ctx), currentUserID)
+		result, err := teamApplication.ListAllTeams(buildTraceScope(ctx), currentUserID)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -96,7 +96,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApplication.ListMyTeams(*buildTraceScope(ctx), currentUserID)
+		result, err := teamApplication.ListMyTeams(buildTraceScope(ctx), currentUserID)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -143,12 +143,93 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 
 		args.ID = teamID
 
-		if err := teamApplication.UpdateTeam(*buildTraceScope(ctx), currentUserID, args); err != nil {
+		if err := teamApplication.UpdateTeam(buildTraceScope(ctx), currentUserID, args); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
 		}
 
 		accept(ctx, "更新汉化组成功", nil)
+	}
+}
+
+// ReserveTeamAvatar godoc
+// @Summary 	预留汉化组头像上传
+// @Description 为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key
+//
+// @Tags 		team
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		team_id path string true "汉化组 ID"
+//
+// @Success 	200 {object} value.ReserveTeamAvatarResult
+//
+// @Router 		/teams/{team_id}/avatar [post]
+func ReserveTeamAvatar(appState *state.AppState) iris.Handler {
+	teamApplication := appState.TeamApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		teamID := ctx.Params().Get("team_id")
+		if teamID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 team_id 路径参数")
+			return
+		}
+
+		result, err := teamApplication.ReserveTeamAvatar(
+			buildTraceScope(ctx),
+			currentUserID,
+			teamID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "预留汉化组头像成功", result)
+	}
+}
+
+// ConfirmTeamAvatarUploaded godoc
+// @Summary 	确认汉化组头像已上传
+// @Description 在客户端上传头像后，确认汉化组头像上传状态
+//
+// @Tags 		team
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		team_id path string true "汉化组 ID"
+//
+// @Success 	200
+//
+// @Router 		/teams/{team_id}/avatar/confirm [post]
+func ConfirmTeamAvatarUploaded(appState *state.AppState) iris.Handler {
+	teamApplication := appState.TeamApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		teamID := ctx.Params().Get("team_id")
+		if teamID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 team_id 路径参数")
+			return
+		}
+
+		if err := teamApplication.ConfirmTeamAvatarUploaded(
+			buildTraceScope(ctx),
+			currentUserID,
+			teamID,
+		); err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "确认汉化组头像上传成功", nil)
 	}
 }
 
@@ -179,7 +260,7 @@ func DeleteTeam(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := teamApplication.RemoveTeam(*buildTraceScope(ctx), currentUserID, teamID); err != nil {
+		if err := teamApplication.RemoveTeam(buildTraceScope(ctx), currentUserID, teamID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

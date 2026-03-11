@@ -811,15 +811,15 @@ const docTemplate = `{
                 "tags": [
                     "page"
                 ],
-                "summary": "创建章节页面",
+                "summary": "预留页面记录，并生成每个页面的预签名上传地址",
                 "parameters": [
                     {
-                        "description": "创建页面参数",
+                        "description": "预留页面参数",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/value.CreateChapterPagesArgs"
+                            "$ref": "#/definitions/value.ReserveChapterPagesArgs"
                         }
                     }
                 ],
@@ -827,7 +827,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/value.CreateChapterPagesResult"
+                            "$ref": "#/definitions/value.ReserveChapterPagesResult"
                         }
                     }
                 }
@@ -1072,6 +1072,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/teams/{team_id}/avatar": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team"
+                ],
+                "summary": "预留汉化组头像上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "汉化组 ID",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/value.ReserveTeamAvatarResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{team_id}/avatar/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在客户端上传头像后，确认汉化组头像上传状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team"
+                ],
+                "summary": "确认汉化组头像已上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "汉化组 ID",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -1265,6 +1330,37 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/users/{user_id}/avatar/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在客户端上传头像后，确认用户头像上传状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "确认用户头像已上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1382,28 +1478,6 @@ const docTemplate = `{
                 },
                 "comic_id": {
                     "type": "string"
-                }
-            }
-        },
-        "value.CreateChapterPagesArgs": {
-            "type": "object",
-            "properties": {
-                "chapter_id": {
-                    "type": "string"
-                },
-                "page_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "value.CreateChapterPagesResult": {
-            "type": "object",
-            "properties": {
-                "creations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/value.PageCreationResult"
-                    }
                 }
             }
         },
@@ -1640,6 +1714,39 @@ const docTemplate = `{
                 }
             }
         },
+        "value.ReserveChapterPagesArgs": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "type": "string"
+                },
+                "page_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "value.ReserveChapterPagesResult": {
+            "type": "object",
+            "properties": {
+                "creations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/value.PageCreationResult"
+                    }
+                }
+            }
+        },
+        "value.ReserveTeamAvatarResult": {
+            "type": "object",
+            "properties": {
+                "avatar_oss_key": {
+                    "type": "string"
+                },
+                "put_url": {
+                    "type": "string"
+                }
+            }
+        },
         "value.ReserveUserAvatarResult": {
             "type": "object",
             "properties": {
@@ -1654,6 +1761,9 @@ const docTemplate = `{
         "value.TeamInfo": {
             "type": "object",
             "properties": {
+                "avatar_oss_key": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "integer"
                 },
@@ -1662,6 +1772,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "is_avatar_uploaded": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"
@@ -1753,9 +1866,6 @@ const docTemplate = `{
         "value.UpdateUserArgs": {
             "type": "object",
             "properties": {
-                "is_avatar_uploaded": {
-                    "type": "boolean"
-                },
                 "name": {
                     "type": "string"
                 },

@@ -37,7 +37,7 @@ func ListTeamComics(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := comicApplication.ListTeamComics(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -79,7 +79,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := comicApplication.CreateComic(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -134,7 +134,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 		}
 
 		if err := comicApplication.UpdateComic(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		); err != nil {
@@ -174,7 +174,7 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 		}
 
 		if err := comicApplication.DeleteComic(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			comicID,
 		); err != nil {

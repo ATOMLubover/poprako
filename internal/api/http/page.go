@@ -35,7 +35,7 @@ func ListChapterPages(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := pageApplication.ListChapterPages(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			chapterID,
 		)
@@ -48,20 +48,20 @@ func ListChapterPages(appState *state.AppState) iris.Handler {
 	}
 }
 
-// CreateChapterPages godoc
-// @Summary 	创建章节页面，实际上是在数据库中预留页面记录，并生成每个页面的预签名上传地址
+// ReserveChapterPages godoc
+// @Summary 	预留页面记录，并生成每个页面的预签名上传地址
 // @Description 为指定章节批量创建页面，返回每个页面的预签名上传地址
 //
 // @Tags 		page
 // @Security 	ApiKeyAuth
 // @Accept 	json
 // @Produce 	json
-// @Param 		body body value.CreateChapterPagesArgs true "创建页面参数"
+// @Param 		body body value.ReserveChapterPagesArgs true "预留页面参数"
 //
-// @Success 	201 {object} value.CreateChapterPagesResult
+// @Success 	201 {object} value.ReserveChapterPagesResult
 //
 // @Router 		/pages [post]
-func CreateChapterPages(appState *state.AppState) iris.Handler {
+func ReserveChapterPages(appState *state.AppState) iris.Handler {
 	pageApplication := appState.PageApplication
 
 	return func(ctx iris.Context) {
@@ -77,7 +77,7 @@ func CreateChapterPages(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := pageApplication.ReserveChapterPages(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -132,7 +132,7 @@ func UpdatePage(appState *state.AppState) iris.Handler {
 		}
 
 		if err := pageApplication.UpdatePage(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		); err != nil {
@@ -172,7 +172,7 @@ func DeletePages(appState *state.AppState) iris.Handler {
 		}
 
 		if err := pageApplication.DeletePages(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			chapterID,
 		); err != nil {

@@ -77,20 +77,6 @@ definitions:
       comic_id:
         type: string
     type: object
-  value.CreateChapterPagesArgs:
-    properties:
-      chapter_id:
-        type: string
-      page_count:
-        type: integer
-    type: object
-  value.CreateChapterPagesResult:
-    properties:
-      creations:
-        items:
-          $ref: '#/definitions/value.PageCreationResult'
-        type: array
-    type: object
   value.CreateChapterResult:
     properties:
       id:
@@ -241,6 +227,27 @@ definitions:
       user_id:
         type: string
     type: object
+  value.ReserveChapterPagesArgs:
+    properties:
+      chapter_id:
+        type: string
+      page_count:
+        type: integer
+    type: object
+  value.ReserveChapterPagesResult:
+    properties:
+      creations:
+        items:
+          $ref: '#/definitions/value.PageCreationResult'
+        type: array
+    type: object
+  value.ReserveTeamAvatarResult:
+    properties:
+      avatar_oss_key:
+        type: string
+      put_url:
+        type: string
+    type: object
   value.ReserveUserAvatarResult:
     properties:
       avatar_oss_key:
@@ -250,12 +257,16 @@ definitions:
     type: object
   value.TeamInfo:
     properties:
+      avatar_oss_key:
+        type: string
       created_at:
         type: integer
       description:
         type: string
       id:
         type: string
+      is_avatar_uploaded:
+        type: boolean
       name:
         type: string
       updated_at:
@@ -316,8 +327,6 @@ definitions:
     type: object
   value.UpdateUserArgs:
     properties:
-      is_avatar_uploaded:
-        type: boolean
       name:
         type: string
       password:
@@ -848,22 +857,22 @@ paths:
       - application/json
       description: 为指定章节批量创建页面，返回每个页面的预签名上传地址
       parameters:
-      - description: 创建页面参数
+      - description: 预留页面参数
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/value.CreateChapterPagesArgs'
+          $ref: '#/definitions/value.ReserveChapterPagesArgs'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/value.CreateChapterPagesResult'
+            $ref: '#/definitions/value.ReserveChapterPagesResult'
       security:
       - ApiKeyAuth: []
-      summary: 创建章节页面
+      summary: 预留页面记录，并生成每个页面的预签名上传地址
       tags:
       - page
   /pages/{chapter_id}:
@@ -995,6 +1004,46 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 更新汉化组信息
+      tags:
+      - team
+  /teams/{team_id}/avatar:
+    post:
+      description: 为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key
+      parameters:
+      - description: 汉化组 ID
+        in: path
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/value.ReserveTeamAvatarResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 预留汉化组头像上传
+      tags:
+      - team
+  /teams/{team_id}/avatar/confirm:
+    post:
+      description: 在客户端上传头像后，确认汉化组头像上传状态
+      parameters:
+      - description: 汉化组 ID
+        in: path
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 确认汉化组头像已上传
       tags:
       - team
   /teams/mine:
@@ -1134,6 +1183,25 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 预留用户头像上传
+      tags:
+      - user
+  /users/{user_id}/avatar/confirm:
+    post:
+      description: 在客户端上传头像后，确认用户头像上传状态
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 确认用户头像已上传
       tags:
       - user
 securityDefinitions:

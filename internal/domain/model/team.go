@@ -7,6 +7,8 @@ type TeamInfo struct {
 
 	Name        string
 	Description string
+	AvatarOSSKey string
+	IsAvatarUploaded bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

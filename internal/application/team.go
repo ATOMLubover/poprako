@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
+	"labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -29,6 +31,16 @@ type TeamApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 	) ([]value.TeamInfo, error)
+	ReserveTeamAvatar(
+		scope util.TraceScope,
+		currentUserID string,
+		teamID string,
+	) (value.ReserveTeamAvatarResult, error)
+	ConfirmTeamAvatarUploaded(
+		scope util.TraceScope,
+		currentUserID string,
+		teamID string,
+	) error
 	UpdateTeam(
 		scope util.TraceScope,
 		currentUserID string,
@@ -42,21 +54,25 @@ type TeamApplication interface {
 }
 
 type teamApplication struct {
+	ossClient        external.OSSClient
 	userRepository   repository.UserRepository
 	teamRepository   repository.TeamRepository
 	memberRepository repository.MemberRepository
 }
 
 func NewTeamApplication(
+	ossClient external.OSSClient,
 	userRepository repository.UserRepository,
 	teamRepository repository.TeamRepository,
 	memberRepository repository.MemberRepository,
 ) TeamApplication {
-	if userRepository == nil ||
+	if ossClient == nil ||
+		userRepository == nil ||
 		teamRepository == nil ||
 		memberRepository == nil {
 		zap.L().Panic(
 			"NewTeamApplication: 依赖项不能为空",
+			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("teamRepository_nil", teamRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
@@ -64,6 +80,7 @@ func NewTeamApplication(
 	}
 
 	return &teamApplication{
+		ossClient:        ossClient,
 		userRepository:   userRepository,
 		teamRepository:   teamRepository,
 		memberRepository: memberRepository,
@@ -111,11 +128,13 @@ func (ta *teamApplication) CreateTeam(
 	now := time.Now()
 
 	return value.NewTeamInfoFromModel(model.TeamInfo{
-		ID:          teamID,
-		Name:        args.Name,
-		Description: args.Description,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:               teamID,
+		Name:             args.Name,
+		Description:      args.Description,
+		AvatarOSSKey:     "",
+		IsAvatarUploaded: false,
+		CreatedAt:        now,
+		UpdatedAt:        now,
 	}), nil
 }
 
@@ -154,6 +173,51 @@ func (ta *teamApplication) ListAllTeams(
 	}
 
 	return result, nil
+}
+
+func (ta *teamApplication) ReserveTeamAvatar(
+	scope util.TraceScope,
+	currentUserID string,
+	teamID string,
+) (value.ReserveTeamAvatarResult, error) {
+	const fn = "TeamApplication.ReserveTeamAvatar"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+			zap.String("team_id", teamID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if teamID == "" {
+		return value.ReserveTeamAvatarResult{}, errors.New("汉化组 ID 不能为空")
+	}
+
+	if !model.PermTeamUpdate().Check(
+		currentUserID,
+		teamID,
+		adapter.HandleLoadUserInfo(ta.userRepository),
+		adapter.HandleLoadMemberInfo(ta.memberRepository),
+	) {
+		scope.Logger().Warn(fn + ": 权限检查失败")
+		return value.ReserveTeamAvatarResult{}, errors.New("权限不足")
+	}
+
+	avatarOSSKey := service.GenerateTeamAvatarOSSKey(teamID)
+
+	putURL, err := ta.ossClient.GeneratePutPresignedURL(avatarOSSKey)
+	if err != nil {
+		scope.Logger().Error(fn+": 生成预签名 URL 失败", zap.Error(err))
+		return value.ReserveTeamAvatarResult{}, errors.New("预留汉化组头像失败")
+	}
+
+	if err := ta.teamRepository.ReserveAvatar(nil, teamID, avatarOSSKey); err != nil {
+		scope.Logger().Error(fn+": 写入头像 OSS Key 失败", zap.Error(err))
+		return value.ReserveTeamAvatarResult{}, errors.New("预留汉化组头像失败")
+	}
+
+	return value.NewReserveTeamAvatarResult(avatarOSSKey, putURL), nil
 }
 
 func (ta *teamApplication) ListMyTeams(
@@ -238,11 +302,52 @@ func (ta *teamApplication) UpdateTeam(
 		return errors.New("权限不足")
 	}
 
-	teamUpdate := model.NewTeamUpdate(args.ID, args.Name, args.Description)
+	teamUpdate := model.NewTeamUpdate(
+		args.ID,
+		args.Name,
+		args.Description,
+	)
 
 	if err := ta.teamRepository.Update(nil, teamUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新汉化组信息失败", zap.Error(err))
 		return errors.New("更新汉化组失败")
+	}
+
+	return nil
+}
+
+func (ta *teamApplication) ConfirmTeamAvatarUploaded(
+	scope util.TraceScope,
+	currentUserID string,
+	teamID string,
+) error {
+	const fn = "TeamApplication.ConfirmTeamAvatarUploaded"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+			zap.String("team_id", teamID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if teamID == "" {
+		return errors.New("汉化组 ID 不能为空")
+	}
+
+	if !model.PermTeamUpdate().Check(
+		currentUserID,
+		teamID,
+		adapter.HandleLoadUserInfo(ta.userRepository),
+		adapter.HandleLoadMemberInfo(ta.memberRepository),
+	) {
+		scope.Logger().Warn(fn + ": 权限检查失败")
+		return errors.New("权限不足")
+	}
+
+	if err := ta.teamRepository.ConfirmAvatarUploaded(nil, teamID); err != nil {
+		scope.Logger().Error(fn+": 确认汉化组头像上传失败", zap.Error(err))
+		return errors.New("确认汉化组头像上传失败")
 	}
 
 	return nil

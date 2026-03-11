@@ -54,14 +54,37 @@ func (r *teamRepository) Create(executor intf.Executor, creation model.TeamCreat
 	executor = r.withTransaction(executor)
 
 	row := entity.TeamInsertRow{
-		ID:          util.GenerateUUID(),
-		Name:        creation.Name,
-		Description: creation.Description,
+		ID:               util.GenerateUUID(),
+		Name:             creation.Name,
+		Description:      creation.Description,
+		AvatarOSSKey:     "",
+		IsAvatarUploaded: false,
 	}
 	if err := executor.Create(&row).Error; err != nil {
 		return "", err
 	}
 	return row.ID, nil
+}
+
+func (r *teamRepository) ReserveAvatar(executor intf.Executor, id string, avatarOSSKey string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.TeamTable).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"avatar_oss_key":     avatarOSSKey,
+			"is_avatar_uploaded": false,
+		}).Error
+}
+
+func (r *teamRepository) ConfirmAvatarUploaded(executor intf.Executor, id string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.TeamTable).
+		Where("id = ? AND deleted_at IS NULL AND avatar_oss_key <> ''", id).
+		Update("is_avatar_uploaded", true).Error
 }
 
 func (r *teamRepository) Update(executor intf.Executor, update model.TeamUpdate) error {

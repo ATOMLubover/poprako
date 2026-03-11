@@ -59,6 +59,7 @@ func main() {
 		invitationRepository,
 	)
 	teamApplication := application.NewTeamApplication(
+		ossClient,
 		userRepository,
 		teamRepository,
 		memberRepository,

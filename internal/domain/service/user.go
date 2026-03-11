@@ -84,5 +84,9 @@ func HashPassword(plainPassword string) (string, error) {
 }
 
 func GenerateUserAvatarOSSKey(userID string) string {
-	return strings.Join([]string{"user_avatar", userID, util.GenerateUUID()}, "/")
+	return strings.Join([]string{"user-avatar", userID, util.GenerateUUID()}, "-")
+}
+
+func GenerateTeamAvatarOSSKey(teamID string) string {
+	return strings.Join([]string{"team-avatar", teamID, util.GenerateUUID()}, "_")
 }

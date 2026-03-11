@@ -117,6 +117,15 @@ func (r *userRepository) ReserveAvatar(executor intf.Executor, id string, avatar
 		}).Error
 }
 
+func (r *userRepository) ConfirmAvatarUploaded(executor intf.Executor, id string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.UserTable).
+		Where("id = ? AND deleted_at IS NULL AND avatar_oss_key <> ''", id).
+		Update("is_avatar_uploaded", true).Error
+}
+
 func (r *userRepository) Update(executor intf.Executor, update model.UserUpdate) error {
 	executor = r.withTransaction(executor)
 
@@ -124,10 +133,9 @@ func (r *userRepository) Update(executor intf.Executor, update model.UserUpdate)
 		Table(entity.UserTable).
 		Where("id = ? AND deleted_at IS NULL", update.ID).
 		Updates(map[string]any{
-			"name":               update.Name,
-			"qq":                 update.QQ,
-			"password_hash":      update.PasswordHash,
-			"is_avatar_uploaded": update.IsAvatarUploaded,
+			"name":          update.Name,
+			"qq":            update.QQ,
+			"password_hash": update.PasswordHash,
 		}).Error
 }
 

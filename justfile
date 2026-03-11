@@ -24,3 +24,6 @@ mgr-rvt mode="step":
     } else {
         "sqlx migrate revert"
     }}}
+    
+seed-base:
+    bun run script/seed/seedBase.ts

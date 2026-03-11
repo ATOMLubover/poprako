@@ -38,10 +38,10 @@ func accept(
 	})
 }
 
-func buildTraceScope(ctx iris.Context) *util.TraceScope {
+func buildTraceScope(ctx iris.Context) util.TraceScope {
 	requestID := requestid.Get(ctx)
 
-	return util.NewTraceScope(zap.L()).
+	return *util.NewTraceScope(zap.L()).
 		WithFields(zap.String("request_id", requestID))
 }
 

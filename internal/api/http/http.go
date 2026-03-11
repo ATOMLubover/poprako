@@ -53,6 +53,7 @@ func initialize(appState *state.AppState) *iris.Application {
 		userParty.Get("/{user_id}", GetUserByID(appState))
 		userParty.Get("/", ListUsers(appState))
 		userParty.Post("/{user_id}/avatar", ReserveUserAvatar(appState))
+		userParty.Post("/{user_id}/avatar/confirm", ConfirmUserAvatarUploaded(appState))
 		userParty.Put("/{user_id}", UpdateUserByID(appState))
 		userParty.Delete("/{user_id}", RemoveUserByID(appState))
 	}
@@ -63,6 +64,8 @@ func initialize(appState *state.AppState) *iris.Application {
 		teamParty.Post("/", CreateTeam(appState))
 		teamParty.Get("/", ListAllTeams(appState))
 		teamParty.Get("/mine", ListMyTeams(appState))
+		teamParty.Post("/{team_id}/avatar", ReserveTeamAvatar(appState))
+		teamParty.Post("/{team_id}/avatar/confirm", ConfirmTeamAvatarUploaded(appState))
 		teamParty.Put("/{team_id}", UpdateTeam(appState))
 		teamParty.Delete("/{team_id}", DeleteTeam(appState))
 	}
@@ -108,7 +111,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	pageParty := authorizedParty.Party("/pages")
 	{
 		pageParty.Get("/", ListChapterPages(appState))
-		pageParty.Post("/", CreateChapterPages(appState))
+		pageParty.Post("/", ReserveChapterPages(appState))
 		pageParty.Put("/{page_id}", UpdatePage(appState))
 		pageParty.Delete("/{chapter_id}", DeletePages(appState))
 	}

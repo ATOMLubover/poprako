@@ -60,7 +60,6 @@ type UserUpdate struct {
 	Name         string
 	QQ           string
 	PasswordHash string
-	IsAvatarUploaded bool
 }
 
 func NewUserUpdate(
@@ -68,13 +67,11 @@ func NewUserUpdate(
 	name string,
 	qq string,
 	passwordHash string,
-	isAvatarUploaded bool,
 ) UserUpdate {
 	return UserUpdate{
-		ID:               id,
-		Name:             name,
-		QQ:               qq,
-		PasswordHash:     passwordHash,
-		IsAvatarUploaded: isAvatarUploaded,
+		ID:           id,
+		Name:         name,
+		QQ:           qq,
+		PasswordHash: passwordHash,
 	}
 }

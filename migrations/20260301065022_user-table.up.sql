@@ -3,6 +3,7 @@ CREATE TABLE "user_table" (
 
     "name"                  TEXT NOT NULL,
     "qq"                    TEXT UNIQUE NOT NULL,
+
     "avatar_oss_key"        TEXT NOT NULL,
     "is_avatar_uploaded"    BOOLEAN NOT NULL DEFAULT FALSE,
 
@@ -40,6 +41,6 @@ INSERT INTO "user_table" (
     'SuperAdmin OvO',
     '123456789',
     '',
-    '$2a$10$N9qo8uLOickgx2ZMRZo5i.ej3c3w9uQZrL6Bq4t7Yq4UstP8yW', -- 123456
+    '$2a$10$eEEkAsc7h3jdkOyjahdH6OX20w/dHKdGVaH7MNREkh54O57v.E2y2', -- 123456
     TRUE
 );

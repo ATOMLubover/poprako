@@ -37,7 +37,7 @@ func CreateMember(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := memberApplication.CreateMember(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -81,7 +81,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := memberApplication.ListMembers(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -135,7 +135,7 @@ func UpdateMemberRole(appState *state.AppState) iris.Handler {
 		}
 
 		if err := memberApplication.UpdateMemberRole(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		); err != nil {
@@ -177,7 +177,7 @@ func JoinTeam(appState *state.AppState) iris.Handler {
 		}
 
 		if err := memberApplication.JoinTeam(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		); err != nil {
@@ -217,7 +217,7 @@ func RemoveMember(appState *state.AppState) iris.Handler {
 		}
 
 		if err := memberApplication.RemoveMember(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			memberID,
 		); err != nil {

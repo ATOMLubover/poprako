@@ -31,7 +31,7 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 		}
 
 		// 调用 UserApplication 获取用户信息
-		result, err := userApplication.GetUser(*buildTraceScope(ctx), userID)
+		result, err := userApplication.GetUser(buildTraceScope(ctx), userID)
 		if err != nil {
 			reject(ctx, iris.StatusInternalServerError, err.Error())
 			return
@@ -74,7 +74,7 @@ func ListUsers(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := userApplication.ListUsers(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		)
@@ -115,7 +115,7 @@ func ReserveUserAvatar(appState *state.AppState) iris.Handler {
 		}
 
 		result, err := userApplication.ReserveUserAvatar(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			targetUserID,
 		)
@@ -125,6 +125,46 @@ func ReserveUserAvatar(appState *state.AppState) iris.Handler {
 		}
 
 		accept(ctx, "预留用户头像成功", result)
+	}
+}
+
+// ConfirmUserAvatarUploaded godoc
+// @Summary 	确认用户头像已上传
+// @Description 在客户端上传头像后，确认用户头像上传状态
+//
+// @Tags 		user
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		user_id path string true "用户 ID"
+//
+// @Success 	200
+//
+// @Router 		/users/{user_id}/avatar/confirm [post]
+func ConfirmUserAvatarUploaded(appState *state.AppState) iris.Handler {
+	userApplication := appState.UserApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		targetUserID := ctx.Params().Get("user_id")
+		if targetUserID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 user_id 路径参数")
+			return
+		}
+
+		if err := userApplication.ConfirmUserAvatarUploaded(
+			buildTraceScope(ctx),
+			currentUserID,
+			targetUserID,
+		); err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "确认用户头像上传成功", nil)
 	}
 }
 
@@ -166,7 +206,7 @@ func UpdateUserByID(appState *state.AppState) iris.Handler {
 		args.UserID = targetUserID
 
 		if err := userApplication.UpdateUser(
-			*buildTraceScope(ctx),
+			buildTraceScope(ctx),
 			currentUserID,
 			args,
 		); err != nil {
@@ -205,7 +245,7 @@ func RemoveUserByID(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := userApplication.RemoveUser(*buildTraceScope(ctx), currentUserID, targetUserID); err != nil {
+		if err := userApplication.RemoveUser(buildTraceScope(ctx), currentUserID, targetUserID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

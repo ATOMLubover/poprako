@@ -37,6 +37,8 @@ type TeamInfo struct {
 
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	AvatarOSSKey string `json:"avatar_oss_key"`
+	IsAvatarUploaded bool `json:"is_avatar_uploaded"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
@@ -49,11 +51,25 @@ func NewTeamInfoFromModel(team model.TeamInfo) TeamInfo {
 	}
 
 	return TeamInfo{
-		ID:          team.ID,
-		Name:        team.Name,
-		Description: team.Description,
-		CreatedAt:   team.CreatedAt.UnixMilli(),
-		UpdatedAt:   team.UpdatedAt.UnixMilli(),
+		ID:               team.ID,
+		Name:             team.Name,
+		Description:      team.Description,
+		AvatarOSSKey:     team.AvatarOSSKey,
+		IsAvatarUploaded: team.IsAvatarUploaded,
+		CreatedAt:        team.CreatedAt.UnixMilli(),
+		UpdatedAt:        team.UpdatedAt.UnixMilli(),
+	}
+}
+
+type ReserveTeamAvatarResult struct {
+	AvatarOSSKey string `json:"avatar_oss_key"`
+	PutURL       string `json:"put_url"`
+}
+
+func NewReserveTeamAvatarResult(avatarOSSKey string, putURL string) ReserveTeamAvatarResult {
+	return ReserveTeamAvatarResult{
+		AvatarOSSKey: avatarOSSKey,
+		PutURL:       putURL,
 	}
 }
 
