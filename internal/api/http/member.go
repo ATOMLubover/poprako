@@ -94,6 +94,36 @@ func ListMembers(appState *state.AppState) iris.Handler {
 	}
 }
 
+// ListMyMembers godoc
+// @Summary 	获取当前用户的成员身份列表
+// @Description 获取当前用户在各汉化组中的成员信息，注意当列表为空，会返回 null 而不是空数组
+//
+// @Tags 		member
+// @Security 	ApiKeyAuth
+// @Produce 	json
+//
+// @Success 	200 {object} []value.MemberWithTeamInfo
+//
+// @Router 		/members/mine [get]
+func ListMyMembers(appState *state.AppState) iris.Handler {
+	memberApplication := appState.MemberApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		result, err := memberApplication.ListMyMembers(buildTraceScope(ctx), currentUserID)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取我的成员身份列表成功", result)
+	}
+}
+
 // UpdateMemberRole godoc
 // @Summary 	更新成员角色
 // @Description 更新指定成员的分工角色

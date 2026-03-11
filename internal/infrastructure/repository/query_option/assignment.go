@@ -15,7 +15,7 @@ func (assignmentQuery) FilterByChapterID(chapterID string) intf.QueryOption {
 }
 
 func (assignmentQuery) FilterByUserID(userID string) intf.QueryOption {
-    return func(executor intf.Executor) intf.Executor {
-        return executor.Where("assignment_table.user_id = ?", userID)
-    }
+	return func(executor intf.Executor) intf.Executor {
+		return executor.Where("assignment_table.user_id = ?", userID)
+	}
 }

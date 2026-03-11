@@ -6,7 +6,10 @@ default:
 swag:
     swag init
 
-dev: swag
+fmt:
+    gofumpt -w .
+
+dev: fmt swag
     go run main.go
     
 build:

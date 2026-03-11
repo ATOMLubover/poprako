@@ -17,7 +17,7 @@ import (
 // @Produce 	json
 // @Param 		body body value.CreateTeamArgs true "创建汉化组参数"
 //
-// @Success 	200 {object} value.TeamInfo
+// @Success 	200 {object} value.CreateTeamResult
 //
 // @Router 		/teams [post]
 func CreateTeam(appState *state.AppState) iris.Handler {

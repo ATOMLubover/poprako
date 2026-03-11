@@ -38,7 +38,7 @@ type ChapterDetail struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewChapterInfoFromModel(chapterDetail model.ChapterInfo) ChapterDetail {
+func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterDetail {
 	return ChapterDetail{
 		ID:                  chapterDetail.ID,
 		ComicID:             chapterDetail.ComicID,
@@ -61,6 +61,40 @@ func NewChapterInfoFromModel(chapterDetail model.ChapterInfo) ChapterDetail {
 		CreatorID:           chapterDetail.CreatorID,
 		CreatedAt:           chapterDetail.CreatedAt.Unix(),
 		UpdatedAt:           chapterDetail.UpdatedAt.Unix(),
+	}
+}
+
+type ChapterWithComicInfo struct {
+	ID string `json:"id"`
+
+	Comic     ComicInfo `json:"comic"`
+	Index     int       `json:"index"`
+	ChapterNo string    `json:"chapter_no"`
+
+	CoverURL string `json:"cover_url"`
+
+	PageCount           int `json:"page_count"`
+	TotalUnitCount      int `json:"total_unit_count"`
+	TranslatedUnitCount int `json:"translated_unit_count"`
+	ProofreadUnitCount  int `json:"proofread_unit_count"`
+
+	CreatedAt int64 `json:"created_at"`
+	UpdatedAt int64 `json:"updated_at"`
+}
+
+func NewChapterWithComicInfoFromModel(chapterInfo model.ChapterWithComicInfo, coverURL string) ChapterWithComicInfo {
+	return ChapterWithComicInfo{
+		ID:                  chapterInfo.ID,
+		Comic:               NewComicInfoFromModel(chapterInfo.Comic),
+		Index:               chapterInfo.Index,
+		ChapterNo:           chapterInfo.ChapterNo,
+		CoverURL:            coverURL,
+		PageCount:           chapterInfo.PageCount,
+		TotalUnitCount:      chapterInfo.TotalUnitCount,
+		TranslatedUnitCount: chapterInfo.TranslatedUnitCount,
+		ProofreadUnitCount:  chapterInfo.ProofreadUnitCount,
+		CreatedAt:           chapterInfo.CreatedAt.Unix(),
+		UpdatedAt:           chapterInfo.UpdatedAt.Unix(),
 	}
 }
 

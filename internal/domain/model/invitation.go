@@ -16,7 +16,7 @@ type InvitationCreation struct {
 	ToBeProofreader bool
 	ToBeTypesetter  bool
 	ToBeReviewer    bool
-	ToBeUploader    bool
+	ToBePublisher   bool
 	ToBeAdmin       bool
 }
 
@@ -53,7 +53,7 @@ func (ic *InvitationCreation) setRoles(roles ...RoleFlag) {
 		case RoleReviewer:
 			ic.ToBeReviewer = true
 		case RolePublisher:
-			ic.ToBeUploader = true
+			ic.ToBePublisher = true
 		case RoleAdmin:
 			ic.ToBeAdmin = true
 		}
@@ -75,7 +75,7 @@ type InvitationInfo struct {
 	ToBeProofreader bool
 	ToBeTypesetter  bool
 	ToBeReviewer    bool
-	ToBeUploader    bool
+	ToBePublisher   bool
 	ToBeAdmin       bool
 
 	CreatedAt time.Time
@@ -99,7 +99,7 @@ func (ii *InvitationInfo) RoleMask() RoleMask {
 	if ii.ToBeReviewer {
 		mask |= RoleMask(RoleReviewer)
 	}
-	if ii.ToBeUploader {
+	if ii.ToBePublisher {
 		mask |= RoleMask(RolePublisher)
 	}
 	if ii.ToBeAdmin {
@@ -116,7 +116,7 @@ type InvitationUpdate struct {
 	ToBeProofreader bool
 	ToBeTypesetter  bool
 	ToBeReviewer    bool
-	ToBePublisher    bool
+	ToBePublisher   bool
 	ToBeAdmin       bool
 }
 

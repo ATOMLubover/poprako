@@ -15,9 +15,9 @@ func (chapterQuery) FilterByComicID(comicID string) intf.QueryOption {
 	}
 }
 
-// OrderByIndexAsc 按章节顺序升序排列
-func (chapterQuery) OrderByIndexAsc() intf.QueryOption {
+// OrderByIndexAsc 按章节顺序降序排列
+func (chapterQuery) OrderByIndexDesc() intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
-		return executor.Order("chapter_table.index ASC")
+		return executor.Order("chapter_table.index DESC")
 	}
 }

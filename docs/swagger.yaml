@@ -12,6 +12,28 @@ definitions:
     - WorkflowInProgress
     - WorkflowCompleted
     - WorkflowUnset
+  value.AssignmentWithChapterInfo:
+    properties:
+      chapter:
+        $ref: '#/definitions/value.ChapterWithComicInfo'
+      id:
+        type: string
+      roles:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  value.AssignmentWithUserInfo:
+    properties:
+      chapter_id:
+        type: string
+      id:
+        type: string
+      roles:
+        type: integer
+      user:
+        $ref: '#/definitions/value.UserInfo'
+    type: object
   value.ChapterDetail:
     properties:
       chapter_no:
@@ -57,6 +79,31 @@ definitions:
       uploaded_at:
         type: integer
     type: object
+  value.ChapterWithComicInfo:
+    properties:
+      chapter_no:
+        type: string
+      comic:
+        $ref: '#/definitions/value.ComicInfo'
+      cover_url:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      index:
+        type: integer
+      page_count:
+        type: integer
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+      updated_at:
+        type: integer
+    type: object
   value.ComicInfo:
     properties:
       author:
@@ -87,6 +134,20 @@ definitions:
       chapter_no:
         type: string
       comic_id:
+        type: string
+    type: object
+  value.CreateChapterAssignmentArgs:
+    properties:
+      chapter_id:
+        type: string
+      role:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  value.CreateChapterAssignmentResult:
+    properties:
+      id:
         type: string
     type: object
   value.CreateChapterResult:
@@ -140,6 +201,11 @@ definitions:
       name:
         type: string
     type: object
+  value.CreateTeamResult:
+    properties:
+      id:
+        type: string
+    type: object
   value.InvitationInfo:
     properties:
       created_at:
@@ -178,13 +244,15 @@ definitions:
     type: object
   value.MemberProfile:
     properties:
-      avatar_oss_key:
+      avatar_url:
         type: string
       created_at:
         type: integer
       id:
         type: string
       is_avatar_uploaded:
+        type: boolean
+      is_super_admin:
         type: boolean
       name:
         type: string
@@ -194,6 +262,29 @@ definitions:
         type: integer
       updated_at:
         type: integer
+    type: object
+  value.MemberWithTeamInfo:
+    properties:
+      assigned_admin_at:
+        type: integer
+      assigned_proofreader_at:
+        type: integer
+      assigned_publisher_at:
+        type: integer
+      assigned_raw_provider_at:
+        type: integer
+      assigned_reviewer_at:
+        type: integer
+      assigned_translator_at:
+        type: integer
+      assigned_typesetter_at:
+        type: integer
+      id:
+        type: string
+      team:
+        $ref: '#/definitions/value.TeamInfo'
+      user_id:
+        type: string
     type: object
   value.PageCreationResult:
     properties:
@@ -209,6 +300,8 @@ definitions:
       created_at:
         type: integer
       id:
+        type: string
+      image_url:
         type: string
       index:
         type: integer
@@ -262,14 +355,12 @@ definitions:
     type: object
   value.ReserveUserAvatarResult:
     properties:
-      avatar_oss_key:
-        type: string
       put_url:
         type: string
     type: object
   value.TeamInfo:
     properties:
-      avatar_oss_key:
+      avatar_url:
         type: string
       created_at:
         type: integer
@@ -282,6 +373,13 @@ definitions:
       name:
         type: string
       updated_at:
+        type: integer
+    type: object
+  value.UpdateAssignmentArgs:
+    properties:
+      id:
+        type: string
+      role:
         type: integer
     type: object
   value.UpdateChapterArgs:
@@ -375,13 +473,15 @@ definitions:
     type: object
   value.UserInfo:
     properties:
-      avatar_oss_key:
+      avatar_url:
         type: string
       created_at:
         type: integer
       id:
         type: string
       is_avatar_uploaded:
+        type: boolean
+      is_super_admin:
         type: boolean
       name:
         type: string
@@ -396,6 +496,125 @@ info:
   title: LabelPlus Next Web API
   version: 0.1.0
 paths:
+  /assignments:
+    get:
+      description: 获取指定章节的所有分配记录（含被分配用户信息），仅汉化组成员可访问
+      parameters:
+      - description: 章节 ID
+        in: query
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.AssignmentWithUserInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取章节分配列表
+      tags:
+      - assignment
+    post:
+      consumes:
+      - application/json
+      description: 为指定章节创建一条分配记录，需要当前用户在该章节中拥有 reviewer 角色
+      parameters:
+      - description: 创建分配参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.CreateChapterAssignmentArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/value.CreateChapterAssignmentResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建章节分配
+      tags:
+      - assignment
+  /assignments/{assignment_id}:
+    delete:
+      description: 删除指定分配记录，需要当前用户在该章节中拥有 reviewer 角色
+      parameters:
+      - description: 分配 ID
+        in: path
+        name: assignment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 删除分配
+      tags:
+      - assignment
+    put:
+      consumes:
+      - application/json
+      description: 全量替换指定分配的角色（PUT 语义），需要当前用户在该章节中拥有 reviewer 角色
+      parameters:
+      - description: 分配 ID
+        in: path
+        name: assignment_id
+        required: true
+        type: string
+      - description: 更新分配参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.UpdateAssignmentArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 更新分配角色
+      tags:
+      - assignment
+  /assignments/mine:
+    get:
+      description: 获取当前登录用户的所有分配记录（含章节和漫画信息），支持分页
+      parameters:
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.AssignmentWithChapterInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取我的分配列表
+      tags:
+      - assignment
   /auth/login:
     post:
       consumes:
@@ -866,6 +1085,23 @@ paths:
       summary: 通过邀请码加入汉化组
       tags:
       - member
+  /members/mine:
+    get:
+      description: 获取当前用户在各汉化组中的成员信息，注意当列表为空，会返回 null 而不是空数组
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.MemberWithTeamInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取当前用户的成员身份列表
+      tags:
+      - member
   /pages:
     get:
       description: 获取指定章节的所有页面，注意当列表为空，会返回 null 而不是空数组
@@ -992,7 +1228,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/value.TeamInfo'
+            $ref: '#/definitions/value.CreateTeamResult'
       security:
       - ApiKeyAuth: []
       summary: 创建汉化组（已测试）
@@ -1239,6 +1475,21 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 确认用户头像已上传
+      tags:
+      - user
+  /users/mine:
+    get:
+      description: 获取当前登录用户的详细信息，用于保持登录状态
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/value.UserInfo'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取当前登录用户信息
       tags:
       - user
 securityDefinitions:

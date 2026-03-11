@@ -77,7 +77,7 @@ func (r *invitationRepository) Create(executor intf.Executor, creation model.Inv
 		ToBeProofreader: creation.ToBeProofreader,
 		ToBeTypesetter:  creation.ToBeTypesetter,
 		ToBeReviewer:    creation.ToBeReviewer,
-		ToBePublisher:   creation.ToBeUploader,
+		ToBePublisher:   creation.ToBePublisher,
 		ToBeAdmin:       creation.ToBeAdmin,
 		Pending:         true,
 	}

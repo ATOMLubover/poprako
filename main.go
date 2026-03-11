@@ -70,6 +70,7 @@ func main() {
 		invitationRepository,
 	)
 	memberApplication := application.NewMemberApplication(
+		ossClient,
 		userRepository,
 		memberRepository,
 		invitationRepository,
@@ -91,6 +92,13 @@ func main() {
 		pageRepository,
 		assignmentRepository,
 	)
+	assignmentApplication := application.NewAssignmentApplication(
+		ossClient,
+		memberRepository,
+		comicRepository,
+		chapterRepository,
+		assignmentRepository,
+	)
 
 	appState := state.NewAppState(
 		appConfig,
@@ -101,6 +109,7 @@ func main() {
 		comicApplication,
 		chapterApplication,
 		pageApplication,
+		assignmentApplication,
 	)
 
 	zap.L().Info("应用状态初始化完成，HTTP 服务器启动")

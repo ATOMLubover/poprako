@@ -97,14 +97,16 @@ type UserInfo struct {
 	Name string `json:"name"`
 	QQ   string `json:"qq"`
 
-	AvatarOSSKey     string `json:"avatar_oss_key"`
+	AvatarURL        string `json:"avatar_url"`
 	IsAvatarUploaded bool   `json:"is_avatar_uploaded"`
+
+	IsSuperAdmin bool `json:"is_super_admin"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewUserInfoFromModel(user model.UserInfo) UserInfo {
+func NewUserInfoFromModel(user model.UserInfo, avatarURL string) UserInfo {
 	if user.ID == "" {
 		zap.L().Warn("NewUserInfoFromModel: user 为空")
 		return UserInfo{}
@@ -114,22 +116,21 @@ func NewUserInfoFromModel(user model.UserInfo) UserInfo {
 		ID:               user.ID,
 		Name:             user.Name,
 		QQ:               user.QQ,
-		AvatarOSSKey:     user.AvatarOSSKey,
+		AvatarURL:        avatarURL,
 		IsAvatarUploaded: user.IsAvatarUploaded,
+		IsSuperAdmin:     user.IsSuperAdmin,
 		CreatedAt:        user.CreatedAt.UnixMilli(),
 		UpdatedAt:        user.UpdatedAt.UnixMilli(),
 	}
 }
 
 type ReserveUserAvatarResult struct {
-	AvatarOSSKey string `json:"avatar_oss_key"`
-	PutURL       string `json:"put_url"`
+	PutURL string `json:"put_url"`
 }
 
-func NewReserveUserAvatarResult(avatarOSSKey string, putURL string) ReserveUserAvatarResult {
+func NewReserveUserAvatarResult(putURL string) ReserveUserAvatarResult {
 	return ReserveUserAvatarResult{
-		AvatarOSSKey: avatarOSSKey,
-		PutURL:       putURL,
+		PutURL: putURL,
 	}
 }
 

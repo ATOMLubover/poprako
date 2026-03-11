@@ -197,7 +197,7 @@ func (pa *pageApplication) ListChapterPages(
 	if !model.PermPageList().Check(
 		currentUserID,
 		chapterID,
-		func(chapterID string) (model.ChapterInfo, error) {
+		func(chapterID string) (model.ChapterDetail, error) {
 			return pa.pageRepository.GetChapterByID(nil, chapterID)
 		},
 		adapter.HandleLoadComicInfo(pa.comicRepository),
@@ -219,7 +219,13 @@ func (pa *pageApplication) ListChapterPages(
 
 	result := make([]value.PageInfo, len(pageInfos))
 	for i, pageInfo := range pageInfos {
-		result[i] = value.NewPageInfoFromModel(pageInfo)
+		imageURL, err := pa.ossClient.GenerateGetPresignedURL(pageInfo.OSSKey)
+		if err != nil {
+			scope.Logger().Error(fn+": 生成页面访问链接失败", zap.Error(err))
+			return nil, errors.New("获取页面列表失败")
+		}
+
+		result[i] = value.NewPageInfoFromModel(pageInfo, imageURL)
 	}
 
 	return result, nil
@@ -254,7 +260,7 @@ func (pa *pageApplication) UpdatePage(
 				query_option.FilterByID(repository_infra.PageTable, pageID),
 			)
 		},
-		func(chapterID string) (model.ChapterInfo, error) {
+		func(chapterID string) (model.ChapterDetail, error) {
 			return pa.pageRepository.GetChapterByID(nil, chapterID)
 		},
 		adapter.HandleLoadAssignmentInfo(pa.assignmentRepository),

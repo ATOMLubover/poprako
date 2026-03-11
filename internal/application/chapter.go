@@ -183,7 +183,7 @@ func (ca *chapterApplication) ListComicChapters(
 	chapters, err := ca.chapterRepository.List(
 		nil,
 		query_option.ChapterQuery().FilterByComicID(args.ComicID),
-		query_option.ChapterQuery().OrderByIndexAsc(),
+		query_option.ChapterQuery().OrderByIndexDesc(),
 		query_option.Paginate(args.Offset, args.Limit),
 	)
 	if err != nil {

@@ -30,6 +30,10 @@ type UserApplication interface {
 		scope util.TraceScope,
 		userID string,
 	) (value.UserInfo, error)
+	GetMyUser(
+		scope util.TraceScope,
+		currentUserID string,
+	) (value.UserInfo, error)
 	ListUsers(
 		scope util.TraceScope,
 		currentUserID string,
@@ -300,7 +304,61 @@ func (ua *userApplication) GetUser(
 		return value.UserInfo{}, errors.New("用户不存在")
 	}
 
-	return value.NewUserInfoFromModel(userInfo), nil
+	avatarURL, err := ua.ossClient.GenerateGetPresignedURL(userInfo.AvatarOSSKey)
+	if err != nil {
+		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+		return value.UserInfo{}, errors.New("无法获取用户信息")
+	}
+
+	return value.NewUserInfoFromModel(userInfo, avatarURL), nil
+}
+
+func (ua *userApplication) GetMyUser(
+	scope util.TraceScope,
+	currentUserID string,
+) (value.UserInfo, error) {
+	const fn = "UserApplication.GetMyUser"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if currentUserID == "" {
+		return value.UserInfo{}, errors.New("用户 ID 不能为空")
+	}
+
+	// 鉴权：用户只能查看自己的信息，超级管理员可以查看所有
+	if !model.PermUserView().Check(
+		currentUserID,
+		currentUserID,
+	) {
+		scope.Logger().Warn(fn + ":权限检查不通过")
+		return value.UserInfo{}, errors.New("没有权限查看用户信息")
+	}
+
+	userInfo, err := ua.userRepository.Get(
+		nil,
+		query_option.FilterByID(repository_infra.UserTable, currentUserID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取用户信息失败", zap.Error(err))
+		return value.UserInfo{}, errors.New("无法获取用户信息")
+	}
+
+	if userInfo.ID == "" {
+		return value.UserInfo{}, errors.New("用户不存在")
+	}
+
+	avatarURL, err := ua.ossClient.GenerateGetPresignedURL(userInfo.AvatarOSSKey)
+	if err != nil {
+		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+		return value.UserInfo{}, errors.New("无法获取用户信息")
+	}
+
+	return value.NewUserInfoFromModel(userInfo, avatarURL), nil
 }
 
 func (ua *userApplication) ListUsers(
@@ -354,7 +412,13 @@ func (ua *userApplication) ListUsers(
 	// 转换为应用层的值对象
 	result := make([]value.UserInfo, len(userList))
 	for i := range userList {
-		result[i] = value.NewUserInfoFromModel(userList[i])
+		avatarURL, err := ua.ossClient.GenerateGetPresignedURL(userList[i].AvatarOSSKey)
+		if err != nil {
+			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+			return nil, errors.New("无法获取用户列表")
+		}
+
+		result[i] = value.NewUserInfoFromModel(userList[i], avatarURL)
 	}
 
 	return result, nil
@@ -392,7 +456,7 @@ func (ua *userApplication) ReserveUserAvatar(
 
 	putURL, err := ua.ossClient.GeneratePutPresignedURL(avatarOSSKey)
 	if err != nil {
-		scope.Logger().Error(fn+": 生成预签名 URL 失败", zap.Error(err))
+		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
 		return value.ReserveUserAvatarResult{}, errors.New("预留用户头像失败")
 	}
 
@@ -401,7 +465,7 @@ func (ua *userApplication) ReserveUserAvatar(
 		return value.ReserveUserAvatarResult{}, errors.New("预留用户头像失败")
 	}
 
-	return value.NewReserveUserAvatarResult(avatarOSSKey, putURL), nil
+	return value.NewReserveUserAvatarResult(putURL), nil
 }
 
 func (ua *userApplication) UpdateUser(

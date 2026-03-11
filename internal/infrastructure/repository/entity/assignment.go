@@ -42,3 +42,129 @@ func ToAssignmentInfo(row AssignmentInfoRow) model.AssignmentInfo {
 		row.UpdatedAt,
 	)
 }
+
+// AssignmentInsertRow 用于 Create，仅包含写入所需字段。
+type AssignmentInsertRow struct {
+	ID        string `gorm:"column:id"`
+	ChapterID string `gorm:"column:chapter_id"`
+	UserID    string `gorm:"column:user_id"`
+
+	AssignedRawProviderAt *time.Time `gorm:"column:assigned_raw_provider_at"`
+	AssignedTranslatorAt  *time.Time `gorm:"column:assigned_translator_at"`
+	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
+	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
+	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
+	AssignedPublisherAt   *time.Time `gorm:"column:assigned_publisher_at"`
+}
+
+func (AssignmentInsertRow) TableName() string { return AssignmentTable }
+
+// AssignmentWithUserRow 用于 ListWithUserInfo（JOIN user_table）。
+type AssignmentWithUserRow struct {
+	AssignmentInfoRow
+
+	UserName             string    `gorm:"column:user_name"`
+	UserQQ               string    `gorm:"column:user_qq"`
+	UserAvatarOSSKey     string    `gorm:"column:user_avatar_oss_key"`
+	UserIsAvatarUploaded bool      `gorm:"column:user_is_avatar_uploaded"`
+	UserIsSuperAdmin     bool      `gorm:"column:user_is_super_admin"`
+	UserCreatedAt        time.Time `gorm:"column:user_created_at"`
+	UserUpdatedAt        time.Time `gorm:"column:user_updated_at"`
+}
+
+func ToAssignmentWithUserInfo(row AssignmentWithUserRow) model.AssignmentWithUserInfo {
+	user := model.UserInfo{
+		ID:               row.UserID,
+		Name:             row.UserName,
+		QQ:               row.UserQQ,
+		AvatarOSSKey:     row.UserAvatarOSSKey,
+		IsAvatarUploaded: row.UserIsAvatarUploaded,
+		IsSuperAdmin:     row.UserIsSuperAdmin,
+		CreatedAt:        row.UserCreatedAt,
+		UpdatedAt:        row.UserUpdatedAt,
+	}
+
+	return model.NewAssignmentWithUserInfo(
+		row.ID,
+		row.ChapterID,
+		user,
+		row.AssignedRawProviderAt,
+		row.AssignedTranslatorAt,
+		row.AssignedProofreaderAt,
+		row.AssignedTypesetterAt,
+		row.AssignedReviewerAt,
+		row.AssignedPublisherAt,
+		row.CreatedAt,
+		row.UpdatedAt,
+	)
+}
+
+// AssignmentWithChapterAndComicRow 用于 ListWithChapterInfo（JOIN chapter_table + comic_table）。
+type AssignmentWithChapterAndComicRow struct {
+	AssignmentInfoRow
+
+	ChapterComicID   string    `gorm:"column:chapter_comic_id"`
+	ChapterIndex     int       `gorm:"column:chapter_index"`
+	ChapterSubtitle  string    `gorm:"column:chapter_subtitle"`
+	ChapterPageCount int       `gorm:"column:chapter_page_count"`
+	ChapterCoverURL  string    `gorm:"column:chapter_cover_url"`
+	ChapterCreatedAt time.Time `gorm:"column:chapter_created_at"`
+	ChapterUpdatedAt time.Time `gorm:"column:chapter_updated_at"`
+
+	ComicTeamID       string    `gorm:"column:comic_team_id"`
+	ComicIndex        int       `gorm:"column:comic_index"`
+	ComicTitle        string    `gorm:"column:comic_title"`
+	ComicAuthor       string    `gorm:"column:comic_author"`
+	ComicDescription  string    `gorm:"column:comic_description"`
+	ComicCoverURL     string    `gorm:"column:comic_cover_url"`
+	ComicChapterCount int       `gorm:"column:comic_chapter_count"`
+	ComicCreatorID    string    `gorm:"column:comic_creator_id"`
+	ComicLastActiveAt time.Time `gorm:"column:comic_last_active_at"`
+	ComicCreatedAt    time.Time `gorm:"column:comic_created_at"`
+	ComicUpdatedAt    time.Time `gorm:"column:comic_updated_at"`
+}
+
+func ToAssignmentWithChapterInfo(row AssignmentWithChapterAndComicRow) model.AssignmentWithChapterInfo {
+	comic := model.NewComicInfo(
+		row.ChapterComicID,
+		row.ComicTeamID,
+		row.ComicIndex,
+		row.ComicTitle,
+		row.ComicAuthor,
+		row.ComicDescription,
+		row.ComicCoverURL,
+		row.ComicChapterCount,
+		row.ComicCreatorID,
+		row.ComicLastActiveAt,
+		row.ComicCreatedAt,
+		row.ComicUpdatedAt,
+	)
+
+	chapter := model.NewChapterWithComicInfo(
+		row.ChapterID,
+		comic,
+		row.ChapterIndex,
+		row.ChapterSubtitle,
+		row.ChapterCoverURL,
+		row.ChapterPageCount,
+		0,
+		0,
+		0,
+		row.ChapterCreatedAt,
+		row.ChapterUpdatedAt,
+	)
+
+	return model.NewAssignmentWithChapterInfo(
+		row.ID,
+		chapter,
+		row.UserID,
+		row.AssignedRawProviderAt,
+		row.AssignedTranslatorAt,
+		row.AssignedProofreaderAt,
+		row.AssignedTypesetterAt,
+		row.AssignedReviewerAt,
+		row.AssignedPublisherAt,
+		row.CreatedAt,
+		row.UpdatedAt,
+	)
+}

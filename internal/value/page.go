@@ -74,6 +74,8 @@ type PageInfo struct {
 	ChapterID string `json:"chapter_id"`
 	Index     int    `json:"index"`
 
+	ImageURL string `json:"image_url"`
+
 	TotalUnitCount      int `json:"total_unit_count"`
 	TranslatedUnitCount int `json:"translated_unit_count"`
 	ProofreadUnitCount  int `json:"proofread_unit_count"`
@@ -82,11 +84,12 @@ type PageInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewPageInfoFromModel(pageInfo model.PageInfo) PageInfo {
+func NewPageInfoFromModel(pageInfo model.PageInfo, imageURL string) PageInfo {
 	return PageInfo{
 		ID:                  pageInfo.ID,
 		ChapterID:           pageInfo.ChapterID,
 		Index:               pageInfo.Index,
+		ImageURL:            imageURL,
 		TotalUnitCount:      pageInfo.TotalUnitCount,
 		TranslatedUnitCount: pageInfo.TranslatedUnitCount,
 		ProofreadUnitCount:  pageInfo.ProofreadUnitCount,

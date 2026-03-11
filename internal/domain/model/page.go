@@ -5,9 +5,9 @@ import "time"
 type PageInfo struct {
 	ID string
 
-	ChapterID string
-	Index     int
-	OSSKey    string
+	ChapterID  string
+	Index      int
+	OSSKey     string
 	IsUploaded bool
 
 	TotalUnitCount      int

@@ -7,7 +7,7 @@ type PageRepository interface {
 	LockByChapterID(executor Executor, chapterID string) error
 	List(executor Executor, options ...QueryOption) ([]model.PageInfo, error)
 	Get(executor Executor, options ...QueryOption) (model.PageInfo, error)
-	GetChapterByID(executor Executor, chapterID string) (model.ChapterInfo, error)
+	GetChapterByID(executor Executor, chapterID string) (model.ChapterDetail, error)
 	CreateBatch(executor Executor, pages []model.PageCreation) error
 	Update(executor Executor, update model.PageUpdate) error
 	Delete(executor Executor, id string) error

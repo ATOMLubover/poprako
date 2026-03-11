@@ -32,19 +32,29 @@ func (cta *CreateTeamArgs) Validate() error {
 	return nil
 }
 
+type CreateTeamResult struct {
+	ID string `json:"id"`
+}
+
+func NewCreateTeamResult(teamID string) CreateTeamResult {
+	return CreateTeamResult{
+		ID: teamID,
+	}
+}
+
 type TeamInfo struct {
 	ID string `json:"id"`
 
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	AvatarOSSKey string `json:"avatar_oss_key"`
-	IsAvatarUploaded bool `json:"is_avatar_uploaded"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	AvatarURL        string `json:"avatar_url"`
+	IsAvatarUploaded bool   `json:"is_avatar_uploaded"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewTeamInfoFromModel(team model.TeamInfo) TeamInfo {
+func NewTeamInfoFromModel(team model.TeamInfo, avatarURL string) TeamInfo {
 	if team.ID == "" {
 		zap.L().Warn("NewTeamInfoFromModel: team 为空")
 		return TeamInfo{}
@@ -54,7 +64,7 @@ func NewTeamInfoFromModel(team model.TeamInfo) TeamInfo {
 		ID:               team.ID,
 		Name:             team.Name,
 		Description:      team.Description,
-		AvatarOSSKey:     team.AvatarOSSKey,
+		AvatarURL:        avatarURL,
 		IsAvatarUploaded: team.IsAvatarUploaded,
 		CreatedAt:        team.CreatedAt.UnixMilli(),
 		UpdatedAt:        team.UpdatedAt.UnixMilli(),

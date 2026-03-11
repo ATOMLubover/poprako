@@ -96,8 +96,8 @@ func ToPageInfo(row PageInfoRow) model.PageInfo {
 	)
 }
 
-func ToChapterInfo(row ChapterInfoRow) model.ChapterInfo {
-	return model.NewChapterInfo(
+func ToChapterInfo(row ChapterInfoRow) model.ChapterDetail {
+	return model.NewChapterDetail(
 		row.ID,
 		row.ComicID,
 		row.Index,

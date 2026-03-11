@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/domain/model"
+	"labelplus-next-web-be/internal/util"
 
 	"go.uber.org/zap"
 )
@@ -44,13 +45,14 @@ func NewMemberProfile(userInfo UserInfo, roles ...model.RoleFlag) MemberProfile 
 	}
 }
 
-func NewMemberProfileFromModel(mp model.MemberProfile) MemberProfile {
+// FIXME: 有没有更好的方法自动生成 avatarURL
+func NewMemberProfileFromModel(mp model.MemberWithUserInfo, avatarURL string) MemberProfile {
 	if mp.UserInfo.ID == "" {
 		zap.L().Warn("NewMemberProfileFromModel: mp 为空或用户信息为空")
 		return MemberProfile{}
 	}
 
-	userInfo := NewUserInfoFromModel(*mp.UserInfo)
+	userInfo := NewUserInfoFromModel(mp.UserInfo, avatarURL)
 
 	return NewMemberProfile(userInfo, mp.Roles()...)
 }
@@ -126,4 +128,36 @@ func (jta *JoinTeamArgs) Validate() error {
 	}
 
 	return nil
+}
+
+type MemberWithTeamInfo struct {
+	ID string `json:"id"`
+
+	UserID string   `json:"user_id"`
+	Team   TeamInfo `json:"team"`
+
+	AssignedRawProviderAt *int64 `json:"assigned_raw_provider_at,omitempty"`
+	AssignedTranslatorAt  *int64 `json:"assigned_translator_at,omitempty"`
+	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at,omitempty"`
+	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at,omitempty"`
+	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at,omitempty"`
+	AssignedPublishererAt *int64 `json:"assigned_publisher_at,omitempty"`
+	AssignedAdminAt       *int64 `json:"assigned_admin_at,omitempty"`
+}
+
+func NewMemberWithTeamInfoFromModel(m model.MemberWithTeamInfo, avatarURL string) MemberWithTeamInfo {
+	return MemberWithTeamInfo{
+		ID: m.ID,
+
+		UserID: m.UserID,
+		Team:   NewTeamInfoFromModel(m.Team, avatarURL),
+
+		AssignedRawProviderAt: util.ToUnixPtr(m.AssignedRawProviderAt),
+		AssignedTranslatorAt:  util.ToUnixPtr(m.AssignedTranslatorAt),
+		AssignedProofreaderAt: util.ToUnixPtr(m.AssignedProofreaderAt),
+		AssignedTypesetterAt:  util.ToUnixPtr(m.AssignedTypesetterAt),
+		AssignedReviewerAt:    util.ToUnixPtr(m.AssignedReviewerAt),
+		AssignedPublishererAt: util.ToUnixPtr(m.AssignedPublisherAt),
+		AssignedAdminAt:       util.ToUnixPtr(m.AssignedAdminAt),
+	}
 }

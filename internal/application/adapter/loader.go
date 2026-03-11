@@ -41,3 +41,12 @@ func HandleLoadAssignmentInfo(assignmentRepository repository.AssignmentReposito
 		)
 	}
 }
+
+func HandleLoadChapterInfo(chapterRepository repository.ChapterRepository) model.OnLoadChapterInfo {
+	return func(chapterID string) (model.ChapterDetail, error) {
+		return chapterRepository.Get(
+			nil,
+			query_option.FilterByID(repository_infra.ChapterTable, chapterID),
+		)
+	}
+}

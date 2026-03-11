@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
@@ -20,6 +21,10 @@ type MemberApplication interface {
 		currentUserID string,
 		args value.CreateMemberArgs,
 	) (value.CreateMemberResult, error)
+	ListMyMembers(
+		scope util.TraceScope,
+		currentUserID string,
+	) ([]value.MemberWithTeamInfo, error)
 	ListMembers(
 		scope util.TraceScope,
 		currentUserID string,
@@ -43,19 +48,22 @@ type MemberApplication interface {
 }
 
 type memberApplication struct {
+	ossClient            external.OSSClient
 	userRepository       repository.UserRepository
 	memberRepository     repository.MemberRepository
 	invitationRepository repository.InvitationRepository
 }
 
 func NewMemberApplication(
+	ossClient external.OSSClient,
 	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
 	invitationRepository repository.InvitationRepository,
 ) MemberApplication {
-	if userRepository == nil || memberRepository == nil || invitationRepository == nil {
+	if ossClient == nil || userRepository == nil || memberRepository == nil || invitationRepository == nil {
 		zap.L().Panic(
 			"NewMemberApplication: 依赖项不能为空",
+			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("invitationRepository_nil", invitationRepository == nil),
@@ -63,6 +71,7 @@ func NewMemberApplication(
 	}
 
 	return &memberApplication{
+		ossClient:            ossClient,
 		userRepository:       userRepository,
 		memberRepository:     memberRepository,
 		invitationRepository: invitationRepository,
@@ -159,7 +168,7 @@ func (ma *memberApplication) ListMembers(
 	// 获取成员列表（含用户信息）
 	memberList, err := ma.memberRepository.ListProfiles(
 		nil,
-		query_option.CreatedAtDesc(repository_infra.MemberTable),
+		query_option.CreatedAtAsc(repository_infra.MemberTable),
 		query_option.MemberQuery().FilterByTeamID(args.TeamID),
 		query_option.Paginate(args.Offset, args.Limit),
 	)
@@ -171,7 +180,50 @@ func (ma *memberApplication) ListMembers(
 	result := make([]value.MemberProfile, len(memberList))
 
 	for i := range memberList {
-		result[i] = value.NewMemberProfileFromModel(memberList[i])
+		avatarURL, err := ma.ossClient.GenerateGetPresignedURL(memberList[i].UserInfo.AvatarOSSKey)
+		if err != nil {
+			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+			return nil, errors.New("无法获取成员列表")
+		}
+
+		result[i] = value.NewMemberProfileFromModel(memberList[i], avatarURL)
+	}
+
+	return result, nil
+}
+
+func (ma *memberApplication) ListMyMembers(
+	scope util.TraceScope,
+	currentUserID string,
+) ([]value.MemberWithTeamInfo, error) {
+	const fn = "MemberApplication.ListMyMembers"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	memberList, err := ma.memberRepository.ListWithTeamInfo(
+		nil,
+		query_option.MemberQuery().FilterByUserID(currentUserID),
+		query_option.CreatedAtDesc(repository_infra.MemberTable),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取我的成员列表失败", zap.Error(err))
+		return nil, errors.New("无法获取我的成员列表")
+	}
+
+	result := make([]value.MemberWithTeamInfo, len(memberList))
+	for i := range memberList {
+		avatarURL, err := ma.ossClient.GenerateGetPresignedURL(memberList[i].Team.AvatarOSSKey)
+		if err != nil {
+			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+			return nil, errors.New("无法获取我的成员列表")
+		}
+
+		result[i] = value.NewMemberWithTeamInfoFromModel(memberList[i], avatarURL)
 	}
 
 	return result, nil
@@ -217,8 +269,8 @@ func (ma *memberApplication) UpdateMemberRole(
 		return errors.New("权限不足")
 	}
 
-	// 构建更新对象，传入目标角色
-	memberUpdate := model.NewMemberUpdate(args.ID, model.UnmaskRolesWithTime(args.Roles)...)
+	// PUT 语义：按照目标角色做全量替换；已存在角色保留原时间，新授予角色记录当前时间
+	memberUpdate := model.NewMemberUpdate(args.ID, targetMember, args.Roles)
 
 	if err := ma.memberRepository.Update(nil, memberUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新成员角色失败", zap.Error(err))

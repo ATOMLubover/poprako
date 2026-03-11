@@ -19,7 +19,7 @@ type MemberProfileRow struct {
 	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
 	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
 	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
-	AssignedUploaderAt    *time.Time `gorm:"column:assigned_publisher_at"`
+	AssignedPublisherAt   *time.Time `gorm:"column:assigned_publisher_at"`
 	AssignedAdminAt       *time.Time `gorm:"column:assigned_admin_at"`
 
 	CreatedAt time.Time  `gorm:"column:created_at"`
@@ -40,7 +40,7 @@ type MemberInsertRow struct {
 	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
 	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
 	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
-	AssignedUploaderAt    *time.Time `gorm:"column:assigned_publisher_at"`
+	AssignedPublisherAt   *time.Time `gorm:"column:assigned_publisher_at"`
 	AssignedAdminAt       *time.Time `gorm:"column:assigned_admin_at"`
 }
 
@@ -57,8 +57,18 @@ type MemberWithUserRow struct {
 	UserUpdatedAt        time.Time `gorm:"column:user_updated_at"`
 }
 
-func ToMemberProfile(row MemberProfileRow, userInfo *model.UserInfo) model.MemberProfile {
-	return model.MemberProfile{
+type MemberWithTeamRow struct {
+	MemberProfileRow
+	TeamName             string    `gorm:"column:team_name"`
+	TeamDescription      string    `gorm:"column:team_description"`
+	TeamAvatarOSSKey     string    `gorm:"column:team_avatar_oss_key"`
+	TeamIsAvatarUploaded bool      `gorm:"column:team_is_avatar_uploaded"`
+	TeamCreatedAt        time.Time `gorm:"column:team_created_at"`
+	TeamUpdatedAt        time.Time `gorm:"column:team_updated_at"`
+}
+
+func ToMemberProfile(row MemberProfileRow, userInfo model.UserInfo) model.MemberWithUserInfo {
+	return model.MemberWithUserInfo{
 		ID:                    row.ID,
 		UserInfo:              userInfo,
 		TeamID:                row.TeamID,
@@ -67,9 +77,34 @@ func ToMemberProfile(row MemberProfileRow, userInfo *model.UserInfo) model.Membe
 		AssignedProofreaderAt: row.AssignedProofreaderAt,
 		AssignedTypesetterAt:  row.AssignedTypesetterAt,
 		AssignedReviewerAt:    row.AssignedReviewerAt,
-		AssignedUploaderAt:    row.AssignedUploaderAt,
+		AssignedPublishererAt: row.AssignedPublisherAt,
 		AssignedAdminAt:       row.AssignedAdminAt,
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}
+}
+
+func ToMemberWithTeamInfo(row MemberWithTeamRow) model.MemberWithTeamInfo {
+	team := model.TeamInfo{
+		ID:               row.TeamID,
+		Name:             row.TeamName,
+		Description:      row.TeamDescription,
+		AvatarOSSKey:     row.TeamAvatarOSSKey,
+		IsAvatarUploaded: row.TeamIsAvatarUploaded,
+		CreatedAt:        row.TeamCreatedAt,
+		UpdatedAt:        row.TeamUpdatedAt,
+	}
+
+	return model.NewMemberWithTeamInfo(
+		row.ID,
+		row.UserID,
+		team,
+		row.AssignedRawProviderAt,
+		row.AssignedTranslatorAt,
+		row.AssignedProofreaderAt,
+		row.AssignedTypesetterAt,
+		row.AssignedReviewerAt,
+		row.AssignedPublisherAt,
+		row.AssignedAdminAt,
+	)
 }

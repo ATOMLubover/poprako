@@ -13,7 +13,7 @@ type MemberCreation struct {
 	ToBeProofreader bool
 	ToBeTypesetter  bool
 	ToBeReviewer    bool
-	ToBeUploader    bool
+	ToBePublisher   bool
 	ToBeAdmin       bool
 }
 
@@ -36,7 +36,7 @@ func NewMemberCreation(userID, teamID string, roles ...RoleFlag) MemberCreation 
 		case RoleReviewer:
 			mc.ToBeReviewer = true
 		case RolePublisher:
-			mc.ToBeUploader = true
+			mc.ToBePublisher = true
 		case RoleAdmin:
 			mc.ToBeAdmin = true
 		}
@@ -45,10 +45,10 @@ func NewMemberCreation(userID, teamID string, roles ...RoleFlag) MemberCreation 
 	return mc
 }
 
-type MemberProfile struct {
+type MemberWithUserInfo struct {
 	ID string
 
-	UserInfo *UserInfo
+	UserInfo UserInfo
 
 	TeamID string
 
@@ -57,14 +57,14 @@ type MemberProfile struct {
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
 	AssignedReviewerAt    *time.Time
-	AssignedUploaderAt    *time.Time
+	AssignedPublishererAt *time.Time
 	AssignedAdminAt       *time.Time
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-func (mp *MemberProfile) HasAnyRole(roles ...RoleFlag) bool {
+func (mp *MemberWithUserInfo) HasAnyRole(roles ...RoleFlag) bool {
 	for _, role := range roles {
 		switch role {
 		case RoleRawProvider:
@@ -87,6 +87,10 @@ func (mp *MemberProfile) HasAnyRole(roles ...RoleFlag) bool {
 			if mp.AssignedReviewerAt != nil {
 				return true
 			}
+		case RolePublisher:
+			if mp.AssignedPublishererAt != nil {
+				return true
+			}
 		case RoleAdmin:
 			if mp.AssignedAdminAt != nil {
 				return true
@@ -97,7 +101,7 @@ func (mp *MemberProfile) HasAnyRole(roles ...RoleFlag) bool {
 	return false
 }
 
-func (mp *MemberProfile) Roles() []RoleFlag {
+func (mp *MemberWithUserInfo) Roles() []RoleFlag {
 	roles := make([]RoleFlag, 0)
 
 	if mp.AssignedRawProviderAt != nil {
@@ -115,7 +119,7 @@ func (mp *MemberProfile) Roles() []RoleFlag {
 	if mp.AssignedReviewerAt != nil {
 		roles = append(roles, RoleReviewer)
 	}
-	if mp.AssignedUploaderAt != nil {
+	if mp.AssignedPublishererAt != nil {
 		roles = append(roles, RolePublisher)
 	}
 	if mp.AssignedAdminAt != nil {
@@ -123,11 +127,6 @@ func (mp *MemberProfile) Roles() []RoleFlag {
 	}
 
 	return roles
-}
-
-type RoleWithTime struct {
-	Role       RoleFlag
-	AssignedAt time.Time
 }
 
 type MemberInfo struct {
@@ -140,43 +139,32 @@ type MemberInfo struct {
 	AssignProofreader *time.Time
 	AssignTypesetter  *time.Time
 	AssignReviewer    *time.Time
-	AssignUploader    *time.Time
+	AssignPublisher   *time.Time
 	AssignAdmin       *time.Time
 }
 
-func NewMemberInfo(id string, userID string, roles ...RoleWithTime) MemberInfo {
-	memberInfo := MemberInfo{
-		ID:     id,
-		UserID: userID,
+func NewMemberInfo(
+	id string,
+	userID string,
+	assignRawProvider *time.Time,
+	assignTranslator *time.Time,
+	assignProofreader *time.Time,
+	assignTypesetter *time.Time,
+	assignReviewer *time.Time,
+	assignPublisher *time.Time,
+	assignAdmin *time.Time,
+) MemberInfo {
+	return MemberInfo{
+		ID:                id,
+		UserID:            userID,
+		AssignRawProvider: assignRawProvider,
+		AssignTranslator:  assignTranslator,
+		AssignProofreader: assignProofreader,
+		AssignTypesetter:  assignTypesetter,
+		AssignReviewer:    assignReviewer,
+		AssignPublisher:   assignPublisher,
+		AssignAdmin:       assignAdmin,
 	}
-
-	for _, role := range roles {
-		switch role.Role {
-		case RoleRawProvider:
-			t := role.AssignedAt
-			memberInfo.AssignRawProvider = &t
-		case RoleTranslator:
-			t := role.AssignedAt
-			memberInfo.AssignTranslator = &t
-		case RoleProofreader:
-			t := role.AssignedAt
-			memberInfo.AssignProofreader = &t
-		case RoleTypesetter:
-			t := role.AssignedAt
-			memberInfo.AssignTypesetter = &t
-		case RoleReviewer:
-			t := role.AssignedAt
-			memberInfo.AssignReviewer = &t
-		case RolePublisher:
-			t := role.AssignedAt
-			memberInfo.AssignUploader = &t
-		case RoleAdmin:
-			t := role.AssignedAt
-			memberInfo.AssignAdmin = &t
-		}
-	}
-
-	return memberInfo
 }
 
 func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
@@ -203,7 +191,7 @@ func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 				return true
 			}
 		case RolePublisher:
-			if mi.AssignUploader != nil {
+			if mi.AssignPublisher != nil {
 				return true
 			}
 		case RoleAdmin:
@@ -216,40 +204,83 @@ func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 	return false
 }
 
-type MemberUpdate struct {
-	ID                string
-	AssignRawProvider time.Time
-	AssignTranslator  time.Time
-	AssignProofreader time.Time
-	AssignTypesetter  time.Time
-	AssignReviewer    time.Time
-	AssignUploader    time.Time
-	AssignAdmin       time.Time
+type MemberWithTeamInfo struct {
+	ID string
+
+	UserID string
+	Team   TeamInfo
+
+	AssignedRawProviderAt *time.Time
+	AssignedTranslatorAt  *time.Time
+	AssignedProofreaderAt *time.Time
+	AssignedTypesetterAt  *time.Time
+	AssignedReviewerAt    *time.Time
+	AssignedPublisherAt   *time.Time
+	AssignedAdminAt       *time.Time
 }
 
-func NewMemberUpdate(id string, roles ...RoleWithTime) MemberUpdate {
-	mu := MemberUpdate{
-		ID: id,
+func NewMemberWithTeamInfo(
+	id string,
+	userID string,
+	team TeamInfo,
+	assignedRawProviderAt *time.Time,
+	assignedTranslatorAt *time.Time,
+	assignedProofreaderAt *time.Time,
+	assignedTypesetterAt *time.Time,
+	assignedReviewerAt *time.Time,
+	assignedPublisherAt *time.Time,
+	assignedAdminAt *time.Time,
+) MemberWithTeamInfo {
+	return MemberWithTeamInfo{
+		ID:                    id,
+		UserID:                userID,
+		Team:                  team,
+		AssignedRawProviderAt: assignedRawProviderAt,
+		AssignedTranslatorAt:  assignedTranslatorAt,
+		AssignedProofreaderAt: assignedProofreaderAt,
+		AssignedTypesetterAt:  assignedTypesetterAt,
+		AssignedReviewerAt:    assignedReviewerAt,
+		AssignedPublisherAt:   assignedPublisherAt,
+		AssignedAdminAt:       assignedAdminAt,
 	}
+}
 
-	for _, role := range roles {
-		switch role.Role {
-		case RoleRawProvider:
-			mu.AssignRawProvider = role.AssignedAt
-		case RoleTranslator:
-			mu.AssignTranslator = role.AssignedAt
-		case RoleProofreader:
-			mu.AssignProofreader = role.AssignedAt
-		case RoleTypesetter:
-			mu.AssignTypesetter = role.AssignedAt
-		case RoleReviewer:
-			mu.AssignReviewer = role.AssignedAt
-		case RolePublisher:
-			mu.AssignUploader = role.AssignedAt
-		case RoleAdmin:
-			mu.AssignAdmin = role.AssignedAt
+type MemberUpdate struct {
+	ID                string
+	AssignRawProvider *time.Time
+	AssignTranslator  *time.Time
+	AssignProofreader *time.Time
+	AssignTypesetter  *time.Time
+	AssignReviewer    *time.Time
+	AssignPublisher   *time.Time
+	AssignAdmin       *time.Time
+}
+
+func NewMemberUpdate(id string, current MemberWithUserInfo, targetRoles RoleMask) MemberUpdate {
+	now := time.Now()
+
+	resolveRoleAssignedAt := func(currentAssignedAt *time.Time, role RoleFlag) *time.Time {
+		if targetRoles&RoleMask(role) == 0 {
+			return nil
 		}
+
+		if currentAssignedAt != nil {
+			t := *currentAssignedAt
+			return &t
+		}
+
+		t := now
+		return &t
 	}
 
-	return mu
+	return MemberUpdate{
+		ID:                id,
+		AssignRawProvider: resolveRoleAssignedAt(current.AssignedRawProviderAt, RoleRawProvider),
+		AssignTranslator:  resolveRoleAssignedAt(current.AssignedTranslatorAt, RoleTranslator),
+		AssignProofreader: resolveRoleAssignedAt(current.AssignedProofreaderAt, RoleProofreader),
+		AssignTypesetter:  resolveRoleAssignedAt(current.AssignedTypesetterAt, RoleTypesetter),
+		AssignReviewer:    resolveRoleAssignedAt(current.AssignedReviewerAt, RoleReviewer),
+		AssignPublisher:   resolveRoleAssignedAt(current.AssignedPublishererAt, RolePublisher),
+		AssignAdmin:       resolveRoleAssignedAt(current.AssignedAdminAt, RoleAdmin),
+	}
 }

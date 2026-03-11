@@ -24,6 +24,18 @@ func CreatedAtDesc(table string) intf.QueryOption {
 	}
 }
 
+func CreatedAtAsc(table string) intf.QueryOption {
+	return func(executor intf.Executor) intf.Executor {
+		return executor.Order(fmt.Sprintf("%s.created_at ASC", table))
+	}
+}
+
+func UpdatedAtDesc(table string) intf.QueryOption {
+	return func(executor intf.Executor) intf.Executor {
+		return executor.Order(fmt.Sprintf("%s.updated_at DESC", table))
+	}
+}
+
 func FilterByIDs(table string, ids []string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
 		return executor.Where(fmt.Sprintf("%s.id IN ?", table), ids)

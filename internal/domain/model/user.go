@@ -7,9 +7,9 @@ import (
 type UserInfo struct {
 	ID string
 
-	Name      string
-	QQ        string
-	AvatarOSSKey string
+	Name             string
+	QQ               string
+	AvatarOSSKey     string
 	IsAvatarUploaded bool
 
 	IsSuperAdmin bool

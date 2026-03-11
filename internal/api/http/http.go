@@ -50,6 +50,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	// 用户相关路由
 	userParty := authorizedParty.Party("/users")
 	{
+		userParty.Get("/mine", GetMyUser(appState))
 		userParty.Get("/{user_id}", GetUserByID(appState))
 		userParty.Get("/", ListUsers(appState))
 		userParty.Post("/{user_id}/avatar", ReserveUserAvatar(appState))
@@ -75,6 +76,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		memberParty.Post("/", CreateMember(appState))
 		memberParty.Post("/join", JoinTeam(appState))
+		memberParty.Get("/mine", ListMyMembers(appState))
 		memberParty.Get("/", ListMembers(appState))
 		memberParty.Put("/{member_id}", UpdateMemberRole(appState))
 		memberParty.Delete("/{member_id}", RemoveMember(appState))
@@ -114,6 +116,16 @@ func initialize(appState *state.AppState) *iris.Application {
 		pageParty.Post("/", ReserveChapterPages(appState))
 		pageParty.Put("/{page_id}", UpdatePage(appState))
 		pageParty.Delete("/{chapter_id}", DeletePages(appState))
+	}
+
+	// 分配相关路由
+	assignmentParty := authorizedParty.Party("/assignments")
+	{
+		assignmentParty.Get("/mine", ListMyAssignments(appState))
+		assignmentParty.Get("/", ListChapterAssignments(appState))
+		assignmentParty.Post("/", CreateChapterAssignment(appState))
+		assignmentParty.Put("/{assignment_id}", UpdateAssignment(appState))
+		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))
 	}
 
 	// 初始化 Swagger UI

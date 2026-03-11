@@ -5,9 +5,9 @@ import "time"
 type TeamInfo struct {
 	ID string
 
-	Name        string
-	Description string
-	AvatarOSSKey string
+	Name             string
+	Description      string
+	AvatarOSSKey     string
 	IsAvatarUploaded bool
 
 	CreatedAt time.Time

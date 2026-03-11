@@ -253,3 +253,33 @@ func RemoveUserByID(appState *state.AppState) iris.Handler {
 		accept(ctx, "删除用户成功", nil)
 	}
 }
+
+// GetMyUser godoc
+// @Summary  获取当前登录用户信息
+// @Description 获取当前登录用户的详细信息，用于保持登录状态
+//
+// @Tags    user
+// @Security    ApiKeyAuth
+// @Produce json
+//
+// @Success 200 {object} value.UserInfo
+//
+// @Router  /users/mine [get]
+func GetMyUser(appState *state.AppState) iris.Handler {
+	userApplication := appState.UserApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		result, err := userApplication.GetMyUser(buildTraceScope(ctx), currentUserID)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取当前用户信息成功", result)
+	}
+}

@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-type ChapterInfo struct {
+type ChapterDetail struct {
 	ID string
 
 	ComicID   string
@@ -32,7 +32,7 @@ type ChapterInfo struct {
 	UpdatedAt time.Time
 }
 
-func NewChapterInfo(
+func NewChapterDetail(
 	id string,
 	comicID string,
 	index int,
@@ -54,8 +54,8 @@ func NewChapterInfo(
 	creatorID string,
 	createdAt time.Time,
 	updatedAt time.Time,
-) ChapterInfo {
-	return ChapterInfo{
+) ChapterDetail {
+	return ChapterDetail{
 		ID:                  id,
 		ComicID:             comicID,
 		Index:               index,
@@ -75,6 +75,52 @@ func NewChapterInfo(
 		ReviewedAt:          reviewedAt,
 		PublishedAt:         publishedAt,
 		CreatorID:           creatorID,
+		CreatedAt:           createdAt,
+		UpdatedAt:           updatedAt,
+	}
+}
+
+type ChapterWithComicInfo struct {
+	ID string
+
+	Comic     ComicInfo
+	Index     int
+	ChapterNo string
+
+	CoverURL string
+
+	PageCount           int
+	TotalUnitCount      int
+	TranslatedUnitCount int
+	ProofreadUnitCount  int
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func NewChapterWithComicInfo(
+	id string,
+	comicInfo ComicInfo,
+	index int,
+	chapterNo string,
+	coverURL string,
+	pageCount int,
+	totalUnitCount int,
+	translatedUnitCount int,
+	proofreadUnitCount int,
+	createdAt time.Time,
+	updatedAt time.Time,
+) ChapterWithComicInfo {
+	return ChapterWithComicInfo{
+		ID:                  id,
+		Comic:               comicInfo,
+		Index:               index,
+		ChapterNo:           chapterNo,
+		CoverURL:            coverURL,
+		PageCount:           pageCount,
+		TotalUnitCount:      totalUnitCount,
+		TranslatedUnitCount: translatedUnitCount,
+		ProofreadUnitCount:  proofreadUnitCount,
 		CreatedAt:           createdAt,
 		UpdatedAt:           updatedAt,
 	}
@@ -119,7 +165,7 @@ type ChapterUpdate struct {
 func NewChapterUpdate(
 	id string,
 	chapterNo *string,
-	current ChapterInfo,
+	current ChapterDetail,
 	uploadStatus *WorkflowStatus,
 	translateStatus *WorkflowStatus,
 	proofreadStatus *WorkflowStatus,

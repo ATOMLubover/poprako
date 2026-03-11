@@ -43,7 +43,7 @@ func (r *chapterRepository) LockByComicID(executor intf.Executor, comicID string
 		Pluck("id", &lockedIDs).Error
 }
 
-func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ChapterInfo, error) {
+func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ChapterDetail, error) {
 	executor = r.withTransaction(executor)
 	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
 
@@ -56,7 +56,7 @@ func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOp
 		return nil, err
 	}
 
-	result := make([]model.ChapterInfo, len(rows))
+	result := make([]model.ChapterDetail, len(rows))
 	for i, row := range rows {
 		result[i] = entity.ToChapterInfo(row)
 	}
@@ -64,7 +64,7 @@ func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOp
 	return result, nil
 }
 
-func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ChapterInfo, error) {
+func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ChapterDetail, error) {
 	executor = r.withTransaction(executor)
 	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
 
@@ -74,7 +74,7 @@ func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOpt
 
 	var row entity.ChapterInfoRow
 	if err := executor.First(&row).Error; err != nil {
-		return model.ChapterInfo{}, err
+		return model.ChapterDetail{}, err
 	}
 
 	return entity.ToChapterInfo(row), nil

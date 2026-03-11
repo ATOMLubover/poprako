@@ -2,7 +2,6 @@ package application
 
 import (
 	"errors"
-	"time"
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/domain/external"
@@ -22,7 +21,7 @@ type TeamApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		args value.CreateTeamArgs,
-	) (value.TeamInfo, error)
+	) (value.CreateTeamResult, error)
 	ListAllTeams(
 		scope util.TraceScope,
 		currentUserID string,
@@ -91,12 +90,12 @@ func (ta *teamApplication) CreateTeam(
 	scope util.TraceScope,
 	currentUserID string,
 	args value.CreateTeamArgs,
-) (value.TeamInfo, error) {
+) (value.CreateTeamResult, error) {
 	const fn = "TeamApplication.CreateTeam"
 
 	if err := args.Validate(); err != nil {
 		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
-		return value.TeamInfo{}, errors.New("参数错误: " + err.Error())
+		return value.CreateTeamResult{}, errors.New("参数错误: " + err.Error())
 	}
 
 	scope.
@@ -112,7 +111,7 @@ func (ta *teamApplication) CreateTeam(
 		adapter.HandleLoadUserInfo(ta.userRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
-		return value.TeamInfo{}, errors.New("权限不足")
+		return value.CreateTeamResult{}, errors.New("权限不足")
 	}
 
 	// 创建汉化组
@@ -121,21 +120,10 @@ func (ta *teamApplication) CreateTeam(
 	teamID, err := ta.teamRepository.Create(nil, *teamCreation)
 	if err != nil {
 		scope.Logger().Error(fn+": 创建汉化组失败", zap.Error(err))
-		return value.TeamInfo{}, errors.New("创建汉化组失败")
+		return value.CreateTeamResult{}, errors.New("创建汉化组失败")
 	}
 
-	// 构造返回值，不再查询数据库
-	now := time.Now()
-
-	return value.NewTeamInfoFromModel(model.TeamInfo{
-		ID:               teamID,
-		Name:             args.Name,
-		Description:      args.Description,
-		AvatarOSSKey:     "",
-		IsAvatarUploaded: false,
-		CreatedAt:        now,
-		UpdatedAt:        now,
-	}), nil
+	return value.NewCreateTeamResult(teamID), nil
 }
 
 func (ta *teamApplication) ListAllTeams(
@@ -160,7 +148,7 @@ func (ta *teamApplication) ListAllTeams(
 	}
 
 	// 获取所有汉化组列表
-	teamList, err := ta.teamRepository.List(nil)
+	teamList, err := ta.teamRepository.List(nil, query_option.UpdatedAtDesc(repository_infra.TeamTable))
 	if err != nil {
 		scope.Logger().Error(fn+": 获取汉化组列表失败", zap.Error(err))
 		return nil, errors.New("无法获取汉化组列表")
@@ -169,7 +157,13 @@ func (ta *teamApplication) ListAllTeams(
 	result := make([]value.TeamInfo, len(teamList))
 
 	for i, team := range teamList {
-		result[i] = value.NewTeamInfoFromModel(team)
+		avatarURL, err := ta.ossClient.GenerateGetPresignedURL(team.AvatarOSSKey)
+		if err != nil {
+			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+			return nil, errors.New("无法获取汉化组列表")
+		}
+
+		result[i] = value.NewTeamInfoFromModel(team, avatarURL)
 	}
 
 	return result, nil
@@ -208,7 +202,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 
 	putURL, err := ta.ossClient.GeneratePutPresignedURL(avatarOSSKey)
 	if err != nil {
-		scope.Logger().Error(fn+": 生成预签名 URL 失败", zap.Error(err))
+		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
 		return value.ReserveTeamAvatarResult{}, errors.New("预留汉化组头像失败")
 	}
 
@@ -256,6 +250,7 @@ func (ta *teamApplication) ListMyTeams(
 	// 由于用户所在汉化组数量较少，直接采用 N + 1 查询方式获取汉化组信息
 	teams, err := ta.teamRepository.List(
 		nil,
+		query_option.UpdatedAtDesc(repository_infra.TeamTable),
 		query_option.FilterByIDs(repository_infra.TeamTable, teamIDs),
 	)
 	if err != nil {
@@ -266,7 +261,13 @@ func (ta *teamApplication) ListMyTeams(
 	result := make([]value.TeamInfo, len(teams))
 
 	for i, team := range teams {
-		result[i] = value.NewTeamInfoFromModel(team)
+		avatarURL, err := ta.ossClient.GenerateGetPresignedURL(team.AvatarOSSKey)
+		if err != nil {
+			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
+			return nil, errors.New("无法获取汉化组列表")
+		}
+
+		result[i] = value.NewTeamInfoFromModel(team, avatarURL)
 	}
 
 	return result, nil
