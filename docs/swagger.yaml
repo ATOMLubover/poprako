@@ -1,5 +1,17 @@
 basePath: /api/v1
 definitions:
+  model.WorkflowStatus:
+    enum:
+    - pending
+    - in_progress
+    - completed
+    - unset
+    type: string
+    x-enum-varnames:
+    - WorkflowPending
+    - WorkflowInProgress
+    - WorkflowCompleted
+    - WorkflowUnset
   value.ChapterDetail:
     properties:
       chapter_no:
@@ -277,7 +289,32 @@ definitions:
       chapter_id:
         type: string
       chapter_no:
+        description: ChapterNo 章节编号，最多 10 字符；不传则不更新
         type: string
+      proofread_status:
+        allOf:
+        - $ref: '#/definitions/model.WorkflowStatus'
+        description: ProofreadStatus 校对状态，可取值：pending（待校对）、in_progress（校对中）、completed（已校对）；不传则不更新
+      publish_status:
+        allOf:
+        - $ref: '#/definitions/model.WorkflowStatus'
+        description: PublishStatus 发布状态，可取值：pending（待发布）、completed（已发布）；不传则不更新
+      review_status:
+        allOf:
+        - $ref: '#/definitions/model.WorkflowStatus'
+        description: ReviewStatus 审阅状态，可取值：pending（待审阅）、completed（已审阅）；不传则不更新
+      translate_status:
+        allOf:
+        - $ref: '#/definitions/model.WorkflowStatus'
+        description: TranslateStatus 翻译状态，可取值：pending（待翻译）、in_progress（翻译中）、completed（已翻译）；不传则不更新
+      typeset_status:
+        allOf:
+        - $ref: '#/definitions/model.WorkflowStatus'
+        description: TypesetStatus 排版状态，可取值：pending（待排版）、in_progress（排版中）、completed（已排版）；不传则不更新
+      upload_status:
+        allOf:
+        - $ref: '#/definitions/model.WorkflowStatus'
+        description: UploadStatus 上传状态，可取值：pending（待上传）、completed（已上传）；不传则不更新
     type: object
   value.UpdateComicArgs:
     properties:
@@ -478,10 +515,10 @@ paths:
       summary: 删除章节
       tags:
       - chapter
-    put:
+    patch:
       consumes:
       - application/json
-      description: 更新指定章节的信息
+      description: 局部更新指定章节的信息，未传的字段不会被修改
       parameters:
       - description: 章节 ID
         in: path
@@ -501,7 +538,7 @@ paths:
           description: OK
       security:
       - ApiKeyAuth: []
-      summary: 更新章节
+      summary: 更新章节（PATCH 语义，仅传需要更新的字段）
       tags:
       - chapter
   /comics:

@@ -11,20 +11,6 @@ const (
 	WorkflowPublishing   Workflow = "publishing"
 )
 
-func IsValidWorkflow(workflow string) bool {
-	switch Workflow(workflow) {
-	case WorkflowUploading,
-		WorkflowTranslating,
-		WorkflowProofreading,
-		WorkflowTypesetting,
-		WorkflowReviewing,
-		WorkflowPublishing:
-		return true
-	default:
-		return false
-	}
-}
-
 type WorkflowStatus string
 
 const (
@@ -35,32 +21,15 @@ const (
 	WorkflowUnset WorkflowStatus = "unset"
 )
 
-func IsValidWorkflowStatus(status string) bool {
-	switch WorkflowStatus(status) {
-	case WorkflowPending,
-		WorkflowInProgress,
-		WorkflowCompleted,
-		WorkflowUnset:
-		return true
-	default:
-		return false
-	}
-}
-
 func IsValidWorkflowCombination(workflow Workflow, status WorkflowStatus) bool {
-	if !IsValidWorkflowStatus(string(status)) {
-		return false
-	}
-	if !IsValidWorkflow(string(workflow)) {
-		return false
-	}
-
 	switch workflow {
 	case WorkflowUploading, WorkflowReviewing, WorkflowPublishing:
 		// 这三个状态不区分进行中和未开始，只有待处理和已完成两种状态
 		return status == WorkflowPending || status == WorkflowCompleted
-	default:
+	case WorkflowTranslating, WorkflowProofreading, WorkflowTypesetting:
 		// 其他状态区分待处理、进行中和已完成三种状态
 		return status == WorkflowPending || status == WorkflowInProgress || status == WorkflowCompleted
 	}
+
+	return false
 }

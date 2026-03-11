@@ -94,8 +94,8 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 }
 
 // UpdateChapter godoc
-// @Summary 	更新章节
-// @Description 更新指定章节的信息
+// @Summary 	更新章节（PATCH 语义，仅传需要更新的字段）
+// @Description 局部更新指定章节的信息，未传的字段不会被修改
 //
 // @Tags 		chapter
 // @Security 	ApiKeyAuth
@@ -106,7 +106,7 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 //
 // @Success 	200
 //
-// @Router 		/chapters/{chapter_id} [put]
+// @Router 		/chapters/{chapter_id} [patch]
 func UpdateChapter(appState *state.AppState) iris.Handler {
 	chapterApplication := appState.ChapterApplication
 
@@ -127,11 +127,7 @@ func UpdateChapter(appState *state.AppState) iris.Handler {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
 		}
-
-		if args.ChapterID != chapterID {
-			reject(ctx, iris.StatusBadRequest, "路径参数 chapter_id 与请求体中的 chapter_id 不匹配")
-			return
-		}
+		args.ChapterID = chapterID
 
 		if err := chapterApplication.UpdateChapter(
 			buildTraceScope(ctx),

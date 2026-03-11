@@ -22,6 +22,16 @@ type ChapterInfoRow struct {
 
 	CoverURL string `gorm:"column:cover_url"`
 
+	UploadedAt     *time.Time `gorm:"column:uploaded_at"`
+	TransalatingAt *time.Time `gorm:"column:transalating_at"`
+	TranslatedAt   *time.Time `gorm:"column:translated_at"`
+	ProofreadingAt *time.Time `gorm:"column:proofreading_at"`
+	ProofreadAt    *time.Time `gorm:"column:proofread_at"`
+	TypesettingAt  *time.Time `gorm:"column:typesetting_at"`
+	TypesetAt      *time.Time `gorm:"column:typeset_at"`
+	ReviewedAt     *time.Time `gorm:"column:reviewed_at"`
+	PublishedAt    *time.Time `gorm:"column:published_at"`
+
 	CreatorID string `gorm:"column:creator_id"`
 
 	CreatedAt time.Time  `gorm:"column:created_at"`
@@ -97,15 +107,15 @@ func ToChapterInfo(row ChapterInfoRow) model.ChapterInfo {
 		0,
 		0,
 		row.CoverURL,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
+		row.UploadedAt,
+		row.TransalatingAt,
+		row.TranslatedAt,
+		row.ProofreadingAt,
+		row.ProofreadAt,
+		row.TypesettingAt,
+		row.TypesetAt,
+		row.ReviewedAt,
+		row.PublishedAt,
 		row.CreatorID,
 		row.CreatedAt,
 		row.UpdatedAt,

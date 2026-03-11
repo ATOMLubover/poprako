@@ -121,7 +121,16 @@ func (r *chapterRepository) Update(executor intf.Executor, update model.ChapterU
 		Table(entity.ChapterTable).
 		Where("id = ? AND deleted_at IS NULL", update.ID).
 		Updates(map[string]any{
-			"subtitle": update.ChapterNo,
+			"subtitle":        update.ChapterNo,
+			"uploaded_at":     update.UploadedAt,
+			"transalating_at": update.TransalatingAt,
+			"translated_at":   update.TranslatedAt,
+			"proofreading_at": update.ProofreadingAt,
+			"proofread_at":    update.ProofreadAt,
+			"typesetting_at":  update.TypesettingAt,
+			"typeset_at":      update.TypesetAt,
+			"reviewed_at":     update.ReviewedAt,
+			"published_at":    update.PublishedAt,
 		}).Error
 }
 

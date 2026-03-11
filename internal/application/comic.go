@@ -162,6 +162,7 @@ func (ca *comicApplication) CreateComic(
 		}
 	}()
 
+	// FIXME：其实都没必要 lock，因为数据库有 UNIQUE (team_id, index) 约束了，并发创建漫画时必然有一个会失败
 	transactionErr = ca.comicRepository.LockByTeamID(transactionExecutor, args.TeamID)
 	if transactionErr != nil {
 		scope.Logger().Error(fn+": 锁定漫画记录失败", zap.Error(transactionErr))
@@ -180,7 +181,8 @@ func (ca *comicApplication) CreateComic(
 	// 创建漫画
 	comicCreation := model.NewComicCreation(
 		args.TeamID,
-		int(comicCount)+1,
+		// 因为是 0-based index，所以新漫画的 index 就是当前漫画数量
+		int(comicCount),
 		args.Title,
 		args.Author,
 		args.Description,

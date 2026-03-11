@@ -172,47 +172,6 @@ const docTemplate = `{
             }
         },
         "/chapters/{chapter_id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "更新指定章节的信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "更新章节",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "章节 ID",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新章节参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/value.UpdateChapterArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
             "delete": {
                 "security": [
                     {
@@ -234,6 +193,47 @@ const docTemplate = `{
                         "name": "chapter_id",
                         "in": "path",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "局部更新指定章节的信息，未传的字段不会被修改",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "更新章节（PATCH 语义，仅传需要更新的字段）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新章节参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.UpdateChapterArgs"
+                        }
                     }
                 ],
                 "responses": {
@@ -1364,6 +1364,21 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "model.WorkflowStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "in_progress",
+                "completed",
+                "unset"
+            ],
+            "x-enum-varnames": [
+                "WorkflowPending",
+                "WorkflowInProgress",
+                "WorkflowCompleted",
+                "WorkflowUnset"
+            ]
+        },
         "value.ChapterDetail": {
             "type": "object",
             "properties": {
@@ -1791,7 +1806,56 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "chapter_no": {
+                    "description": "ChapterNo 章节编号，最多 10 字符；不传则不更新",
                     "type": "string"
+                },
+                "proofread_status": {
+                    "description": "ProofreadStatus 校对状态，可取值：pending（待校对）、in_progress（校对中）、completed（已校对）；不传则不更新",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WorkflowStatus"
+                        }
+                    ]
+                },
+                "publish_status": {
+                    "description": "PublishStatus 发布状态，可取值：pending（待发布）、completed（已发布）；不传则不更新",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WorkflowStatus"
+                        }
+                    ]
+                },
+                "review_status": {
+                    "description": "ReviewStatus 审阅状态，可取值：pending（待审阅）、completed（已审阅）；不传则不更新",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WorkflowStatus"
+                        }
+                    ]
+                },
+                "translate_status": {
+                    "description": "TranslateStatus 翻译状态，可取值：pending（待翻译）、in_progress（翻译中）、completed（已翻译）；不传则不更新",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WorkflowStatus"
+                        }
+                    ]
+                },
+                "typeset_status": {
+                    "description": "TypesetStatus 排版状态，可取值：pending（待排版）、in_progress（排版中）、completed（已排版）；不传则不更新",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WorkflowStatus"
+                        }
+                    ]
+                },
+                "upload_status": {
+                    "description": "UploadStatus 上传状态，可取值：pending（待上传）、completed（已上传）；不传则不更新",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WorkflowStatus"
+                        }
+                    ]
                 }
             }
         },

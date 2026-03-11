@@ -65,7 +65,7 @@ func NewChapterInfoFromModel(chapterDetail model.ChapterInfo) ChapterDetail {
 }
 
 type ListComicChapterArgs struct {
-	ComicID string `json:"comic_id"`
+	ComicID string `url:"comic_id"`
 	PaginationParams
 }
 
@@ -118,8 +118,22 @@ func NewCreateChapterResultFromModel(chapterID string) CreateChapterResult {
 
 type UpdateChapterArgs struct {
 	ChapterID string `json:"chapter_id"`
-	ChapterNo string `json:"chapter_no"`
 
+	// ChapterNo 章节编号，最多 10 字符；不传则不更新
+	ChapterNo *string `json:"chapter_no,omitempty"`
+
+	// UploadStatus 上传状态，可取值：pending（待上传）、completed（已上传）；不传则不更新
+	UploadStatus *model.WorkflowStatus `json:"upload_status,omitempty"`
+	// TranslateStatus 翻译状态，可取值：pending（待翻译）、in_progress（翻译中）、completed（已翻译）；不传则不更新
+	TranslateStatus *model.WorkflowStatus `json:"translate_status,omitempty"`
+	// ProofreadStatus 校对状态，可取值：pending（待校对）、in_progress（校对中）、completed（已校对）；不传则不更新
+	ProofreadStatus *model.WorkflowStatus `json:"proofread_status,omitempty"`
+	// TypesetStatus 排版状态，可取值：pending（待排版）、in_progress（排版中）、completed（已排版）；不传则不更新
+	TypesetStatus *model.WorkflowStatus `json:"typeset_status,omitempty"`
+	// ReviewStatus 审阅状态，可取值：pending（待审阅）、completed（已审阅）；不传则不更新
+	ReviewStatus *model.WorkflowStatus `json:"review_status,omitempty"`
+	// PublishStatus 发布状态，可取值：pending（待发布）、completed（已发布）；不传则不更新
+	PublishStatus *model.WorkflowStatus `json:"publish_status,omitempty"`
 }
 
 func (args *UpdateChapterArgs) Validate() error {
@@ -131,14 +145,33 @@ func (args *UpdateChapterArgs) Validate() error {
 		return errors.New("章节 ID 不能为空")
 	}
 
-	if args.ChapterNo == "" {
-		return errors.New("章节编号不能为空")
+	if args.ChapterNo != nil {
+		chapterNoLen := utf8.RuneCountInString(*args.ChapterNo)
+		if chapterNoLen == 0 {
+			return errors.New("章节编号不能为空字符串")
+		}
+		if chapterNoLen > 10 {
+			return errors.New("章节编号长度不能超过 10 字符")
+		}
 	}
 
-	chapterNoLen := utf8.RuneCountInString(args.ChapterNo)
-
-	if chapterNoLen > 10 {
-		return errors.New("章节编号长度不能超过 10 字符")
+	if args.UploadStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowUploading, *args.UploadStatus) {
+		return errors.New("upload_status 取值无效")
+	}
+	if args.TranslateStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowTranslating, *args.TranslateStatus) {
+		return errors.New("translate_status 取值无效")
+	}
+	if args.ProofreadStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowProofreading, *args.ProofreadStatus) {
+		return errors.New("proofread_status 取值无效")
+	}
+	if args.TypesetStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowTypesetting, *args.TypesetStatus) {
+		return errors.New("typeset_status 取值无效")
+	}
+	if args.ReviewStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowReviewing, *args.ReviewStatus) {
+		return errors.New("review_status 取值无效")
+	}
+	if args.PublishStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowPublishing, *args.PublishStatus) {
+		return errors.New("publish_status 取值无效")
 	}
 
 	return nil

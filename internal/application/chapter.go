@@ -112,6 +112,7 @@ func (ca *chapterApplication) CreateComicChapter(
 		}
 	}()
 
+	// FIXME：其实都没必要 lock，因为数据库有 UNIQUE (comic_id, index) 约束了，并发创建章节时必然有一个会失败
 	transactionErr = ca.chapterRepository.LockByComicID(transactionExecutor, args.ComicID)
 	if transactionErr != nil {
 		scope.Logger().Error(fn+": 锁定章节记录失败", zap.Error(transactionErr))
@@ -129,7 +130,8 @@ func (ca *chapterApplication) CreateComicChapter(
 
 	chapterCreation := model.NewChapterCreation(
 		args.ComicID,
-		int(chapterCount)+1,
+		// 因为是 0-based index，所以新章节的 index 就是当前章节数量
+		int(chapterCount),
 		args.ChapterNo,
 		currentUserID,
 	)
@@ -236,7 +238,17 @@ func (ca *chapterApplication) UpdateChapter(
 		return errors.New("权限不足")
 	}
 
-	chapterUpdate := model.NewChapterUpdate(args.ChapterID, args.ChapterNo)
+	chapterUpdate := model.NewChapterUpdate(
+		args.ChapterID,
+		args.ChapterNo,
+		targetChapter,
+		args.UploadStatus,
+		args.TranslateStatus,
+		args.ProofreadStatus,
+		args.TypesetStatus,
+		args.ReviewStatus,
+		args.PublishStatus,
+	)
 
 	if err := ca.chapterRepository.Update(nil, chapterUpdate); err != nil {
 		scope.Logger().Error(fn+": 更新章节失败", zap.Error(err))

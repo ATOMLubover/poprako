@@ -103,7 +103,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		chapterParty.Get("/", ListComicChapters(appState))
 		chapterParty.Post("/", CreateComicChapter(appState))
-		chapterParty.Put("/{chapter_id}", UpdateChapter(appState))
+		chapterParty.Patch("/{chapter_id}", UpdateChapter(appState))
 		chapterParty.Delete("/{chapter_id}", DeleteComicChapter(appState))
 	}
 
