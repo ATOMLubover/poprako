@@ -45,6 +45,7 @@ func main() {
 	teamRepository := repository_infra.NewTeamRepository(databaseExecutor)
 	invitationRepository := repository_infra.NewInvitationRepository(databaseExecutor)
 	memberRepository := repository_infra.NewMemberRepository(databaseExecutor)
+	worksetRepository := repository_infra.NewWorksetRepository(databaseExecutor)
 	comicRepository := repository_infra.NewComicRepository(databaseExecutor)
 	chapterRepository := repository_infra.NewChapterRepository(databaseExecutor)
 	pageRepository := repository_infra.NewPageRepository(databaseExecutor)
@@ -74,6 +75,11 @@ func main() {
 		userRepository,
 		memberRepository,
 		invitationRepository,
+	)
+	worksetApplication := application.NewWorksetApplication(
+		ossClient,
+		memberRepository,
+		worksetRepository,
 	)
 	comicApplication := application.NewComicApplication(
 		userRepository,
@@ -106,6 +112,7 @@ func main() {
 		invitationApplication,
 		teamApplication,
 		memberApplication,
+		worksetApplication,
 		comicApplication,
 		chapterApplication,
 		pageApplication,

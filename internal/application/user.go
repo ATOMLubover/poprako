@@ -34,11 +34,11 @@ type UserApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 	) (value.UserInfo, error)
-	ListUsers(
+	/* 	ListUsers(
 		scope util.TraceScope,
 		currentUserID string,
 		args value.ListUserArgs,
-	) ([]value.UserInfo, error)
+	) ([]value.UserInfo, error) */
 	ReserveUserAvatar(
 		scope util.TraceScope,
 		currentUserID string,
@@ -361,7 +361,7 @@ func (ua *userApplication) GetMyUser(
 	return value.NewUserInfoFromModel(userInfo, avatarURL), nil
 }
 
-func (ua *userApplication) ListUsers(
+/* func (ua *userApplication) ListUsers(
 	scope util.TraceScope,
 	currentUserID string,
 	args value.ListUserArgs,
@@ -422,7 +422,7 @@ func (ua *userApplication) ListUsers(
 	}
 
 	return result, nil
-}
+} */
 
 func (ua *userApplication) ReserveUserAvatar(
 	scope util.TraceScope,

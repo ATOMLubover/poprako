@@ -8,6 +8,7 @@ CREATE TABLE "assignment_table" (
     "assigned_translator_at"   TIMESTAMPTZ,
     "assigned_proofreader_at"  TIMESTAMPTZ,
     "assigned_typesetter_at"   TIMESTAMPTZ,
+    "assigned_redrawer_at"     TIMESTAMPTZ,
     "assigned_reviewer_at"     TIMESTAMPTZ,
     "assigned_publisher_at"    TIMESTAMPTZ,
 

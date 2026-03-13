@@ -8,10 +8,12 @@ import (
 	"labelplus-next-web-be/internal/util"
 )
 
-type ChapterDetail struct {
+type ChapterInfo struct {
 	ID string `json:"id"`
 
-	ComicID   string `json:"comic_id"`
+	ComicID string     `json:"comic_id"`
+	Comic   *ComicInfo `json:"comic,omitempty"`
+
 	Index     int    `json:"index"`
 	ChapterNo string `json:"chapter_no"`
 
@@ -19,8 +21,6 @@ type ChapterDetail struct {
 	TotalUnitCount      int `json:"total_unit_count"`
 	TranslatedUnitCount int `json:"translated_unit_count"`
 	ProofreadUnitCount  int `json:"proofread_unit_count"`
-
-	CoverURL string `json:"cover_url"`
 
 	UploadedAt     *int64 `json:"uploaded_at,omitempty"`
 	TransalatingAt *int64 `json:"transalating_at,omitempty"`
@@ -32,14 +32,15 @@ type ChapterDetail struct {
 	ReviewedAt     *int64 `json:"reviewed_at,omitempty"`
 	PublishedAt    *int64 `json:"published_at,omitempty"`
 
-	CreatorID string `json:"creator_id"`
+	CreatorID   string    `json:"creator_id"`
+	CreatorInfo *UserInfo `json:"creator_info,omitempty"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterDetail {
-	return ChapterDetail{
+func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterInfo {
+	return ChapterInfo{
 		ID:                  chapterDetail.ID,
 		ComicID:             chapterDetail.ComicID,
 		Index:               chapterDetail.Index,
@@ -48,7 +49,6 @@ func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterDetail {
 		TotalUnitCount:      chapterDetail.TotalUnitCount,
 		TranslatedUnitCount: chapterDetail.TranslatedUnitCount,
 		ProofreadUnitCount:  chapterDetail.ProofreadUnitCount,
-		CoverURL:            chapterDetail.CoverURL,
 		UploadedAt:          util.ToUnixPtr(chapterDetail.UploadedAt),
 		TransalatingAt:      util.ToUnixPtr(chapterDetail.TransalatingAt),
 		TranslatedAt:        util.ToUnixPtr(chapterDetail.TranslatedAt),
@@ -64,46 +64,12 @@ func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterDetail {
 	}
 }
 
-type ChapterWithComicInfo struct {
-	ID string `json:"id"`
-
-	Comic     ComicInfo `json:"comic"`
-	Index     int       `json:"index"`
-	ChapterNo string    `json:"chapter_no"`
-
-	CoverURL string `json:"cover_url"`
-
-	PageCount           int `json:"page_count"`
-	TotalUnitCount      int `json:"total_unit_count"`
-	TranslatedUnitCount int `json:"translated_unit_count"`
-	ProofreadUnitCount  int `json:"proofread_unit_count"`
-
-	CreatedAt int64 `json:"created_at"`
-	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewChapterWithComicInfoFromModel(chapterInfo model.ChapterWithComicInfo, coverURL string) ChapterWithComicInfo {
-	return ChapterWithComicInfo{
-		ID:                  chapterInfo.ID,
-		Comic:               NewComicInfoFromModel(chapterInfo.Comic),
-		Index:               chapterInfo.Index,
-		ChapterNo:           chapterInfo.ChapterNo,
-		CoverURL:            coverURL,
-		PageCount:           chapterInfo.PageCount,
-		TotalUnitCount:      chapterInfo.TotalUnitCount,
-		TranslatedUnitCount: chapterInfo.TranslatedUnitCount,
-		ProofreadUnitCount:  chapterInfo.ProofreadUnitCount,
-		CreatedAt:           chapterInfo.CreatedAt.Unix(),
-		UpdatedAt:           chapterInfo.UpdatedAt.Unix(),
-	}
-}
-
-type ListComicChapterArgs struct {
+type ListChapterArgs struct {
 	ComicID string `url:"comic_id"`
 	PaginationParams
 }
 
-func (args *ListComicChapterArgs) Validate() error {
+func (args *ListChapterArgs) Validate() error {
 	if args == nil {
 		return errors.New("参数不能为空")
 	}

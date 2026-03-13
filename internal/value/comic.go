@@ -10,12 +10,13 @@ import (
 type ComicInfo struct {
 	ID string `json:"id"`
 
+	WorksetID   string       `json:"workset_id"`
+	WorksetInfo *WorksetInfo `json:"workset_info,omitempty"`
+
 	Index       int    `json:"index"`
 	Title       string `json:"title"`
 	Author      string `json:"author"`
 	Description string `json:"description"`
-
-	CoverURL string `json:"coverUrl"`
 
 	ChapterCount int    `json:"chapter_count"`
 	CreatorID    string `json:"creator_id"`
@@ -33,7 +34,6 @@ func NewComicInfoFromModel(comicInfo model.ComicInfo) ComicInfo {
 		Title:        comicInfo.Title,
 		Author:       comicInfo.Author,
 		Description:  comicInfo.Description,
-		CoverURL:     comicInfo.CoverURL,
 		ChapterCount: comicInfo.ChapterCount,
 		CreatorID:    comicInfo.CreatorID,
 		LastActiveAt: comicInfo.LastActiveAt.Unix(),

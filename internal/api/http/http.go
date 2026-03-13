@@ -52,7 +52,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		userParty.Get("/mine", GetMyUser(appState))
 		userParty.Get("/{user_id}", GetUserByID(appState))
-		userParty.Get("/", ListUsers(appState))
+		// userParty.Get("/", ListUsers(appState))
 		userParty.Post("/{user_id}/avatar", ReserveUserAvatar(appState))
 		userParty.Post("/{user_id}/avatar/confirm", ConfirmUserAvatarUploaded(appState))
 		userParty.Put("/{user_id}", UpdateUserByID(appState))
@@ -98,6 +98,15 @@ func initialize(appState *state.AppState) *iris.Application {
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))
+	}
+
+	// 工作集相关路由
+	worksetParty := authorizedParty.Party("/worksets")
+	{
+		worksetParty.Get("/", ListWorksets(appState))
+		worksetParty.Post("/", CreateWorkset(appState))
+		worksetParty.Put("/{workset_id}", UpdateWorkset(appState))
+		worksetParty.Delete("/{workset_id}", DeleteWorkset(appState))
 	}
 
 	// 章节相关路由

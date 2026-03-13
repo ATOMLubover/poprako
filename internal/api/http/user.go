@@ -42,7 +42,7 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 	}
 }
 
-// ListUsers godoc
+/* // ListUsers godoc
 // @Summary 	获取用户列表（已测试）
 // @Description 根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组
 //
@@ -85,7 +85,7 @@ func ListUsers(appState *state.AppState) iris.Handler {
 
 		accept(ctx, "获取用户列表成功", result)
 	}
-}
+} */
 
 // ReserveUserAvatar godoc
 // @Summary 	预留用户头像上传

@@ -70,7 +70,7 @@ func ListMyAssignments(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		var args value.ListUserAssignmentArgs
+		var args value.ListAssignmentArgs
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return

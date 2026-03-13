@@ -12,6 +12,7 @@ type AppState struct {
 	InvitationApplication application.InvitationApplication
 	TeamApplication       application.TeamApplication
 	MemberApplication     application.MemberApplication
+	WorksetApplication    application.WorksetApplication
 	ComicApplication      application.ComicApplication
 	ChapterApplication    application.ChapterApplication
 	PageApplication       application.PageApplication
@@ -24,6 +25,7 @@ func NewAppState(
 	invitationApplication application.InvitationApplication,
 	teamApplication application.TeamApplication,
 	memberApplication application.MemberApplication,
+	worksetApplication application.WorksetApplication,
 	comicApplication application.ComicApplication,
 	chapterApplication application.ChapterApplication,
 	pageApplication application.PageApplication,
@@ -35,6 +37,7 @@ func NewAppState(
 		InvitationApplication: invitationApplication,
 		TeamApplication:       teamApplication,
 		MemberApplication:     memberApplication,
+		WorksetApplication:    worksetApplication,
 		ComicApplication:      comicApplication,
 		ChapterApplication:    chapterApplication,
 		PageApplication:       pageApplication,

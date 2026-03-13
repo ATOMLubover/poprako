@@ -134,7 +134,7 @@ func NewReserveUserAvatarResult(putURL string) ReserveUserAvatarResult {
 	}
 }
 
-type ListUserArgs struct {
+/* type ListUserArgs struct {
 	PaginationParams
 
 	QQ        string `json:"qq"`
@@ -155,7 +155,7 @@ func (lua *ListUserArgs) Validate() error {
 	}
 
 	return nil
-}
+} */
 
 type UpdateUserArgs struct {
 	UserID string `json:"user_id"`

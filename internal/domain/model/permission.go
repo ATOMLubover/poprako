@@ -707,3 +707,56 @@ func (p permUnitSave) Check(
 	// 只有当用户有对应分工时，才有权限保存单元
 	return assignmentInfo.HasAnyRole(p.role)
 }
+
+type (
+	permWorksetList   struct{}
+	permWorksetCreate struct{}
+	permWorksetUpdate struct{}
+	permWorksetDelete struct{}
+)
+
+func PermWorksetList() permWorksetList     { return permWorksetList{} }
+func PermWorksetCreate() permWorksetCreate { return permWorksetCreate{} }
+func PermWorksetUpdate() permWorksetUpdate { return permWorksetUpdate{} }
+func PermWorksetDelete() permWorksetDelete { return permWorksetDelete{} }
+
+func (permWorksetList) Check(
+	userID string,
+	teamID string,
+	onLoadMemberInfo OnLoadMemberInfo,
+) bool {
+	// 只要是汉化组成员，就可以查看工作集列表
+	_, ok := loadMemberInfoForCheck("PermWorksetList.Check", userID, teamID, onLoadMemberInfo)
+	if !ok {
+		return false
+	}
+
+	return true
+}
+
+func (permWorksetCreate) Check(
+	userID string,
+	teamID string,
+	onLoadMemberInfo OnLoadMemberInfo,
+) bool {
+	// 只有汉化组管理员可以创建工作集
+	return isTeamAdmin("PermWorksetCreate.Check", userID, teamID, onLoadMemberInfo)
+}
+
+func (permWorksetUpdate) Check(
+	userID string,
+	teamID string,
+	onLoadMemberInfo OnLoadMemberInfo,
+) bool {
+	// 只有汉化组管理员可以更新工作集
+	return isTeamAdmin("PermWorksetUpdate.Check", userID, teamID, onLoadMemberInfo)
+}
+
+func (permWorksetDelete) Check(
+	userID string,
+	teamID string,
+	onLoadMemberInfo OnLoadMemberInfo,
+) bool {
+	// 只有汉化组管理员可以删除工作集
+	return isTeamAdmin("PermWorksetDelete.Check", userID, teamID, onLoadMemberInfo)
+}

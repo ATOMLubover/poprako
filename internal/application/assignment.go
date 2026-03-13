@@ -24,7 +24,7 @@ type AssignmentApplication interface {
 	ListMyAssignments(
 		scope util.TraceScope,
 		currentUserID string,
-		args value.ListUserAssignmentArgs,
+		args value.ListAssignmentArgs,
 	) ([]value.AssignmentWithChapterInfo, error)
 	CreateChapterAssignment(
 		scope util.TraceScope,
@@ -139,7 +139,7 @@ func (aa *assignmentApplication) ListChapterAssignments(
 func (aa *assignmentApplication) ListMyAssignments(
 	scope util.TraceScope,
 	currentUserID string,
-	args value.ListUserAssignmentArgs,
+	args value.ListAssignmentArgs,
 ) ([]value.AssignmentWithChapterInfo, error) {
 	const fn = "AssignmentApplication.ListMyAssignments"
 

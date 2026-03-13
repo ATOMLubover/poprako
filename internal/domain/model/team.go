@@ -14,6 +14,26 @@ type TeamInfo struct {
 	UpdatedAt time.Time
 }
 
+func NewTeamInfo(
+	id string,
+	name string,
+	description string,
+	avatarOSSKey string,
+	isAvatarUploaded bool,
+	createdAt time.Time,
+	updatedAt time.Time,
+) TeamInfo {
+	return TeamInfo{
+		ID:               id,
+		Name:             name,
+		Description:      description,
+		AvatarOSSKey:     avatarOSSKey,
+		IsAvatarUploaded: isAvatarUploaded,
+		CreatedAt:        createdAt,
+		UpdatedAt:        updatedAt,
+	}
+}
+
 type TeamCreation struct {
 	Name        string
 	Description string

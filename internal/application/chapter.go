@@ -23,8 +23,8 @@ type ChapterApplication interface {
 	ListComicChapters(
 		scope util.TraceScope,
 		currentUserID string,
-		args value.ListComicChapterArgs,
-	) ([]value.ChapterDetail, error)
+		args value.ListChapterArgs,
+	) ([]value.ChapterInfo, error)
 	UpdateChapter(
 		scope util.TraceScope,
 		currentUserID string,
@@ -153,8 +153,8 @@ func (ca *chapterApplication) CreateComicChapter(
 func (ca *chapterApplication) ListComicChapters(
 	scope util.TraceScope,
 	currentUserID string,
-	args value.ListComicChapterArgs,
-) ([]value.ChapterDetail, error) {
+	args value.ListChapterArgs,
+) ([]value.ChapterInfo, error) {
 	const fn = "ChapterApplication.ListComicChapters"
 
 	if err := args.Validate(); err != nil {
@@ -191,7 +191,7 @@ func (ca *chapterApplication) ListComicChapters(
 		return nil, errors.New("获取章节列表失败")
 	}
 
-	result := make([]value.ChapterDetail, len(chapters))
+	result := make([]value.ChapterInfo, len(chapters))
 	for i, chapter := range chapters {
 		result[i] = value.NewChapterInfoFromModel(chapter)
 	}

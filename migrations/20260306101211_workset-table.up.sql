@@ -1,15 +1,15 @@
 CREATE TABLE "workset_table" (
-    "id"           SERIAL PRIMARY KEY,
+    "id"           TEXT        PRIMARY KEY,
 
-    "team_id"      INTEGER NOT NULL REFERENCES "team_table" ("id") ON DELETE CASCADE,
-    "index"        INTEGER NOT NULL,
+    "team_id"      TEXT        NOT NULL REFERENCES "team_table" ("id") ON DELETE CASCADE,
+    "index"        INTEGER     NOT NULL,
 
-    "name"         VARCHAR(255) NOT NULL,
+    "name"         TEXT        NOT NULL,
     "description"  TEXT,
-    "comic_count"  INTEGER NOT NULL DEFAULT 0,
+    "comic_count"  INTEGER     NOT NULL DEFAULT 0,
 
-    "created_at"   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "updated_at"   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    "created_at"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updated_at"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX "idx_workset_team_id"

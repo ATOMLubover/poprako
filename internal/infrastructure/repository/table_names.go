@@ -7,6 +7,7 @@ const (
 	UserTable       = entity.UserTable
 	MemberTable     = entity.MemberTable
 	TeamTable       = entity.TeamTable
+	WorksetTable    = entity.WorksetTable
 	ComicTable      = entity.ComicTable
 	ChapterTable    = entity.ChapterTable
 	PageTable       = entity.PageTable

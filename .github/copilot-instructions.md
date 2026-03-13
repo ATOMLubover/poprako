@@ -13,3 +13,7 @@ value 对象是 API 层和 APP 层的数据传输对象，model 对象是领域�
 每次修改后，必须使用 get_errors MCP 检查代码是否符合规范、有静态错误。
 
 无须更新 swagger 文档，这是自动生成的。但是 handler 上的 godoc 需要更新，以保持文档的准确性和完整性。
+
+除了 (wa worksetApplication) 这种关联对象，其他的参数一律不得使用简写，必须使用全称，否则会导致代码可读性差，增加理解难度。
+
+所有的数据的 single source of truth 全部在于 migrations/ 下的数据库 SQL 脚本。任何 Go 代码中的字段都可能因为 SQL 脚本改变而失效或缺失。

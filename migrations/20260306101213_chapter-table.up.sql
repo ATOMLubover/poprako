@@ -11,6 +11,16 @@ CREATE TABLE "chapter_table" (
     "translated_unit_count" INTEGER     NOT NULL DEFAULT 0,
     "proofread_unit_count"  INTEGER     NOT NULL DEFAULT 0,
 
+    "uploaded_at"           TIMESTAMPTZ,
+    "transalating_at"       TIMESTAMPTZ,
+    "translated_at"         TIMESTAMPTZ,
+    "proofreading_at"       TIMESTAMPTZ,
+    "proofread_at"          TIMESTAMPTZ,
+    "typesetting_at"        TIMESTAMPTZ,
+    "typeset_at"            TIMESTAMPTZ,
+    "reviewed_at"           TIMESTAMPTZ,
+    "published_at"          TIMESTAMPTZ,
+
     "creator_id"            TEXT        NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
