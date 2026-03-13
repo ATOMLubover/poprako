@@ -9,6 +9,9 @@ swag:
 fmt:
     gofumpt -w .
 
+cloc:
+    cloc internal/
+
 dev: fmt swag
     go run main.go
     

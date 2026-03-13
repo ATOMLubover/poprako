@@ -62,7 +62,7 @@ type PageInfoRow struct {
 
 	TotalUnitCount      int `gorm:"column:total_unit_count"`
 	TranslatedUnitCount int `gorm:"column:translated_unit_count"`
-	ProofreadUnitCount  int `gorm:"column:proved_unit_count"`
+	ProofreadUnitCount  int `gorm:"column:proofread_unit_count"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`

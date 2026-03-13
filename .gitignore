@@ -5,3 +5,6 @@
 
 # Output files
 output/
+
+# Other files
+.agent.md

@@ -1,15 +1,14 @@
 CREATE TABLE "team_table" (
-    "id"                    TEXT PRIMARY KEY,
+    "id"                 TEXT        PRIMARY KEY,
+    "name"               TEXT        NOT NULL,
+    "description"        TEXT,
 
-    "name"                  TEXT NOT NULL,
-    "description"           TEXT,
+    "avatar_oss_key"     TEXT,
+    "is_avatar_uploaded" BOOLEAN     NOT NULL DEFAULT FALSE,
 
-    "avatar_oss_key"        TEXT,
-    "is_avatar_uploaded"    BOOLEAN NOT NULL DEFAULT FALSE,
-
-    "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "deleted_at"            TIMESTAMPTZ
+    "created_at"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updated_at"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "deleted_at"         TIMESTAMPTZ
 );
 
 CREATE UNIQUE INDEX "idx_team_name"
