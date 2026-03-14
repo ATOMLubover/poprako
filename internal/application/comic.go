@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
@@ -136,7 +137,9 @@ func (ca *comicApplication) ListComics(
 
 	result := make([]value.ComicInfo, len(comicList))
 	for i, comic := range comicList {
-		result[i] = value.NewComicInfoFromModel(comic)
+		result[i] = assembler.AssembleComicInfo(comic, func(string) (string, error) {
+			return "", nil
+		})
 	}
 
 	return result, nil
@@ -236,7 +239,7 @@ func (ca *comicApplication) CreateComic(
 		return value.CreateComicResult{}, errors.New("创建漫画失败")
 	}
 
-	result := value.NewCreateComicResultFromModel(comicID)
+	result := value.CreateComicResult{ID: comicID}
 
 	return result, nil
 }

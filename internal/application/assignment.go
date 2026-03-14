@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
@@ -20,12 +21,12 @@ type AssignmentApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		args value.ListChapterAssignmentArgs,
-	) ([]value.AssignmentWithUserInfo, error)
+	) ([]value.AssignmentInfo, error)
 	ListMyAssignments(
 		scope util.TraceScope,
 		currentUserID string,
 		args value.ListAssignmentArgs,
-	) ([]value.AssignmentWithChapterInfo, error)
+	) ([]value.AssignmentInfo, error)
 	CreateChapterAssignment(
 		scope util.TraceScope,
 		currentUserID string,
@@ -86,7 +87,7 @@ func (aa *assignmentApplication) ListChapterAssignments(
 	scope util.TraceScope,
 	currentUserID string,
 	args value.ListChapterAssignmentArgs,
-) ([]value.AssignmentWithUserInfo, error) {
+) ([]value.AssignmentInfo, error) {
 	const fn = "AssignmentApplication.ListChapterAssignments"
 
 	if err := args.Validate(); err != nil {
@@ -117,20 +118,16 @@ func (aa *assignmentApplication) ListChapterAssignments(
 		nil,
 		query_option.UpdatedAtDesc(repository_infra.AssignmentTable),
 		query_option.AssignmentQuery().FilterByChapterID(args.ChapterID),
+		query_option.Paginate(args.Offset, args.Limit),
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取分配列表失败", zap.Error(err))
 		return nil, errors.New("获取分配列表失败")
 	}
 
-	result := make([]value.AssignmentWithUserInfo, len(assignments))
+	result := make([]value.AssignmentInfo, len(assignments))
 	for i, a := range assignments {
-		avatarURL, err := aa.ossClient.GenerateGetPresignedURL(a.User.AvatarOSSKey)
-		if err != nil {
-			scope.Logger().Error(fn+": 生成头像链接失败", zap.Error(err))
-			return nil, errors.New("获取分配列表失败")
-		}
-		result[i] = value.NewAssignmentWithUserInfo(a, avatarURL)
+		result[i] = assembler.AssembleAssignmentInfoFromUser(a, aa.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -140,7 +137,7 @@ func (aa *assignmentApplication) ListMyAssignments(
 	scope util.TraceScope,
 	currentUserID string,
 	args value.ListAssignmentArgs,
-) ([]value.AssignmentWithChapterInfo, error) {
+) ([]value.AssignmentInfo, error) {
 	const fn = "AssignmentApplication.ListMyAssignments"
 
 	if err := args.Validate(); err != nil {
@@ -167,9 +164,9 @@ func (aa *assignmentApplication) ListMyAssignments(
 		return nil, errors.New("获取用户分配列表失败")
 	}
 
-	result := make([]value.AssignmentWithChapterInfo, len(assignments))
+	result := make([]value.AssignmentInfo, len(assignments))
 	for i, a := range assignments {
-		result[i] = value.NewAssignmentWithChapterInfo(a, a.Chapter.CoverURL)
+		result[i] = assembler.AssembleAssignmentInfoFromChapter(a, aa.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -225,7 +222,7 @@ func (aa *assignmentApplication) CreateChapterAssignment(
 		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
 	}
 
-	return value.NewCreateChapterAssignmentResult(assignmentID), nil
+	return value.CreateChapterAssignmentResult{ID: assignmentID}, nil
 }
 
 func (aa *assignmentApplication) UpdateAssignment(

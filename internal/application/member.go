@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
@@ -132,7 +133,7 @@ func (ma *memberApplication) CreateMember(
 		return value.CreateMemberResult{}, errors.New("创建成员失败")
 	}
 
-	result := value.NewCreateMemberResult(memberID)
+	result := value.CreateMemberResult{MemberID: memberID}
 
 	return result, nil
 }
@@ -189,18 +190,7 @@ func (ma *memberApplication) ListMembers(
 	result := make([]value.MemberInfo, len(memberList))
 
 	for i, member := range memberList {
-		result[i] = value.NewMemberInfoFromModel(member)
-
-		if includeSpec.NeedUser && member.User != nil {
-			avatarURL, avatarErr := ma.ossClient.GenerateGetPresignedURL(member.User.AvatarOSSKey)
-			if avatarErr != nil {
-				scope.Logger().Error(fn+": 生成用户头像链接失败", zap.Error(avatarErr))
-				return nil, errors.New("无法获取成员列表")
-			}
-
-			userInfo := value.NewUserInfoFromModel(*member.User, avatarURL)
-			result[i].User = &userInfo
-		}
+		result[i] = assembler.AssembleMemberInfo(member, ma.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -246,18 +236,7 @@ func (ma *memberApplication) ListMyMembers(
 	result := make([]value.MemberInfo, len(memberList))
 
 	for i, member := range memberList {
-		result[i] = value.NewMemberInfoFromModel(member)
-
-		if includeSpec.NeedTeam && member.Team != nil {
-			avatarURL, avatarErr := ma.ossClient.GenerateGetPresignedURL(member.Team.AvatarOSSKey)
-			if avatarErr != nil {
-				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(avatarErr))
-				return nil, errors.New("无法获取我的成员列表")
-			}
-
-			teamInfo := value.NewTeamInfoFromModel(*member.Team, avatarURL)
-			result[i].Team = &teamInfo
-		}
+		result[i] = assembler.AssembleMemberInfo(member, ma.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil

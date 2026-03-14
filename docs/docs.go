@@ -37,6 +37,30 @@ const docTemplate = `{
                         "name": "chapter_id",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "嵌套信息（user）",
+                        "name": "includes[]",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -280,7 +304,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取指定漫画的章节列表，支持分页，注意当列表为空，会返回 null 而不是空数组",
+                "description": "获取指定漫画的章节列表，支持分页和 includes 嵌套信息查询",
                 "produces": [
                     "application/json"
                 ],
@@ -309,6 +333,16 @@ const docTemplate = `{
                         "name": "limit",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "嵌套信息（creator）",
+                        "name": "includes[]",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -317,7 +351,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/value.ChapterDetail"
+                                "$ref": "#/definitions/value.ChapterInfo"
                             }
                         }
                     }
@@ -440,19 +474,19 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取指定汉化组的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组",
+                "description": "获取指定工作集的漫画列表，支持分页和 includes 嵌套信息查询",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "comic"
                 ],
-                "summary": "获取指定汉化组的漫画列表（已测试）",
+                "summary": "获取指定工作集的漫画列表",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
+                        "description": "工作集 ID",
+                        "name": "workset_id",
                         "in": "query",
                         "required": true
                     },
@@ -469,6 +503,16 @@ const docTemplate = `{
                         "name": "limit",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "嵌套信息（workset,creator）",
+                        "name": "includes[]",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -629,6 +673,16 @@ const docTemplate = `{
                         "name": "limit",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "嵌套信息（invitor）",
+                        "name": "includes[]",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -777,6 +831,16 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include 关联信息，可选值：user",
+                        "name": "\"includes[]\"",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "偏移量",
                         "name": "offset",
@@ -797,7 +861,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/value.MemberProfile"
+                                "$ref": "#/definitions/value.MemberInfo"
                             }
                         }
                     }
@@ -892,13 +956,39 @@ const docTemplate = `{
                     "member"
                 ],
                 "summary": "获取当前用户的成员身份列表",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include 关联信息，可选值：team",
+                        "name": "\"includes[]\"",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/value.MemberWithTeamInfo"
+                                "$ref": "#/definitions/value.MemberInfo"
                             }
                         }
                     }
@@ -999,6 +1089,30 @@ const docTemplate = `{
                         "name": "chapter_id",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "嵌套信息（creator）",
+                        "name": "includes[]",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1140,6 +1254,22 @@ const docTemplate = `{
                     "team"
                 ],
                 "summary": "获取所有汉化组列表（已测试）",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1205,6 +1335,22 @@ const docTemplate = `{
                     "team"
                 ],
                 "summary": "获取当前用户所在的汉化组列表（已测试）",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1351,62 +1497,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
-                    }
-                }
-            }
-        },
-        "/users": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "获取用户列表（已测试）",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "QQ 号",
-                        "name": "qq",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "模糊名称",
-                        "name": "fuzzy_name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/value.UserInfo"
-                            }
-                        }
                     }
                 }
             }
@@ -1604,6 +1694,176 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/worksets": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定汉化组的工作集列表，支持分页，注意当列表为空，会返回 null 而不是空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workset"
+                ],
+                "summary": "获取指定汉化组的工作集列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "汉化组 ID",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "关联展开字段，支持 team",
+                        "name": "includes[]",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "偏移量",
+                        "name": "offset",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/value.WorksetInfo"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在指定汉化组中创建工作集",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workset"
+                ],
+                "summary": "创建工作集",
+                "parameters": [
+                    {
+                        "description": "创建工作集参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateWorksetArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/value.CreateWorksetResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/worksets/{workset_id}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "更新指定工作集的信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workset"
+                ],
+                "summary": "更新工作集",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作集 ID",
+                        "name": "workset_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新工作集参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.UpdateWorksetArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定工作集",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workset"
+                ],
+                "summary": "删除工作集",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "工作集 ID",
+                        "name": "workset_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1625,13 +1885,37 @@ const docTemplate = `{
         "value.AssignmentWithChapterInfo": {
             "type": "object",
             "properties": {
+                "assigned_proofreader_at": {
+                    "type": "integer"
+                },
+                "assigned_publisher_at": {
+                    "type": "integer"
+                },
+                "assigned_raw_provider_at": {
+                    "type": "integer"
+                },
+                "assigned_redrawer_at": {
+                    "type": "integer"
+                },
+                "assigned_reviewer_at": {
+                    "type": "integer"
+                },
+                "assigned_translator_at": {
+                    "type": "integer"
+                },
+                "assigned_typesetter_at": {
+                    "type": "integer"
+                },
                 "chapter": {
                     "$ref": "#/definitions/value.ChapterWithComicInfo"
+                },
+                "created_at": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "roles": {
+                "updated_at": {
                     "type": "integer"
                 },
                 "user_id": {
@@ -1642,13 +1926,37 @@ const docTemplate = `{
         "value.AssignmentWithUserInfo": {
             "type": "object",
             "properties": {
+                "assigned_proofreader_at": {
+                    "type": "integer"
+                },
+                "assigned_publisher_at": {
+                    "type": "integer"
+                },
+                "assigned_raw_provider_at": {
+                    "type": "integer"
+                },
+                "assigned_redrawer_at": {
+                    "type": "integer"
+                },
+                "assigned_reviewer_at": {
+                    "type": "integer"
+                },
+                "assigned_translator_at": {
+                    "type": "integer"
+                },
+                "assigned_typesetter_at": {
+                    "type": "integer"
+                },
                 "chapter_id": {
                     "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "roles": {
+                "updated_at": {
                     "type": "integer"
                 },
                 "user": {
@@ -1656,20 +1964,23 @@ const docTemplate = `{
                 }
             }
         },
-        "value.ChapterDetail": {
+        "value.ChapterInfo": {
             "type": "object",
             "properties": {
                 "chapter_no": {
                     "type": "string"
                 },
-                "comic_id": {
-                    "type": "string"
+                "comic": {
+                    "$ref": "#/definitions/value.ComicInfo"
                 },
-                "cover_url": {
+                "comic_id": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "integer"
+                },
+                "creator": {
+                    "$ref": "#/definitions/value.UserInfo"
                 },
                 "creator_id": {
                     "type": "string"
@@ -1771,11 +2082,14 @@ const docTemplate = `{
                 "chapter_count": {
                     "type": "integer"
                 },
-                "coverUrl": {
+                "cover_url": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "integer"
+                },
+                "creator": {
+                    "$ref": "#/definitions/value.UserInfo"
                 },
                 "creator_id": {
                     "type": "string"
@@ -1797,6 +2111,12 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "workset_id": {
+                    "type": "string"
+                },
+                "workset_info": {
+                    "$ref": "#/definitions/value.WorksetInfo"
                 }
             }
         },
@@ -1850,10 +2170,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "team_id": {
+                "title": {
                     "type": "string"
                 },
-                "title": {
+                "workset_id": {
                     "type": "string"
                 }
             }
@@ -1921,6 +2241,28 @@ const docTemplate = `{
                 }
             }
         },
+        "value.CreateWorksetArgs": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.CreateWorksetResult": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "value.InvitationInfo": {
             "type": "object",
             "properties": {
@@ -1938,6 +2280,9 @@ const docTemplate = `{
                 },
                 "invitor_id": {
                     "type": "string"
+                },
+                "invitor_info": {
+                    "$ref": "#/definitions/value.UserInfo"
                 },
                 "pending": {
                     "type": "boolean"
@@ -1977,39 +2322,7 @@ const docTemplate = `{
                 }
             }
         },
-        "value.MemberProfile": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_avatar_uploaded": {
-                    "type": "boolean"
-                },
-                "is_super_admin": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "qq": {
-                    "type": "string"
-                },
-                "roles": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "integer"
-                }
-            }
-        },
-        "value.MemberWithTeamInfo": {
+        "value.MemberInfo": {
             "type": "object",
             "properties": {
                 "assigned_admin_at": {
@@ -2033,11 +2346,26 @@ const docTemplate = `{
                 "assigned_typesetter_at": {
                     "type": "integer"
                 },
+                "created_at": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "string"
                 },
+                "roles": {
+                    "type": "integer"
+                },
                 "team": {
                     "$ref": "#/definitions/value.TeamInfo"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/value.UserInfo"
                 },
                 "user_id": {
                     "type": "string"
@@ -2063,6 +2391,12 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "integer"
+                },
+                "creator": {
+                    "$ref": "#/definitions/value.UserInfo"
+                },
+                "creator_id": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -2338,6 +2672,20 @@ const docTemplate = `{
                 }
             }
         },
+        "value.UpdateWorksetArgs": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "value.UserInfo": {
             "type": "object",
             "properties": {
@@ -2360,6 +2708,38 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "qq": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "value.WorksetInfo": {
+            "type": "object",
+            "properties": {
+                "comic_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "team": {
+                    "$ref": "#/definitions/value.TeamInfo"
+                },
+                "team_id": {
                     "type": "string"
                 },
                 "updated_at": {

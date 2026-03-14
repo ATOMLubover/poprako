@@ -14,36 +14,70 @@ definitions:
     - WorkflowUnset
   value.AssignmentWithChapterInfo:
     properties:
+      assigned_proofreader_at:
+        type: integer
+      assigned_publisher_at:
+        type: integer
+      assigned_raw_provider_at:
+        type: integer
+      assigned_redrawer_at:
+        type: integer
+      assigned_reviewer_at:
+        type: integer
+      assigned_translator_at:
+        type: integer
+      assigned_typesetter_at:
+        type: integer
       chapter:
         $ref: '#/definitions/value.ChapterWithComicInfo'
+      created_at:
+        type: integer
       id:
         type: string
-      roles:
+      updated_at:
         type: integer
       user_id:
         type: string
     type: object
   value.AssignmentWithUserInfo:
     properties:
+      assigned_proofreader_at:
+        type: integer
+      assigned_publisher_at:
+        type: integer
+      assigned_raw_provider_at:
+        type: integer
+      assigned_redrawer_at:
+        type: integer
+      assigned_reviewer_at:
+        type: integer
+      assigned_translator_at:
+        type: integer
+      assigned_typesetter_at:
+        type: integer
       chapter_id:
         type: string
+      created_at:
+        type: integer
       id:
         type: string
-      roles:
+      updated_at:
         type: integer
       user:
         $ref: '#/definitions/value.UserInfo'
     type: object
-  value.ChapterDetail:
+  value.ChapterInfo:
     properties:
       chapter_no:
         type: string
+      comic:
+        $ref: '#/definitions/value.ComicInfo'
       comic_id:
-        type: string
-      cover_url:
         type: string
       created_at:
         type: integer
+      creator:
+        $ref: '#/definitions/value.UserInfo'
       creator_id:
         type: string
       id:
@@ -110,10 +144,12 @@ definitions:
         type: string
       chapter_count:
         type: integer
-      coverUrl:
+      cover_url:
         type: string
       created_at:
         type: integer
+      creator:
+        $ref: '#/definitions/value.UserInfo'
       creator_id:
         type: string
       description:
@@ -128,6 +164,10 @@ definitions:
         type: string
       updated_at:
         type: integer
+      workset_id:
+        type: string
+      workset_info:
+        $ref: '#/definitions/value.WorksetInfo'
     type: object
   value.CreateChapterArgs:
     properties:
@@ -161,9 +201,9 @@ definitions:
         type: string
       description:
         type: string
-      team_id:
-        type: string
       title:
+        type: string
+      workset_id:
         type: string
     type: object
   value.CreateComicResult:
@@ -206,6 +246,20 @@ definitions:
       id:
         type: string
     type: object
+  value.CreateWorksetArgs:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      team_id:
+        type: string
+    type: object
+  value.CreateWorksetResult:
+    properties:
+      id:
+        type: string
+    type: object
   value.InvitationInfo:
     properties:
       created_at:
@@ -218,6 +272,8 @@ definitions:
         type: string
       invitor_id:
         type: string
+      invitor_info:
+        $ref: '#/definitions/value.UserInfo'
       pending:
         type: boolean
       roles:
@@ -242,28 +298,7 @@ definitions:
       user_id:
         type: string
     type: object
-  value.MemberProfile:
-    properties:
-      avatar_url:
-        type: string
-      created_at:
-        type: integer
-      id:
-        type: string
-      is_avatar_uploaded:
-        type: boolean
-      is_super_admin:
-        type: boolean
-      name:
-        type: string
-      qq:
-        type: string
-      roles:
-        type: integer
-      updated_at:
-        type: integer
-    type: object
-  value.MemberWithTeamInfo:
+  value.MemberInfo:
     properties:
       assigned_admin_at:
         type: integer
@@ -279,10 +314,20 @@ definitions:
         type: integer
       assigned_typesetter_at:
         type: integer
+      created_at:
+        type: integer
       id:
         type: string
+      roles:
+        type: integer
       team:
         $ref: '#/definitions/value.TeamInfo'
+      team_id:
+        type: string
+      updated_at:
+        type: integer
+      user:
+        $ref: '#/definitions/value.UserInfo'
       user_id:
         type: string
     type: object
@@ -299,6 +344,10 @@ definitions:
         type: string
       created_at:
         type: integer
+      creator:
+        $ref: '#/definitions/value.UserInfo'
+      creator_id:
+        type: string
       id:
         type: string
       image_url:
@@ -471,6 +520,15 @@ definitions:
       user_id:
         type: string
     type: object
+  value.UpdateWorksetArgs:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   value.UserInfo:
     properties:
       avatar_url:
@@ -490,6 +548,27 @@ definitions:
       updated_at:
         type: integer
     type: object
+  value.WorksetInfo:
+    properties:
+      comic_count:
+        type: integer
+      created_at:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      name:
+        type: string
+      team:
+        $ref: '#/definitions/value.TeamInfo'
+      team_id:
+        type: string
+      updated_at:
+        type: integer
+    type: object
 info:
   contact: {}
   description: LabelPlus Next Web 后端 API 文档
@@ -505,6 +584,23 @@ paths:
         name: chapter_id
         required: true
         type: string
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: 嵌套信息（user）
+        in: query
+        items:
+          type: string
+        name: includes[]
+        type: array
       produces:
       - application/json
       responses:
@@ -661,7 +757,7 @@ paths:
       - auth
   /chapters:
     get:
-      description: 获取指定漫画的章节列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+      description: 获取指定漫画的章节列表，支持分页和 includes 嵌套信息查询
       parameters:
       - description: 漫画 ID
         in: query
@@ -678,6 +774,13 @@ paths:
         name: limit
         required: true
         type: integer
+      - collectionFormat: csv
+        description: 嵌套信息（creator）
+        in: query
+        items:
+          type: string
+        name: includes[]
+        type: array
       produces:
       - application/json
       responses:
@@ -685,7 +788,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.ChapterDetail'
+              $ref: '#/definitions/value.ChapterInfo'
             type: array
       security:
       - ApiKeyAuth: []
@@ -762,11 +865,11 @@ paths:
       - chapter
   /comics:
     get:
-      description: 获取指定汉化组的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+      description: 获取指定工作集的漫画列表，支持分页和 includes 嵌套信息查询
       parameters:
-      - description: 汉化组 ID
+      - description: 工作集 ID
         in: query
-        name: team_id
+        name: workset_id
         required: true
         type: string
       - description: 偏移量
@@ -779,6 +882,13 @@ paths:
         name: limit
         required: true
         type: integer
+      - collectionFormat: csv
+        description: 嵌套信息（workset,creator）
+        in: query
+        items:
+          type: string
+        name: includes[]
+        type: array
       produces:
       - application/json
       responses:
@@ -790,7 +900,7 @@ paths:
             type: array
       security:
       - ApiKeyAuth: []
-      summary: 获取指定汉化组的漫画列表（已测试）
+      summary: 获取指定工作集的漫画列表
       tags:
       - comic
     post:
@@ -880,6 +990,13 @@ paths:
         name: limit
         required: true
         type: integer
+      - collectionFormat: csv
+        description: 嵌套信息（invitor）
+        in: query
+        items:
+          type: string
+        name: includes[]
+        type: array
       produces:
       - application/json
       responses:
@@ -971,6 +1088,13 @@ paths:
         name: team_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: include 关联信息，可选值：user
+        in: query
+        items:
+          type: string
+        name: '"includes[]"'
+        type: array
       - description: 偏移量
         in: query
         name: offset
@@ -988,7 +1112,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.MemberProfile'
+              $ref: '#/definitions/value.MemberInfo'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1088,6 +1212,24 @@ paths:
   /members/mine:
     get:
       description: 获取当前用户在各汉化组中的成员信息，注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - collectionFormat: csv
+        description: include 关联信息，可选值：team
+        in: query
+        items:
+          type: string
+        name: '"includes[]"'
+        type: array
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1095,7 +1237,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.MemberWithTeamInfo'
+              $ref: '#/definitions/value.MemberInfo'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1111,6 +1253,23 @@ paths:
         name: chapter_id
         required: true
         type: string
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: 嵌套信息（creator）
+        in: query
+        items:
+          type: string
+        name: includes[]
+        type: array
       produces:
       - application/json
       responses:
@@ -1197,6 +1356,17 @@ paths:
   /teams:
     get:
       description: 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
@@ -1322,32 +1492,7 @@ paths:
   /teams/mine:
     get:
       description: 获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/value.TeamInfo'
-            type: array
-      security:
-      - ApiKeyAuth: []
-      summary: 获取当前用户所在的汉化组列表（已测试）
-      tags:
-      - team
-  /users:
-    get:
-      description: 根据查询条件获取用户列表，支持按 QQ、模糊名称筛选，注意当列表为空，会返回 null 而不是空数组
       parameters:
-      - description: QQ 号
-        in: query
-        name: qq
-        type: string
-      - description: 模糊名称
-        in: query
-        name: fuzzy_name
-        type: string
       - description: 偏移量
         in: query
         name: offset
@@ -1365,13 +1510,13 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.UserInfo'
+              $ref: '#/definitions/value.TeamInfo'
             type: array
       security:
       - ApiKeyAuth: []
-      summary: 获取用户列表（已测试）
+      summary: 获取当前用户所在的汉化组列表（已测试）
       tags:
-      - user
+      - team
   /users/{user_id}:
     delete:
       description: 根据用户 ID 删除用户
@@ -1492,6 +1637,114 @@ paths:
       summary: 获取当前登录用户信息
       tags:
       - user
+  /worksets:
+    get:
+      description: 获取指定汉化组的工作集列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+      parameters:
+      - description: 汉化组 ID
+        in: query
+        name: team_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 关联展开字段，支持 team
+        in: query
+        items:
+          type: string
+        name: includes[]
+        type: array
+      - description: 偏移量
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.WorksetInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取指定汉化组的工作集列表
+      tags:
+      - workset
+    post:
+      consumes:
+      - application/json
+      description: 在指定汉化组中创建工作集
+      parameters:
+      - description: 创建工作集参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.CreateWorksetArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/value.CreateWorksetResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建工作集
+      tags:
+      - workset
+  /worksets/{workset_id}:
+    delete:
+      description: 删除指定工作集
+      parameters:
+      - description: 工作集 ID
+        in: path
+        name: workset_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 删除工作集
+      tags:
+      - workset
+    put:
+      consumes:
+      - application/json
+      description: 更新指定工作集的信息
+      parameters:
+      - description: 工作集 ID
+        in: path
+        name: workset_id
+        required: true
+        type: string
+      - description: 更新工作集参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.UpdateWorksetArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 更新工作集
+      tags:
+      - workset
 securityDefinitions:
   ApiKeyAuth:
     in: header

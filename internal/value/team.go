@@ -3,10 +3,6 @@ package value
 import (
 	"errors"
 	"unicode/utf8"
-
-	"labelplus-next-web-be/internal/domain/model"
-
-	"go.uber.org/zap"
 )
 
 type CreateTeamArgs struct {
@@ -36,12 +32,6 @@ type CreateTeamResult struct {
 	ID string `json:"id"`
 }
 
-func NewCreateTeamResult(teamID string) CreateTeamResult {
-	return CreateTeamResult{
-		ID: teamID,
-	}
-}
-
 type TeamInfo struct {
 	ID string `json:"id"`
 
@@ -54,33 +44,9 @@ type TeamInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewTeamInfoFromModel(team model.TeamInfo, avatarURL string) TeamInfo {
-	if team.ID == "" {
-		zap.L().Warn("NewTeamInfoFromModel: team 为空")
-		return TeamInfo{}
-	}
-
-	return TeamInfo{
-		ID:               team.ID,
-		Name:             team.Name,
-		Description:      team.Description,
-		AvatarURL:        avatarURL,
-		IsAvatarUploaded: team.IsAvatarUploaded,
-		CreatedAt:        team.CreatedAt.UnixMilli(),
-		UpdatedAt:        team.UpdatedAt.UnixMilli(),
-	}
-}
-
 type ReserveTeamAvatarResult struct {
 	AvatarOSSKey string `json:"avatar_oss_key"`
 	PutURL       string `json:"put_url"`
-}
-
-func NewReserveTeamAvatarResult(avatarOSSKey string, putURL string) ReserveTeamAvatarResult {
-	return ReserveTeamAvatarResult{
-		AvatarOSSKey: avatarOSSKey,
-		PutURL:       putURL,
-	}
 }
 
 type UpdateTeamArgs struct {

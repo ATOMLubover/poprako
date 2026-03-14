@@ -4,8 +4,6 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/domain/model"
-
-	"go.uber.org/zap"
 )
 
 type CreateInvitationArgs struct {
@@ -65,41 +63,6 @@ type InvitationInfo struct {
 	Roles model.RoleMask `json:"roles"`
 
 	CreatedAt int64 `json:"created_at"`
-}
-
-func NewInvitationInfo(id string, invitorID string, inviteeQQ string, invitationCode string, pengding bool, roles model.RoleMask, createdAt int64) InvitationInfo {
-	return InvitationInfo{
-		ID:             id,
-		InvitorID:      invitorID,
-		InviteeQQ:      inviteeQQ,
-		InvitationCode: invitationCode,
-		Pending:        pengding,
-		Roles:          roles,
-		CreatedAt:      createdAt,
-	}
-}
-
-func NewInvitationInfoFromModel(invitation model.InvitationInfo) InvitationInfo {
-	if invitation.ID == "" {
-		zap.L().Warn("NewInvitationInfoFromModel: invitation 为空")
-		return InvitationInfo{}
-	}
-
-	result := InvitationInfo{
-		ID:        invitation.ID,
-		InvitorID: invitation.InvitorID,
-		InviteeQQ: invitation.InviteeQQ,
-		Pending:   invitation.Pending,
-		Roles:     invitation.RoleMask(),
-		CreatedAt: invitation.CreatedAt.UnixMilli(),
-	}
-
-	if invitation.Invitor != nil {
-		invitorInfo := NewUserInfoFromModel(*invitation.Invitor, "")
-		result.InvitorInfo = &invitorInfo
-	}
-
-	return result
 }
 
 type UpdateInvitationArgs struct {

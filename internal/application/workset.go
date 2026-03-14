@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
@@ -118,19 +119,7 @@ func (wa *worksetApplication) ListWorksets(
 
 	result := make([]value.WorksetInfo, len(worksetList))
 	for i, workset := range worksetList {
-		result[i] = value.NewWorksetInfoFromModel(workset)
-
-		if includeSpec.NeedTeam && workset.Team != nil {
-			teamAvatarURL, avatarErr := wa.ossClient.GenerateGetPresignedURL(workset.Team.AvatarOSSKey)
-			if avatarErr != nil {
-				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(avatarErr))
-				return nil, errors.New("无法获取工作集列表")
-			}
-
-			teamInfo := value.NewTeamInfoFromModel(*workset.Team, teamAvatarURL)
-
-			result[i].Team = &teamInfo
-		}
+		result[i] = assembler.AssembleWorksetInfo(workset, wa.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -220,7 +209,7 @@ func (wa *worksetApplication) CreateWorkset(
 		return value.CreateWorksetResult{}, errors.New("创建工作集失败")
 	}
 
-	return value.NewCreateWorksetResult(worksetID), nil
+	return value.CreateWorksetResult{ID: worksetID}, nil
 }
 
 func (wa *worksetApplication) UpdateWorkset(

@@ -2,8 +2,6 @@ package value
 
 import (
 	"errors"
-
-	"labelplus-next-web-be/internal/domain/model"
 )
 
 type ReserveChapterPagesArgs struct {
@@ -31,22 +29,9 @@ type ReserveChapterPagesResult struct {
 	Creations []PageCreationResult `json:"creations"`
 }
 
-func NewCreateChapterPagesResult(creations []PageCreationResult) ReserveChapterPagesResult {
-	return ReserveChapterPagesResult{
-		Creations: creations,
-	}
-}
-
 type PageCreationResult struct {
 	PageID string `json:"page_id"`
 	PutURL string `json:"put_url"`
-}
-
-func NewPageCreationResult(pageID string, putURL string) PageCreationResult {
-	return PageCreationResult{
-		PageID: pageID,
-		PutURL: putURL,
-	}
 }
 
 type UpdatePageArgs struct {
@@ -71,10 +56,10 @@ func (args *UpdatePageArgs) Validate() error {
 type PageInfo struct {
 	ID string `json:"id"`
 
-	ChapterID   string    `json:"chapter_id"`
-	Index       int       `json:"index"`
-	CreatorID   string    `json:"creator_id"`
-	CreatorInfo *UserInfo `json:"creator_info,omitempty"`
+	ChapterID string    `json:"chapter_id"`
+	Index     int       `json:"index"`
+	CreatorID string    `json:"creator_id"`
+	Creator   *UserInfo `json:"creator,omitempty"`
 
 	ImageURL string `json:"image_url"`
 
@@ -84,28 +69,6 @@ type PageInfo struct {
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewPageInfoFromModel(pageInfo model.PageInfo, imageURL string) PageInfo {
-	result := PageInfo{
-		ID:                  pageInfo.ID,
-		ChapterID:           pageInfo.ChapterID,
-		Index:               pageInfo.Index,
-		CreatorID:           pageInfo.CreatorID,
-		ImageURL:            imageURL,
-		TotalUnitCount:      pageInfo.TotalUnitCount,
-		TranslatedUnitCount: pageInfo.TranslatedUnitCount,
-		ProofreadUnitCount:  pageInfo.ProofreadUnitCount,
-		CreatedAt:           pageInfo.CreatedAt.Unix(),
-		UpdatedAt:           pageInfo.UpdatedAt.Unix(),
-	}
-
-	if pageInfo.Creator != nil {
-		creatorInfo := NewUserInfoFromModel(*pageInfo.Creator, "")
-		result.CreatorInfo = &creatorInfo
-	}
-
-	return result
 }
 
 type ListChapterPageArgs struct {

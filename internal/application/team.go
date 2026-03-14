@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
@@ -125,7 +126,7 @@ func (ta *teamApplication) CreateTeam(
 		return value.CreateTeamResult{}, errors.New("创建汉化组失败")
 	}
 
-	return value.NewCreateTeamResult(teamID), nil
+	return value.CreateTeamResult{ID: teamID}, nil
 }
 
 func (ta *teamApplication) ListTeams(
@@ -175,7 +176,8 @@ func (ta *teamApplication) ListTeams(
 			return nil, errors.New("无法获取汉化组列表")
 		}
 
-		result[i] = value.NewTeamInfoFromModel(team, avatarURL)
+		_ = avatarURL
+		result[i] = assembler.AssembleTeamInfo(team, ta.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -223,7 +225,10 @@ func (ta *teamApplication) ReserveTeamAvatar(
 		return value.ReserveTeamAvatarResult{}, errors.New("预留汉化组头像失败")
 	}
 
-	return value.NewReserveTeamAvatarResult(avatarOSSKey, putURL), nil
+	return value.ReserveTeamAvatarResult{
+		AvatarOSSKey: avatarOSSKey,
+		PutURL:       putURL,
+	}, nil
 }
 
 func (ta *teamApplication) ListMyTeams(
@@ -286,7 +291,8 @@ func (ta *teamApplication) ListMyTeams(
 			return nil, errors.New("无法获取汉化组列表")
 		}
 
-		result[i] = value.NewTeamInfoFromModel(team, avatarURL)
+		_ = avatarURL
+		result[i] = assembler.AssembleTeamInfo(team, ta.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil

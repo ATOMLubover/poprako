@@ -3,10 +3,6 @@ package value
 import (
 	"errors"
 	"unicode/utf8"
-
-	"labelplus-next-web-be/internal/domain/model"
-
-	"go.uber.org/zap"
 )
 
 type LoginUserArgs struct {
@@ -33,13 +29,6 @@ func (lua *LoginUserArgs) Validate() error {
 type LoginUserResult struct {
 	UserID      string `json:"user_id"`
 	AccessToken string `json:"access_token"`
-}
-
-func NewLoginUserResult(userID string, accessToken string) LoginUserResult {
-	return LoginUserResult{
-		UserID:      userID,
-		AccessToken: accessToken,
-	}
 }
 
 type RegisterUserArgs struct {
@@ -84,13 +73,6 @@ type RegisterUserResult struct {
 	AccessToken string `json:"access_token"`
 }
 
-func NewRegisterUserResult(userID string, accessToken string) RegisterUserResult {
-	return RegisterUserResult{
-		UserID:      userID,
-		AccessToken: accessToken,
-	}
-}
-
 // UserInfo 是应用层对外暴露的用户信息值对象
 type UserInfo struct {
 	ID   string `json:"id"`
@@ -102,48 +84,17 @@ type UserInfo struct {
 
 	IsSuperAdmin bool `json:"is_super_admin"`
 
-	// Members 仅在 include 指定时填充。
-	Members []MemberInfo `json:"members,omitempty"`
-
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewUserInfoFromModel(user model.UserInfo, avatarURL string) UserInfo {
-	if user.ID == "" {
-		zap.L().Warn("NewUserInfoFromModel: user 为空")
-		return UserInfo{}
-	}
-
-	return UserInfo{
-		ID:               user.ID,
-		Name:             user.Name,
-		QQ:               user.QQ,
-		AvatarURL:        avatarURL,
-		IsAvatarUploaded: user.IsAvatarUploaded,
-		IsSuperAdmin:     user.IsSuperAdmin,
-		CreatedAt:        user.CreatedAt.UnixMilli(),
-		UpdatedAt:        user.UpdatedAt.UnixMilli(),
-	}
 }
 
 type ReserveUserAvatarResult struct {
 	PutURL string `json:"put_url"`
 }
 
-func NewReserveUserAvatarResult(putURL string) ReserveUserAvatarResult {
-	return ReserveUserAvatarResult{
-		PutURL: putURL,
-	}
-}
+type GetUserArgs struct{}
 
-type GetUserArgs struct {
-	Includes []string `url:"includes[]"`
-}
-
-type GetMyUserArgs struct {
-	Includes []string `url:"includes[]"`
-}
+type GetMyUserArgs struct{}
 
 /* type ListUserArgs struct {
 	PaginationParams

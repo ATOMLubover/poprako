@@ -2,8 +2,6 @@ package value
 
 import (
 	"errors"
-
-	"labelplus-next-web-be/internal/domain/model"
 )
 
 type WorksetInfo struct {
@@ -19,26 +17,6 @@ type WorksetInfo struct {
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewWorksetInfoFromModel(worksetInfo model.WorksetInfo) WorksetInfo {
-	result := WorksetInfo{
-		ID:          worksetInfo.ID,
-		TeamID:      worksetInfo.TeamID,
-		Index:       worksetInfo.Index,
-		Name:        worksetInfo.Name,
-		Description: worksetInfo.Description,
-		ComicCount:  worksetInfo.ComicCount,
-		CreatedAt:   worksetInfo.CreatedAt.UnixMilli(),
-		UpdatedAt:   worksetInfo.UpdatedAt.UnixMilli(),
-	}
-
-	if worksetInfo.Team != nil {
-		teamInfo := NewTeamInfoFromModel(*worksetInfo.Team, "")
-		result.Team = &teamInfo
-	}
-
-	return result
 }
 
 // 所有的 list 都聚合在一个 List 参数下
@@ -88,10 +66,6 @@ func (cwa *CreateWorksetArgs) Validate() error {
 
 type CreateWorksetResult struct {
 	ID string `json:"id"`
-}
-
-func NewCreateWorksetResult(worksetID string) CreateWorksetResult {
-	return CreateWorksetResult{ID: worksetID}
 }
 
 // PUT 语义的 update 参数，nil 值视为强制置为 NULL，非 nil 值视为更新为该值，空字符串视为更新为 ""

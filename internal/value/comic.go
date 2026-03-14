@@ -3,8 +3,6 @@ package value
 import (
 	"errors"
 	"unicode/utf8"
-
-	"labelplus-next-web-be/internal/domain/model"
 )
 
 type ComicInfo struct {
@@ -22,41 +20,12 @@ type ComicInfo struct {
 
 	ChapterCount int       `json:"chapter_count"`
 	CreatorID    string    `json:"creator_id"`
-	CreatorInfo  *UserInfo `json:"creator_info,omitempty"`
+	Creator      *UserInfo `json:"creator,omitempty"`
 
 	LastActiveAt int64 `json:"last_active_at"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewComicInfoFromModel(comicInfo model.ComicInfo) ComicInfo {
-	result := ComicInfo{
-		ID:           comicInfo.ID,
-		WorksetID:    comicInfo.WorksetID,
-		Index:        comicInfo.Index,
-		Title:        comicInfo.Title,
-		Author:       comicInfo.Author,
-		Description:  comicInfo.Description,
-		CoverURL:     comicInfo.CoverURL,
-		ChapterCount: comicInfo.ChapterCount,
-		CreatorID:    comicInfo.CreatorID,
-		LastActiveAt: comicInfo.LastActiveAt.UnixMilli(),
-		CreatedAt:    comicInfo.CreatedAt.UnixMilli(),
-		UpdatedAt:    comicInfo.UpdatedAt.UnixMilli(),
-	}
-
-	if comicInfo.Workset != nil {
-		worksetInfo := NewWorksetInfoFromModel(*comicInfo.Workset)
-		result.WorksetInfo = &worksetInfo
-	}
-
-	if comicInfo.Creator != nil {
-		creatorInfo := NewUserInfoFromModel(*comicInfo.Creator, "")
-		result.CreatorInfo = &creatorInfo
-	}
-
-	return result
 }
 
 // ListComicArgs 查询指定工作集下的漫画列表参数。
@@ -118,12 +87,6 @@ func (cca *CreateComicArgs) Validate() error {
 
 type CreateComicResult struct {
 	ID string `json:"id"`
-}
-
-func NewCreateComicResultFromModel(comicID string) CreateComicResult {
-	return CreateComicResult{
-		ID: comicID,
-	}
 }
 
 type UpdateComicArgs struct {

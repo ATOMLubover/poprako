@@ -15,7 +15,6 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		user_id path string true "用户 ID"
-// @Param 		"includes[]" query []string false "include 关联信息，可选值：member,member.team"
 //
 // @Success 	200 {object} value.UserInfo
 //
@@ -268,7 +267,6 @@ func RemoveUserByID(appState *state.AppState) iris.Handler {
 // @Tags    user
 // @Security    ApiKeyAuth
 // @Produce json
-// @Param 		"includes[]" query []string false "include 关联信息，可选值：member,member.team"
 //
 // @Success 200 {object} value.UserInfo
 //
@@ -282,13 +280,7 @@ func GetMyUser(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		var args value.GetMyUserArgs
-		if err := ctx.ReadQuery(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
-			return
-		}
-
-		result, err := userApplication.GetMyUser(buildTraceScope(ctx), currentUserID, args)
+		result, err := userApplication.GetMyUser(buildTraceScope(ctx), currentUserID)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return

@@ -19,7 +19,7 @@ import (
 // @Param 		limit query int true "每页数量"
 // @Param 		includes[] query []string false "嵌套信息（user）"
 //
-// @Success 	200 {object} []value.AssignmentWithUserInfo
+// @Success 	200 {object} []value.AssignmentInfo
 //
 // @Router 		/assignments [get]
 func ListChapterAssignments(appState *state.AppState) iris.Handler {
@@ -61,7 +61,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 //
-// @Success 	200 {object} []value.AssignmentWithChapterInfo
+// @Success 	200 {object} []value.AssignmentInfo
 //
 // @Router 		/assignments/mine [get]
 func ListMyAssignments(appState *state.AppState) iris.Handler {

@@ -5,7 +5,6 @@ import (
 	"unicode/utf8"
 
 	"labelplus-next-web-be/internal/domain/model"
-	"labelplus-next-web-be/internal/util"
 )
 
 type ChapterInfo struct {
@@ -32,43 +31,11 @@ type ChapterInfo struct {
 	ReviewedAt     *int64 `json:"reviewed_at,omitempty"`
 	PublishedAt    *int64 `json:"published_at,omitempty"`
 
-	CreatorID   string    `json:"creator_id"`
-	CreatorInfo *UserInfo `json:"creator_info,omitempty"`
+	CreatorID string    `json:"creator_id"`
+	Creator   *UserInfo `json:"creator,omitempty"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewChapterInfoFromModel(chapterInfo model.ChapterInfo) ChapterInfo {
-	result := ChapterInfo{
-		ID:                  chapterInfo.ID,
-		ComicID:             chapterInfo.ComicID,
-		Index:               chapterInfo.Index,
-		ChapterNo:           chapterInfo.ChapterNo,
-		PageCount:           chapterInfo.PageCount,
-		TotalUnitCount:      chapterInfo.TotalUnitCount,
-		TranslatedUnitCount: chapterInfo.TranslatedUnitCount,
-		ProofreadUnitCount:  chapterInfo.ProofreadUnitCount,
-		UploadedAt:          util.ToUnixPtr(chapterInfo.UploadedAt),
-		TransalatingAt:      util.ToUnixPtr(chapterInfo.TransalatingAt),
-		TranslatedAt:        util.ToUnixPtr(chapterInfo.TranslatedAt),
-		ProofreadingAt:      util.ToUnixPtr(chapterInfo.ProofreadingAt),
-		ProofreadAt:         util.ToUnixPtr(chapterInfo.ProofreadAt),
-		TypesettingAt:       util.ToUnixPtr(chapterInfo.TypesettingAt),
-		TypesetAt:           util.ToUnixPtr(chapterInfo.TypesetAt),
-		ReviewedAt:          util.ToUnixPtr(chapterInfo.ReviewedAt),
-		PublishedAt:         util.ToUnixPtr(chapterInfo.PublishedAt),
-		CreatorID:           chapterInfo.CreatorID,
-		CreatedAt:           chapterInfo.CreatedAt.UnixMilli(),
-		UpdatedAt:           chapterInfo.UpdatedAt.UnixMilli(),
-	}
-
-	if chapterInfo.Creator != nil {
-		creatorInfo := NewUserInfoFromModel(*chapterInfo.Creator, "")
-		result.CreatorInfo = &creatorInfo
-	}
-
-	return result
 }
 
 type ListChapterArgs struct {
@@ -116,12 +83,6 @@ func (args *CreateChapterArgs) Validate() error {
 
 type CreateChapterResult struct {
 	ID string `json:"id"`
-}
-
-func NewCreateChapterResultFromModel(chapterID string) CreateChapterResult {
-	return CreateChapterResult{
-		ID: chapterID,
-	}
 }
 
 type UpdateChapterArgs struct {

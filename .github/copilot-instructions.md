@@ -17,3 +17,5 @@ value 对象是 API 层和 APP 层的数据传输对象，model 对象是领域�
 除了 (wa worksetApplication) 这种关联对象，其他的参数一律不得使用简写，必须使用全称，否则会导致代码可读性差，增加理解难度。
 
 所有的数据的 single source of truth 全部在于 migrations/ 下的数据库 SQL 脚本。任何 Go 代码中的字段都可能因为 SQL 脚本改变而失效或缺失。
+
+大部分情况下，你需要的格式化代码都在 justfile 中。只有测试 build 不应该使用 just build，它是最终打包为 Linux 可执行文件时才使用。

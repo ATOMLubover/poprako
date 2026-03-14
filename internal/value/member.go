@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/domain/model"
-	"labelplus-next-web-be/internal/util"
 )
 
 type UpdateMemberRoleArgs struct {
@@ -51,36 +50,6 @@ type MemberInfo struct {
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
-}
-
-func NewMemberInfoFromModel(m model.MemberWithInfo) MemberInfo {
-	result := MemberInfo{
-		ID:                    m.ID,
-		UserID:                m.UserID,
-		TeamID:                m.TeamID,
-		Roles:                 model.MaskRoles(m.Roles()),
-		AssignedRawProviderAt: util.ToUnixPtr(m.AssignedRawProviderAt),
-		AssignedTranslatorAt:  util.ToUnixPtr(m.AssignedTranslatorAt),
-		AssignedProofreaderAt: util.ToUnixPtr(m.AssignedProofreaderAt),
-		AssignedTypesetterAt:  util.ToUnixPtr(m.AssignedTypesetterAt),
-		AssignedReviewerAt:    util.ToUnixPtr(m.AssignedReviewerAt),
-		AssignedPublisherAt:   util.ToUnixPtr(m.AssignedPublisherAt),
-		AssignedAdminAt:       util.ToUnixPtr(m.AssignedAdminAt),
-		CreatedAt:             m.CreatedAt.UnixMilli(),
-		UpdatedAt:             m.UpdatedAt.UnixMilli(),
-	}
-
-	if m.User != nil {
-		userInfo := NewUserInfoFromModel(*m.User, "")
-		result.User = &userInfo
-	}
-
-	if m.Team != nil {
-		teamInfo := NewTeamInfoFromModel(*m.Team, "")
-		result.Team = &teamInfo
-	}
-
-	return result
 }
 
 type ListTeamMemberArgs struct {
@@ -150,12 +119,6 @@ func (cma *CreateMemberArgs) Validate() error {
 
 type CreateMemberResult struct {
 	MemberID string `json:"member_id"`
-}
-
-func NewCreateMemberResult(memberID string) CreateMemberResult {
-	return CreateMemberResult{
-		MemberID: memberID,
-	}
 }
 
 type JoinTeamArgs struct {

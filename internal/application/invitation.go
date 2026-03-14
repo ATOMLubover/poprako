@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
@@ -121,7 +122,9 @@ func (ia invitationApplication) ListInvitations(
 	// 转换为应用层的值对
 	result := make([]value.InvitationInfo, len(invitationList))
 	for i, info := range invitationList {
-		result[i] = value.NewInvitationInfoFromModel(info)
+		result[i] = assembler.AssembleInvitationInfo(info, func(string) (string, error) {
+			return "", nil
+		})
 	}
 
 	return result, nil
@@ -196,15 +199,15 @@ func (ia invitationApplication) CreateInvitation(
 	}
 
 	// 构造创建成功的邀请信息值对象，不再查询数据库获取邀请信息
-	invitationInfo := value.NewInvitationInfo(
-		invitationID,
-		currentUserID,
-		args.InviteeQQ,
-		invitationCode,
-		true,
-		args.Roles,
-		util.NowMillis(),
-	)
+	invitationInfo := value.InvitationInfo{
+		ID:             invitationID,
+		InvitorID:      currentUserID,
+		InviteeQQ:      args.InviteeQQ,
+		InvitationCode: invitationCode,
+		Pending:        true,
+		Roles:          args.Roles,
+		CreatedAt:      util.NowMillis(),
+	}
 
 	return invitationInfo, nil
 }

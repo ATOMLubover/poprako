@@ -122,7 +122,7 @@ func (r *pageRepository) Update(executor intf.Executor, update model.PageUpdate)
 			"uploaded":              update.IsUploaded,
 			"total_unit_count":      update.TotalUnitCount,
 			"translated_unit_count": update.TranslatedUnitCount,
-			"proofread_unit_count":     update.ProofreadUnitCount,
+			"proofread_unit_count":  update.ProofreadUnitCount,
 		}).Error
 }
 

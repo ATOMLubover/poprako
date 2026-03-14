@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
@@ -154,7 +155,7 @@ func (ca *chapterApplication) CreateComicChapter(
 		return value.CreateChapterResult{}, errors.New("创建章节失败")
 	}
 
-	return value.NewCreateChapterResultFromModel(chapterID), nil
+	return value.CreateChapterResult{ID: chapterID}, nil
 }
 
 func (ca *chapterApplication) ListComicChapters(
@@ -206,17 +207,7 @@ func (ca *chapterApplication) ListComicChapters(
 
 	result := make([]value.ChapterInfo, len(chapters))
 	for i, chapter := range chapters {
-		result[i] = value.NewChapterInfoFromModel(chapter)
-
-		if includeSpec.NeedCreator && chapter.Creator != nil {
-			avatarURL, avatarErr := ca.ossClient.GenerateGetPresignedURL(chapter.Creator.AvatarOSSKey)
-			if avatarErr != nil {
-				scope.Logger().Error(fn+": 生戛创建者头像链接失败", zap.Error(avatarErr))
-				return nil, errors.New("获取章节列表失败")
-			}
-			creatorInfo := value.NewUserInfoFromModel(*chapter.Creator, avatarURL)
-			result[i].CreatorInfo = &creatorInfo
-		}
+		result[i] = assembler.AssembleChapterInfo(chapter, ca.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil

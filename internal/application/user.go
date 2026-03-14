@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/application/assembler"
 	"labelplus-next-web-be/internal/config"
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
@@ -34,7 +35,6 @@ type UserApplication interface {
 	GetMyUser(
 		scope util.TraceScope,
 		currentUserID string,
-		args value.GetMyUserArgs,
 	) (value.UserInfo, error)
 	/* 	ListUsers(
 		scope util.TraceScope,
@@ -147,7 +147,10 @@ func (ua *userApplication) LoginUser(
 		return value.LoginUserResult{}, errors.New("生成访问令牌失败")
 	}
 
-	return value.NewLoginUserResult(credentials.UserID, accessToken), nil
+	return value.LoginUserResult{
+		UserID:      credentials.UserID,
+		AccessToken: accessToken,
+	}, nil
 }
 
 func (ua *userApplication) RegisterUser(
@@ -268,7 +271,10 @@ func (ua *userApplication) RegisterUser(
 		return value.RegisterUserResult{}, errors.New("生成访问令牌失败")
 	}
 
-	return value.NewRegisterUserResult(userID, accessToken), nil
+	return value.RegisterUserResult{
+		UserID:      userID,
+		AccessToken: accessToken,
+	}, nil
 }
 
 func (ua *userApplication) GetUser(
@@ -307,60 +313,14 @@ func (ua *userApplication) GetUser(
 		return value.UserInfo{}, errors.New("用户不存在")
 	}
 
-	avatarURL, err := ua.ossClient.GenerateGetPresignedURL(userInfo.AvatarOSSKey)
-	if err != nil {
-		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
-		return value.UserInfo{}, errors.New("无法获取用户信息")
-	}
+	_ = args
 
-	includeSpec := service.ResolveUserDetailIncludeSpec(args.Includes)
-
-	if !includeSpec.NeedMembers {
-		return value.NewUserInfoFromModel(userInfo, avatarURL), nil
-	}
-
-	memberQueryOptions := []repository.QueryOption{
-		query_option.MemberQuery().FilterByUserID(userID),
-		query_option.CreatedAtDesc(repository_infra.MemberTable),
-	}
-
-	if includeSpec.NeedMemberTeam {
-		memberQueryOptions = append(memberQueryOptions, query_option.MemberQuery().IncludeTeamInfo())
-	}
-
-	memberList, memberErr := ua.memberRepository.List(nil, memberQueryOptions...)
-	if memberErr != nil {
-		scope.Logger().Error(fn+": 获取用户成员列表失败", zap.Error(memberErr))
-		return value.UserInfo{}, errors.New("无法获取用户信息")
-	}
-
-	result := value.NewUserInfoFromModel(userInfo, avatarURL)
-	result.Members = make([]value.MemberInfo, len(memberList))
-
-	for i, member := range memberList {
-		memberInfo := value.NewMemberInfoFromModel(member)
-
-		if includeSpec.NeedMemberTeam && member.Team != nil {
-			teamAvatarURL, teamAvatarErr := ua.ossClient.GenerateGetPresignedURL(member.Team.AvatarOSSKey)
-			if teamAvatarErr != nil {
-				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(teamAvatarErr))
-				return value.UserInfo{}, errors.New("无法获取用户信息")
-			}
-
-			teamValueInfo := value.NewTeamInfoFromModel(*member.Team, teamAvatarURL)
-			memberInfo.Team = &teamValueInfo
-		}
-
-		result.Members[i] = memberInfo
-	}
-
-	return result, nil
+	return assembler.AssembleUserInfo(userInfo, ua.ossClient.GenerateGetPresignedURL), nil
 }
 
 func (ua *userApplication) GetMyUser(
 	scope util.TraceScope,
 	currentUserID string,
-	args value.GetMyUserArgs,
 ) (value.UserInfo, error) {
 	const fn = "UserApplication.GetMyUser"
 
@@ -397,54 +357,7 @@ func (ua *userApplication) GetMyUser(
 		return value.UserInfo{}, errors.New("用户不存在")
 	}
 
-	avatarURL, err := ua.ossClient.GenerateGetPresignedURL(userInfo.AvatarOSSKey)
-	if err != nil {
-		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
-		return value.UserInfo{}, errors.New("无法获取用户信息")
-	}
-
-	includeSpec := service.ResolveUserDetailIncludeSpec(args.Includes)
-
-	if !includeSpec.NeedMembers {
-		return value.NewUserInfoFromModel(userInfo, avatarURL), nil
-	}
-
-	memberQueryOptions := []repository.QueryOption{
-		query_option.MemberQuery().FilterByUserID(currentUserID),
-		query_option.CreatedAtDesc(repository_infra.MemberTable),
-	}
-
-	if includeSpec.NeedMemberTeam {
-		memberQueryOptions = append(memberQueryOptions, query_option.MemberQuery().IncludeTeamInfo())
-	}
-
-	memberList, memberErr := ua.memberRepository.List(nil, memberQueryOptions...)
-	if memberErr != nil {
-		scope.Logger().Error(fn+": 获取当前用户成员列表失败", zap.Error(memberErr))
-		return value.UserInfo{}, errors.New("无法获取用户信息")
-	}
-
-	result := value.NewUserInfoFromModel(userInfo, avatarURL)
-	result.Members = make([]value.MemberInfo, len(memberList))
-
-	for i, member := range memberList {
-		memberInfo := value.NewMemberInfoFromModel(member)
-
-		if includeSpec.NeedMemberTeam && member.Team != nil {
-			teamAvatarURL, teamAvatarErr := ua.ossClient.GenerateGetPresignedURL(member.Team.AvatarOSSKey)
-			if teamAvatarErr != nil {
-				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(teamAvatarErr))
-				return value.UserInfo{}, errors.New("无法获取用户信息")
-			}
-
-			teamValueInfo := value.NewTeamInfoFromModel(*member.Team, teamAvatarURL)
-			memberInfo.Team = &teamValueInfo
-		}
-
-		result.Members[i] = memberInfo
-	}
-
-	return result, nil
+	return assembler.AssembleUserInfo(userInfo, ua.ossClient.GenerateGetPresignedURL), nil
 }
 
 /* func (ua *userApplication) ListUsers(
@@ -504,7 +417,7 @@ func (ua *userApplication) GetMyUser(
 			return nil, errors.New("无法获取用户列表")
 		}
 
-		result[i] = value.NewUserInfoFromModel(userList[i], avatarURL)
+		result[i] = assembler.AssembleUserInfo(userList[i], ua.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -551,7 +464,7 @@ func (ua *userApplication) ReserveUserAvatar(
 		return value.ReserveUserAvatarResult{}, errors.New("预留用户头像失败")
 	}
 
-	return value.NewReserveUserAvatarResult(putURL), nil
+	return value.ReserveUserAvatarResult{PutURL: putURL}, nil
 }
 
 func (ua *userApplication) UpdateUser(

@@ -13,6 +13,8 @@ import (
 	"labelplus-next-web-be/internal/util"
 	"labelplus-next-web-be/internal/value"
 
+	"labelplus-next-web-be/internal/application/assembler"
+
 	"go.uber.org/zap"
 )
 
@@ -161,7 +163,7 @@ func (pa *pageApplication) ReserveChapterPages(
 			return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 		}
 
-		creationResults[i] = value.NewPageCreationResult(pageCreations[i].ID, presignedURL)
+			creationResults[i] = value.PageCreationResult{PageID: pageCreations[i].ID, PutURL: presignedURL}
 	}
 
 	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {
@@ -169,7 +171,7 @@ func (pa *pageApplication) ReserveChapterPages(
 		return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 	}
 
-	result := value.NewCreateChapterPagesResult(creationResults)
+	result := value.ReserveChapterPagesResult{Creations: creationResults}
 
 	return result, nil
 }
@@ -230,24 +232,7 @@ func (pa *pageApplication) ListChapterPages(
 
 	result := make([]value.PageInfo, len(pageInfos))
 	for i, pageInfo := range pageInfos {
-		imageURL, err := pa.ossClient.GenerateGetPresignedURL(pageInfo.OSSKey)
-		if err != nil {
-			scope.Logger().Error(fn+": 生成页面访问链接失败", zap.Error(err))
-			return nil, errors.New("获取页面列表失败")
-		}
-
-		result[i] = value.NewPageInfoFromModel(pageInfo, imageURL)
-
-		if includeSpec.NeedCreator && pageInfo.Creator != nil {
-			creatorAvatarURL, avatarErr := pa.ossClient.GenerateGetPresignedURL(pageInfo.Creator.AvatarOSSKey)
-			if avatarErr != nil {
-				scope.Logger().Error(fn+": 生成页面创建者头像链接失败", zap.Error(avatarErr))
-				return nil, errors.New("获取页面列表失败")
-			}
-
-			creatorInfo := value.NewUserInfoFromModel(*pageInfo.Creator, creatorAvatarURL)
-			result[i].CreatorInfo = &creatorInfo
-		}
+		result[i] = assembler.AssemblePageInfo(pageInfo, pa.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
