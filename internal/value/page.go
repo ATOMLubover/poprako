@@ -71,8 +71,10 @@ func (args *UpdatePageArgs) Validate() error {
 type PageInfo struct {
 	ID string `json:"id"`
 
-	ChapterID string `json:"chapter_id"`
-	Index     int    `json:"index"`
+	ChapterID   string    `json:"chapter_id"`
+	Index       int       `json:"index"`
+	CreatorID   string    `json:"creator_id"`
+	CreatorInfo *UserInfo `json:"creator_info,omitempty"`
 
 	ImageURL string `json:"image_url"`
 
@@ -85,10 +87,11 @@ type PageInfo struct {
 }
 
 func NewPageInfoFromModel(pageInfo model.PageInfo, imageURL string) PageInfo {
-	return PageInfo{
+	result := PageInfo{
 		ID:                  pageInfo.ID,
 		ChapterID:           pageInfo.ChapterID,
 		Index:               pageInfo.Index,
+		CreatorID:           pageInfo.CreatorID,
 		ImageURL:            imageURL,
 		TotalUnitCount:      pageInfo.TotalUnitCount,
 		TranslatedUnitCount: pageInfo.TranslatedUnitCount,
@@ -96,4 +99,33 @@ func NewPageInfoFromModel(pageInfo model.PageInfo, imageURL string) PageInfo {
 		CreatedAt:           pageInfo.CreatedAt.Unix(),
 		UpdatedAt:           pageInfo.UpdatedAt.Unix(),
 	}
+
+	if pageInfo.Creator != nil {
+		creatorInfo := NewUserInfoFromModel(*pageInfo.Creator, "")
+		result.CreatorInfo = &creatorInfo
+	}
+
+	return result
+}
+
+type ListChapterPageArgs struct {
+	ChapterID string   `url:"chapter_id"`
+	Includes  []string `url:"includes[]"`
+	PaginationParams
+}
+
+func (args *ListChapterPageArgs) Validate() error {
+	if args == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if args.ChapterID == "" {
+		return errors.New("章节 ID 不能为空")
+	}
+
+	if err := args.PaginationParams.Validate(); err != nil {
+		return errors.New("分页参数无效: " + err.Error())
+	}
+
+	return nil
 }

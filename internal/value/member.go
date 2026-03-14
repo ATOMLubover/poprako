@@ -31,12 +31,13 @@ func (uma *UpdateMemberRoleArgs) Validate() error {
 
 // MemberInfo 是成员的统一展示模型，User 和 Team 字段均为可选，仅在 includes 指定时填充。
 type MemberInfo struct {
-	ID     string `json:"id"`
-	UserID string `json:"user_id"`
-	TeamID string `json:"team_id"`
+	ID string `json:"id"`
 
-	User *UserInfo `json:"user,omitempty"`
-	Team *TeamInfo `json:"team,omitempty"`
+	UserID string    `json:"user_id"`
+	User   *UserInfo `json:"user,omitempty"`
+
+	TeamID string    `json:"team_id"`
+	Team   *TeamInfo `json:"team,omitempty"`
 
 	Roles model.RoleMask `json:"roles"`
 
@@ -90,6 +91,7 @@ type ListTeamMemberArgs struct {
 
 type ListMyMemberArgs struct {
 	Includes []string `url:"includes[]"`
+	PaginationParams
 }
 
 func (ltma *ListTeamMemberArgs) Validate() error {
@@ -102,6 +104,18 @@ func (ltma *ListTeamMemberArgs) Validate() error {
 	}
 
 	if err := ltma.PaginationParams.Validate(); err != nil {
+		return errors.New("分页参数无效: " + err.Error())
+	}
+
+	return nil
+}
+
+func (lmma *ListMyMemberArgs) Validate() error {
+	if lmma == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if err := lmma.PaginationParams.Validate(); err != nil {
 		return errors.New("分页参数无效: " + err.Error())
 	}
 
@@ -159,5 +173,3 @@ func (jta *JoinTeamArgs) Validate() error {
 
 	return nil
 }
-
-

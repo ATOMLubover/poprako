@@ -25,7 +25,7 @@ type PageApplication interface {
 	ListChapterPages(
 		scope util.TraceScope,
 		currentUserID string,
-		chapterID string,
+		args value.ListChapterPageArgs,
 	) ([]value.PageInfo, error)
 	UpdatePage(
 		scope util.TraceScope,
@@ -177,27 +177,27 @@ func (pa *pageApplication) ReserveChapterPages(
 func (pa *pageApplication) ListChapterPages(
 	scope util.TraceScope,
 	currentUserID string,
-	chapterID string,
+	args value.ListChapterPageArgs,
 ) ([]value.PageInfo, error) {
 	const fn = "PageApplication.ListChapterPages"
 
-	if chapterID == "" {
-		scope.Logger().Warn(fn + ": chapterID 不能为空")
-		return nil, errors.New("参数错误: chapterID 不能为空")
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
 	}
 
 	scope.
 		WithFields(
 			zap.String("current_user_id", currentUserID),
-			zap.String("chapter_id", chapterID),
+			zap.Any("args", args),
 		).
 		Logger().
 		Debug(fn + ": 被调用")
 
 	if !model.PermPageList().Check(
 		currentUserID,
-		chapterID,
-		func(chapterID string) (model.ChapterDetail, error) {
+		args.ChapterID,
+		func(chapterID string) (model.ChapterInfo, error) {
 			return pa.pageRepository.GetChapterByID(nil, chapterID)
 		},
 		adapter.HandleLoadComicInfo(pa.comicRepository),
@@ -207,10 +207,21 @@ func (pa *pageApplication) ListChapterPages(
 		return nil, errors.New("权限不足")
 	}
 
+	includeSpec := service.ResolvePageListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
+		query_option.PageQuery().FilterByChapterID(args.ChapterID),
+		query_option.PageQuery().OrderByIndexAsc(),
+		query_option.Paginate(args.Offset, args.Limit),
+	}
+
+	if includeSpec.NeedCreator {
+		queryOptions = append(queryOptions, query_option.PageQuery().IncludeCreatorInfo())
+	}
+
 	pageInfos, err := pa.pageRepository.List(
 		nil,
-		query_option.PageQuery().FilterByChapterID(chapterID),
-		query_option.PageQuery().OrderByIndexAsc(),
+		queryOptions...,
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取页面列表失败", zap.Error(err))
@@ -226,6 +237,17 @@ func (pa *pageApplication) ListChapterPages(
 		}
 
 		result[i] = value.NewPageInfoFromModel(pageInfo, imageURL)
+
+		if includeSpec.NeedCreator && pageInfo.Creator != nil {
+			creatorAvatarURL, avatarErr := pa.ossClient.GenerateGetPresignedURL(pageInfo.Creator.AvatarOSSKey)
+			if avatarErr != nil {
+				scope.Logger().Error(fn+": 生成页面创建者头像链接失败", zap.Error(avatarErr))
+				return nil, errors.New("获取页面列表失败")
+			}
+
+			creatorInfo := value.NewUserInfoFromModel(*pageInfo.Creator, creatorAvatarURL)
+			result[i].CreatorInfo = &creatorInfo
+		}
 	}
 
 	return result, nil
@@ -260,7 +282,7 @@ func (pa *pageApplication) UpdatePage(
 				query_option.FilterByID(repository_infra.PageTable, pageID),
 			)
 		},
-		func(chapterID string) (model.ChapterDetail, error) {
+		func(chapterID string) (model.ChapterInfo, error) {
 			return pa.pageRepository.GetChapterByID(nil, chapterID)
 		},
 		adapter.HandleLoadAssignmentInfo(pa.assignmentRepository),

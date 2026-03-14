@@ -15,7 +15,8 @@ type CreateInvitationArgs struct {
 }
 
 type ListTeamInvitationArgs struct {
-	TeamID string `url:"team_id"`
+	TeamID   string   `url:"team_id"`
+	Includes []string `url:"includes[]"`
 	PaginationParams
 }
 
@@ -54,9 +55,10 @@ func (cia *CreateInvitationArgs) Validate() error {
 type InvitationInfo struct {
 	ID string `json:"id"`
 
-	InvitorID      string `json:"invitor_id"`
-	InviteeQQ      string `json:"invitee_qq"`
-	InvitationCode string `json:"invitation_code"`
+	InvitorID      string    `json:"invitor_id"`
+	InvitorInfo    *UserInfo `json:"invitor_info,omitempty"`
+	InviteeQQ      string    `json:"invitee_qq"`
+	InvitationCode string    `json:"invitation_code"`
 
 	Pending bool `json:"pending"`
 
@@ -83,7 +85,7 @@ func NewInvitationInfoFromModel(invitation model.InvitationInfo) InvitationInfo 
 		return InvitationInfo{}
 	}
 
-	return InvitationInfo{
+	result := InvitationInfo{
 		ID:        invitation.ID,
 		InvitorID: invitation.InvitorID,
 		InviteeQQ: invitation.InviteeQQ,
@@ -91,6 +93,13 @@ func NewInvitationInfoFromModel(invitation model.InvitationInfo) InvitationInfo 
 		Roles:     invitation.RoleMask(),
 		CreatedAt: invitation.CreatedAt.UnixMilli(),
 	}
+
+	if invitation.Invitor != nil {
+		invitorInfo := NewUserInfoFromModel(*invitation.Invitor, "")
+		result.InvitorInfo = &invitorInfo
+	}
+
+	return result
 }
 
 type UpdateInvitationArgs struct {

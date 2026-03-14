@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-type ChapterDetail struct {
+type ChapterInfo struct {
 	ID string
 
 	ComicID   string
@@ -56,8 +56,8 @@ func NewChapterDetail(
 	creatorID string,
 	createdAt time.Time,
 	updatedAt time.Time,
-) ChapterDetail {
-	return ChapterDetail{
+) ChapterInfo {
+	return ChapterInfo{
 		ID:                  id,
 		ComicID:             comicID,
 		Index:               index,
@@ -167,7 +167,7 @@ type ChapterUpdate struct {
 func NewChapterUpdate(
 	id string,
 	chapterNo *string,
-	current ChapterDetail,
+	current ChapterInfo,
 	uploadStatus *WorkflowStatus,
 	translateStatus *WorkflowStatus,
 	proofreadStatus *WorkflowStatus,

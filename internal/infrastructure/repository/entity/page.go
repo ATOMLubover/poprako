@@ -57,12 +57,22 @@ type PageInfoRow struct {
 	ChapterID string `gorm:"column:chapter_id"`
 	Index     int    `gorm:"column:index"`
 	OSSKey    string `gorm:"column:oss_key"`
+	CreatorID string `gorm:"column:creator_id"`
 
 	IsUploaded bool `gorm:"column:uploaded"`
 
 	TotalUnitCount      int `gorm:"column:total_unit_count"`
 	TranslatedUnitCount int `gorm:"column:translated_unit_count"`
 	ProofreadUnitCount  int `gorm:"column:proofread_unit_count"`
+
+	// Creator 别名列（IncludeCreatorInfo() 时填充）
+	CreatorName             string    `gorm:"column:creator_name"`
+	CreatorQQ               string    `gorm:"column:creator_qq"`
+	CreatorAvatarOSSKey     string    `gorm:"column:creator_avatar_oss_key"`
+	CreatorIsAvatarUploaded bool      `gorm:"column:creator_is_avatar_uploaded"`
+	CreatorIsSuperAdmin     bool      `gorm:"column:creator_is_super_admin"`
+	CreatorCreatedAt        time.Time `gorm:"column:creator_created_at"`
+	CreatorUpdatedAt        time.Time `gorm:"column:creator_updated_at"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
@@ -82,12 +92,29 @@ type PageInsertRow struct {
 func (PageInsertRow) TableName() string { return PageTable }
 
 func ToPageInfo(row PageInfoRow) model.PageInfo {
+	var creatorInfo *model.UserInfo
+	if !row.CreatorCreatedAt.IsZero() {
+		info := model.NewUserInfo(
+			row.CreatorID,
+			row.CreatorName,
+			row.CreatorQQ,
+			row.CreatorAvatarOSSKey,
+			row.CreatorIsAvatarUploaded,
+			row.CreatorIsSuperAdmin,
+			row.CreatorCreatedAt,
+			row.CreatorUpdatedAt,
+		)
+		creatorInfo = &info
+	}
+
 	return model.NewPageInfo(
 		row.ID,
 		row.ChapterID,
 		row.Index,
 		row.OSSKey,
 		row.IsUploaded,
+		row.CreatorID,
+		creatorInfo,
 		row.TotalUnitCount,
 		row.TranslatedUnitCount,
 		row.ProofreadUnitCount,
@@ -96,7 +123,7 @@ func ToPageInfo(row PageInfoRow) model.PageInfo {
 	)
 }
 
-func ToChapterInfo(row ChapterInfoRow) model.ChapterDetail {
+func ToChapterInfo(row ChapterInfoRow) model.ChapterInfo {
 	return model.NewChapterDetail(
 		row.ID,
 		row.ComicID,
@@ -137,7 +164,7 @@ type ChapterWithInfoRow struct {
 	CreatorUpdatedAt        time.Time `gorm:"column:creator_updated_at"`
 }
 
-func ToChapterWithInfo(row ChapterWithInfoRow) model.ChapterDetail {
+func ToChapterWithInfo(row ChapterWithInfoRow) model.ChapterInfo {
 	chapter := ToChapterInfo(row.ChapterInfoRow)
 
 	if !row.CreatorCreatedAt.IsZero() {

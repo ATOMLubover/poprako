@@ -15,6 +15,9 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		chapter_id query string true "章节 ID"
+// @Param 		offset query int true "偏移量"
+// @Param 		limit query int true "每页数量"
+// @Param 		includes[] query []string false "嵌套信息（creator）"
 //
 // @Success 	200 {object} []value.PageInfo
 //
@@ -28,16 +31,16 @@ func ListChapterPages(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		chapterID := ctx.URLParam("chapter_id")
-		if chapterID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 chapter_id 查询参数")
+		var args value.ListChapterPageArgs
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
 		}
 
 		result, err := pageApplication.ListChapterPages(
 			buildTraceScope(ctx),
 			currentUserID,
-			chapterID,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

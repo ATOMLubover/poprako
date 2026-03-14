@@ -63,7 +63,9 @@ func (ic *InvitationCreation) setRoles(roles ...RoleFlag) {
 type InvitationInfo struct {
 	ID string
 
-	InvitorID      string
+	InvitorID string
+	// Invitor 仅在 includes 指定时填充。
+	Invitor        *UserInfo
 	InviteeQQ      string
 	TeamID         string
 	InvitationCode string

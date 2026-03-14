@@ -9,6 +9,9 @@ type PageInfo struct {
 	Index      int
 	OSSKey     string
 	IsUploaded bool
+	CreatorID  string
+	// Creator 仅在 includes 指定时填充。
+	Creator *UserInfo
 
 	TotalUnitCount      int
 	TranslatedUnitCount int
@@ -24,6 +27,8 @@ func NewPageInfo(
 	index int,
 	ossKey string,
 	isUploaded bool,
+	creatorID string,
+	creator *UserInfo,
 	totalUnitCount int,
 	translatedUnitCount int,
 	proofreadUnitCount int,
@@ -36,6 +41,8 @@ func NewPageInfo(
 		Index:               index,
 		OSSKey:              ossKey,
 		IsUploaded:          isUploaded,
+		CreatorID:           creatorID,
+		Creator:             creator,
 		TotalUnitCount:      totalUnitCount,
 		TranslatedUnitCount: translatedUnitCount,
 		ProofreadUnitCount:  proofreadUnitCount,

@@ -20,6 +20,8 @@ type ComicInfo struct {
 
 	ChapterCount int
 	CreatorID    string
+	// Creator 仅在 includes 指定时填充。
+	Creator *UserInfo
 
 	LastActiveAt time.Time
 
@@ -39,6 +41,7 @@ func NewComicInfo(
 	coverURL string,
 	chapterCount int,
 	creatorID string,
+	creator *UserInfo,
 	lastActiveAt time.Time,
 	createdAt time.Time,
 	updatedAt time.Time,
@@ -55,6 +58,7 @@ func NewComicInfo(
 		CoverURL:     coverURL,
 		ChapterCount: chapterCount,
 		CreatorID:    creatorID,
+		Creator:      creator,
 		LastActiveAt: lastActiveAt,
 		CreatedAt:    createdAt,
 		UpdatedAt:    updatedAt,

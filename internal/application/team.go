@@ -135,6 +135,11 @@ func (ta *teamApplication) ListTeams(
 ) ([]value.TeamInfo, error) {
 	const fn = "TeamApplication.ListTeams"
 
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
+	}
+
 	scope.
 		WithFields(
 			zap.String("current_user_id", currentUserID),
@@ -150,10 +155,12 @@ func (ta *teamApplication) ListTeams(
 		return nil, errors.New("权限不足")
 	}
 
-	includeSpec := service.ResolveTeamListIncludeSpec(args.Includes)
-
 	// 获取所有汉化组列表
-	teamList, err := ta.teamRepository.List(nil, query_option.UpdatedAtDesc(repository_infra.TeamTable))
+	teamList, err := ta.teamRepository.List(
+		nil,
+		query_option.UpdatedAtDesc(repository_infra.TeamTable),
+		query_option.Paginate(args.Offset, args.Limit),
+	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取汉化组列表失败", zap.Error(err))
 		return nil, errors.New("无法获取汉化组列表")
@@ -169,43 +176,6 @@ func (ta *teamApplication) ListTeams(
 		}
 
 		result[i] = value.NewTeamInfoFromModel(team, avatarURL)
-
-		if includeSpec.NeedMembers {
-			memberQueryOptions := []repository.QueryOption{
-				query_option.MemberQuery().FilterByTeamID(team.ID),
-				query_option.CreatedAtAsc(repository_infra.MemberTable),
-			}
-
-			if includeSpec.NeedMemberUser {
-				memberQueryOptions = append(memberQueryOptions, query_option.MemberQuery().IncludeUserInfo())
-			}
-
-			memberList, memberErr := ta.memberRepository.List(nil, memberQueryOptions...)
-			if memberErr != nil {
-				scope.Logger().Error(fn+": 获取团队成员失败", zap.Error(memberErr), zap.String("team_id", team.ID))
-				return nil, errors.New("无法获取汉化组列表")
-			}
-
-			memberValues := make([]value.MemberInfo, len(memberList))
-			for j, member := range memberList {
-				memberInfo := value.NewMemberInfoFromModel(member)
-
-				if includeSpec.NeedMemberUser && member.User != nil {
-					userAvatarURL, avatarErr := ta.ossClient.GenerateGetPresignedURL(member.User.AvatarOSSKey)
-					if avatarErr != nil {
-						scope.Logger().Error(fn+": 生成成员用户头像链接失败", zap.Error(avatarErr))
-						return nil, errors.New("无法获取汉化组列表")
-					}
-
-					userValueInfo := value.NewUserInfoFromModel(*member.User, userAvatarURL)
-					memberInfo.User = &userValueInfo
-				}
-
-				memberValues[j] = memberInfo
-			}
-
-			result[i].Members = memberValues
-		}
 	}
 
 	return result, nil
@@ -263,14 +233,17 @@ func (ta *teamApplication) ListMyTeams(
 ) ([]value.TeamInfo, error) {
 	const fn = "TeamApplication.ListMyTeams"
 
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
+	}
+
 	scope.
 		WithFields(
 			zap.String("current_user_id", currentUserID),
 		).
 		Logger().
 		Debug(fn + ": 被调用")
-
-	includeSpec := service.ResolveTeamListIncludeSpec(args.Includes)
 
 	// 获取当前用户的所有成员记录
 	currentUserMemberships, err := ta.memberRepository.List(
@@ -297,6 +270,7 @@ func (ta *teamApplication) ListMyTeams(
 		nil,
 		query_option.UpdatedAtDesc(repository_infra.TeamTable),
 		query_option.FilterByIDs(repository_infra.TeamTable, teamIDs),
+		query_option.Paginate(args.Offset, args.Limit),
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取汉化组列表失败", zap.Error(err))
@@ -313,43 +287,6 @@ func (ta *teamApplication) ListMyTeams(
 		}
 
 		result[i] = value.NewTeamInfoFromModel(team, avatarURL)
-
-		if includeSpec.NeedMembers {
-			memberQueryOptions := []repository.QueryOption{
-				query_option.MemberQuery().FilterByTeamID(team.ID),
-				query_option.CreatedAtAsc(repository_infra.MemberTable),
-			}
-
-			if includeSpec.NeedMemberUser {
-				memberQueryOptions = append(memberQueryOptions, query_option.MemberQuery().IncludeUserInfo())
-			}
-
-			memberList, memberErr := ta.memberRepository.List(nil, memberQueryOptions...)
-			if memberErr != nil {
-				scope.Logger().Error(fn+": 获取团队成员失败", zap.Error(memberErr), zap.String("team_id", team.ID))
-				return nil, errors.New("无法获取汉化组列表")
-			}
-
-			memberValues := make([]value.MemberInfo, len(memberList))
-			for j, member := range memberList {
-				memberInfo := value.NewMemberInfoFromModel(member)
-
-				if includeSpec.NeedMemberUser && member.User != nil {
-					userAvatarURL, avatarErr := ta.ossClient.GenerateGetPresignedURL(member.User.AvatarOSSKey)
-					if avatarErr != nil {
-						scope.Logger().Error(fn+": 生成成员用户头像链接失败", zap.Error(avatarErr))
-						return nil, errors.New("无法获取汉化组列表")
-					}
-
-					userValueInfo := value.NewUserInfoFromModel(*member.User, userAvatarURL)
-					memberInfo.User = &userValueInfo
-				}
-
-				memberValues[j] = memberInfo
-			}
-
-			result[i].Members = memberValues
-		}
 	}
 
 	return result, nil

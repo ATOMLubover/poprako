@@ -20,8 +20,9 @@ type ComicInfo struct {
 
 	CoverURL string `json:"cover_url"`
 
-	ChapterCount int    `json:"chapter_count"`
-	CreatorID    string `json:"creator_id"`
+	ChapterCount int       `json:"chapter_count"`
+	CreatorID    string    `json:"creator_id"`
+	CreatorInfo  *UserInfo `json:"creator_info,omitempty"`
 
 	LastActiveAt int64 `json:"last_active_at"`
 
@@ -48,6 +49,11 @@ func NewComicInfoFromModel(comicInfo model.ComicInfo) ComicInfo {
 	if comicInfo.Workset != nil {
 		worksetInfo := NewWorksetInfoFromModel(*comicInfo.Workset)
 		result.WorksetInfo = &worksetInfo
+	}
+
+	if comicInfo.Creator != nil {
+		creatorInfo := NewUserInfoFromModel(*comicInfo.Creator, "")
+		result.CreatorInfo = &creatorInfo
 	}
 
 	return result

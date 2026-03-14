@@ -103,6 +103,8 @@ func ListMembers(appState *state.AppState) iris.Handler {
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		"includes[]" query []string false "include 关联信息，可选值：team"
+// @Param 		offset query int true "偏移量"
+// @Param 		limit query int true "每页数量"
 //
 // @Success 	200 {object} []value.MemberInfo
 //

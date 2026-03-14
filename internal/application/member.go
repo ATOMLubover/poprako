@@ -213,6 +213,11 @@ func (ma *memberApplication) ListMyMembers(
 ) ([]value.MemberInfo, error) {
 	const fn = "MemberApplication.ListMyMembers"
 
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return nil, errors.New("参数错误: " + err.Error())
+	}
+
 	scope.
 		WithFields(
 			zap.String("current_user_id", currentUserID),
@@ -225,6 +230,7 @@ func (ma *memberApplication) ListMyMembers(
 	queryOptions := []repository.QueryOption{
 		query_option.MemberQuery().FilterByUserID(currentUserID),
 		query_option.CreatedAtDesc(repository_infra.MemberTable),
+		query_option.Paginate(args.Offset, args.Limit),
 	}
 
 	if includeSpec.NeedTeam {

@@ -142,6 +142,7 @@ func ToAssignmentWithChapterInfo(row AssignmentWithChapterAndComicRow) model.Ass
 		row.ComicCoverURL,
 		row.ComicChapterCount,
 		row.ComicCreatorID,
+		nil,
 		row.ComicLastActiveAt,
 		row.ComicCreatedAt,
 		row.ComicUpdatedAt,

@@ -77,13 +77,13 @@ func (r *pageRepository) Get(executor intf.Executor, options ...intf.QueryOption
 	return entity.ToPageInfo(row), nil
 }
 
-func (r *pageRepository) GetChapterByID(executor intf.Executor, chapterID string) (model.ChapterDetail, error) {
+func (r *pageRepository) GetChapterByID(executor intf.Executor, chapterID string) (model.ChapterInfo, error) {
 	executor = r.withTransaction(executor)
 	executor = executor.Table(entity.ChapterTable).Where("id = ?", chapterID)
 
 	var row entity.ChapterInfoRow
 	if err := executor.First(&row).Error; err != nil {
-		return model.ChapterDetail{}, err
+		return model.ChapterInfo{}, err
 	}
 
 	return entity.ToChapterInfo(row), nil

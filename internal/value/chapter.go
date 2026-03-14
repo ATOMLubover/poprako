@@ -39,32 +39,32 @@ type ChapterInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterInfo {
+func NewChapterInfoFromModel(chapterInfo model.ChapterInfo) ChapterInfo {
 	result := ChapterInfo{
-		ID:                  chapterDetail.ID,
-		ComicID:             chapterDetail.ComicID,
-		Index:               chapterDetail.Index,
-		ChapterNo:           chapterDetail.ChapterNo,
-		PageCount:           chapterDetail.PageCount,
-		TotalUnitCount:      chapterDetail.TotalUnitCount,
-		TranslatedUnitCount: chapterDetail.TranslatedUnitCount,
-		ProofreadUnitCount:  chapterDetail.ProofreadUnitCount,
-		UploadedAt:          util.ToUnixPtr(chapterDetail.UploadedAt),
-		TransalatingAt:      util.ToUnixPtr(chapterDetail.TransalatingAt),
-		TranslatedAt:        util.ToUnixPtr(chapterDetail.TranslatedAt),
-		ProofreadingAt:      util.ToUnixPtr(chapterDetail.ProofreadingAt),
-		ProofreadAt:         util.ToUnixPtr(chapterDetail.ProofreadAt),
-		TypesettingAt:       util.ToUnixPtr(chapterDetail.TypesettingAt),
-		TypesetAt:           util.ToUnixPtr(chapterDetail.TypesetAt),
-		ReviewedAt:          util.ToUnixPtr(chapterDetail.ReviewedAt),
-		PublishedAt:         util.ToUnixPtr(chapterDetail.PublishedAt),
-		CreatorID:           chapterDetail.CreatorID,
-		CreatedAt:           chapterDetail.CreatedAt.UnixMilli(),
-		UpdatedAt:           chapterDetail.UpdatedAt.UnixMilli(),
+		ID:                  chapterInfo.ID,
+		ComicID:             chapterInfo.ComicID,
+		Index:               chapterInfo.Index,
+		ChapterNo:           chapterInfo.ChapterNo,
+		PageCount:           chapterInfo.PageCount,
+		TotalUnitCount:      chapterInfo.TotalUnitCount,
+		TranslatedUnitCount: chapterInfo.TranslatedUnitCount,
+		ProofreadUnitCount:  chapterInfo.ProofreadUnitCount,
+		UploadedAt:          util.ToUnixPtr(chapterInfo.UploadedAt),
+		TransalatingAt:      util.ToUnixPtr(chapterInfo.TransalatingAt),
+		TranslatedAt:        util.ToUnixPtr(chapterInfo.TranslatedAt),
+		ProofreadingAt:      util.ToUnixPtr(chapterInfo.ProofreadingAt),
+		ProofreadAt:         util.ToUnixPtr(chapterInfo.ProofreadAt),
+		TypesettingAt:       util.ToUnixPtr(chapterInfo.TypesettingAt),
+		TypesetAt:           util.ToUnixPtr(chapterInfo.TypesetAt),
+		ReviewedAt:          util.ToUnixPtr(chapterInfo.ReviewedAt),
+		PublishedAt:         util.ToUnixPtr(chapterInfo.PublishedAt),
+		CreatorID:           chapterInfo.CreatorID,
+		CreatedAt:           chapterInfo.CreatedAt.UnixMilli(),
+		UpdatedAt:           chapterInfo.UpdatedAt.UnixMilli(),
 	}
 
-	if chapterDetail.Creator != nil {
-		creatorInfo := NewUserInfoFromModel(*chapterDetail.Creator, "")
+	if chapterInfo.Creator != nil {
+		creatorInfo := NewUserInfoFromModel(*chapterInfo.Creator, "")
 		result.CreatorInfo = &creatorInfo
 	}
 

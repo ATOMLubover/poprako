@@ -34,11 +34,20 @@ type ComicInfoRow struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at"`
 
 	// Workset 别名列（IncludeWorksetInfo() 时填充）
-	WorksetName      string    `gorm:"column:workset_name"`
-	WorksetIndex     int       `gorm:"column:workset_index"`
-	WorksetComicCount int      `gorm:"column:workset_comic_count"`
-	WorksetCreatedAt time.Time `gorm:"column:workset_created_at"`
-	WorksetUpdatedAt time.Time `gorm:"column:workset_updated_at"`
+	WorksetName       string    `gorm:"column:workset_name"`
+	WorksetIndex      int       `gorm:"column:workset_index"`
+	WorksetComicCount int       `gorm:"column:workset_comic_count"`
+	WorksetCreatedAt  time.Time `gorm:"column:workset_created_at"`
+	WorksetUpdatedAt  time.Time `gorm:"column:workset_updated_at"`
+
+	// Creator 别名列（IncludeCreatorInfo() 时填充）
+	CreatorName             string    `gorm:"column:creator_name"`
+	CreatorQQ               string    `gorm:"column:creator_qq"`
+	CreatorAvatarOSSKey     string    `gorm:"column:creator_avatar_oss_key"`
+	CreatorIsAvatarUploaded bool      `gorm:"column:creator_is_avatar_uploaded"`
+	CreatorIsSuperAdmin     bool      `gorm:"column:creator_is_super_admin"`
+	CreatorCreatedAt        time.Time `gorm:"column:creator_created_at"`
+	CreatorUpdatedAt        time.Time `gorm:"column:creator_updated_at"`
 }
 
 func (ComicInfoRow) TableName() string { return ComicTable }
@@ -74,6 +83,21 @@ func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 		worksetInfo = &info
 	}
 
+	var creatorInfo *model.UserInfo
+	if !row.CreatorCreatedAt.IsZero() {
+		info := model.NewUserInfo(
+			row.CreatorID,
+			row.CreatorName,
+			row.CreatorQQ,
+			row.CreatorAvatarOSSKey,
+			row.CreatorIsAvatarUploaded,
+			row.CreatorIsSuperAdmin,
+			row.CreatorCreatedAt,
+			row.CreatorUpdatedAt,
+		)
+		creatorInfo = &info
+	}
+
 	return model.NewComicInfo(
 		row.ID,
 		row.WorksetID,
@@ -86,6 +110,7 @@ func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 		row.CoverURL,
 		row.ChapterCount,
 		row.CreatorID,
+		creatorInfo,
 		row.LastActiveAt,
 		row.CreatedAt,
 		row.UpdatedAt,

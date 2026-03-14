@@ -7,7 +7,7 @@ type (
 	OnLoadMemberInfo     func(teamID string, userID string) (MemberInfo, error)
 	OnLoadAssignmentInfo func(comicID string, userID string) (AssignmentInfo, error)
 	OnLoadComicInfo      func(comicID string) (ComicInfo, error)
-	OnLoadChapterInfo    func(chapterID string) (ChapterDetail, error)
+	OnLoadChapterInfo    func(chapterID string) (ChapterInfo, error)
 	OnLoadPageInfo       func(pageID string) (PageInfo, error)
 )
 
@@ -122,7 +122,7 @@ func loadChapterInfoForCheck(
 	checkName string,
 	chapterID string,
 	onLoadChapterInfo OnLoadChapterInfo,
-) (ChapterDetail, bool) {
+) (ChapterInfo, bool) {
 	chapterInfo, err := onLoadChapterInfo(chapterID)
 	if err != nil {
 		zap.L().Error(
@@ -131,7 +131,7 @@ func loadChapterInfoForCheck(
 			zap.Error(err),
 		)
 
-		return ChapterDetail{}, false
+		return ChapterInfo{}, false
 	}
 
 	return chapterInfo, true

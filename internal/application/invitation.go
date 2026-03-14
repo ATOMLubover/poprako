@@ -97,12 +97,21 @@ func (ia invitationApplication) ListInvitations(
 		return nil, errors.New("没有权限查看邀请信息")
 	}
 
-	// 获取邀请信息列表
-	invitationList, err := ia.invitationRepository.List(
-		nil,
+	includeSpec := service.ResolveInvitationListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
 		query_option.InvitationQuery().FilterByTeamID(args.TeamID),
 		query_option.CreatedAtDesc(repository_infra.InvitationTable),
 		query_option.Paginate(args.Offset, args.Limit),
+	}
+	if includeSpec.NeedInvitor {
+		queryOptions = append(queryOptions, query_option.InvitationQuery().IncludeInvitorInfo())
+	}
+
+	// 获取邀请信息列表
+	invitationList, err := ia.invitationRepository.List(
+		nil,
+		queryOptions...,
 	)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取指定汉化组邀请信息列表失败", zap.Error(err))

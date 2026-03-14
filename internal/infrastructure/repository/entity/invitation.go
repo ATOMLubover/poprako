@@ -26,6 +26,15 @@ type InvitationInfoRow struct {
 
 	Pending bool `gorm:"column:pending"`
 
+	// Invitor 别名列（IncludeInvitorInfo() 时填充）
+	InvitorName             string    `gorm:"column:invitor_name"`
+	InvitorQQ               string    `gorm:"column:invitor_qq"`
+	InvitorAvatarOSSKey     string    `gorm:"column:invitor_avatar_oss_key"`
+	InvitorIsAvatarUploaded bool      `gorm:"column:invitor_is_avatar_uploaded"`
+	InvitorIsSuperAdmin     bool      `gorm:"column:invitor_is_super_admin"`
+	InvitorCreatedAt        time.Time `gorm:"column:invitor_created_at"`
+	InvitorUpdatedAt        time.Time `gorm:"column:invitor_updated_at"`
+
 	CreatedAt time.Time `gorm:"column:created_at"`
 }
 
@@ -53,7 +62,7 @@ type InvitationInsertRow struct {
 func (InvitationInsertRow) TableName() string { return InvitationTable }
 
 func ToInvitationInfo(row InvitationInfoRow) model.InvitationInfo {
-	return model.InvitationInfo{
+	result := model.InvitationInfo{
 		ID:              row.ID,
 		InvitorID:       row.InvitorID,
 		InviteeQQ:       row.InviteeQQ,
@@ -69,4 +78,20 @@ func ToInvitationInfo(row InvitationInfoRow) model.InvitationInfo {
 		ToBeAdmin:       row.ToBeAdmin,
 		CreatedAt:       row.CreatedAt,
 	}
+
+	if !row.InvitorCreatedAt.IsZero() {
+		invitorInfo := model.NewUserInfo(
+			row.InvitorID,
+			row.InvitorName,
+			row.InvitorQQ,
+			row.InvitorAvatarOSSKey,
+			row.InvitorIsAvatarUploaded,
+			row.InvitorIsSuperAdmin,
+			row.InvitorCreatedAt,
+			row.InvitorUpdatedAt,
+		)
+		result.Invitor = &invitorInfo
+	}
+
+	return result
 }
