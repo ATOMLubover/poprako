@@ -63,7 +63,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	teamParty := authorizedParty.Party("/teams")
 	{
 		teamParty.Post("/", CreateTeam(appState))
-		teamParty.Get("/", ListAllTeams(appState))
+		teamParty.Get("/", ListTeams(appState))
 		teamParty.Get("/mine", ListMyTeams(appState))
 		teamParty.Post("/{team_id}/avatar", ReserveTeamAvatar(appState))
 		teamParty.Post("/{team_id}/avatar/confirm", ConfirmTeamAvatarUploaded(appState))
@@ -94,7 +94,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	// 漫画相关路由
 	comicParty := authorizedParty.Party("/comics")
 	{
-		comicParty.Get("/", ListTeamComics(appState))
+		comicParty.Get("/", ListComics(appState))
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))

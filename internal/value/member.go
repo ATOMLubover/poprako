@@ -5,8 +5,6 @@ import (
 
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/util"
-
-	"go.uber.org/zap"
 )
 
 type UpdateMemberRoleArgs struct {
@@ -31,35 +29,67 @@ func (uma *UpdateMemberRoleArgs) Validate() error {
 	return nil
 }
 
-// MemberProfile 不仅包含成员的汉化组信息，
-// 还包含成员的用户信息（如昵称、头像等）
-type MemberProfile struct {
-	UserInfo
+// MemberInfo 是成员的统一展示模型，User 和 Team 字段均为可选，仅在 includes 指定时填充。
+type MemberInfo struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+	TeamID string `json:"team_id"`
+
+	User *UserInfo `json:"user,omitempty"`
+	Team *TeamInfo `json:"team,omitempty"`
+
 	Roles model.RoleMask `json:"roles"`
+
+	AssignedRawProviderAt *int64 `json:"assigned_raw_provider_at,omitempty"`
+	AssignedTranslatorAt  *int64 `json:"assigned_translator_at,omitempty"`
+	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at,omitempty"`
+	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at,omitempty"`
+	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at,omitempty"`
+	AssignedPublisherAt   *int64 `json:"assigned_publisher_at,omitempty"`
+	AssignedAdminAt       *int64 `json:"assigned_admin_at,omitempty"`
+
+	CreatedAt int64 `json:"created_at"`
+	UpdatedAt int64 `json:"updated_at"`
 }
 
-func NewMemberProfile(userInfo UserInfo, roles ...model.RoleFlag) MemberProfile {
-	return MemberProfile{
-		UserInfo: userInfo,
-		Roles:    model.MaskRoles(roles),
+func NewMemberInfoFromModel(m model.MemberWithInfo) MemberInfo {
+	result := MemberInfo{
+		ID:                    m.ID,
+		UserID:                m.UserID,
+		TeamID:                m.TeamID,
+		Roles:                 model.MaskRoles(m.Roles()),
+		AssignedRawProviderAt: util.ToUnixPtr(m.AssignedRawProviderAt),
+		AssignedTranslatorAt:  util.ToUnixPtr(m.AssignedTranslatorAt),
+		AssignedProofreaderAt: util.ToUnixPtr(m.AssignedProofreaderAt),
+		AssignedTypesetterAt:  util.ToUnixPtr(m.AssignedTypesetterAt),
+		AssignedReviewerAt:    util.ToUnixPtr(m.AssignedReviewerAt),
+		AssignedPublisherAt:   util.ToUnixPtr(m.AssignedPublisherAt),
+		AssignedAdminAt:       util.ToUnixPtr(m.AssignedAdminAt),
+		CreatedAt:             m.CreatedAt.UnixMilli(),
+		UpdatedAt:             m.UpdatedAt.UnixMilli(),
 	}
-}
 
-// FIXME: 有没有更好的方法自动生成 avatarURL
-func NewMemberProfileFromModel(mp model.MemberWithUserInfo, avatarURL string) MemberProfile {
-	if mp.UserInfo.ID == "" {
-		zap.L().Warn("NewMemberProfileFromModel: mp 为空或用户信息为空")
-		return MemberProfile{}
+	if m.User != nil {
+		userInfo := NewUserInfoFromModel(*m.User, "")
+		result.User = &userInfo
 	}
 
-	userInfo := NewUserInfoFromModel(mp.UserInfo, avatarURL)
+	if m.Team != nil {
+		teamInfo := NewTeamInfoFromModel(*m.Team, "")
+		result.Team = &teamInfo
+	}
 
-	return NewMemberProfile(userInfo, mp.Roles()...)
+	return result
 }
 
 type ListTeamMemberArgs struct {
-	TeamID string `url:"team_id"`
+	TeamID   string   `url:"team_id"`
+	Includes []string `url:"includes[]"`
 	PaginationParams
+}
+
+type ListMyMemberArgs struct {
+	Includes []string `url:"includes[]"`
 }
 
 func (ltma *ListTeamMemberArgs) Validate() error {
@@ -130,34 +160,4 @@ func (jta *JoinTeamArgs) Validate() error {
 	return nil
 }
 
-type MemberWithTeamInfo struct {
-	ID string `json:"id"`
 
-	UserID string   `json:"user_id"`
-	Team   TeamInfo `json:"team"`
-
-	AssignedRawProviderAt *int64 `json:"assigned_raw_provider_at,omitempty"`
-	AssignedTranslatorAt  *int64 `json:"assigned_translator_at,omitempty"`
-	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at,omitempty"`
-	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at,omitempty"`
-	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at,omitempty"`
-	AssignedPublishererAt *int64 `json:"assigned_publisher_at,omitempty"`
-	AssignedAdminAt       *int64 `json:"assigned_admin_at,omitempty"`
-}
-
-func NewMemberWithTeamInfoFromModel(m model.MemberWithTeamInfo, avatarURL string) MemberWithTeamInfo {
-	return MemberWithTeamInfo{
-		ID: m.ID,
-
-		UserID: m.UserID,
-		Team:   NewTeamInfoFromModel(m.Team, avatarURL),
-
-		AssignedRawProviderAt: util.ToUnixPtr(m.AssignedRawProviderAt),
-		AssignedTranslatorAt:  util.ToUnixPtr(m.AssignedTranslatorAt),
-		AssignedProofreaderAt: util.ToUnixPtr(m.AssignedProofreaderAt),
-		AssignedTypesetterAt:  util.ToUnixPtr(m.AssignedTypesetterAt),
-		AssignedReviewerAt:    util.ToUnixPtr(m.AssignedReviewerAt),
-		AssignedPublishererAt: util.ToUnixPtr(m.AssignedPublisherAt),
-		AssignedAdminAt:       util.ToUnixPtr(m.AssignedAdminAt),
-	}
-}

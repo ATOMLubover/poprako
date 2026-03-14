@@ -10,6 +10,9 @@ type TeamInfo struct {
 	AvatarOSSKey     string
 	IsAvatarUploaded bool
 
+	// Members 仅在 include 指定时填充。
+	Members []MemberWithInfo
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

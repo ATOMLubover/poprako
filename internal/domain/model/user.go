@@ -14,8 +14,33 @@ type UserInfo struct {
 
 	IsSuperAdmin bool
 
+	// Members 仅在 include 指定时填充。
+	Members []MemberWithInfo
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+func NewUserInfo(
+	id string,
+	name string,
+	qq string,
+	avatarOSSKey string,
+	isAvatarUploaded bool,
+	isSuperAdmin bool,
+	createdAt time.Time,
+	updatedAt time.Time,
+) UserInfo {
+	return UserInfo{
+		ID:               id,
+		Name:             name,
+		QQ:               qq,
+		AvatarOSSKey:     avatarOSSKey,
+		IsAvatarUploaded: isAvatarUploaded,
+		IsSuperAdmin:     isSuperAdmin,
+		CreatedAt:        createdAt,
+		UpdatedAt:        updatedAt,
+	}
 }
 
 // UserCredentials 仅用于登录时校验，不对外暴露完整用户信息

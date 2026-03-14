@@ -102,6 +102,9 @@ type UserInfo struct {
 
 	IsSuperAdmin bool `json:"is_super_admin"`
 
+	// Members 仅在 include 指定时填充。
+	Members []MemberInfo `json:"members,omitempty"`
+
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
 }
@@ -132,6 +135,14 @@ func NewReserveUserAvatarResult(putURL string) ReserveUserAvatarResult {
 	return ReserveUserAvatarResult{
 		PutURL: putURL,
 	}
+}
+
+type GetUserArgs struct {
+	Includes []string `url:"includes[]"`
+}
+
+type GetMyUserArgs struct {
+	Includes []string `url:"includes[]"`
 }
 
 /* type ListUserArgs struct {

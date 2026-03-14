@@ -7,6 +7,7 @@ import (
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
+	domain_service "labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -24,12 +25,13 @@ type MemberApplication interface {
 	ListMyMembers(
 		scope util.TraceScope,
 		currentUserID string,
-	) ([]value.MemberWithTeamInfo, error)
+		args value.ListMyMemberArgs,
+	) ([]value.MemberInfo, error)
 	ListMembers(
 		scope util.TraceScope,
 		currentUserID string,
 		args value.ListTeamMemberArgs,
-	) ([]value.MemberProfile, error)
+	) ([]value.MemberInfo, error)
 	UpdateMemberRole(
 		scope util.TraceScope,
 		currentUserID string,
@@ -139,7 +141,7 @@ func (ma *memberApplication) ListMembers(
 	scope util.TraceScope,
 	currentUserID string,
 	args value.ListTeamMemberArgs,
-) ([]value.MemberProfile, error) {
+) ([]value.MemberInfo, error) {
 	const fn = "MemberApplication.ListMembers"
 
 	if err := args.Validate(); err != nil {
@@ -165,28 +167,40 @@ func (ma *memberApplication) ListMembers(
 		return nil, errors.New("权限不足")
 	}
 
-	// 获取成员列表（含用户信息）
-	memberList, err := ma.memberRepository.ListProfiles(
-		nil,
+	includeSpec := domain_service.ResolveMemberListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
 		query_option.CreatedAtAsc(repository_infra.MemberTable),
 		query_option.MemberQuery().FilterByTeamID(args.TeamID),
-		query_option.Paginate(args.Offset, args.Limit),
-	)
+	}
+
+	if includeSpec.NeedUser {
+		queryOptions = append(queryOptions, query_option.MemberQuery().IncludeUserInfo())
+	}
+
+	queryOptions = append(queryOptions, query_option.Paginate(args.Offset, args.Limit))
+
+	memberList, err := ma.memberRepository.List(nil, queryOptions...)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取成员列表失败", zap.Error(err))
 		return nil, errors.New("无法获取成员列表")
 	}
 
-	result := make([]value.MemberProfile, len(memberList))
+	result := make([]value.MemberInfo, len(memberList))
 
-	for i := range memberList {
-		avatarURL, err := ma.ossClient.GenerateGetPresignedURL(memberList[i].UserInfo.AvatarOSSKey)
-		if err != nil {
-			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
-			return nil, errors.New("无法获取成员列表")
+	for i, member := range memberList {
+		result[i] = value.NewMemberInfoFromModel(member)
+
+		if includeSpec.NeedUser && member.User != nil {
+			avatarURL, avatarErr := ma.ossClient.GenerateGetPresignedURL(member.User.AvatarOSSKey)
+			if avatarErr != nil {
+				scope.Logger().Error(fn+": 生成用户头像链接失败", zap.Error(avatarErr))
+				return nil, errors.New("无法获取成员列表")
+			}
+
+			userInfo := value.NewUserInfoFromModel(*member.User, avatarURL)
+			result[i].User = &userInfo
 		}
-
-		result[i] = value.NewMemberProfileFromModel(memberList[i], avatarURL)
 	}
 
 	return result, nil
@@ -195,7 +209,8 @@ func (ma *memberApplication) ListMembers(
 func (ma *memberApplication) ListMyMembers(
 	scope util.TraceScope,
 	currentUserID string,
-) ([]value.MemberWithTeamInfo, error) {
+	args value.ListMyMemberArgs,
+) ([]value.MemberInfo, error) {
 	const fn = "MemberApplication.ListMyMembers"
 
 	scope.
@@ -205,25 +220,38 @@ func (ma *memberApplication) ListMyMembers(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	memberList, err := ma.memberRepository.ListWithTeamInfo(
-		nil,
+	includeSpec := domain_service.ResolveMyMemberListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
 		query_option.MemberQuery().FilterByUserID(currentUserID),
 		query_option.CreatedAtDesc(repository_infra.MemberTable),
-	)
+	}
+
+	if includeSpec.NeedTeam {
+		queryOptions = append(queryOptions, query_option.MemberQuery().IncludeTeamInfo())
+	}
+
+	memberList, err := ma.memberRepository.List(nil, queryOptions...)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取我的成员列表失败", zap.Error(err))
 		return nil, errors.New("无法获取我的成员列表")
 	}
 
-	result := make([]value.MemberWithTeamInfo, len(memberList))
-	for i := range memberList {
-		avatarURL, err := ma.ossClient.GenerateGetPresignedURL(memberList[i].Team.AvatarOSSKey)
-		if err != nil {
-			scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
-			return nil, errors.New("无法获取我的成员列表")
-		}
+	result := make([]value.MemberInfo, len(memberList))
 
-		result[i] = value.NewMemberWithTeamInfoFromModel(memberList[i], avatarURL)
+	for i, member := range memberList {
+		result[i] = value.NewMemberInfoFromModel(member)
+
+		if includeSpec.NeedTeam && member.Team != nil {
+			avatarURL, avatarErr := ma.ossClient.GenerateGetPresignedURL(member.Team.AvatarOSSKey)
+			if avatarErr != nil {
+				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(avatarErr))
+				return nil, errors.New("无法获取我的成员列表")
+			}
+
+			teamInfo := value.NewTeamInfoFromModel(*member.Team, avatarURL)
+			result[i].Team = &teamInfo
+		}
 	}
 
 	return result, nil

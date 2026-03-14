@@ -7,21 +7,22 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// ListTeamComics godoc
-// @Summary 	获取指定汉化组的漫画列表（已测试）
-// @Description 获取指定汉化组的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+// ListComics godoc
+// @Summary 		获取指定工作集的漫画列表
+// @Description 获取指定工作集的漫画列表，支持分页和 includes 嵌套信息查询
 //
 // @Tags 		comic
 // @Security 	ApiKeyAuth
 // @Produce 	json
-// @Param 		team_id query string true "汉化组 ID"
+// @Param 		workset_id query string true "工作集 ID"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
+// @Param 		includes[] query []string false "嵌套信息（workset）"
 //
 // @Success 	200 {object} []value.ComicInfo
 //
 // @Router 		/comics [get]
-func ListTeamComics(appState *state.AppState) iris.Handler {
+func ListComics(appState *state.AppState) iris.Handler {
 	comicApplication := appState.ComicApplication
 
 	return func(ctx iris.Context) {
@@ -30,13 +31,13 @@ func ListTeamComics(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		var args value.ListTeamComicArgs
+		var args value.ListComicArgs
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
 		}
 
-		result, err := comicApplication.ListTeamComics(
+		result, err := comicApplication.ListComics(
 			buildTraceScope(ctx),
 			currentUserID,
 			args,

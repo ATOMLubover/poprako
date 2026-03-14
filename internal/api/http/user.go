@@ -15,6 +15,7 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		user_id path string true "用户 ID"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：member,member.team"
 //
 // @Success 	200 {object} value.UserInfo
 //
@@ -30,8 +31,14 @@ func GetUserByID(appState *state.AppState) iris.Handler {
 			return
 		}
 
+		var args value.GetUserArgs
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
+			return
+		}
+
 		// 调用 UserApplication 获取用户信息
-		result, err := userApplication.GetUser(buildTraceScope(ctx), userID)
+		result, err := userApplication.GetUser(buildTraceScope(ctx), userID, args)
 		if err != nil {
 			reject(ctx, iris.StatusInternalServerError, err.Error())
 			return
@@ -261,6 +268,7 @@ func RemoveUserByID(appState *state.AppState) iris.Handler {
 // @Tags    user
 // @Security    ApiKeyAuth
 // @Produce json
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：member,member.team"
 //
 // @Success 200 {object} value.UserInfo
 //
@@ -274,7 +282,13 @@ func GetMyUser(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := userApplication.GetMyUser(buildTraceScope(ctx), currentUserID)
+		var args value.GetMyUserArgs
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
+			return
+		}
+
+		result, err := userApplication.GetMyUser(buildTraceScope(ctx), currentUserID, args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return

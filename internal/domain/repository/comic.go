@@ -7,7 +7,7 @@ type ComicRepository interface {
 	List(executor Executor, options ...QueryOption) ([]model.ComicInfo, error)
 	Get(executor Executor, options ...QueryOption) (model.ComicInfo, error)
 	Count(executor Executor, options ...QueryOption) (int64, error)
-	LockByTeamID(executor Executor, teamID string) error
+	LockByWorksetID(executor Executor, worksetID string) error
 	Create(executor Executor, creation model.ComicCreation) (string, error)
 	Update(executor Executor, update model.ComicUpdate) error
 	Delete(executor Executor, id string) error

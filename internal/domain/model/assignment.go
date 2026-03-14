@@ -12,6 +12,7 @@ type AssignmentInfo struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 
@@ -27,6 +28,7 @@ func NewAssignmentInfo(
 	assignedTranslatorAt *time.Time,
 	assignedProofreaderAt *time.Time,
 	assignedTypesetterAt *time.Time,
+	assignedRedrawerAt *time.Time,
 	assignedReviewerAt *time.Time,
 	assignedPublisherAt *time.Time,
 	createdAt time.Time,
@@ -40,6 +42,7 @@ func NewAssignmentInfo(
 		AssignedTranslatorAt:  assignedTranslatorAt,
 		AssignedProofreaderAt: assignedProofreaderAt,
 		AssignedTypesetterAt:  assignedTypesetterAt,
+		AssignedRedrawerAt:    assignedRedrawerAt,
 		AssignedReviewerAt:    assignedReviewerAt,
 		AssignedPublisherAt:   assignedPublisherAt,
 		CreatedAt:             createdAt,
@@ -112,6 +115,7 @@ type AssignmentCreation struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 }
@@ -134,6 +138,7 @@ func NewAssignmentCreation(chapterID, userID string, roles RoleMask) AssignmentC
 		AssignedTranslatorAt:  toAssign(RoleTranslator),
 		AssignedProofreaderAt: toAssign(RoleProofreader),
 		AssignedTypesetterAt:  toAssign(RoleTypesetter),
+		AssignedRedrawerAt:    nil,
 		AssignedReviewerAt:    toAssign(RoleReviewer),
 		AssignedPublisherAt:   toAssign(RolePublisher),
 	}
@@ -147,6 +152,7 @@ type AssignmentUpdate struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 }
@@ -172,6 +178,7 @@ func NewAssignmentUpdate(id string, current AssignmentInfo, targetRoles RoleMask
 		AssignedTranslatorAt:  resolveAt(current.AssignedTranslatorAt, RoleTranslator),
 		AssignedProofreaderAt: resolveAt(current.AssignedProofreaderAt, RoleProofreader),
 		AssignedTypesetterAt:  resolveAt(current.AssignedTypesetterAt, RoleTypesetter),
+		AssignedRedrawerAt:    current.AssignedRedrawerAt,
 		AssignedReviewerAt:    resolveAt(current.AssignedReviewerAt, RoleReviewer),
 		AssignedPublisherAt:   resolveAt(current.AssignedPublisherAt, RolePublisher),
 	}
@@ -187,6 +194,7 @@ type AssignmentWithUserInfo struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 
@@ -202,6 +210,7 @@ func NewAssignmentWithUserInfo(
 	assignedTranslatorAt *time.Time,
 	assignedProofreaderAt *time.Time,
 	assignedTypesetterAt *time.Time,
+	assignedRedrawerAt *time.Time,
 	assignedReviewerAt *time.Time,
 	assignedPublisherAt *time.Time,
 	createdAt time.Time,
@@ -215,6 +224,7 @@ func NewAssignmentWithUserInfo(
 		AssignedTranslatorAt:  assignedTranslatorAt,
 		AssignedProofreaderAt: assignedProofreaderAt,
 		AssignedTypesetterAt:  assignedTypesetterAt,
+		AssignedRedrawerAt:    assignedRedrawerAt,
 		AssignedReviewerAt:    assignedReviewerAt,
 		AssignedPublisherAt:   assignedPublisherAt,
 		CreatedAt:             createdAt,
@@ -255,6 +265,7 @@ type AssignmentWithChapterInfo struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 
@@ -270,6 +281,7 @@ func NewAssignmentWithChapterInfo(
 	assignedTranslatorAt *time.Time,
 	assignedProofreaderAt *time.Time,
 	assignedTypesetterAt *time.Time,
+	assignedRedrawerAt *time.Time,
 	assignedReviewerAt *time.Time,
 	assignedPublisherAt *time.Time,
 	createdAt time.Time,
@@ -283,6 +295,7 @@ func NewAssignmentWithChapterInfo(
 		AssignedTranslatorAt:  assignedTranslatorAt,
 		AssignedProofreaderAt: assignedProofreaderAt,
 		AssignedTypesetterAt:  assignedTypesetterAt,
+		AssignedRedrawerAt:    assignedRedrawerAt,
 		AssignedReviewerAt:    assignedReviewerAt,
 		AssignedPublisherAt:   assignedPublisherAt,
 		CreatedAt:             createdAt,

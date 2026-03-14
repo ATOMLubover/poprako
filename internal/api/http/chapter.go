@@ -9,7 +9,7 @@ import (
 
 // ListComicChapters godoc
 // @Summary 	获取漫画章节列表
-// @Description 获取指定漫画的章节列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+// @Description 获取指定漫画的章节列表，支持分页和 includes 嵌套信息查询
 //
 // @Tags 		chapter
 // @Security 	ApiKeyAuth
@@ -17,8 +17,9 @@ import (
 // @Param 		comic_id query string true "漫画 ID"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
+// @Param 		includes[] query []string false "嵌套信息（creator）"
 //
-// @Success 	200 {object} []value.ChapterDetail
+// @Success 	200 {object} []value.ChapterInfo
 //
 // @Router 		/chapters [get]
 func ListComicChapters(appState *state.AppState) iris.Handler {

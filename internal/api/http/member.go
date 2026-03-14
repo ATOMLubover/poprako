@@ -58,10 +58,11 @@ func CreateMember(appState *state.AppState) iris.Handler {
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：user"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 //
-// @Success 	200 {object} []value.MemberProfile
+// @Success 	200 {object} []value.MemberInfo
 //
 // @Router 		/members [get]
 func ListMembers(appState *state.AppState) iris.Handler {
@@ -101,8 +102,9 @@ func ListMembers(appState *state.AppState) iris.Handler {
 // @Tags 		member
 // @Security 	ApiKeyAuth
 // @Produce 	json
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：team"
 //
-// @Success 	200 {object} []value.MemberWithTeamInfo
+// @Success 	200 {object} []value.MemberInfo
 //
 // @Router 		/members/mine [get]
 func ListMyMembers(appState *state.AppState) iris.Handler {
@@ -114,7 +116,14 @@ func ListMyMembers(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := memberApplication.ListMyMembers(buildTraceScope(ctx), currentUserID)
+		var args value.ListMyMemberArgs
+
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
+			return
+		}
+
+		result, err := memberApplication.ListMyMembers(buildTraceScope(ctx), currentUserID, args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return

@@ -9,6 +9,7 @@ type GetIncludeOption string
 // 注意，应该根据业务，允许嵌套，比如 Assignment.Chapter.Comic
 const (
 	IncludeUser    GetIncludeOption = "user"
+	IncludeMember  GetIncludeOption = "member"
 	IncludeCreator GetIncludeOption = "creator"
 	IncludeTeam    GetIncludeOption = "team"
 	IncludeWorkset GetIncludeOption = "workset"

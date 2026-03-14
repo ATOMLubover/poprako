@@ -6,6 +6,7 @@ import (
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
+	"labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -15,10 +16,10 @@ import (
 )
 
 type ComicApplication interface {
-	ListTeamComics(
+	ListComics(
 		scope util.TraceScope,
 		currentUserID string,
-		args value.ListTeamComicArgs,
+		args value.ListComicArgs,
 	) ([]value.ComicInfo, error)
 	CreateComic(
 		scope util.TraceScope,
@@ -38,40 +39,45 @@ type ComicApplication interface {
 }
 
 type comicApplication struct {
-	userRepository   repository.UserRepository
-	memberRepository repository.MemberRepository
-	comicRepository  repository.ComicRepository
+	userRepository    repository.UserRepository
+	memberRepository  repository.MemberRepository
+	worksetRepository repository.WorksetRepository
+	comicRepository   repository.ComicRepository
 }
 
 func NewComicApplication(
 	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
+	worksetRepository repository.WorksetRepository,
 	comicRepository repository.ComicRepository,
 ) ComicApplication {
 	if userRepository == nil ||
 		memberRepository == nil ||
+		worksetRepository == nil ||
 		comicRepository == nil {
 		zap.L().Panic(
 			"NewComicApplication: 依赖项不能为空",
 			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
+			zap.Bool("worksetRepository_nil", worksetRepository == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
 		)
 	}
 
 	return &comicApplication{
-		userRepository:   userRepository,
-		memberRepository: memberRepository,
-		comicRepository:  comicRepository,
+		userRepository:    userRepository,
+		memberRepository:  memberRepository,
+		worksetRepository: worksetRepository,
+		comicRepository:   comicRepository,
 	}
 }
 
-func (ca *comicApplication) ListTeamComics(
+func (ca *comicApplication) ListComics(
 	scope util.TraceScope,
 	currentUserID string,
-	args value.ListTeamComicArgs,
+	args value.ListComicArgs,
 ) ([]value.ComicInfo, error) {
-	const fn = "ComicApplication.ListTeamComics"
+	const fn = "ComicApplication.ListComics"
 
 	if err := args.Validate(); err != nil {
 		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
@@ -86,23 +92,39 @@ func (ca *comicApplication) ListTeamComics(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	// 鉴权：检查当前用户在指定的汉化组是否有权限查看漫画列表
+	// 通过工作集获取汉化组 ID，用于鉴权
+	targetWorkset, err := ca.worksetRepository.Get(
+		nil,
+		query_option.FilterByID(repository_infra.WorksetTable, args.WorksetID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取工作集信息失败", zap.Error(err))
+		return nil, errors.New("无法获取工作集信息")
+	}
+
+	// 鉴权：检查当前用户在工作集所属汉化组是否有权限查看漫画列表
 	if !model.PermComicList().Check(
 		currentUserID,
-		args.TeamID,
+		targetWorkset.TeamID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return nil, errors.New("权限不足")
 	}
 
-	// 获取漫画列表
-	comicList, err := ca.comicRepository.List(
-		nil,
-		query_option.ComicQuery().FilterByTeamID(args.TeamID),
+	includeSpec := service.ResolveComicListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
+		query_option.ComicQuery().FilterByWorksetID(args.WorksetID),
 		query_option.ComicQuery().OrderByLastActiveAtDesc(),
 		query_option.Paginate(args.Offset, args.Limit),
-	)
+	}
+	if includeSpec.NeedWorkset {
+		queryOptions = append(queryOptions, query_option.ComicQuery().IncludeWorksetInfo())
+	}
+
+	// 获取漫画列表
+	comicList, err := ca.comicRepository.List(nil, queryOptions...)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取漫画列表失败", zap.Error(err))
 		return nil, errors.New("无法获取漫画列表")
@@ -136,10 +158,20 @@ func (ca *comicApplication) CreateComic(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	// 鉴权：检查当前用户在指定汉化组是否有创建漫画权限
+	// 通过工作集获取汉化组 ID，用于鉴权
+	targetWorkset, err := ca.worksetRepository.Get(
+		nil,
+		query_option.FilterByID(repository_infra.WorksetTable, args.WorksetID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取工作集信息失败", zap.Error(err))
+		return value.CreateComicResult{}, errors.New("无法获取工作集信息")
+	}
+
+	// 鉴权：检查当前用户在工作集所属汉化组是否有创建漫画权限
 	if !model.PermComicCreate().Check(
 		currentUserID,
-		args.TeamID,
+		targetWorkset.TeamID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
@@ -162,8 +194,8 @@ func (ca *comicApplication) CreateComic(
 		}
 	}()
 
-	// FIXME：其实都没必要 lock，因为数据库有 UNIQUE (team_id, index) 约束了，并发创建漫画时必然有一个会失败
-	transactionErr = ca.comicRepository.LockByTeamID(transactionExecutor, args.TeamID)
+	// FIXME：其实都没必要 lock，因为数据库有 UNIQUE (workset_id, index) 约束了，并发创建漫画时必然有一个会失败
+	transactionErr = ca.comicRepository.LockByWorksetID(transactionExecutor, args.WorksetID)
 	if transactionErr != nil {
 		scope.Logger().Error(fn+": 锁定漫画记录失败", zap.Error(transactionErr))
 		return value.CreateComicResult{}, errors.New("创建漫画失败")
@@ -171,7 +203,7 @@ func (ca *comicApplication) CreateComic(
 
 	comicCount, transactionErr := ca.comicRepository.Count(
 		transactionExecutor,
-		query_option.ComicQuery().FilterByTeamID(args.TeamID),
+		query_option.ComicQuery().FilterByWorksetID(args.WorksetID),
 	)
 	if transactionErr != nil {
 		scope.Logger().Error(fn+": 统计漫画数量失败", zap.Error(transactionErr))
@@ -180,7 +212,7 @@ func (ca *comicApplication) CreateComic(
 
 	// 创建漫画
 	comicCreation := model.NewComicCreation(
-		args.TeamID,
+		args.WorksetID,
 		// 因为是 0-based index，所以新漫画的 index 就是当前漫画数量
 		int(comicCount),
 		args.Title,

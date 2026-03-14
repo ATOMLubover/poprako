@@ -17,10 +17,10 @@ func (comicQuery) FilterByCreatorID(creatorID string) intf.QueryOption {
 	}
 }
 
-// FilterByTeamID 精确匹配漫画所属汉化组 ID
-func (comicQuery) FilterByTeamID(teamID string) intf.QueryOption {
+// FilterByWorksetID 精确匹配漫画所属工作集 ID
+func (comicQuery) FilterByWorksetID(worksetID string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
-		return executor.Where("comic_table.team_id = ?", teamID)
+		return executor.Where("comic_table.workset_id = ?", worksetID)
 	}
 }
 
@@ -28,5 +28,19 @@ func (comicQuery) FilterByTeamID(teamID string) intf.QueryOption {
 func (comicQuery) OrderByLastActiveAtDesc() intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
 		return executor.Order("comic_table.last_active_at DESC")
+	}
+}
+
+// IncludeWorksetInfo 聚合查询 comic 所属工作集字段。
+func (comicQuery) IncludeWorksetInfo() intf.QueryOption {
+	return func(executor intf.Executor) intf.Executor {
+		return executor.Select(
+			"comic_table.*, workset_table.team_id AS team_id, " +
+				"workset_table.name AS workset_name, " +
+				"workset_table.index AS workset_index, " +
+				"workset_table.comic_count AS workset_comic_count, " +
+				"workset_table.created_at AS workset_created_at, " +
+				"workset_table.updated_at AS workset_updated_at",
+		)
 	}
 }

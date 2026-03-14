@@ -45,90 +45,6 @@ func NewMemberCreation(userID, teamID string, roles ...RoleFlag) MemberCreation 
 	return mc
 }
 
-type MemberWithUserInfo struct {
-	ID string
-
-	UserInfo UserInfo
-
-	TeamID string
-
-	AssignedRawProviderAt *time.Time
-	AssignedTranslatorAt  *time.Time
-	AssignedProofreaderAt *time.Time
-	AssignedTypesetterAt  *time.Time
-	AssignedReviewerAt    *time.Time
-	AssignedPublishererAt *time.Time
-	AssignedAdminAt       *time.Time
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func (mp *MemberWithUserInfo) HasAnyRole(roles ...RoleFlag) bool {
-	for _, role := range roles {
-		switch role {
-		case RoleRawProvider:
-			if mp.AssignedRawProviderAt != nil {
-				return true
-			}
-		case RoleTranslator:
-			if mp.AssignedTranslatorAt != nil {
-				return true
-			}
-		case RoleProofreader:
-			if mp.AssignedProofreaderAt != nil {
-				return true
-			}
-		case RoleTypesetter:
-			if mp.AssignedTypesetterAt != nil {
-				return true
-			}
-		case RoleReviewer:
-			if mp.AssignedReviewerAt != nil {
-				return true
-			}
-		case RolePublisher:
-			if mp.AssignedPublishererAt != nil {
-				return true
-			}
-		case RoleAdmin:
-			if mp.AssignedAdminAt != nil {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func (mp *MemberWithUserInfo) Roles() []RoleFlag {
-	roles := make([]RoleFlag, 0)
-
-	if mp.AssignedRawProviderAt != nil {
-		roles = append(roles, RoleRawProvider)
-	}
-	if mp.AssignedTranslatorAt != nil {
-		roles = append(roles, RoleTranslator)
-	}
-	if mp.AssignedProofreaderAt != nil {
-		roles = append(roles, RoleProofreader)
-	}
-	if mp.AssignedTypesetterAt != nil {
-		roles = append(roles, RoleTypesetter)
-	}
-	if mp.AssignedReviewerAt != nil {
-		roles = append(roles, RoleReviewer)
-	}
-	if mp.AssignedPublishererAt != nil {
-		roles = append(roles, RolePublisher)
-	}
-	if mp.AssignedAdminAt != nil {
-		roles = append(roles, RoleAdmin)
-	}
-
-	return roles
-}
-
 type MemberInfo struct {
 	ID string
 
@@ -204,11 +120,15 @@ func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 	return false
 }
 
-type MemberWithTeamInfo struct {
-	ID string
-
+// MemberWithInfo 是统一的成员详情模型，替代分裂的 MemberWithUserInfo 和 MemberWithTeamInfo。
+// User 和 Team 字段均为可选，仅在 includes 指定时填充。
+type MemberWithInfo struct {
+	ID     string
 	UserID string
-	Team   TeamInfo
+	TeamID string
+
+	User *UserInfo
+	Team *TeamInfo
 
 	AssignedRawProviderAt *time.Time
 	AssignedTranslatorAt  *time.Time
@@ -217,12 +137,17 @@ type MemberWithTeamInfo struct {
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 	AssignedAdminAt       *time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func NewMemberWithTeamInfo(
+func NewMemberWithInfo(
 	id string,
 	userID string,
-	team TeamInfo,
+	teamID string,
+	user *UserInfo,
+	team *TeamInfo,
 	assignedRawProviderAt *time.Time,
 	assignedTranslatorAt *time.Time,
 	assignedProofreaderAt *time.Time,
@@ -230,10 +155,14 @@ func NewMemberWithTeamInfo(
 	assignedReviewerAt *time.Time,
 	assignedPublisherAt *time.Time,
 	assignedAdminAt *time.Time,
-) MemberWithTeamInfo {
-	return MemberWithTeamInfo{
+	createdAt time.Time,
+	updatedAt time.Time,
+) MemberWithInfo {
+	return MemberWithInfo{
 		ID:                    id,
 		UserID:                userID,
+		TeamID:                teamID,
+		User:                  user,
 		Team:                  team,
 		AssignedRawProviderAt: assignedRawProviderAt,
 		AssignedTranslatorAt:  assignedTranslatorAt,
@@ -242,7 +171,74 @@ func NewMemberWithTeamInfo(
 		AssignedReviewerAt:    assignedReviewerAt,
 		AssignedPublisherAt:   assignedPublisherAt,
 		AssignedAdminAt:       assignedAdminAt,
+		CreatedAt:             createdAt,
+		UpdatedAt:             updatedAt,
 	}
+}
+
+func (m *MemberWithInfo) HasAnyRole(roles ...RoleFlag) bool {
+	for _, role := range roles {
+		switch role {
+		case RoleRawProvider:
+			if m.AssignedRawProviderAt != nil {
+				return true
+			}
+		case RoleTranslator:
+			if m.AssignedTranslatorAt != nil {
+				return true
+			}
+		case RoleProofreader:
+			if m.AssignedProofreaderAt != nil {
+				return true
+			}
+		case RoleTypesetter:
+			if m.AssignedTypesetterAt != nil {
+				return true
+			}
+		case RoleReviewer:
+			if m.AssignedReviewerAt != nil {
+				return true
+			}
+		case RolePublisher:
+			if m.AssignedPublisherAt != nil {
+				return true
+			}
+		case RoleAdmin:
+			if m.AssignedAdminAt != nil {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (m *MemberWithInfo) Roles() []RoleFlag {
+	roles := make([]RoleFlag, 0)
+
+	if m.AssignedRawProviderAt != nil {
+		roles = append(roles, RoleRawProvider)
+	}
+	if m.AssignedTranslatorAt != nil {
+		roles = append(roles, RoleTranslator)
+	}
+	if m.AssignedProofreaderAt != nil {
+		roles = append(roles, RoleProofreader)
+	}
+	if m.AssignedTypesetterAt != nil {
+		roles = append(roles, RoleTypesetter)
+	}
+	if m.AssignedReviewerAt != nil {
+		roles = append(roles, RoleReviewer)
+	}
+	if m.AssignedPublisherAt != nil {
+		roles = append(roles, RolePublisher)
+	}
+	if m.AssignedAdminAt != nil {
+		roles = append(roles, RoleAdmin)
+	}
+
+	return roles
 }
 
 type MemberUpdate struct {
@@ -256,7 +252,7 @@ type MemberUpdate struct {
 	AssignAdmin       *time.Time
 }
 
-func NewMemberUpdate(id string, current MemberWithUserInfo, targetRoles RoleMask) MemberUpdate {
+func NewMemberUpdate(id string, current MemberWithInfo, targetRoles RoleMask) MemberUpdate {
 	now := time.Now()
 
 	resolveRoleAssignedAt := func(currentAssignedAt *time.Time, role RoleFlag) *time.Time {
@@ -280,7 +276,7 @@ func NewMemberUpdate(id string, current MemberWithUserInfo, targetRoles RoleMask
 		AssignProofreader: resolveRoleAssignedAt(current.AssignedProofreaderAt, RoleProofreader),
 		AssignTypesetter:  resolveRoleAssignedAt(current.AssignedTypesetterAt, RoleTypesetter),
 		AssignReviewer:    resolveRoleAssignedAt(current.AssignedReviewerAt, RoleReviewer),
-		AssignPublisher:   resolveRoleAssignedAt(current.AssignedPublishererAt, RolePublisher),
+		AssignPublisher:   resolveRoleAssignedAt(current.AssignedPublisherAt, RolePublisher),
 		AssignAdmin:       resolveRoleAssignedAt(current.AssignedAdminAt, RoleAdmin),
 	}
 }

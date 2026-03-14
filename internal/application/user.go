@@ -29,10 +29,12 @@ type UserApplication interface {
 	GetUser(
 		scope util.TraceScope,
 		userID string,
+		args value.GetUserArgs,
 	) (value.UserInfo, error)
 	GetMyUser(
 		scope util.TraceScope,
 		currentUserID string,
+		args value.GetMyUserArgs,
 	) (value.UserInfo, error)
 	/* 	ListUsers(
 		scope util.TraceScope,
@@ -272,6 +274,7 @@ func (ua *userApplication) RegisterUser(
 func (ua *userApplication) GetUser(
 	scope util.TraceScope,
 	userID string,
+	args value.GetUserArgs,
 ) (value.UserInfo, error) {
 	const fn = "UserApplication.GetUser"
 
@@ -310,12 +313,54 @@ func (ua *userApplication) GetUser(
 		return value.UserInfo{}, errors.New("无法获取用户信息")
 	}
 
-	return value.NewUserInfoFromModel(userInfo, avatarURL), nil
+	includeSpec := service.ResolveUserDetailIncludeSpec(args.Includes)
+
+	if !includeSpec.NeedMembers {
+		return value.NewUserInfoFromModel(userInfo, avatarURL), nil
+	}
+
+	memberQueryOptions := []repository.QueryOption{
+		query_option.MemberQuery().FilterByUserID(userID),
+		query_option.CreatedAtDesc(repository_infra.MemberTable),
+	}
+
+	if includeSpec.NeedMemberTeam {
+		memberQueryOptions = append(memberQueryOptions, query_option.MemberQuery().IncludeTeamInfo())
+	}
+
+	memberList, memberErr := ua.memberRepository.List(nil, memberQueryOptions...)
+	if memberErr != nil {
+		scope.Logger().Error(fn+": 获取用户成员列表失败", zap.Error(memberErr))
+		return value.UserInfo{}, errors.New("无法获取用户信息")
+	}
+
+	result := value.NewUserInfoFromModel(userInfo, avatarURL)
+	result.Members = make([]value.MemberInfo, len(memberList))
+
+	for i, member := range memberList {
+		memberInfo := value.NewMemberInfoFromModel(member)
+
+		if includeSpec.NeedMemberTeam && member.Team != nil {
+			teamAvatarURL, teamAvatarErr := ua.ossClient.GenerateGetPresignedURL(member.Team.AvatarOSSKey)
+			if teamAvatarErr != nil {
+				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(teamAvatarErr))
+				return value.UserInfo{}, errors.New("无法获取用户信息")
+			}
+
+			teamValueInfo := value.NewTeamInfoFromModel(*member.Team, teamAvatarURL)
+			memberInfo.Team = &teamValueInfo
+		}
+
+		result.Members[i] = memberInfo
+	}
+
+	return result, nil
 }
 
 func (ua *userApplication) GetMyUser(
 	scope util.TraceScope,
 	currentUserID string,
+	args value.GetMyUserArgs,
 ) (value.UserInfo, error) {
 	const fn = "UserApplication.GetMyUser"
 
@@ -358,7 +403,48 @@ func (ua *userApplication) GetMyUser(
 		return value.UserInfo{}, errors.New("无法获取用户信息")
 	}
 
-	return value.NewUserInfoFromModel(userInfo, avatarURL), nil
+	includeSpec := service.ResolveUserDetailIncludeSpec(args.Includes)
+
+	if !includeSpec.NeedMembers {
+		return value.NewUserInfoFromModel(userInfo, avatarURL), nil
+	}
+
+	memberQueryOptions := []repository.QueryOption{
+		query_option.MemberQuery().FilterByUserID(currentUserID),
+		query_option.CreatedAtDesc(repository_infra.MemberTable),
+	}
+
+	if includeSpec.NeedMemberTeam {
+		memberQueryOptions = append(memberQueryOptions, query_option.MemberQuery().IncludeTeamInfo())
+	}
+
+	memberList, memberErr := ua.memberRepository.List(nil, memberQueryOptions...)
+	if memberErr != nil {
+		scope.Logger().Error(fn+": 获取当前用户成员列表失败", zap.Error(memberErr))
+		return value.UserInfo{}, errors.New("无法获取用户信息")
+	}
+
+	result := value.NewUserInfoFromModel(userInfo, avatarURL)
+	result.Members = make([]value.MemberInfo, len(memberList))
+
+	for i, member := range memberList {
+		memberInfo := value.NewMemberInfoFromModel(member)
+
+		if includeSpec.NeedMemberTeam && member.Team != nil {
+			teamAvatarURL, teamAvatarErr := ua.ossClient.GenerateGetPresignedURL(member.Team.AvatarOSSKey)
+			if teamAvatarErr != nil {
+				scope.Logger().Error(fn+": 生成汉化组头像链接失败", zap.Error(teamAvatarErr))
+				return value.UserInfo{}, errors.New("无法获取用户信息")
+			}
+
+			teamValueInfo := value.NewTeamInfoFromModel(*member.Team, teamAvatarURL)
+			memberInfo.Team = &teamValueInfo
+		}
+
+		result.Members[i] = memberInfo
+	}
+
+	return result, nil
 }
 
 /* func (ua *userApplication) ListUsers(

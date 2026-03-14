@@ -51,14 +51,14 @@ func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOp
 		executor = opt(executor)
 	}
 
-	var rows []entity.ChapterInfoRow
+	var rows []entity.ChapterWithInfoRow
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
 	result := make([]model.ChapterDetail, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToChapterInfo(row)
+		result[i] = entity.ToChapterWithInfo(row)
 	}
 
 	return result, nil
@@ -72,12 +72,12 @@ func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOpt
 		executor = opt(executor)
 	}
 
-	var row entity.ChapterInfoRow
+	var row entity.ChapterWithInfoRow
 	if err := executor.First(&row).Error; err != nil {
 		return model.ChapterDetail{}, err
 	}
 
-	return entity.ToChapterInfo(row), nil
+	return entity.ToChapterWithInfo(row), nil
 }
 
 func (r *chapterRepository) Count(executor intf.Executor, options ...intf.QueryOption) (int64, error) {

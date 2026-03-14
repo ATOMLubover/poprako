@@ -67,38 +67,65 @@ type MemberWithTeamRow struct {
 	TeamUpdatedAt        time.Time `gorm:"column:team_updated_at"`
 }
 
-func ToMemberProfile(row MemberProfileRow, userInfo model.UserInfo) model.MemberWithUserInfo {
-	return model.MemberWithUserInfo{
-		ID:                    row.ID,
-		UserInfo:              userInfo,
-		TeamID:                row.TeamID,
-		AssignedRawProviderAt: row.AssignedRawProviderAt,
-		AssignedTranslatorAt:  row.AssignedTranslatorAt,
-		AssignedProofreaderAt: row.AssignedProofreaderAt,
-		AssignedTypesetterAt:  row.AssignedTypesetterAt,
-		AssignedReviewerAt:    row.AssignedReviewerAt,
-		AssignedPublishererAt: row.AssignedPublisherAt,
-		AssignedAdminAt:       row.AssignedAdminAt,
-		CreatedAt:             row.CreatedAt,
-		UpdatedAt:             row.UpdatedAt,
-	}
+// MemberWithInfoRow 是统一的聚合行类型，可同时携带 user 和 team 别名列。
+// User 列与 Team 列均可选，由 query option 决定是否 JOIN。
+type MemberWithInfoRow struct {
+	MemberProfileRow
+
+	// User 别名列（IncludeUserInfo() 时填充）
+	UserName             string    `gorm:"column:user_name"`
+	UserQQ               string    `gorm:"column:user_qq"`
+	UserAvatarOSSKey     string    `gorm:"column:user_avatar_oss_key"`
+	UserIsAvatarUploaded bool      `gorm:"column:user_is_avatar_uploaded"`
+	UserIsSuperAdmin     bool      `gorm:"column:user_is_super_admin"`
+	UserCreatedAt        time.Time `gorm:"column:user_created_at"`
+	UserUpdatedAt        time.Time `gorm:"column:user_updated_at"`
+
+	// Team 别名列（IncludeTeamInfo() 时填充）
+	TeamName             string    `gorm:"column:team_name"`
+	TeamDescription      string    `gorm:"column:team_description"`
+	TeamAvatarOSSKey     string    `gorm:"column:team_avatar_oss_key"`
+	TeamIsAvatarUploaded bool      `gorm:"column:team_is_avatar_uploaded"`
+	TeamCreatedAt        time.Time `gorm:"column:team_created_at"`
+	TeamUpdatedAt        time.Time `gorm:"column:team_updated_at"`
 }
 
-func ToMemberWithTeamInfo(row MemberWithTeamRow) model.MemberWithTeamInfo {
-	team := model.TeamInfo{
-		ID:               row.TeamID,
-		Name:             row.TeamName,
-		Description:      row.TeamDescription,
-		AvatarOSSKey:     row.TeamAvatarOSSKey,
-		IsAvatarUploaded: row.TeamIsAvatarUploaded,
-		CreatedAt:        row.TeamCreatedAt,
-		UpdatedAt:        row.TeamUpdatedAt,
+func ToMemberWithInfo(row MemberWithInfoRow) model.MemberWithInfo {
+	var userInfo *model.UserInfo
+	if !row.UserCreatedAt.IsZero() {
+		info := model.NewUserInfo(
+			row.UserID,
+			row.UserName,
+			row.UserQQ,
+			row.UserAvatarOSSKey,
+			row.UserIsAvatarUploaded,
+			row.UserIsSuperAdmin,
+			row.UserCreatedAt,
+			row.UserUpdatedAt,
+		)
+		userInfo = &info
 	}
 
-	return model.NewMemberWithTeamInfo(
+	var teamInfo *model.TeamInfo
+	if !row.TeamCreatedAt.IsZero() {
+		info := model.NewTeamInfo(
+			row.TeamID,
+			row.TeamName,
+			row.TeamDescription,
+			row.TeamAvatarOSSKey,
+			row.TeamIsAvatarUploaded,
+			row.TeamCreatedAt,
+			row.TeamUpdatedAt,
+		)
+		teamInfo = &info
+	}
+
+	return model.NewMemberWithInfo(
 		row.ID,
 		row.UserID,
-		team,
+		row.TeamID,
+		userInfo,
+		teamInfo,
 		row.AssignedRawProviderAt,
 		row.AssignedTranslatorAt,
 		row.AssignedProofreaderAt,
@@ -106,5 +133,7 @@ func ToMemberWithTeamInfo(row MemberWithTeamRow) model.MemberWithTeamInfo {
 		row.AssignedReviewerAt,
 		row.AssignedPublisherAt,
 		row.AssignedAdminAt,
+		row.CreatedAt,
+		row.UpdatedAt,
 	)
 }

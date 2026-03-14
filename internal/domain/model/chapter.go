@@ -27,6 +27,8 @@ type ChapterDetail struct {
 	PublishedAt    *time.Time
 
 	CreatorID string
+	// Creator 仅在 includes 指定时填充。
+	Creator *UserInfo
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

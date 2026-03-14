@@ -15,6 +15,9 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		chapter_id query string true "章节 ID"
+// @Param 		offset query int true "偏移量"
+// @Param 		limit query int true "每页数量"
+// @Param 		includes[] query []string false "嵌套信息（user）"
 //
 // @Success 	200 {object} []value.AssignmentWithUserInfo
 //

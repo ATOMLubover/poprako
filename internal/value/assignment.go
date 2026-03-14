@@ -116,7 +116,8 @@ func (a *UpdateAssignmentArgs) Validate() error {
 
 // ListChapterAssignmentArgs 查询某章节的所有分配
 type ListChapterAssignmentArgs struct {
-	ChapterID string `url:"chapter_id"`
+	ChapterID string   `url:"chapter_id"`
+	Includes  []string `url:"includes[]"`
 	PaginationParams
 }
 
@@ -146,6 +147,7 @@ type AssignmentWithUserInfo struct {
 	AssignedTranslatorAt  *int64 `json:"assigned_translator_at,omitempty"`
 	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at,omitempty"`
 	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at,omitempty"`
+	AssignedRedrawerAt    *int64 `json:"assigned_redrawer_at,omitempty"`
 	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at,omitempty"`
 	AssignedPublisherAt   *int64 `json:"assigned_publisher_at,omitempty"`
 
@@ -162,6 +164,7 @@ func NewAssignmentWithUserInfo(source model.AssignmentWithUserInfo, avatarURL st
 		AssignedTranslatorAt:  util.ToUnixPtr(source.AssignedTranslatorAt),
 		AssignedProofreaderAt: util.ToUnixPtr(source.AssignedProofreaderAt),
 		AssignedTypesetterAt:  util.ToUnixPtr(source.AssignedTypesetterAt),
+		AssignedRedrawerAt:    util.ToUnixPtr(source.AssignedRedrawerAt),
 		AssignedReviewerAt:    util.ToUnixPtr(source.AssignedReviewerAt),
 		AssignedPublisherAt:   util.ToUnixPtr(source.AssignedPublisherAt),
 		CreatedAt:             source.CreatedAt.UnixMilli(),
@@ -214,6 +217,7 @@ type AssignmentWithChapterInfo struct {
 	AssignedTranslatorAt  *int64 `json:"assigned_translator_at,omitempty"`
 	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at,omitempty"`
 	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at,omitempty"`
+	AssignedRedrawerAt    *int64 `json:"assigned_redrawer_at,omitempty"`
 	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at,omitempty"`
 	AssignedPublisherAt   *int64 `json:"assigned_publisher_at,omitempty"`
 
@@ -230,6 +234,7 @@ func NewAssignmentWithChapterInfo(source model.AssignmentWithChapterInfo, coverU
 		AssignedTranslatorAt:  util.ToUnixPtr(source.AssignedTranslatorAt),
 		AssignedProofreaderAt: util.ToUnixPtr(source.AssignedProofreaderAt),
 		AssignedTypesetterAt:  util.ToUnixPtr(source.AssignedTypesetterAt),
+		AssignedRedrawerAt:    util.ToUnixPtr(source.AssignedRedrawerAt),
 		AssignedReviewerAt:    util.ToUnixPtr(source.AssignedReviewerAt),
 		AssignedPublisherAt:   util.ToUnixPtr(source.AssignedPublisherAt),
 		CreatedAt:             source.CreatedAt.UnixMilli(),

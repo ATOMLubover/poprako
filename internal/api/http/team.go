@@ -46,18 +46,19 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 	}
 }
 
-// ListAllTeams godoc
+// ListTeams godoc
 // @Summary 	获取所有汉化组列表（已测试）
 // @Description 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
 //
 // @Tags 		team
 // @Security 	ApiKeyAuth
 // @Produce 	json
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：member,member.user"
 //
 // @Success 	200 {object} []value.TeamInfo
 //
 // @Router 		/teams [get]
-func ListAllTeams(appState *state.AppState) iris.Handler {
+func ListTeams(appState *state.AppState) iris.Handler {
 	teamApplication := appState.TeamApplication
 
 	return func(ctx iris.Context) {
@@ -66,7 +67,14 @@ func ListAllTeams(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApplication.ListAllTeams(buildTraceScope(ctx), currentUserID)
+		var args value.ListTeamArgs
+
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
+			return
+		}
+
+		result, err := teamApplication.ListTeams(buildTraceScope(ctx), currentUserID, args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -83,6 +91,7 @@ func ListAllTeams(appState *state.AppState) iris.Handler {
 // @Tags 		team
 // @Security 	ApiKeyAuth
 // @Produce 	json
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：member,member.user"
 //
 // @Success 	200 {object} []value.TeamInfo
 //
@@ -96,7 +105,14 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApplication.ListMyTeams(buildTraceScope(ctx), currentUserID)
+		var args value.ListMyTeamArgs
+
+		if err := ctx.ReadQuery(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
+			return
+		}
+
+		result, err := teamApplication.ListMyTeams(buildTraceScope(ctx), currentUserID, args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return

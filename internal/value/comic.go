@@ -18,6 +18,8 @@ type ComicInfo struct {
 	Author      string `json:"author"`
 	Description string `json:"description"`
 
+	CoverURL string `json:"cover_url"`
+
 	ChapterCount int    `json:"chapter_count"`
 	CreatorID    string `json:"creator_id"`
 
@@ -28,35 +30,46 @@ type ComicInfo struct {
 }
 
 func NewComicInfoFromModel(comicInfo model.ComicInfo) ComicInfo {
-	return ComicInfo{
+	result := ComicInfo{
 		ID:           comicInfo.ID,
+		WorksetID:    comicInfo.WorksetID,
 		Index:        comicInfo.Index,
 		Title:        comicInfo.Title,
 		Author:       comicInfo.Author,
 		Description:  comicInfo.Description,
+		CoverURL:     comicInfo.CoverURL,
 		ChapterCount: comicInfo.ChapterCount,
 		CreatorID:    comicInfo.CreatorID,
-		LastActiveAt: comicInfo.LastActiveAt.Unix(),
-		CreatedAt:    comicInfo.CreatedAt.Unix(),
-		UpdatedAt:    comicInfo.UpdatedAt.Unix(),
+		LastActiveAt: comicInfo.LastActiveAt.UnixMilli(),
+		CreatedAt:    comicInfo.CreatedAt.UnixMilli(),
+		UpdatedAt:    comicInfo.UpdatedAt.UnixMilli(),
 	}
+
+	if comicInfo.Workset != nil {
+		worksetInfo := NewWorksetInfoFromModel(*comicInfo.Workset)
+		result.WorksetInfo = &worksetInfo
+	}
+
+	return result
 }
 
-type ListTeamComicArgs struct {
-	TeamID string `url:"team_id"`
+// ListComicArgs 查询指定工作集下的漫画列表参数。
+type ListComicArgs struct {
+	WorksetID string   `url:"workset_id"`
+	Includes  []string `url:"includes[]"`
 	PaginationParams
 }
 
-func (ltca *ListTeamComicArgs) Validate() error {
-	if ltca == nil {
+func (args *ListComicArgs) Validate() error {
+	if args == nil {
 		return errors.New("参数不能为空")
 	}
 
-	if ltca.TeamID == "" {
-		return errors.New("汉化组 ID 不能为空")
+	if args.WorksetID == "" {
+		return errors.New("工作集 ID 不能为空")
 	}
 
-	if err := ltca.PaginationParams.Validate(); err != nil {
+	if err := args.PaginationParams.Validate(); err != nil {
 		return errors.New("分页参数无效: " + err.Error())
 	}
 
@@ -64,7 +77,7 @@ func (ltca *ListTeamComicArgs) Validate() error {
 }
 
 type CreateComicArgs struct {
-	TeamID      string `json:"team_id"`
+	WorksetID   string `json:"workset_id"`
 	Title       string `json:"title"`
 	Author      string `json:"author"`
 	Description string `json:"description"`
@@ -75,8 +88,8 @@ func (cca *CreateComicArgs) Validate() error {
 		return errors.New("参数不能为空")
 	}
 
-	if cca.TeamID == "" {
-		return errors.New("汉化组 ID 不能为空")
+	if cca.WorksetID == "" {
+		return errors.New("工作集 ID 不能为空")
 	}
 
 	titleLen := utf8.RuneCountInString(cca.Title)

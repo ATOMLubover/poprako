@@ -121,3 +121,38 @@ func ToChapterInfo(row ChapterInfoRow) model.ChapterDetail {
 		row.UpdatedAt,
 	)
 }
+
+// ChapterWithInfoRow 是统一的聚合行类型，可携带 creator 别名列。
+// Creator 列由 IncludeCreatorInfo() query option 决定是否 JOIN。
+type ChapterWithInfoRow struct {
+	ChapterInfoRow
+
+	// Creator 别名列（IncludeCreatorInfo() 时填充）
+	CreatorName             string    `gorm:"column:creator_name"`
+	CreatorQQ               string    `gorm:"column:creator_qq"`
+	CreatorAvatarOSSKey     string    `gorm:"column:creator_avatar_oss_key"`
+	CreatorIsAvatarUploaded bool      `gorm:"column:creator_is_avatar_uploaded"`
+	CreatorIsSuperAdmin     bool      `gorm:"column:creator_is_super_admin"`
+	CreatorCreatedAt        time.Time `gorm:"column:creator_created_at"`
+	CreatorUpdatedAt        time.Time `gorm:"column:creator_updated_at"`
+}
+
+func ToChapterWithInfo(row ChapterWithInfoRow) model.ChapterDetail {
+	chapter := ToChapterInfo(row.ChapterInfoRow)
+
+	if !row.CreatorCreatedAt.IsZero() {
+		creatorInfo := model.NewUserInfo(
+			row.CreatorID,
+			row.CreatorName,
+			row.CreatorQQ,
+			row.CreatorAvatarOSSKey,
+			row.CreatorIsAvatarUploaded,
+			row.CreatorIsSuperAdmin,
+			row.CreatorCreatedAt,
+			row.CreatorUpdatedAt,
+		)
+		chapter.Creator = &creatorInfo
+	}
+
+	return chapter
+}

@@ -50,6 +50,9 @@ type TeamInfo struct {
 	AvatarURL        string `json:"avatar_url"`
 	IsAvatarUploaded bool   `json:"is_avatar_uploaded"`
 
+	// Members 仅在 include 指定时填充。
+	Members []MemberInfo `json:"members,omitempty"`
+
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`
 }
@@ -110,4 +113,14 @@ func (uta *UpdateTeamArgs) Validate() error {
 	}
 
 	return nil
+}
+
+// ListTeamArgs 是查询所有汉化组的参数，预留 includes 字段以备后续扩展。
+type ListTeamArgs struct {
+	Includes []string `url:"includes[]"`
+}
+
+// ListMyTeamArgs 是查询当前用户所在汉化组的参数，预留 includes 字段以备后续扩展。
+type ListMyTeamArgs struct {
+	Includes []string `url:"includes[]"`
 }

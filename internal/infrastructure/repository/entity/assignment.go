@@ -18,6 +18,7 @@ type AssignmentInfoRow struct {
 	AssignedTranslatorAt  *time.Time `gorm:"column:assigned_translator_at"`
 	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
 	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
+	AssignedRedrawerAt    *time.Time `gorm:"column:assigned_redrawer_at"`
 	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
 	AssignedPublisherAt   *time.Time `gorm:"column:assigned_publisher_at"`
 
@@ -36,6 +37,7 @@ func ToAssignmentInfo(row AssignmentInfoRow) model.AssignmentInfo {
 		row.AssignedTranslatorAt,
 		row.AssignedProofreaderAt,
 		row.AssignedTypesetterAt,
+		row.AssignedRedrawerAt,
 		row.AssignedReviewerAt,
 		row.AssignedPublisherAt,
 		row.CreatedAt,
@@ -53,6 +55,7 @@ type AssignmentInsertRow struct {
 	AssignedTranslatorAt  *time.Time `gorm:"column:assigned_translator_at"`
 	AssignedProofreaderAt *time.Time `gorm:"column:assigned_proofreader_at"`
 	AssignedTypesetterAt  *time.Time `gorm:"column:assigned_typesetter_at"`
+	AssignedRedrawerAt    *time.Time `gorm:"column:assigned_redrawer_at"`
 	AssignedReviewerAt    *time.Time `gorm:"column:assigned_reviewer_at"`
 	AssignedPublisherAt   *time.Time `gorm:"column:assigned_publisher_at"`
 }
@@ -92,6 +95,7 @@ func ToAssignmentWithUserInfo(row AssignmentWithUserRow) model.AssignmentWithUse
 		row.AssignedTranslatorAt,
 		row.AssignedProofreaderAt,
 		row.AssignedTypesetterAt,
+		row.AssignedRedrawerAt,
 		row.AssignedReviewerAt,
 		row.AssignedPublisherAt,
 		row.CreatedAt,
@@ -99,7 +103,7 @@ func ToAssignmentWithUserInfo(row AssignmentWithUserRow) model.AssignmentWithUse
 	)
 }
 
-// AssignmentWithChapterAndComicRow 用于 ListWithChapterInfo（JOIN chapter_table + comic_table）。
+// AssignmentWithChapterAndComicRow 用于 ListWithChapterInfo（JOIN chapter_table + workset_table + comic_table）。
 type AssignmentWithChapterAndComicRow struct {
 	AssignmentInfoRow
 
@@ -111,6 +115,7 @@ type AssignmentWithChapterAndComicRow struct {
 	ChapterCreatedAt time.Time `gorm:"column:chapter_created_at"`
 	ChapterUpdatedAt time.Time `gorm:"column:chapter_updated_at"`
 
+	ComicWorksetID    string    `gorm:"column:comic_workset_id"`
 	ComicTeamID       string    `gorm:"column:comic_team_id"`
 	ComicIndex        int       `gorm:"column:comic_index"`
 	ComicTitle        string    `gorm:"column:comic_title"`
@@ -127,7 +132,9 @@ type AssignmentWithChapterAndComicRow struct {
 func ToAssignmentWithChapterInfo(row AssignmentWithChapterAndComicRow) model.AssignmentWithChapterInfo {
 	comic := model.NewComicInfo(
 		row.ChapterComicID,
+		row.ComicWorksetID,
 		row.ComicTeamID,
+		nil,
 		row.ComicIndex,
 		row.ComicTitle,
 		row.ComicAuthor,
@@ -162,6 +169,7 @@ func ToAssignmentWithChapterInfo(row AssignmentWithChapterAndComicRow) model.Ass
 		row.AssignedTranslatorAt,
 		row.AssignedProofreaderAt,
 		row.AssignedTypesetterAt,
+		row.AssignedRedrawerAt,
 		row.AssignedReviewerAt,
 		row.AssignedPublisherAt,
 		row.CreatedAt,

@@ -28,116 +28,26 @@ func (r *memberRepository) BeginTransaction() intf.Executor {
 	return r.executor.Begin()
 }
 
-func (r *memberRepository) ListProfiles(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberWithUserInfo, error) {
-	executor = r.withTransaction(executor)
-
-	executor = executor.Table("member_table").
-		Select(`member_table.*,
-			user_table.name           AS user_name,
-			user_table.qq             AS user_qq,
-			user_table.avatar_oss_key AS user_avatar_oss_key,
-			user_table.is_avatar_uploaded AS user_is_avatar_uploaded,
-			user_table.is_super_admin AS user_is_super_admin,
-			user_table.created_at     AS user_created_at,
-			user_table.updated_at     AS user_updated_at`).
-		Joins("LEFT JOIN user_table ON user_table.id = member_table.user_id AND user_table.deleted_at IS NULL").
-		Where("member_table.deleted_at IS NULL")
-	for _, opt := range options {
-		executor = opt(executor)
-	}
-
-	var rows []entity.MemberWithUserRow
-	if err := executor.Find(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	result := make([]model.MemberWithUserInfo, len(rows))
-	for i, row := range rows {
-		userInfo := model.UserInfo{
-			ID:               row.UserID,
-			Name:             row.UserName,
-			QQ:               row.UserQQ,
-			AvatarOSSKey:     row.UserAvatarOSSKey,
-			IsAvatarUploaded: row.UserIsAvatarUploaded,
-			IsSuperAdmin:     row.UserIsSuperAdmin,
-			CreatedAt:        row.UserCreatedAt,
-			UpdatedAt:        row.UserUpdatedAt,
-		}
-		result[i] = entity.ToMemberProfile(row.MemberProfileRow, userInfo)
-	}
-
-	return result, nil
-}
-
-func (r *memberRepository) ListWithTeamInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberWithTeamInfo, error) {
+func (r *memberRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberWithInfo, error) {
 	executor = r.withTransaction(executor)
 
 	executor = executor.Table(entity.MemberTable).
-		Select(`member_table.*,
-			team_table.name              AS team_name,
-			team_table.description       AS team_description,
-			team_table.avatar_oss_key    AS team_avatar_oss_key,
-			team_table.is_avatar_uploaded AS team_is_avatar_uploaded,
-			team_table.created_at        AS team_created_at,
-			team_table.updated_at        AS team_updated_at`).
-		Joins("LEFT JOIN team_table ON team_table.id = member_table.team_id AND team_table.deleted_at IS NULL").
 		Where("member_table.deleted_at IS NULL")
 
 	for _, opt := range options {
 		executor = opt(executor)
 	}
 
-	var rows []entity.MemberWithTeamRow
+	var rows []entity.MemberWithInfoRow
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
-	result := make([]model.MemberWithTeamInfo, len(rows))
+	result := make([]model.MemberWithInfo, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToMemberWithTeamInfo(row)
+		result[i] = entity.ToMemberWithInfo(row)
 	}
 
-	return result, nil
-}
-
-func (r *memberRepository) ListProfilesWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.MemberWithUserInfo, error) {
-	executor = r.withTransaction(executor)
-
-	executor = executor.Table("member_table").
-		Select(`member_table.*,
-			user_table.name           AS user_name,
-			user_table.qq             AS user_qq,
-			user_table.avatar_oss_key AS user_avatar_oss_key,
-			user_table.is_avatar_uploaded AS user_is_avatar_uploaded,
-			user_table.is_super_admin AS user_is_super_admin,
-			user_table.created_at     AS user_created_at,
-			user_table.updated_at     AS user_updated_at`).
-		Joins("LEFT JOIN user_table ON user_table.id = member_table.user_id AND user_table.deleted_at IS NULL").
-		Where("member_table.deleted_at IS NULL")
-	for _, opt := range options {
-		executor = opt(executor)
-	}
-
-	var rows []entity.MemberWithUserRow
-
-	if err := executor.Find(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	result := make([]model.MemberWithUserInfo, len(rows))
-	for i, row := range rows {
-		userInfo := model.UserInfo{
-			ID:               row.UserID,
-			Name:             row.UserName,
-			QQ:               row.UserQQ,
-			AvatarOSSKey:     row.UserAvatarOSSKey,
-			IsAvatarUploaded: row.UserIsAvatarUploaded,
-			IsSuperAdmin:     row.UserIsSuperAdmin,
-			CreatedAt:        row.UserCreatedAt,
-			UpdatedAt:        row.UserUpdatedAt,
-		}
-		result[i] = entity.ToMemberProfile(row.MemberProfileRow, userInfo)
-	}
 	return result, nil
 }
 
@@ -184,19 +94,19 @@ func (r *memberRepository) Get(executor intf.Executor, options ...intf.QueryOpti
 	}, nil
 }
 
-func (r *memberRepository) GetProfile(executor intf.Executor, options ...intf.QueryOption) (model.MemberWithUserInfo, error) {
+func (r *memberRepository) GetProfile(executor intf.Executor, options ...intf.QueryOption) (model.MemberWithInfo, error) {
 	executor = r.withTransaction(executor)
 	executor = executor.Table(entity.MemberTable).Where("member_table.deleted_at IS NULL")
 	for _, opt := range options {
 		executor = opt(executor)
 	}
 
-	var row entity.MemberProfileRow
+	var row entity.MemberWithInfoRow
 	if err := executor.First(&row).Error; err != nil {
-		return model.MemberWithUserInfo{}, err
+		return model.MemberWithInfo{}, err
 	}
 
-	return entity.ToMemberProfile(row, model.UserInfo{}), nil
+	return entity.ToMemberWithInfo(row), nil
 }
 
 func (r *memberRepository) Create(executor intf.Executor, creation model.MemberCreation) (string, error) {

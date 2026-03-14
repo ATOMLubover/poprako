@@ -101,7 +101,8 @@ func (r *assignmentRepository) ListWithChapterInfo(executor intf.Executor, optio
 			chapter_table.cover_url     AS chapter_cover_url,
 			chapter_table.created_at    AS chapter_created_at,
 			chapter_table.updated_at    AS chapter_updated_at,
-			comic_table.team_id         AS comic_team_id,
+			comic_table.workset_id      AS comic_workset_id,
+			workset_table.team_id       AS comic_team_id,
 			comic_table.index           AS comic_index,
 			comic_table.title           AS comic_title,
 			comic_table.author          AS comic_author,
@@ -113,7 +114,8 @@ func (r *assignmentRepository) ListWithChapterInfo(executor intf.Executor, optio
 			comic_table.created_at      AS comic_created_at,
 			comic_table.updated_at      AS comic_updated_at`).
 		Joins("LEFT JOIN chapter_table ON chapter_table.id = assignment_table.chapter_id AND chapter_table.deleted_at IS NULL").
-		Joins("LEFT JOIN comic_table ON comic_table.id = chapter_table.comic_id AND comic_table.deleted_at IS NULL")
+		Joins("LEFT JOIN comic_table ON comic_table.id = chapter_table.comic_id AND comic_table.deleted_at IS NULL").
+		Joins("LEFT JOIN workset_table ON workset_table.id = comic_table.workset_id")
 
 	for _, opt := range options {
 		executor = opt(executor)
@@ -143,6 +145,7 @@ func (r *assignmentRepository) Create(executor intf.Executor, creation model.Ass
 		AssignedTranslatorAt:  creation.AssignedTranslatorAt,
 		AssignedProofreaderAt: creation.AssignedProofreaderAt,
 		AssignedTypesetterAt:  creation.AssignedTypesetterAt,
+		AssignedRedrawerAt:    creation.AssignedRedrawerAt,
 		AssignedReviewerAt:    creation.AssignedReviewerAt,
 		AssignedPublisherAt:   creation.AssignedPublisherAt,
 	}
@@ -162,6 +165,7 @@ func (r *assignmentRepository) Update(executor intf.Executor, update model.Assig
 		"assigned_translator_at":   update.AssignedTranslatorAt,
 		"assigned_proofreader_at":  update.AssignedProofreaderAt,
 		"assigned_typesetter_at":   update.AssignedTypesetterAt,
+		"assigned_redrawer_at":     update.AssignedRedrawerAt,
 		"assigned_reviewer_at":     update.AssignedReviewerAt,
 		"assigned_publisher_at":    update.AssignedPublisherAt,
 	}

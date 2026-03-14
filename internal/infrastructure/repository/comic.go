@@ -34,7 +34,12 @@ func (r *comicRepository) BeginTransaction() intf.Executor {
 func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
 
-	executor = executor.Table(entity.ComicTable).Where("deleted_at IS NULL")
+	// 始终 JOIN workset_table 以获取 team_id（用于权限检查）
+	executor = executor.Table(entity.ComicTable).
+		Joins("JOIN workset_table ON workset_table.id = comic_table.workset_id").
+		Where("comic_table.deleted_at IS NULL").
+		Select("comic_table.*, workset_table.team_id AS team_id")
+
 	for _, opt := range options {
 		executor = opt(executor)
 	}
@@ -55,7 +60,13 @@ func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOpti
 
 func (r *comicRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
-	executor = executor.Table(entity.ComicTable).Where("deleted_at IS NULL")
+
+	// 始终 JOIN workset_table 以获取 team_id（用于权限检查）
+	executor = executor.Table(entity.ComicTable).
+		Joins("JOIN workset_table ON workset_table.id = comic_table.workset_id").
+		Where("comic_table.deleted_at IS NULL").
+		Select("comic_table.*, workset_table.team_id AS team_id")
+
 	for _, opt := range options {
 		executor = opt(executor)
 	}
@@ -68,7 +79,7 @@ func (r *comicRepository) Get(executor intf.Executor, options ...intf.QueryOptio
 	return entity.ToComicInfo(row), nil
 }
 
-func (r *comicRepository) LockByTeamID(executor intf.Executor, teamID string) error {
+func (r *comicRepository) LockByWorksetID(executor intf.Executor, worksetID string) error {
 	executor = r.withTransaction(executor)
 
 	var lockedIDs []string
@@ -76,7 +87,7 @@ func (r *comicRepository) LockByTeamID(executor intf.Executor, teamID string) er
 	return executor.
 		Table(entity.ComicTable).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("team_id = ? AND deleted_at IS NULL", teamID).
+		Where("workset_id = ? AND deleted_at IS NULL", worksetID).
 		Pluck("id", &lockedIDs).Error
 }
 
@@ -100,7 +111,7 @@ func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCre
 
 	row := entity.ComicInsertRow{
 		ID:          util.GenerateUUID(),
-		TeamID:      creation.TeamID,
+		WorksetID:   creation.WorksetID,
 		Index:       creation.Index,
 		Title:       creation.Title,
 		Author:      creation.Author,

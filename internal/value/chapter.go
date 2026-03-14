@@ -40,7 +40,7 @@ type ChapterInfo struct {
 }
 
 func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterInfo {
-	return ChapterInfo{
+	result := ChapterInfo{
 		ID:                  chapterDetail.ID,
 		ComicID:             chapterDetail.ComicID,
 		Index:               chapterDetail.Index,
@@ -59,13 +59,21 @@ func NewChapterInfoFromModel(chapterDetail model.ChapterDetail) ChapterInfo {
 		ReviewedAt:          util.ToUnixPtr(chapterDetail.ReviewedAt),
 		PublishedAt:         util.ToUnixPtr(chapterDetail.PublishedAt),
 		CreatorID:           chapterDetail.CreatorID,
-		CreatedAt:           chapterDetail.CreatedAt.Unix(),
-		UpdatedAt:           chapterDetail.UpdatedAt.Unix(),
+		CreatedAt:           chapterDetail.CreatedAt.UnixMilli(),
+		UpdatedAt:           chapterDetail.UpdatedAt.UnixMilli(),
 	}
+
+	if chapterDetail.Creator != nil {
+		creatorInfo := NewUserInfoFromModel(*chapterDetail.Creator, "")
+		result.CreatorInfo = &creatorInfo
+	}
+
+	return result
 }
 
 type ListChapterArgs struct {
-	ComicID string `url:"comic_id"`
+	ComicID  string   `url:"comic_id"`
+	Includes []string `url:"includes[]"`
 	PaginationParams
 }
 

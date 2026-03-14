@@ -3,8 +3,13 @@ package model
 import "time"
 
 type ComicInfo struct {
-	ID     string
+	ID        string
+	WorksetID string
+	// TeamID 通过 JOIN workset_table 填充，不是 comic_table 的直接列。
 	TeamID string
+
+	// Workset 仅在 includes 指定时填充。
+	Workset *WorksetInfo
 
 	Index       int
 	Title       string
@@ -24,7 +29,9 @@ type ComicInfo struct {
 
 func NewComicInfo(
 	id string,
+	worksetID string,
 	teamID string,
+	workset *WorksetInfo,
 	index int,
 	title string,
 	author string,
@@ -38,7 +45,9 @@ func NewComicInfo(
 ) ComicInfo {
 	return ComicInfo{
 		ID:           id,
+		WorksetID:    worksetID,
 		TeamID:       teamID,
+		Workset:      workset,
 		Index:        index,
 		Title:        title,
 		Author:       author,
@@ -53,7 +62,7 @@ func NewComicInfo(
 }
 
 type ComicCreation struct {
-	TeamID      string
+	WorksetID   string
 	Index       int
 	Title       string
 	Author      string
@@ -62,7 +71,7 @@ type ComicCreation struct {
 }
 
 func NewComicCreation(
-	teamID string,
+	worksetID string,
 	index int,
 	title string,
 	author string,
@@ -70,7 +79,7 @@ func NewComicCreation(
 	creatorID string,
 ) *ComicCreation {
 	return &ComicCreation{
-		TeamID:      teamID,
+		WorksetID:   worksetID,
 		Index:       index,
 		Title:       title,
 		Author:      author,

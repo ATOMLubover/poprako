@@ -4,8 +4,10 @@ import (
 	"errors"
 
 	"labelplus-next-web-be/internal/application/adapter"
+	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
+	"labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -38,21 +40,25 @@ type ChapterApplication interface {
 }
 
 type chapterApplication struct {
+	ossClient         external.OSSClient
 	memberRepository  repository.MemberRepository
 	comicRepository   repository.ComicRepository
 	chapterRepository repository.ChapterRepository
 }
 
 func NewChapterApplication(
+	ossClient external.OSSClient,
 	memberRepository repository.MemberRepository,
 	comicRepository repository.ComicRepository,
 	chapterRepository repository.ChapterRepository,
 ) ChapterApplication {
-	if memberRepository == nil ||
+	if ossClient == nil ||
+		memberRepository == nil ||
 		comicRepository == nil ||
 		chapterRepository == nil {
 		zap.L().Panic(
 			"NewChapterApplication: 依赖项不能为空",
+			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
 			zap.Bool("chapterRepository_nil", chapterRepository == nil),
@@ -60,6 +66,7 @@ func NewChapterApplication(
 	}
 
 	return &chapterApplication{
+		ossClient:         ossClient,
 		memberRepository:  memberRepository,
 		comicRepository:   comicRepository,
 		chapterRepository: chapterRepository,
@@ -180,12 +187,18 @@ func (ca *chapterApplication) ListComicChapters(
 		return nil, errors.New("权限不足")
 	}
 
-	chapters, err := ca.chapterRepository.List(
-		nil,
+	includeSpec := service.ResolveChapterListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
 		query_option.ChapterQuery().FilterByComicID(args.ComicID),
 		query_option.ChapterQuery().OrderByIndexDesc(),
 		query_option.Paginate(args.Offset, args.Limit),
-	)
+	}
+	if includeSpec.NeedCreator {
+		queryOptions = append(queryOptions, query_option.ChapterQuery().IncludeCreatorInfo())
+	}
+
+	chapters, err := ca.chapterRepository.List(nil, queryOptions...)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取章节列表失败", zap.Error(err))
 		return nil, errors.New("获取章节列表失败")
@@ -194,6 +207,16 @@ func (ca *chapterApplication) ListComicChapters(
 	result := make([]value.ChapterInfo, len(chapters))
 	for i, chapter := range chapters {
 		result[i] = value.NewChapterInfoFromModel(chapter)
+
+		if includeSpec.NeedCreator && chapter.Creator != nil {
+			avatarURL, avatarErr := ca.ossClient.GenerateGetPresignedURL(chapter.Creator.AvatarOSSKey)
+			if avatarErr != nil {
+				scope.Logger().Error(fn+": 生戛创建者头像链接失败", zap.Error(avatarErr))
+				return nil, errors.New("获取章节列表失败")
+			}
+			creatorInfo := value.NewUserInfoFromModel(*chapter.Creator, avatarURL)
+			result[i].CreatorInfo = &creatorInfo
+		}
 	}
 
 	return result, nil

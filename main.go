@@ -84,9 +84,11 @@ func main() {
 	comicApplication := application.NewComicApplication(
 		userRepository,
 		memberRepository,
+		worksetRepository,
 		comicRepository,
 	)
 	chapterApplication := application.NewChapterApplication(
+		ossClient,
 		memberRepository,
 		comicRepository,
 		chapterRepository,
