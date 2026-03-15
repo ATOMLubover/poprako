@@ -75,7 +75,7 @@ type AssignmentWithUserRow struct {
 	UserUpdatedAt        time.Time `gorm:"column:user_updated_at"`
 }
 
-func ToAssignmentWithUserInfo(row AssignmentWithUserRow) model.AssignmentWithUserInfo {
+func ToAssignmentInfoWithUser(row AssignmentWithUserRow) model.AssignmentInfo {
 	user := model.UserInfo{
 		ID:               row.UserID,
 		Name:             row.UserName,
@@ -87,20 +87,10 @@ func ToAssignmentWithUserInfo(row AssignmentWithUserRow) model.AssignmentWithUse
 		UpdatedAt:        row.UserUpdatedAt,
 	}
 
-	return model.NewAssignmentWithUserInfo(
-		row.ID,
-		row.ChapterID,
-		user,
-		row.AssignedRawProviderAt,
-		row.AssignedTranslatorAt,
-		row.AssignedProofreaderAt,
-		row.AssignedTypesetterAt,
-		row.AssignedRedrawerAt,
-		row.AssignedReviewerAt,
-		row.AssignedPublisherAt,
-		row.CreatedAt,
-		row.UpdatedAt,
-	)
+	assignmentInfo := ToAssignmentInfo(row.AssignmentInfoRow)
+	assignmentInfo.User = &user
+
+	return assignmentInfo
 }
 
 // AssignmentWithChapterAndComicRow 用于 ListWithChapterInfo（JOIN chapter_table + workset_table + comic_table）。
@@ -129,7 +119,7 @@ type AssignmentWithChapterAndComicRow struct {
 	ComicUpdatedAt    time.Time `gorm:"column:comic_updated_at"`
 }
 
-func ToAssignmentWithChapterInfo(row AssignmentWithChapterAndComicRow) model.AssignmentWithChapterInfo {
+func ToAssignmentInfoWithChapter(row AssignmentWithChapterAndComicRow) model.AssignmentInfo {
 	comic := model.NewComicInfo(
 		row.ChapterComicID,
 		row.ComicWorksetID,
@@ -148,32 +138,33 @@ func ToAssignmentWithChapterInfo(row AssignmentWithChapterAndComicRow) model.Ass
 		row.ComicUpdatedAt,
 	)
 
-	chapter := model.NewChapterWithComicInfo(
+	chapter := model.NewChapterDetail(
 		row.ChapterID,
-		comic,
+		row.ChapterComicID,
 		row.ChapterIndex,
 		row.ChapterSubtitle,
-		row.ChapterCoverURL,
 		row.ChapterPageCount,
 		0,
 		0,
 		0,
+		row.ChapterCoverURL,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		"",
 		row.ChapterCreatedAt,
 		row.ChapterUpdatedAt,
 	)
+	chapter.Comic = &comic
 
-	return model.NewAssignmentWithChapterInfo(
-		row.ID,
-		chapter,
-		row.UserID,
-		row.AssignedRawProviderAt,
-		row.AssignedTranslatorAt,
-		row.AssignedProofreaderAt,
-		row.AssignedTypesetterAt,
-		row.AssignedRedrawerAt,
-		row.AssignedReviewerAt,
-		row.AssignedPublisherAt,
-		row.CreatedAt,
-		row.UpdatedAt,
-	)
+	assignmentInfo := ToAssignmentInfo(row.AssignmentInfoRow)
+	assignmentInfo.Chapter = &chapter
+
+	return assignmentInfo
 }

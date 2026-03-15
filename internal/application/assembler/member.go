@@ -6,7 +6,7 @@ import (
 	"labelplus-next-web-be/internal/value"
 )
 
-func AssembleMemberInfo(memberInfo model.MemberWithInfo, onLoadURL OnLoadURL) value.MemberInfo {
+func AssembleMemberInfo(memberInfo model.MemberInfo, onLoadURL OnLoadURL) value.MemberInfo {
 	result := value.MemberInfo{
 		ID:                    memberInfo.ID,
 		UserID:                memberInfo.UserID,

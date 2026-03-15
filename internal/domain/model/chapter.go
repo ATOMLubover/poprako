@@ -6,6 +6,8 @@ type ChapterInfo struct {
 	ID string
 
 	ComicID   string
+	// Comic 仅在 includes 指定时填充。
+	Comic *ComicInfo
 	Index     int
 	ChapterNo string
 
@@ -77,52 +79,6 @@ func NewChapterDetail(
 		ReviewedAt:          reviewedAt,
 		PublishedAt:         publishedAt,
 		CreatorID:           creatorID,
-		CreatedAt:           createdAt,
-		UpdatedAt:           updatedAt,
-	}
-}
-
-type ChapterWithComicInfo struct {
-	ID string
-
-	Comic     ComicInfo
-	Index     int
-	ChapterNo string
-
-	CoverURL string
-
-	PageCount           int
-	TotalUnitCount      int
-	TranslatedUnitCount int
-	ProofreadUnitCount  int
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func NewChapterWithComicInfo(
-	id string,
-	comicInfo ComicInfo,
-	index int,
-	chapterNo string,
-	coverURL string,
-	pageCount int,
-	totalUnitCount int,
-	translatedUnitCount int,
-	proofreadUnitCount int,
-	createdAt time.Time,
-	updatedAt time.Time,
-) ChapterWithComicInfo {
-	return ChapterWithComicInfo{
-		ID:                  id,
-		Comic:               comicInfo,
-		Index:               index,
-		ChapterNo:           chapterNo,
-		CoverURL:            coverURL,
-		PageCount:           pageCount,
-		TotalUnitCount:      totalUnitCount,
-		TranslatedUnitCount: translatedUnitCount,
-		ProofreadUnitCount:  proofreadUnitCount,
 		CreatedAt:           createdAt,
 		UpdatedAt:           updatedAt,
 	}

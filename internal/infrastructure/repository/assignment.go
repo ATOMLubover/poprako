@@ -58,7 +58,7 @@ func (r *assignmentRepository) Exist(executor intf.Executor, options ...intf.Que
 	return count > 0, nil
 }
 
-func (r *assignmentRepository) ListWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentWithUserInfo, error) {
+func (r *assignmentRepository) ListWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentInfo, error) {
 	executor = r.withTransaction(executor)
 
 	executor = executor.Table(entity.AssignmentTable).
@@ -81,15 +81,15 @@ func (r *assignmentRepository) ListWithUserInfo(executor intf.Executor, options 
 		return nil, err
 	}
 
-	result := make([]model.AssignmentWithUserInfo, len(rows))
+	result := make([]model.AssignmentInfo, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToAssignmentWithUserInfo(row)
+		result[i] = entity.ToAssignmentInfoWithUser(row)
 	}
 
 	return result, nil
 }
 
-func (r *assignmentRepository) ListWithChapterInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentWithChapterInfo, error) {
+func (r *assignmentRepository) ListWithChapterInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentInfo, error) {
 	executor = r.withTransaction(executor)
 
 	executor = executor.Table(entity.AssignmentTable).
@@ -126,9 +126,9 @@ func (r *assignmentRepository) ListWithChapterInfo(executor intf.Executor, optio
 		return nil, err
 	}
 
-	result := make([]model.AssignmentWithChapterInfo, len(rows))
+	result := make([]model.AssignmentInfo, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToAssignmentWithChapterInfo(row)
+		result[i] = entity.ToAssignmentInfoWithChapter(row)
 	}
 
 	return result, nil

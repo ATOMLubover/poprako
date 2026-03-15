@@ -49,85 +49,11 @@ type MemberInfo struct {
 	ID string
 
 	UserID string
-
-	AssignRawProvider *time.Time
-	AssignTranslator  *time.Time
-	AssignProofreader *time.Time
-	AssignTypesetter  *time.Time
-	AssignReviewer    *time.Time
-	AssignPublisher   *time.Time
-	AssignAdmin       *time.Time
-}
-
-func NewMemberInfo(
-	id string,
-	userID string,
-	assignRawProvider *time.Time,
-	assignTranslator *time.Time,
-	assignProofreader *time.Time,
-	assignTypesetter *time.Time,
-	assignReviewer *time.Time,
-	assignPublisher *time.Time,
-	assignAdmin *time.Time,
-) MemberInfo {
-	return MemberInfo{
-		ID:                id,
-		UserID:            userID,
-		AssignRawProvider: assignRawProvider,
-		AssignTranslator:  assignTranslator,
-		AssignProofreader: assignProofreader,
-		AssignTypesetter:  assignTypesetter,
-		AssignReviewer:    assignReviewer,
-		AssignPublisher:   assignPublisher,
-		AssignAdmin:       assignAdmin,
-	}
-}
-
-func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
-	for _, role := range roles {
-		switch role {
-		case RoleRawProvider:
-			if mi.AssignRawProvider != nil {
-				return true
-			}
-		case RoleTranslator:
-			if mi.AssignTranslator != nil {
-				return true
-			}
-		case RoleProofreader:
-			if mi.AssignProofreader != nil {
-				return true
-			}
-		case RoleTypesetter:
-			if mi.AssignTypesetter != nil {
-				return true
-			}
-		case RoleReviewer:
-			if mi.AssignReviewer != nil {
-				return true
-			}
-		case RolePublisher:
-			if mi.AssignPublisher != nil {
-				return true
-			}
-		case RoleAdmin:
-			if mi.AssignAdmin != nil {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// MemberWithInfo 是统一的成员详情模型，替代分裂的 MemberWithUserInfo 和 MemberWithTeamInfo。
-// User 和 Team 字段均为可选，仅在 includes 指定时填充。
-type MemberWithInfo struct {
-	ID     string
-	UserID string
 	TeamID string
 
+	// User 仅在 includes 指定时填充。
 	User *UserInfo
+	// Team 仅在 includes 指定时填充。
 	Team *TeamInfo
 
 	AssignedRawProviderAt *time.Time
@@ -142,12 +68,10 @@ type MemberWithInfo struct {
 	UpdatedAt time.Time
 }
 
-func NewMemberWithInfo(
+func NewMemberInfo(
 	id string,
 	userID string,
 	teamID string,
-	user *UserInfo,
-	team *TeamInfo,
 	assignedRawProviderAt *time.Time,
 	assignedTranslatorAt *time.Time,
 	assignedProofreaderAt *time.Time,
@@ -157,13 +81,11 @@ func NewMemberWithInfo(
 	assignedAdminAt *time.Time,
 	createdAt time.Time,
 	updatedAt time.Time,
-) MemberWithInfo {
-	return MemberWithInfo{
+) MemberInfo {
+	return MemberInfo{
 		ID:                    id,
 		UserID:                userID,
 		TeamID:                teamID,
-		User:                  user,
-		Team:                  team,
 		AssignedRawProviderAt: assignedRawProviderAt,
 		AssignedTranslatorAt:  assignedTranslatorAt,
 		AssignedProofreaderAt: assignedProofreaderAt,
@@ -176,35 +98,35 @@ func NewMemberWithInfo(
 	}
 }
 
-func (m *MemberWithInfo) HasAnyRole(roles ...RoleFlag) bool {
+func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 	for _, role := range roles {
 		switch role {
 		case RoleRawProvider:
-			if m.AssignedRawProviderAt != nil {
+			if mi.AssignedRawProviderAt != nil {
 				return true
 			}
 		case RoleTranslator:
-			if m.AssignedTranslatorAt != nil {
+			if mi.AssignedTranslatorAt != nil {
 				return true
 			}
 		case RoleProofreader:
-			if m.AssignedProofreaderAt != nil {
+			if mi.AssignedProofreaderAt != nil {
 				return true
 			}
 		case RoleTypesetter:
-			if m.AssignedTypesetterAt != nil {
+			if mi.AssignedTypesetterAt != nil {
 				return true
 			}
 		case RoleReviewer:
-			if m.AssignedReviewerAt != nil {
+			if mi.AssignedReviewerAt != nil {
 				return true
 			}
 		case RolePublisher:
-			if m.AssignedPublisherAt != nil {
+			if mi.AssignedPublisherAt != nil {
 				return true
 			}
 		case RoleAdmin:
-			if m.AssignedAdminAt != nil {
+			if mi.AssignedAdminAt != nil {
 				return true
 			}
 		}
@@ -212,29 +134,28 @@ func (m *MemberWithInfo) HasAnyRole(roles ...RoleFlag) bool {
 
 	return false
 }
-
-func (m *MemberWithInfo) Roles() []RoleFlag {
+func (mi *MemberInfo) Roles() []RoleFlag {
 	roles := make([]RoleFlag, 0)
 
-	if m.AssignedRawProviderAt != nil {
+	if mi.AssignedRawProviderAt != nil {
 		roles = append(roles, RoleRawProvider)
 	}
-	if m.AssignedTranslatorAt != nil {
+	if mi.AssignedTranslatorAt != nil {
 		roles = append(roles, RoleTranslator)
 	}
-	if m.AssignedProofreaderAt != nil {
+	if mi.AssignedProofreaderAt != nil {
 		roles = append(roles, RoleProofreader)
 	}
-	if m.AssignedTypesetterAt != nil {
+	if mi.AssignedTypesetterAt != nil {
 		roles = append(roles, RoleTypesetter)
 	}
-	if m.AssignedReviewerAt != nil {
+	if mi.AssignedReviewerAt != nil {
 		roles = append(roles, RoleReviewer)
 	}
-	if m.AssignedPublisherAt != nil {
+	if mi.AssignedPublisherAt != nil {
 		roles = append(roles, RolePublisher)
 	}
-	if m.AssignedAdminAt != nil {
+	if mi.AssignedAdminAt != nil {
 		roles = append(roles, RoleAdmin)
 	}
 
@@ -242,17 +163,17 @@ func (m *MemberWithInfo) Roles() []RoleFlag {
 }
 
 type MemberUpdate struct {
-	ID                string
-	AssignRawProvider *time.Time
-	AssignTranslator  *time.Time
-	AssignProofreader *time.Time
-	AssignTypesetter  *time.Time
-	AssignReviewer    *time.Time
-	AssignPublisher   *time.Time
-	AssignAdmin       *time.Time
+	ID                    string
+	AssignedRawProviderAt *time.Time
+	AssignedTranslatorAt  *time.Time
+	AssignedProofreaderAt *time.Time
+	AssignedTypesetterAt  *time.Time
+	AssignedReviewerAt    *time.Time
+	AssignedPublisherAt   *time.Time
+	AssignedAdminAt       *time.Time
 }
 
-func NewMemberUpdate(id string, current MemberWithInfo, targetRoles RoleMask) MemberUpdate {
+func NewMemberUpdate(id string, current MemberInfo, targetRoles RoleMask) MemberUpdate {
 	now := time.Now()
 
 	resolveRoleAssignedAt := func(currentAssignedAt *time.Time, role RoleFlag) *time.Time {
@@ -270,13 +191,13 @@ func NewMemberUpdate(id string, current MemberWithInfo, targetRoles RoleMask) Me
 	}
 
 	return MemberUpdate{
-		ID:                id,
-		AssignRawProvider: resolveRoleAssignedAt(current.AssignedRawProviderAt, RoleRawProvider),
-		AssignTranslator:  resolveRoleAssignedAt(current.AssignedTranslatorAt, RoleTranslator),
-		AssignProofreader: resolveRoleAssignedAt(current.AssignedProofreaderAt, RoleProofreader),
-		AssignTypesetter:  resolveRoleAssignedAt(current.AssignedTypesetterAt, RoleTypesetter),
-		AssignReviewer:    resolveRoleAssignedAt(current.AssignedReviewerAt, RoleReviewer),
-		AssignPublisher:   resolveRoleAssignedAt(current.AssignedPublisherAt, RolePublisher),
-		AssignAdmin:       resolveRoleAssignedAt(current.AssignedAdminAt, RoleAdmin),
+		ID:                    id,
+		AssignedRawProviderAt: resolveRoleAssignedAt(current.AssignedRawProviderAt, RoleRawProvider),
+		AssignedTranslatorAt:  resolveRoleAssignedAt(current.AssignedTranslatorAt, RoleTranslator),
+		AssignedProofreaderAt: resolveRoleAssignedAt(current.AssignedProofreaderAt, RoleProofreader),
+		AssignedTypesetterAt:  resolveRoleAssignedAt(current.AssignedTypesetterAt, RoleTypesetter),
+		AssignedReviewerAt:    resolveRoleAssignedAt(current.AssignedReviewerAt, RoleReviewer),
+		AssignedPublisherAt:   resolveRoleAssignedAt(current.AssignedPublisherAt, RolePublisher),
+		AssignedAdminAt:       resolveRoleAssignedAt(current.AssignedAdminAt, RoleAdmin),
 	}
 }

@@ -67,9 +67,9 @@ type MemberWithTeamRow struct {
 	TeamUpdatedAt        time.Time `gorm:"column:team_updated_at"`
 }
 
-// MemberWithInfoRow 是统一的聚合行类型，可同时携带 user 和 team 别名列。
+// MemberProfileIncludeRow 是统一的聚合行类型，可同时携带 user 和 team 别名列。
 // User 列与 Team 列均可选，由 query option 决定是否 JOIN。
-type MemberWithInfoRow struct {
+type MemberProfileIncludeRow struct {
 	MemberProfileRow
 
 	// User 别名列（IncludeUserInfo() 时填充）
@@ -90,7 +90,7 @@ type MemberWithInfoRow struct {
 	TeamUpdatedAt        time.Time `gorm:"column:team_updated_at"`
 }
 
-func ToMemberWithInfo(row MemberWithInfoRow) model.MemberWithInfo {
+func ToMemberInfo(row MemberProfileIncludeRow) model.MemberInfo {
 	var userInfo *model.UserInfo
 	if !row.UserCreatedAt.IsZero() {
 		info := model.NewUserInfo(
@@ -120,12 +120,10 @@ func ToMemberWithInfo(row MemberWithInfoRow) model.MemberWithInfo {
 		teamInfo = &info
 	}
 
-	return model.NewMemberWithInfo(
+	memberInfo := model.NewMemberInfo(
 		row.ID,
 		row.UserID,
 		row.TeamID,
-		userInfo,
-		teamInfo,
 		row.AssignedRawProviderAt,
 		row.AssignedTranslatorAt,
 		row.AssignedProofreaderAt,
@@ -136,4 +134,9 @@ func ToMemberWithInfo(row MemberWithInfoRow) model.MemberWithInfo {
 		row.CreatedAt,
 		row.UpdatedAt,
 	)
+
+	memberInfo.User = userInfo
+	memberInfo.Team = teamInfo
+
+	return memberInfo
 }

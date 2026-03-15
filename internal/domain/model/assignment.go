@@ -6,7 +6,11 @@ type AssignmentInfo struct {
 	ID string
 
 	ChapterID string
-	UserID    string
+	// Chapter 仅在 includes 指定时填充。
+	Chapter *ChapterInfo
+	UserID  string
+	// User 仅在 includes 指定时填充。
+	User *UserInfo
 
 	AssignedRawProviderAt *time.Time
 	AssignedTranslatorAt  *time.Time
@@ -182,146 +186,4 @@ func NewAssignmentUpdate(id string, current AssignmentInfo, targetRoles RoleMask
 		AssignedReviewerAt:    resolveAt(current.AssignedReviewerAt, RoleReviewer),
 		AssignedPublisherAt:   resolveAt(current.AssignedPublisherAt, RolePublisher),
 	}
-}
-
-// AssignmentWithUserInfo 用于列出某章节的所有分配（含用户信息）。
-type AssignmentWithUserInfo struct {
-	ID        string
-	ChapterID string
-	User      UserInfo
-
-	AssignedRawProviderAt *time.Time
-	AssignedTranslatorAt  *time.Time
-	AssignedProofreaderAt *time.Time
-	AssignedTypesetterAt  *time.Time
-	AssignedRedrawerAt    *time.Time
-	AssignedReviewerAt    *time.Time
-	AssignedPublisherAt   *time.Time
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func NewAssignmentWithUserInfo(
-	id string,
-	chapterID string,
-	user UserInfo,
-	assignedRawProviderAt *time.Time,
-	assignedTranslatorAt *time.Time,
-	assignedProofreaderAt *time.Time,
-	assignedTypesetterAt *time.Time,
-	assignedRedrawerAt *time.Time,
-	assignedReviewerAt *time.Time,
-	assignedPublisherAt *time.Time,
-	createdAt time.Time,
-	updatedAt time.Time,
-) AssignmentWithUserInfo {
-	return AssignmentWithUserInfo{
-		ID:                    id,
-		ChapterID:             chapterID,
-		User:                  user,
-		AssignedRawProviderAt: assignedRawProviderAt,
-		AssignedTranslatorAt:  assignedTranslatorAt,
-		AssignedProofreaderAt: assignedProofreaderAt,
-		AssignedTypesetterAt:  assignedTypesetterAt,
-		AssignedRedrawerAt:    assignedRedrawerAt,
-		AssignedReviewerAt:    assignedReviewerAt,
-		AssignedPublisherAt:   assignedPublisherAt,
-		CreatedAt:             createdAt,
-		UpdatedAt:             updatedAt,
-	}
-}
-
-func (a *AssignmentWithUserInfo) RoleMask() RoleMask {
-	mask := RoleMask(0)
-	if a.AssignedRawProviderAt != nil {
-		mask |= RoleMask(RoleRawProvider)
-	}
-	if a.AssignedTranslatorAt != nil {
-		mask |= RoleMask(RoleTranslator)
-	}
-	if a.AssignedProofreaderAt != nil {
-		mask |= RoleMask(RoleProofreader)
-	}
-	if a.AssignedTypesetterAt != nil {
-		mask |= RoleMask(RoleTypesetter)
-	}
-	if a.AssignedReviewerAt != nil {
-		mask |= RoleMask(RoleReviewer)
-	}
-	if a.AssignedPublisherAt != nil {
-		mask |= RoleMask(RolePublisher)
-	}
-	return mask
-}
-
-// AssignmentWithChapterInfo 用于列出某用户的所有分配（含章节+漫画信息）。
-type AssignmentWithChapterInfo struct {
-	ID      string
-	Chapter ChapterWithComicInfo
-	UserID  string
-
-	AssignedRawProviderAt *time.Time
-	AssignedTranslatorAt  *time.Time
-	AssignedProofreaderAt *time.Time
-	AssignedTypesetterAt  *time.Time
-	AssignedRedrawerAt    *time.Time
-	AssignedReviewerAt    *time.Time
-	AssignedPublisherAt   *time.Time
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-func NewAssignmentWithChapterInfo(
-	id string,
-	chapter ChapterWithComicInfo,
-	userID string,
-	assignedRawProviderAt *time.Time,
-	assignedTranslatorAt *time.Time,
-	assignedProofreaderAt *time.Time,
-	assignedTypesetterAt *time.Time,
-	assignedRedrawerAt *time.Time,
-	assignedReviewerAt *time.Time,
-	assignedPublisherAt *time.Time,
-	createdAt time.Time,
-	updatedAt time.Time,
-) AssignmentWithChapterInfo {
-	return AssignmentWithChapterInfo{
-		ID:                    id,
-		Chapter:               chapter,
-		UserID:                userID,
-		AssignedRawProviderAt: assignedRawProviderAt,
-		AssignedTranslatorAt:  assignedTranslatorAt,
-		AssignedProofreaderAt: assignedProofreaderAt,
-		AssignedTypesetterAt:  assignedTypesetterAt,
-		AssignedRedrawerAt:    assignedRedrawerAt,
-		AssignedReviewerAt:    assignedReviewerAt,
-		AssignedPublisherAt:   assignedPublisherAt,
-		CreatedAt:             createdAt,
-		UpdatedAt:             updatedAt,
-	}
-}
-
-func (a *AssignmentWithChapterInfo) RoleMask() RoleMask {
-	mask := RoleMask(0)
-	if a.AssignedRawProviderAt != nil {
-		mask |= RoleMask(RoleRawProvider)
-	}
-	if a.AssignedTranslatorAt != nil {
-		mask |= RoleMask(RoleTranslator)
-	}
-	if a.AssignedProofreaderAt != nil {
-		mask |= RoleMask(RoleProofreader)
-	}
-	if a.AssignedTypesetterAt != nil {
-		mask |= RoleMask(RoleTypesetter)
-	}
-	if a.AssignedReviewerAt != nil {
-		mask |= RoleMask(RoleReviewer)
-	}
-	if a.AssignedPublisherAt != nil {
-		mask |= RoleMask(RolePublisher)
-	}
-	return mask
 }
