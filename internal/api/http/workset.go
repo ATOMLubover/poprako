@@ -15,7 +15,7 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
-// @Param 		includes[] query []string false "关联展开字段，支持 team"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：team"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 //

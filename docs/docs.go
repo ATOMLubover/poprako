@@ -22,7 +22,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取指定章节的所有分配记录（含被分配用户信息），仅汉化组成员可访问",
+                "description": "获取指定章节的所有分配记录，仅汉化组成员可访问",
                 "produces": [
                     "application/json"
                 ],
@@ -39,6 +39,16 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include 关联信息，可选值：user",
+                        "name": "\"includes[]\"",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "偏移量",
                         "name": "offset",
@@ -51,16 +61,6 @@ const docTemplate = `{
                         "name": "limit",
                         "in": "query",
                         "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "嵌套信息（user）",
-                        "name": "includes[]",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -69,7 +69,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/value.AssignmentWithUserInfo"
+                                "$ref": "#/definitions/value.AssignmentInfo"
                             }
                         }
                     }
@@ -120,7 +120,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取当前登录用户的所有分配记录（含章节和漫画信息），支持分页",
+                "description": "获取当前登录用户的所有分配记录，支持分页",
                 "produces": [
                     "application/json"
                 ],
@@ -129,6 +129,16 @@ const docTemplate = `{
                 ],
                 "summary": "获取我的分配列表",
                 "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include 关联信息，可选值：chapter（隐含 chapter.comic）",
+                        "name": "\"includes[]\"",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "description": "偏移量",
@@ -150,7 +160,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/value.AssignmentWithChapterInfo"
+                                "$ref": "#/definitions/value.AssignmentInfo"
                             }
                         }
                     }
@@ -340,8 +350,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "嵌套信息（creator）",
-                        "name": "includes[]",
+                        "description": "include 关联信息，可选值：creator",
+                        "name": "\"includes[]\"",
                         "in": "query"
                     }
                 ],
@@ -510,8 +520,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "嵌套信息（workset,creator）",
-                        "name": "includes[]",
+                        "description": "include 关联信息，可选值：workset, creator",
+                        "name": "\"includes[]\"",
                         "in": "query"
                     }
                 ],
@@ -680,8 +690,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "嵌套信息（invitor）",
-                        "name": "includes[]",
+                        "description": "include 关联信息，可选值：invitor",
+                        "name": "\"includes[]\"",
                         "in": "query"
                     }
                 ],
@@ -1110,8 +1120,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "嵌套信息（creator）",
-                        "name": "includes[]",
+                        "description": "include 关联信息，可选值：creator",
+                        "name": "\"includes[]\"",
                         "in": "query"
                     }
                 ],
@@ -1724,8 +1734,8 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "关联展开字段，支持 team",
-                        "name": "includes[]",
+                        "description": "include 关联信息，可选值：team",
+                        "name": "\"includes[]\"",
                         "in": "query"
                     },
                     {
@@ -1882,7 +1892,7 @@ const docTemplate = `{
                 "WorkflowUnset"
             ]
         },
-        "value.AssignmentWithChapterInfo": {
+        "value.AssignmentInfo": {
             "type": "object",
             "properties": {
                 "assigned_proofreader_at": {
@@ -1907,47 +1917,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "chapter": {
-                    "$ref": "#/definitions/value.ChapterWithComicInfo"
-                },
-                "created_at": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "value.AssignmentWithUserInfo": {
-            "type": "object",
-            "properties": {
-                "assigned_proofreader_at": {
-                    "type": "integer"
-                },
-                "assigned_publisher_at": {
-                    "type": "integer"
-                },
-                "assigned_raw_provider_at": {
-                    "type": "integer"
-                },
-                "assigned_redrawer_at": {
-                    "type": "integer"
-                },
-                "assigned_reviewer_at": {
-                    "type": "integer"
-                },
-                "assigned_translator_at": {
-                    "type": "integer"
-                },
-                "assigned_typesetter_at": {
-                    "type": "integer"
+                    "$ref": "#/definitions/value.ChapterInfo"
                 },
                 "chapter_id": {
+                    "description": "关联的章节信息",
                     "type": "string"
                 },
                 "created_at": {
@@ -1961,6 +1934,10 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/value.UserInfo"
+                },
+                "user_id": {
+                    "description": "关联的用户信息",
+                    "type": "string"
                 }
             }
         },
@@ -2031,44 +2008,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "uploaded_at": {
-                    "type": "integer"
-                }
-            }
-        },
-        "value.ChapterWithComicInfo": {
-            "type": "object",
-            "properties": {
-                "chapter_no": {
-                    "type": "string"
-                },
-                "comic": {
-                    "$ref": "#/definitions/value.ComicInfo"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "index": {
-                    "type": "integer"
-                },
-                "page_count": {
-                    "type": "integer"
-                },
-                "proofread_unit_count": {
-                    "type": "integer"
-                },
-                "total_unit_count": {
-                    "type": "integer"
-                },
-                "translated_unit_count": {
-                    "type": "integer"
-                },
-                "updated_at": {
                     "type": "integer"
                 }
             }

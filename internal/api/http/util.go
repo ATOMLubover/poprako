@@ -15,7 +15,7 @@ func reject(
 ) {
 	ctx.StatusCode(code)
 
-	ctx.JSON(FormatResponse{
+	_ = ctx.JSON(FormatResponse{
 		Code:    code,
 		Message: message,
 	})
@@ -30,7 +30,7 @@ func accept(
 	// 统一使用 200 状态码，错误信息通过 code 字段传递
 	ctx.StatusCode(iris.StatusOK)
 
-	ctx.JSON(FormatResponse{
+	_ = ctx.JSON(FormatResponse{
 		// 暂时使用统一的 200 HTTP status code，不携带具体业务状态码
 		Code:    iris.StatusOK,
 		Message: message,

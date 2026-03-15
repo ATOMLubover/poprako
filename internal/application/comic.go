@@ -120,11 +120,12 @@ func (ca *comicApplication) ListComics(
 		query_option.ComicQuery().OrderByLastActiveAtDesc(),
 		query_option.Paginate(args.Offset, args.Limit),
 	}
-	if includeSpec.NeedWorkset && includeSpec.NeedCreator {
+	switch {
+	case includeSpec.NeedWorkset && includeSpec.NeedCreator:
 		queryOptions = append(queryOptions, query_option.ComicQuery().IncludeWorksetAndCreatorInfo())
-	} else if includeSpec.NeedWorkset {
+	case includeSpec.NeedWorkset:
 		queryOptions = append(queryOptions, query_option.ComicQuery().IncludeWorksetInfo())
-	} else if includeSpec.NeedCreator {
+	case includeSpec.NeedCreator:
 		queryOptions = append(queryOptions, query_option.ComicQuery().IncludeCreatorInfo())
 	}
 

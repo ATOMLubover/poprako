@@ -17,7 +17,7 @@ import (
 // @Param 		workset_id query string true "工作集 ID"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
-// @Param 		includes[] query []string false "嵌套信息（workset,creator）"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：workset, creator"
 //
 // @Success 	200 {object} []value.ComicInfo
 //

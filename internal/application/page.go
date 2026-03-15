@@ -163,7 +163,7 @@ func (pa *pageApplication) ReserveChapterPages(
 			return value.ReserveChapterPagesResult{}, errors.New("创建漫画页失败")
 		}
 
-			creationResults[i] = value.PageCreationResult{PageID: pageCreations[i].ID, PutURL: presignedURL}
+		creationResults[i] = value.PageCreationResult{PageID: pageCreations[i].ID, PutURL: presignedURL}
 	}
 
 	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {

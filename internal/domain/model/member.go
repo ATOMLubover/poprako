@@ -134,6 +134,7 @@ func (mi *MemberInfo) HasAnyRole(roles ...RoleFlag) bool {
 
 	return false
 }
+
 func (mi *MemberInfo) Roles() []RoleFlag {
 	roles := make([]RoleFlag, 0)
 

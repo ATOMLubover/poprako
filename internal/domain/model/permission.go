@@ -727,11 +727,8 @@ func (permWorksetList) Check(
 ) bool {
 	// 只要是汉化组成员，就可以查看工作集列表
 	_, ok := loadMemberInfoForCheck("PermWorksetList.Check", userID, teamID, onLoadMemberInfo)
-	if !ok {
-		return false
-	}
 
-	return true
+	return ok
 }
 
 func (permWorksetCreate) Check(

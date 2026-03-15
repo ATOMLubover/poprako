@@ -33,7 +33,7 @@ type AssignmentInfo struct {
 // ListAssignmentArgs 用于查询当前用户的所有分配，支持分页。
 type ListAssignmentArgs struct {
 	// 嵌套关联字段
-	Includes []string `url:"includes"`
+	Includes []string `url:"includes[]"`
 
 	// 查询条件
 	ChapterID string `url:"chapter_id,omitempty"`
@@ -49,9 +49,6 @@ func (a *ListAssignmentArgs) Validate() error {
 
 	if err := a.PaginationParams.Validate(); err != nil {
 		return err
-	}
-
-	if len(a.Includes) > 0 {
 	}
 
 	return nil

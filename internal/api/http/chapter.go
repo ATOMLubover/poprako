@@ -17,7 +17,7 @@ import (
 // @Param 		comic_id query string true "漫画 ID"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
-// @Param 		includes[] query []string false "嵌套信息（creator）"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：creator"
 //
 // @Success 	200 {object} []value.ChapterInfo
 //

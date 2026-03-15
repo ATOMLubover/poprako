@@ -8,6 +8,7 @@ import (
 	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
+	domain_service "labelplus-next-web-be/internal/domain/service"
 	repository_infra "labelplus-next-web-be/internal/infrastructure/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/query_option"
 	"labelplus-next-web-be/internal/util"
@@ -114,12 +115,20 @@ func (aa *assignmentApplication) ListChapterAssignments(
 		return nil, errors.New("权限不足")
 	}
 
-	assignments, err := aa.assignmentRepository.ListWithUserInfo(
-		nil,
+	includeSpec := domain_service.ResolveAssignmentListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
 		query_option.UpdatedAtDesc(repository_infra.AssignmentTable),
 		query_option.AssignmentQuery().FilterByChapterID(args.ChapterID),
-		query_option.Paginate(args.Offset, args.Limit),
-	)
+	}
+
+	if includeSpec.NeedUser {
+		queryOptions = append(queryOptions, query_option.AssignmentQuery().IncludeUserInfo())
+	}
+
+	queryOptions = append(queryOptions, query_option.Paginate(args.Offset, args.Limit))
+
+	assignments, err := aa.assignmentRepository.List(nil, queryOptions...)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取分配列表失败", zap.Error(err))
 		return nil, errors.New("获取分配列表失败")
@@ -127,7 +136,7 @@ func (aa *assignmentApplication) ListChapterAssignments(
 
 	result := make([]value.AssignmentInfo, len(assignments))
 	for i, a := range assignments {
-		result[i] = assembler.AssembleAssignmentInfoFromUser(a, aa.ossClient.GenerateGetPresignedURL)
+		result[i] = assembler.AssembleAssignmentInfo(a, aa.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil
@@ -153,12 +162,20 @@ func (aa *assignmentApplication) ListMyAssignments(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	assignments, err := aa.assignmentRepository.ListWithChapterInfo(
-		nil,
+	includeSpec := domain_service.ResolveAssignmentMyListIncludeSpec(args.Includes)
+
+	queryOptions := []repository.QueryOption{
 		query_option.UpdatedAtDesc(repository_infra.AssignmentTable),
 		query_option.AssignmentQuery().FilterByUserID(currentUserID),
-		query_option.Paginate(args.Offset, args.Limit),
-	)
+	}
+
+	if includeSpec.NeedChapter {
+		queryOptions = append(queryOptions, query_option.AssignmentQuery().IncludeChapterInfo())
+	}
+
+	queryOptions = append(queryOptions, query_option.Paginate(args.Offset, args.Limit))
+
+	assignments, err := aa.assignmentRepository.List(nil, queryOptions...)
 	if err != nil {
 		scope.Logger().Error(fn+": 获取用户分配列表失败", zap.Error(err))
 		return nil, errors.New("获取用户分配列表失败")
@@ -166,7 +183,7 @@ func (aa *assignmentApplication) ListMyAssignments(
 
 	result := make([]value.AssignmentInfo, len(assignments))
 	for i, a := range assignments {
-		result[i] = assembler.AssembleAssignmentInfoFromChapter(a, aa.ossClient.GenerateGetPresignedURL)
+		result[i] = assembler.AssembleAssignmentInfo(a, aa.ossClient.GenerateGetPresignedURL)
 	}
 
 	return result, nil

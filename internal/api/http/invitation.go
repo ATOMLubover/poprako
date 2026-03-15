@@ -17,7 +17,7 @@ import (
 // @Param 		team_id query string true "汉化组 ID"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
-// @Param 		includes[] query []string false "嵌套信息（invitor）"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：invitor"
 //
 // @Success 	200 {object} []value.InvitationInfo
 //

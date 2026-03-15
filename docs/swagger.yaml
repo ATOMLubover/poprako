@@ -12,7 +12,7 @@ definitions:
     - WorkflowInProgress
     - WorkflowCompleted
     - WorkflowUnset
-  value.AssignmentWithChapterInfo:
+  value.AssignmentInfo:
     properties:
       assigned_proofreader_at:
         type: integer
@@ -29,33 +29,9 @@ definitions:
       assigned_typesetter_at:
         type: integer
       chapter:
-        $ref: '#/definitions/value.ChapterWithComicInfo'
-      created_at:
-        type: integer
-      id:
-        type: string
-      updated_at:
-        type: integer
-      user_id:
-        type: string
-    type: object
-  value.AssignmentWithUserInfo:
-    properties:
-      assigned_proofreader_at:
-        type: integer
-      assigned_publisher_at:
-        type: integer
-      assigned_raw_provider_at:
-        type: integer
-      assigned_redrawer_at:
-        type: integer
-      assigned_reviewer_at:
-        type: integer
-      assigned_translator_at:
-        type: integer
-      assigned_typesetter_at:
-        type: integer
+        $ref: '#/definitions/value.ChapterInfo'
       chapter_id:
+        description: 关联的章节信息
         type: string
       created_at:
         type: integer
@@ -65,6 +41,9 @@ definitions:
         type: integer
       user:
         $ref: '#/definitions/value.UserInfo'
+      user_id:
+        description: 关联的用户信息
+        type: string
     type: object
   value.ChapterInfo:
     properties:
@@ -111,31 +90,6 @@ definitions:
       updated_at:
         type: integer
       uploaded_at:
-        type: integer
-    type: object
-  value.ChapterWithComicInfo:
-    properties:
-      chapter_no:
-        type: string
-      comic:
-        $ref: '#/definitions/value.ComicInfo'
-      cover_url:
-        type: string
-      created_at:
-        type: integer
-      id:
-        type: string
-      index:
-        type: integer
-      page_count:
-        type: integer
-      proofread_unit_count:
-        type: integer
-      total_unit_count:
-        type: integer
-      translated_unit_count:
-        type: integer
-      updated_at:
         type: integer
     type: object
   value.ComicInfo:
@@ -577,13 +531,20 @@ info:
 paths:
   /assignments:
     get:
-      description: 获取指定章节的所有分配记录（含被分配用户信息），仅汉化组成员可访问
+      description: 获取指定章节的所有分配记录，仅汉化组成员可访问
       parameters:
       - description: 章节 ID
         in: query
         name: chapter_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: include 关联信息，可选值：user
+        in: query
+        items:
+          type: string
+        name: '"includes[]"'
+        type: array
       - description: 偏移量
         in: query
         name: offset
@@ -594,13 +555,6 @@ paths:
         name: limit
         required: true
         type: integer
-      - collectionFormat: csv
-        description: 嵌套信息（user）
-        in: query
-        items:
-          type: string
-        name: includes[]
-        type: array
       produces:
       - application/json
       responses:
@@ -608,7 +562,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.AssignmentWithUserInfo'
+              $ref: '#/definitions/value.AssignmentInfo'
             type: array
       security:
       - ApiKeyAuth: []
@@ -685,8 +639,15 @@ paths:
       - assignment
   /assignments/mine:
     get:
-      description: 获取当前登录用户的所有分配记录（含章节和漫画信息），支持分页
+      description: 获取当前登录用户的所有分配记录，支持分页
       parameters:
+      - collectionFormat: csv
+        description: include 关联信息，可选值：chapter（隐含 chapter.comic）
+        in: query
+        items:
+          type: string
+        name: '"includes[]"'
+        type: array
       - description: 偏移量
         in: query
         name: offset
@@ -704,7 +665,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/value.AssignmentWithChapterInfo'
+              $ref: '#/definitions/value.AssignmentInfo'
             type: array
       security:
       - ApiKeyAuth: []
@@ -775,11 +736,11 @@ paths:
         required: true
         type: integer
       - collectionFormat: csv
-        description: 嵌套信息（creator）
+        description: include 关联信息，可选值：creator
         in: query
         items:
           type: string
-        name: includes[]
+        name: '"includes[]"'
         type: array
       produces:
       - application/json
@@ -883,11 +844,11 @@ paths:
         required: true
         type: integer
       - collectionFormat: csv
-        description: 嵌套信息（workset,creator）
+        description: include 关联信息，可选值：workset, creator
         in: query
         items:
           type: string
-        name: includes[]
+        name: '"includes[]"'
         type: array
       produces:
       - application/json
@@ -991,11 +952,11 @@ paths:
         required: true
         type: integer
       - collectionFormat: csv
-        description: 嵌套信息（invitor）
+        description: include 关联信息，可选值：invitor
         in: query
         items:
           type: string
-        name: includes[]
+        name: '"includes[]"'
         type: array
       produces:
       - application/json
@@ -1264,11 +1225,11 @@ paths:
         required: true
         type: integer
       - collectionFormat: csv
-        description: 嵌套信息（creator）
+        description: include 关联信息，可选值：creator
         in: query
         items:
           type: string
-        name: includes[]
+        name: '"includes[]"'
         type: array
       produces:
       - application/json
@@ -1647,11 +1608,11 @@ paths:
         required: true
         type: string
       - collectionFormat: csv
-        description: 关联展开字段，支持 team
+        description: include 关联信息，可选值：team
         in: query
         items:
           type: string
-        name: includes[]
+        name: '"includes[]"'
         type: array
       - description: 偏移量
         in: query

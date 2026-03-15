@@ -6,8 +6,11 @@ default:
 swag:
     swag init
 
+check paths="./...":
+    golangci-lint-v2 run {{ paths }}
+
 fmt:
-    gofumpt -w .
+    golangci-lint-v2 fmt ./...
 
 cloc:
     cloc internal/

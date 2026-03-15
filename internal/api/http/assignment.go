@@ -9,15 +9,15 @@ import (
 
 // ListChapterAssignments godoc
 // @Summary 	获取章节分配列表
-// @Description 获取指定章节的所有分配记录（含被分配用户信息），仅汉化组成员可访问
+// @Description 获取指定章节的所有分配记录，仅汉化组成员可访问
 //
 // @Tags 		assignment
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		chapter_id query string true "章节 ID"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：user"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
-// @Param 		includes[] query []string false "嵌套信息（user）"
 //
 // @Success 	200 {object} []value.AssignmentInfo
 //
@@ -53,11 +53,12 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 
 // ListMyAssignments godoc
 // @Summary 	获取我的分配列表
-// @Description 获取当前登录用户的所有分配记录（含章节和漫画信息），支持分页
+// @Description 获取当前登录用户的所有分配记录，支持分页
 //
 // @Tags 		assignment
 // @Security 	ApiKeyAuth
 // @Produce 	json
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：chapter（隐含 chapter.comic）"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 //

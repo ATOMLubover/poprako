@@ -5,9 +5,9 @@ import "time"
 type ChapterInfo struct {
 	ID string
 
-	ComicID   string
+	ComicID string
 	// Comic 仅在 includes 指定时填充。
-	Comic *ComicInfo
+	Comic     *ComicInfo
 	Index     int
 	ChapterNo string
 

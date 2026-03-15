@@ -58,77 +58,22 @@ func (r *assignmentRepository) Exist(executor intf.Executor, options ...intf.Que
 	return count > 0, nil
 }
 
-func (r *assignmentRepository) ListWithUserInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentInfo, error) {
+func (r *assignmentRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentInfo, error) {
 	executor = r.withTransaction(executor)
-
-	executor = executor.Table(entity.AssignmentTable).
-		Select(`assignment_table.*,
-			user_table.name               AS user_name,
-			user_table.qq                 AS user_qq,
-			user_table.avatar_oss_key     AS user_avatar_oss_key,
-			user_table.is_avatar_uploaded AS user_is_avatar_uploaded,
-			user_table.is_super_admin     AS user_is_super_admin,
-			user_table.created_at         AS user_created_at,
-			user_table.updated_at         AS user_updated_at`).
-		Joins("LEFT JOIN user_table ON user_table.id = assignment_table.user_id AND user_table.deleted_at IS NULL")
+	executor = executor.Table(entity.AssignmentTable)
 
 	for _, opt := range options {
 		executor = opt(executor)
 	}
 
-	var rows []entity.AssignmentWithUserRow
+	var rows []entity.AssignmentIncludeRow
 	if err := executor.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
 	result := make([]model.AssignmentInfo, len(rows))
 	for i, row := range rows {
-		result[i] = entity.ToAssignmentInfoWithUser(row)
-	}
-
-	return result, nil
-}
-
-func (r *assignmentRepository) ListWithChapterInfo(executor intf.Executor, options ...intf.QueryOption) ([]model.AssignmentInfo, error) {
-	executor = r.withTransaction(executor)
-
-	executor = executor.Table(entity.AssignmentTable).
-		Select(`assignment_table.*,
-			chapter_table.comic_id      AS chapter_comic_id,
-			chapter_table.index         AS chapter_index,
-			chapter_table.subtitle      AS chapter_subtitle,
-			chapter_table.page_count    AS chapter_page_count,
-			chapter_table.cover_url     AS chapter_cover_url,
-			chapter_table.created_at    AS chapter_created_at,
-			chapter_table.updated_at    AS chapter_updated_at,
-			comic_table.workset_id      AS comic_workset_id,
-			workset_table.team_id       AS comic_team_id,
-			comic_table.index           AS comic_index,
-			comic_table.title           AS comic_title,
-			comic_table.author          AS comic_author,
-			comic_table.description     AS comic_description,
-			comic_table.cover_url       AS comic_cover_url,
-			comic_table.chapter_count   AS comic_chapter_count,
-			comic_table.creator_id      AS comic_creator_id,
-			comic_table.last_active_at  AS comic_last_active_at,
-			comic_table.created_at      AS comic_created_at,
-			comic_table.updated_at      AS comic_updated_at`).
-		Joins("LEFT JOIN chapter_table ON chapter_table.id = assignment_table.chapter_id AND chapter_table.deleted_at IS NULL").
-		Joins("LEFT JOIN comic_table ON comic_table.id = chapter_table.comic_id AND comic_table.deleted_at IS NULL").
-		Joins("LEFT JOIN workset_table ON workset_table.id = comic_table.workset_id")
-
-	for _, opt := range options {
-		executor = opt(executor)
-	}
-
-	var rows []entity.AssignmentWithChapterAndComicRow
-	if err := executor.Find(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	result := make([]model.AssignmentInfo, len(rows))
-	for i, row := range rows {
-		result[i] = entity.ToAssignmentInfoWithChapter(row)
+		result[i] = entity.ToAssignmentInfoFromIncludeRow(row)
 	}
 
 	return result, nil

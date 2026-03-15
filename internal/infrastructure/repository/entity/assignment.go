@@ -62,10 +62,12 @@ type AssignmentInsertRow struct {
 
 func (AssignmentInsertRow) TableName() string { return AssignmentTable }
 
-// AssignmentWithUserRow 用于 ListWithUserInfo（JOIN user_table）。
-type AssignmentWithUserRow struct {
+// AssignmentIncludeRow 是统一的聚合行类型，可同时携带 user 和 chapter+comic 别名列。
+// User 列与 Chapter/Comic 列均可选，由 query option 决定是否 JOIN 及 SELECT。
+type AssignmentIncludeRow struct {
 	AssignmentInfoRow
 
+	// User 别名列（IncludeUserInfo() 时填充）
 	UserName             string    `gorm:"column:user_name"`
 	UserQQ               string    `gorm:"column:user_qq"`
 	UserAvatarOSSKey     string    `gorm:"column:user_avatar_oss_key"`
@@ -73,30 +75,8 @@ type AssignmentWithUserRow struct {
 	UserIsSuperAdmin     bool      `gorm:"column:user_is_super_admin"`
 	UserCreatedAt        time.Time `gorm:"column:user_created_at"`
 	UserUpdatedAt        time.Time `gorm:"column:user_updated_at"`
-}
 
-func ToAssignmentInfoWithUser(row AssignmentWithUserRow) model.AssignmentInfo {
-	user := model.UserInfo{
-		ID:               row.UserID,
-		Name:             row.UserName,
-		QQ:               row.UserQQ,
-		AvatarOSSKey:     row.UserAvatarOSSKey,
-		IsAvatarUploaded: row.UserIsAvatarUploaded,
-		IsSuperAdmin:     row.UserIsSuperAdmin,
-		CreatedAt:        row.UserCreatedAt,
-		UpdatedAt:        row.UserUpdatedAt,
-	}
-
-	assignmentInfo := ToAssignmentInfo(row.AssignmentInfoRow)
-	assignmentInfo.User = &user
-
-	return assignmentInfo
-}
-
-// AssignmentWithChapterAndComicRow 用于 ListWithChapterInfo（JOIN chapter_table + workset_table + comic_table）。
-type AssignmentWithChapterAndComicRow struct {
-	AssignmentInfoRow
-
+	// Chapter 别名列（IncludeChapterInfo() 时填充）
 	ChapterComicID   string    `gorm:"column:chapter_comic_id"`
 	ChapterIndex     int       `gorm:"column:chapter_index"`
 	ChapterSubtitle  string    `gorm:"column:chapter_subtitle"`
@@ -105,6 +85,7 @@ type AssignmentWithChapterAndComicRow struct {
 	ChapterCreatedAt time.Time `gorm:"column:chapter_created_at"`
 	ChapterUpdatedAt time.Time `gorm:"column:chapter_updated_at"`
 
+	// Comic 别名列（IncludeChapterInfo() 时填充，隐含 chapter.comic）
 	ComicWorksetID    string    `gorm:"column:comic_workset_id"`
 	ComicTeamID       string    `gorm:"column:comic_team_id"`
 	ComicIndex        int       `gorm:"column:comic_index"`
@@ -119,52 +100,71 @@ type AssignmentWithChapterAndComicRow struct {
 	ComicUpdatedAt    time.Time `gorm:"column:comic_updated_at"`
 }
 
-func ToAssignmentInfoWithChapter(row AssignmentWithChapterAndComicRow) model.AssignmentInfo {
-	comic := model.NewComicInfo(
-		row.ChapterComicID,
-		row.ComicWorksetID,
-		row.ComicTeamID,
-		nil,
-		row.ComicIndex,
-		row.ComicTitle,
-		row.ComicAuthor,
-		row.ComicDescription,
-		row.ComicCoverURL,
-		row.ComicChapterCount,
-		row.ComicCreatorID,
-		nil,
-		row.ComicLastActiveAt,
-		row.ComicCreatedAt,
-		row.ComicUpdatedAt,
-	)
-
-	chapter := model.NewChapterDetail(
-		row.ChapterID,
-		row.ChapterComicID,
-		row.ChapterIndex,
-		row.ChapterSubtitle,
-		row.ChapterPageCount,
-		0,
-		0,
-		0,
-		row.ChapterCoverURL,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		"",
-		row.ChapterCreatedAt,
-		row.ChapterUpdatedAt,
-	)
-	chapter.Comic = &comic
-
+// ToAssignmentInfoFromIncludeRow 将聚合行转换为 model.AssignmentInfo。
+// 通过检查时间零值判断对应 include 是否实际被查询。
+func ToAssignmentInfoFromIncludeRow(row AssignmentIncludeRow) model.AssignmentInfo {
 	assignmentInfo := ToAssignmentInfo(row.AssignmentInfoRow)
-	assignmentInfo.Chapter = &chapter
+
+	if !row.UserCreatedAt.IsZero() {
+		user := model.NewUserInfo(
+			row.UserID,
+			row.UserName,
+			row.UserQQ,
+			row.UserAvatarOSSKey,
+			row.UserIsAvatarUploaded,
+			row.UserIsSuperAdmin,
+			row.UserCreatedAt,
+			row.UserUpdatedAt,
+		)
+		assignmentInfo.User = &user
+	}
+
+	if !row.ChapterCreatedAt.IsZero() {
+		comic := model.NewComicInfo(
+			row.ChapterComicID,
+			row.ComicWorksetID,
+			row.ComicTeamID,
+			nil,
+			row.ComicIndex,
+			row.ComicTitle,
+			row.ComicAuthor,
+			row.ComicDescription,
+			row.ComicCoverURL,
+			row.ComicChapterCount,
+			row.ComicCreatorID,
+			nil,
+			row.ComicLastActiveAt,
+			row.ComicCreatedAt,
+			row.ComicUpdatedAt,
+		)
+
+		chapter := model.NewChapterDetail(
+			row.ChapterID,
+			row.ChapterComicID,
+			row.ChapterIndex,
+			row.ChapterSubtitle,
+			row.ChapterPageCount,
+			0,
+			0,
+			0,
+			row.ChapterCoverURL,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
+			"",
+			row.ChapterCreatedAt,
+			row.ChapterUpdatedAt,
+		)
+		chapter.Comic = &comic
+
+		assignmentInfo.Chapter = &chapter
+	}
 
 	return assignmentInfo
 }
