@@ -122,8 +122,16 @@ func (aa *assignmentApplication) ListChapterAssignments(
 		query_option.AssignmentQuery().FilterByChapterID(args.ChapterID),
 	}
 
-	if includeSpec.NeedUser {
-		queryOptions = append(queryOptions, query_option.AssignmentQuery().IncludeUserInfo())
+	if includeSpec.NeedUser || includeSpec.NeedChapter {
+		queryOptions = append(
+			queryOptions,
+			query_option.AssignmentQuery().IncludeRelationInfo(
+				includeSpec.NeedUser,
+				includeSpec.NeedChapter,
+				includeSpec.NeedChapterComic,
+				includeSpec.NeedChapterCreator,
+			),
+		)
 	}
 
 	queryOptions = append(queryOptions, query_option.Paginate(args.Offset, args.Limit))
@@ -169,8 +177,16 @@ func (aa *assignmentApplication) ListMyAssignments(
 		query_option.AssignmentQuery().FilterByUserID(currentUserID),
 	}
 
-	if includeSpec.NeedChapter {
-		queryOptions = append(queryOptions, query_option.AssignmentQuery().IncludeChapterInfo())
+	if includeSpec.NeedUser || includeSpec.NeedChapter {
+		queryOptions = append(
+			queryOptions,
+			query_option.AssignmentQuery().IncludeRelationInfo(
+				includeSpec.NeedUser,
+				includeSpec.NeedChapter,
+				includeSpec.NeedChapterComic,
+				includeSpec.NeedChapterCreator,
+			),
+		)
 	}
 
 	queryOptions = append(queryOptions, query_option.Paginate(args.Offset, args.Limit))

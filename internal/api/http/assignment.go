@@ -15,7 +15,7 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		chapter_id query string true "章节 ID"
-// @Param 		"includes[]" query []string false "include 关联信息，可选值：user"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：user, chapter, chapter.comic, chapter.creator"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 //
@@ -58,7 +58,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 // @Tags 		assignment
 // @Security 	ApiKeyAuth
 // @Produce 	json
-// @Param 		"includes[]" query []string false "include 关联信息，可选值：chapter（隐含 chapter.comic）"
+// @Param 		"includes[]" query []string false "include 关联信息，可选值：chapter, chapter.comic, chapter.creator"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 //

@@ -44,7 +44,7 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：user",
+                        "description": "include 关联信息，可选值：user, chapter, chapter.comic, chapter.creator",
                         "name": "\"includes[]\"",
                         "in": "query"
                     },
@@ -135,7 +135,7 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：chapter（隐含 chapter.comic）",
+                        "description": "include 关联信息，可选值：chapter, chapter.comic, chapter.creator",
                         "name": "\"includes[]\"",
                         "in": "query"
                     },
@@ -2051,11 +2051,11 @@ const docTemplate = `{
                 "updated_at": {
                     "type": "integer"
                 },
+                "workset": {
+                    "$ref": "#/definitions/value.WorksetInfo"
+                },
                 "workset_id": {
                     "type": "string"
-                },
-                "workset_info": {
-                    "$ref": "#/definitions/value.WorksetInfo"
                 }
             }
         },
@@ -2217,11 +2217,11 @@ const docTemplate = `{
                 "invitee_qq": {
                     "type": "string"
                 },
+                "invitor": {
+                    "$ref": "#/definitions/value.UserInfo"
+                },
                 "invitor_id": {
                     "type": "string"
-                },
-                "invitor_info": {
-                    "$ref": "#/definitions/value.UserInfo"
                 },
                 "pending": {
                     "type": "boolean"

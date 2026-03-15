@@ -82,6 +82,7 @@ type AssignmentIncludeRow struct {
 	ChapterSubtitle  string    `gorm:"column:chapter_subtitle"`
 	ChapterPageCount int       `gorm:"column:chapter_page_count"`
 	ChapterCoverURL  string    `gorm:"column:chapter_cover_url"`
+	ChapterCreatorID string    `gorm:"column:chapter_creator_id"`
 	ChapterCreatedAt time.Time `gorm:"column:chapter_created_at"`
 	ChapterUpdatedAt time.Time `gorm:"column:chapter_updated_at"`
 
@@ -98,6 +99,15 @@ type AssignmentIncludeRow struct {
 	ComicLastActiveAt time.Time `gorm:"column:comic_last_active_at"`
 	ComicCreatedAt    time.Time `gorm:"column:comic_created_at"`
 	ComicUpdatedAt    time.Time `gorm:"column:comic_updated_at"`
+
+	// ChapterCreator 别名列（IncludeRelationInfo() 含 chapter.creator 时填充）
+	ChapterCreatorName             string    `gorm:"column:chapter_creator_name"`
+	ChapterCreatorQQ               string    `gorm:"column:chapter_creator_qq"`
+	ChapterCreatorAvatarOSSKey     string    `gorm:"column:chapter_creator_avatar_oss_key"`
+	ChapterCreatorIsAvatarUploaded bool      `gorm:"column:chapter_creator_is_avatar_uploaded"`
+	ChapterCreatorIsSuperAdmin     bool      `gorm:"column:chapter_creator_is_super_admin"`
+	ChapterCreatorCreatedAt        time.Time `gorm:"column:chapter_creator_created_at"`
+	ChapterCreatorUpdatedAt        time.Time `gorm:"column:chapter_creator_updated_at"`
 }
 
 // ToAssignmentInfoFromIncludeRow 将聚合行转换为 model.AssignmentInfo。
@@ -120,24 +130,6 @@ func ToAssignmentInfoFromIncludeRow(row AssignmentIncludeRow) model.AssignmentIn
 	}
 
 	if !row.ChapterCreatedAt.IsZero() {
-		comic := model.NewComicInfo(
-			row.ChapterComicID,
-			row.ComicWorksetID,
-			row.ComicTeamID,
-			nil,
-			row.ComicIndex,
-			row.ComicTitle,
-			row.ComicAuthor,
-			row.ComicDescription,
-			row.ComicCoverURL,
-			row.ComicChapterCount,
-			row.ComicCreatorID,
-			nil,
-			row.ComicLastActiveAt,
-			row.ComicCreatedAt,
-			row.ComicUpdatedAt,
-		)
-
 		chapter := model.NewChapterDetail(
 			row.ChapterID,
 			row.ChapterComicID,
@@ -157,11 +149,45 @@ func ToAssignmentInfoFromIncludeRow(row AssignmentIncludeRow) model.AssignmentIn
 			nil,
 			nil,
 			nil,
-			"",
+			row.ChapterCreatorID,
 			row.ChapterCreatedAt,
 			row.ChapterUpdatedAt,
 		)
-		chapter.Comic = &comic
+
+		if !row.ComicCreatedAt.IsZero() {
+			comic := model.NewComicInfo(
+				row.ChapterComicID,
+				row.ComicWorksetID,
+				row.ComicTeamID,
+				nil,
+				row.ComicIndex,
+				row.ComicTitle,
+				row.ComicAuthor,
+				row.ComicDescription,
+				row.ComicCoverURL,
+				row.ComicChapterCount,
+				row.ComicCreatorID,
+				nil,
+				row.ComicLastActiveAt,
+				row.ComicCreatedAt,
+				row.ComicUpdatedAt,
+			)
+			chapter.Comic = &comic
+		}
+
+		if !row.ChapterCreatorCreatedAt.IsZero() {
+			creator := model.NewUserInfo(
+				row.ChapterCreatorID,
+				row.ChapterCreatorName,
+				row.ChapterCreatorQQ,
+				row.ChapterCreatorAvatarOSSKey,
+				row.ChapterCreatorIsAvatarUploaded,
+				row.ChapterCreatorIsSuperAdmin,
+				row.ChapterCreatorCreatedAt,
+				row.ChapterCreatorUpdatedAt,
+			)
+			chapter.Creator = &creator
+		}
 
 		assignmentInfo.Chapter = &chapter
 	}

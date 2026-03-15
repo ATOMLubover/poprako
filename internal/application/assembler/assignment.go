@@ -30,24 +30,7 @@ func AssembleAssignmentInfo(assignmentInfo model.AssignmentInfo, onLoadURL OnLoa
 	}
 
 	if assignmentInfo.Chapter != nil {
-		chapter := value.ChapterInfo{
-			ID:                  assignmentInfo.Chapter.ID,
-			ComicID:             assignmentInfo.Chapter.ComicID,
-			Index:               assignmentInfo.Chapter.Index,
-			ChapterNo:           assignmentInfo.Chapter.ChapterNo,
-			PageCount:           assignmentInfo.Chapter.PageCount,
-			TotalUnitCount:      assignmentInfo.Chapter.TotalUnitCount,
-			TranslatedUnitCount: assignmentInfo.Chapter.TranslatedUnitCount,
-			ProofreadUnitCount:  assignmentInfo.Chapter.ProofreadUnitCount,
-			CreatedAt:           assignmentInfo.Chapter.CreatedAt.UnixMilli(),
-			UpdatedAt:           assignmentInfo.Chapter.UpdatedAt.UnixMilli(),
-		}
-
-		if assignmentInfo.Chapter.Comic != nil {
-			comic := AssembleComicInfo(*assignmentInfo.Chapter.Comic, onLoadURL)
-			chapter.Comic = &comic
-		}
-
+		chapter := AssembleChapterInfo(*assignmentInfo.Chapter, onLoadURL)
 		result.Chapter = &chapter
 	}
 

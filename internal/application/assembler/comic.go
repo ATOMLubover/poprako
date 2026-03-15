@@ -23,7 +23,7 @@ func AssembleComicInfo(comicInfo model.ComicInfo, onLoadURL OnLoadURL) value.Com
 
 	if comicInfo.Workset != nil {
 		workset := AssembleWorksetInfo(*comicInfo.Workset, onLoadURL)
-		result.WorksetInfo = &workset
+		result.Workset = &workset
 	}
 
 	if comicInfo.Creator != nil {

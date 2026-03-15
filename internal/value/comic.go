@@ -8,8 +8,8 @@ import (
 type ComicInfo struct {
 	ID string `json:"id"`
 
-	WorksetID   string       `json:"workset_id"`
-	WorksetInfo *WorksetInfo `json:"workset_info,omitempty"`
+	WorksetID string       `json:"workset_id"`
+	Workset   *WorksetInfo `json:"workset,omitempty"`
 
 	Index       int    `json:"index"`
 	Title       string `json:"title"`

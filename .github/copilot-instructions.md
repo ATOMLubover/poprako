@@ -19,4 +19,4 @@ value 对象是 API 层和 APP 层的数据传输对象，model 对象是领域�
 所有的数据的 single source of truth 全部在于 migrations/ 下的数据库 SQL 脚本。任何 Go 代码中的字段都可能因为 SQL 脚本改变而失效或缺失。
 
 大部分情况下，你需要的命令都在 justfile 中。只有测试 build 不应该使用 just build，它是最终打包为 Linux 可执行文件时才使用。
-如非必要，禁止使用随意的命令行指令。每次更新代码后，必须使用 just check 来检查代码是否符合规范、有静态错误。
+如非必要，禁止使用包括 gofmt、gofumpt、golangci-lint 等随意的命令行指令。每次更新代码后，必须使用 just check 来检查代码是否符合规范、有静态错误。

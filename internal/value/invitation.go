@@ -54,7 +54,7 @@ type InvitationInfo struct {
 	ID string `json:"id"`
 
 	InvitorID      string    `json:"invitor_id"`
-	InvitorInfo    *UserInfo `json:"invitor_info,omitempty"`
+	Invitor        *UserInfo `json:"invitor,omitempty"`
 	InviteeQQ      string    `json:"invitee_qq"`
 	InvitationCode string    `json:"invitation_code"`
 

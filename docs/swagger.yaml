@@ -118,10 +118,10 @@ definitions:
         type: string
       updated_at:
         type: integer
+      workset:
+        $ref: '#/definitions/value.WorksetInfo'
       workset_id:
         type: string
-      workset_info:
-        $ref: '#/definitions/value.WorksetInfo'
     type: object
   value.CreateChapterArgs:
     properties:
@@ -224,10 +224,10 @@ definitions:
         type: string
       invitee_qq:
         type: string
+      invitor:
+        $ref: '#/definitions/value.UserInfo'
       invitor_id:
         type: string
-      invitor_info:
-        $ref: '#/definitions/value.UserInfo'
       pending:
         type: boolean
       roles:
@@ -539,7 +539,7 @@ paths:
         required: true
         type: string
       - collectionFormat: csv
-        description: include 关联信息，可选值：user
+        description: include 关联信息，可选值：user, chapter, chapter.comic, chapter.creator
         in: query
         items:
           type: string
@@ -642,7 +642,7 @@ paths:
       description: 获取当前登录用户的所有分配记录，支持分页
       parameters:
       - collectionFormat: csv
-        description: include 关联信息，可选值：chapter（隐含 chapter.comic）
+        description: include 关联信息，可选值：chapter, chapter.comic, chapter.creator
         in: query
         items:
           type: string

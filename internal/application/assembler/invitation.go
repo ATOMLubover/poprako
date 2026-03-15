@@ -17,7 +17,7 @@ func AssembleInvitationInfo(invitationInfo model.InvitationInfo, onLoadURL OnLoa
 
 	if invitationInfo.Invitor != nil {
 		invitor := AssembleUserInfo(*invitationInfo.Invitor, onLoadURL)
-		result.InvitorInfo = &invitor
+		result.Invitor = &invitor
 	}
 
 	return result
