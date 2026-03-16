@@ -265,7 +265,7 @@ func (ca *comicApplication) UpdateComic(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	targetComic, err := ca.comicRepository.Get(
+	_, err := ca.comicRepository.Get(
 		nil,
 		query_option.FilterByID(repository_infra.ComicTable, args.ID),
 	)
@@ -277,7 +277,9 @@ func (ca *comicApplication) UpdateComic(
 	// 鉴权：检查当前用户在目标漫画所属汉化组是否有更新权限
 	if !model.PermComicUpdate().Check(
 		currentUserID,
-		targetComic.TeamID,
+		args.ID,
+		adapter.HandleLoadComicInfo(ca.comicRepository),
+		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
@@ -320,7 +322,7 @@ func (ca *comicApplication) DeleteComic(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	targetComic, err := ca.comicRepository.Get(
+	_, err := ca.comicRepository.Get(
 		nil,
 		query_option.FilterByID(repository_infra.ComicTable, comicID),
 	)
@@ -332,7 +334,9 @@ func (ca *comicApplication) DeleteComic(
 	// 鉴权：检查当前用户在目标漫画所属汉化组是否有删除权限
 	if !model.PermComicDelete().Check(
 		currentUserID,
-		targetComic.TeamID,
+		comicID,
+		adapter.HandleLoadComicInfo(ca.comicRepository),
+		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")

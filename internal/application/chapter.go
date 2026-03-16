@@ -43,6 +43,7 @@ type ChapterApplication interface {
 type chapterApplication struct {
 	ossClient         external.OSSClient
 	memberRepository  repository.MemberRepository
+	worksetRepository repository.WorksetRepository
 	comicRepository   repository.ComicRepository
 	chapterRepository repository.ChapterRepository
 }
@@ -50,17 +51,20 @@ type chapterApplication struct {
 func NewChapterApplication(
 	ossClient external.OSSClient,
 	memberRepository repository.MemberRepository,
+	worksetRepository repository.WorksetRepository,
 	comicRepository repository.ComicRepository,
 	chapterRepository repository.ChapterRepository,
 ) ChapterApplication {
 	if ossClient == nil ||
 		memberRepository == nil ||
+		worksetRepository == nil ||
 		comicRepository == nil ||
 		chapterRepository == nil {
 		zap.L().Panic(
 			"NewChapterApplication: 依赖项不能为空",
 			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
+			zap.Bool("worksetRepository_nil", worksetRepository == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
 			zap.Bool("chapterRepository_nil", chapterRepository == nil),
 		)
@@ -69,6 +73,7 @@ func NewChapterApplication(
 	return &chapterApplication{
 		ossClient:         ossClient,
 		memberRepository:  memberRepository,
+		worksetRepository: worksetRepository,
 		comicRepository:   comicRepository,
 		chapterRepository: chapterRepository,
 	}
@@ -99,6 +104,7 @@ func (ca *chapterApplication) CreateComicChapter(
 		args.ComicID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 		adapter.HandleLoadComicInfo(ca.comicRepository),
+		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return value.CreateChapterResult{}, errors.New("权限不足")
@@ -140,7 +146,7 @@ func (ca *chapterApplication) CreateComicChapter(
 		args.ComicID,
 		// 因为是 0-based index，所以新章节的 index 就是当前章节数量
 		int(chapterCount),
-		args.ChapterNo,
+		args.Subtitle,
 		currentUserID,
 	)
 
@@ -183,6 +189,7 @@ func (ca *chapterApplication) ListComicChapters(
 		args.ComicID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 		adapter.HandleLoadComicInfo(ca.comicRepository),
+		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return nil, errors.New("权限不足")
@@ -247,6 +254,7 @@ func (ca *chapterApplication) UpdateChapter(
 		targetChapter.ComicID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 		adapter.HandleLoadComicInfo(ca.comicRepository),
+		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")
@@ -254,7 +262,7 @@ func (ca *chapterApplication) UpdateChapter(
 
 	chapterUpdate := model.NewChapterUpdate(
 		args.ChapterID,
-		args.ChapterNo,
+		args.Subtitle,
 		targetChapter,
 		args.UploadStatus,
 		args.TranslateStatus,
@@ -306,6 +314,7 @@ func (ca *chapterApplication) DeleteComicChapter(
 		targetChapter.ComicID,
 		adapter.HandleLoadMemberInfo(ca.memberRepository),
 		adapter.HandleLoadComicInfo(ca.comicRepository),
+		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")

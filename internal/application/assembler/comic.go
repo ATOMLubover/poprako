@@ -13,7 +13,6 @@ func AssembleComicInfo(comicInfo model.ComicInfo, onLoadURL OnLoadURL) value.Com
 		Title:        comicInfo.Title,
 		Author:       comicInfo.Author,
 		Description:  comicInfo.Description,
-		CoverURL:     comicInfo.CoverURL,
 		ChapterCount: comicInfo.ChapterCount,
 		CreatorID:    comicInfo.CreatorID,
 		LastActiveAt: comicInfo.LastActiveAt.UnixMilli(),

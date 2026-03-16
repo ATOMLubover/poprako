@@ -53,7 +53,7 @@ func ListComicChapters(appState *state.AppState) iris.Handler {
 
 // CreateComicChapter godoc
 // @Summary 	创建漫画章节
-// @Description 在指定漫画中创建章节
+// @Description 在指定漫画中创建章节，并写入章节副标题
 //
 // @Tags 		chapter
 // @Security 	ApiKeyAuth
@@ -95,8 +95,8 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 }
 
 // UpdateChapter godoc
-// @Summary 	更新章节（PATCH 语义，仅传需要更新的字段）
-// @Description 局部更新指定章节的信息，未传的字段不会被修改
+// @Summary 	更新章节
+// @Description 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改
 //
 // @Tags 		chapter
 // @Security 	ApiKeyAuth

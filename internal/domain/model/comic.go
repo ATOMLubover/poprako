@@ -5,10 +5,8 @@ import "time"
 type ComicInfo struct {
 	ID        string
 	WorksetID string
-	// TeamID 通过 JOIN workset_table 填充，不是 comic_table 的直接列。
-	TeamID string
 
-	// Workset 仅在 includes 指定时填充。
+	// Workset 仅在 includes 指定时填充
 	Workset *WorksetInfo
 
 	Index       int
@@ -16,11 +14,9 @@ type ComicInfo struct {
 	Author      string
 	Description string
 
-	CoverURL string
-
 	ChapterCount int
 	CreatorID    string
-	// Creator 仅在 includes 指定时填充。
+	// Creator 仅在 includes 指定时填充
 	Creator *UserInfo
 
 	LastActiveAt time.Time
@@ -32,13 +28,11 @@ type ComicInfo struct {
 func NewComicInfo(
 	id string,
 	worksetID string,
-	teamID string,
 	workset *WorksetInfo,
 	index int,
 	title string,
 	author string,
 	description string,
-	coverURL string,
 	chapterCount int,
 	creatorID string,
 	creator *UserInfo,
@@ -49,13 +43,11 @@ func NewComicInfo(
 	return ComicInfo{
 		ID:           id,
 		WorksetID:    worksetID,
-		TeamID:       teamID,
 		Workset:      workset,
 		Index:        index,
 		Title:        title,
 		Author:       author,
 		Description:  description,
-		CoverURL:     coverURL,
 		ChapterCount: chapterCount,
 		CreatorID:    creatorID,
 		Creator:      creator,

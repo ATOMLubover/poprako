@@ -7,6 +7,7 @@ type (
 	OnLoadMemberInfo     func(teamID string, userID string) (MemberInfo, error)
 	OnLoadAssignmentInfo func(comicID string, userID string) (AssignmentInfo, error)
 	OnLoadComicInfo      func(comicID string) (ComicInfo, error)
+	OnLoadWorksetInfo    func(worksetID string) (WorksetInfo, error)
 	OnLoadChapterInfo    func(chapterID string) (ChapterInfo, error)
 	OnLoadPageInfo       func(pageID string) (PageInfo, error)
 )
@@ -116,6 +117,44 @@ func loadAssignmentInfoForCheck(
 	}
 
 	return assignmentInfo, true
+}
+
+func loadWorksetInfoForCheck(
+	checkName string,
+	worksetID string,
+	onLoadWorksetInfo OnLoadWorksetInfo,
+) (WorksetInfo, bool) {
+	worksetInfo, err := onLoadWorksetInfo(worksetID)
+	if err != nil {
+		zap.L().Error(
+			checkName+": 获取工作集信息失败",
+			zap.String("worksetID", worksetID),
+			zap.Error(err),
+		)
+
+		return WorksetInfo{}, false
+	}
+
+	return worksetInfo, true
+}
+
+func loadComicTeamIDForCheck(
+	checkName string,
+	comicID string,
+	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
+) (string, bool) {
+	comicInfo, ok := loadComicInfoForCheck(checkName, comicID, onLoadComicInfo)
+	if !ok {
+		return "", false
+	}
+
+	worksetInfo, ok := loadWorksetInfoForCheck(checkName, comicInfo.WorksetID, onLoadWorksetInfo)
+	if !ok {
+		return "", false
+	}
+
+	return worksetInfo.TeamID, true
 }
 
 func loadChapterInfoForCheck(
@@ -393,19 +432,31 @@ func (permComicCreate) Check(
 
 func (permComicUpdate) Check(
 	userID string,
-	teamID string,
+	comicID string,
+	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 	onLoadMemberInfo OnLoadMemberInfo,
 ) bool {
-	// 只有汉化组管理员可以更新漫画
+	teamID, ok := loadComicTeamIDForCheck("PermComicUpdate.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
+	if !ok {
+		return false
+	}
+
 	return isTeamAdmin("PermComicUpdate.Check", userID, teamID, onLoadMemberInfo)
 }
 
 func (permComicDelete) Check(
 	userID string,
-	teamID string,
+	comicID string,
+	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 	onLoadMemberInfo OnLoadMemberInfo,
 ) bool {
-	// 只有汉化组管理员可以删除漫画
+	teamID, ok := loadComicTeamIDForCheck("PermComicDelete.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
+	if !ok {
+		return false
+	}
+
 	return isTeamAdmin("PermComicDelete.Check", userID, teamID, onLoadMemberInfo)
 }
 
@@ -426,14 +477,14 @@ func (permChapterList) Check(
 	comicID string,
 	onLoadMemberInfo OnLoadMemberInfo,
 	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 ) bool {
-	// 先查找漫画信息，然后根据其所属汉化组来判断用户是否有权限查看章节列表
-	comicInfo, ok := loadComicInfoForCheck("PermChapterList.Check", comicID, onLoadComicInfo)
+	teamID, ok := loadComicTeamIDForCheck("PermChapterList.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
 	if !ok {
 		return false
 	}
 
-	_, ok = loadMemberInfoForCheck("PermChapterList.Check", userID, comicInfo.TeamID, onLoadMemberInfo)
+	_, ok = loadMemberInfoForCheck("PermChapterList.Check", userID, teamID, onLoadMemberInfo)
 	if !ok {
 		return false
 	}
@@ -447,14 +498,14 @@ func (permChapterCreate) Check(
 	comicID string,
 	onLoadMemberInfo OnLoadMemberInfo,
 	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 ) bool {
-	// 先查找漫画信息，然后根据其所属汉化组来判断用户是否有权限创建章节
-	comicInfo, ok := loadComicInfoForCheck("PermChapterCreate.Check", comicID, onLoadComicInfo)
+	teamID, ok := loadComicTeamIDForCheck("PermChapterCreate.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
 	if !ok {
 		return false
 	}
 
-	return isTeamAdmin("PermChapterCreate.Check", userID, comicInfo.TeamID, onLoadMemberInfo)
+	return isTeamAdmin("PermChapterCreate.Check", userID, teamID, onLoadMemberInfo)
 }
 
 func (permChapterUpdate) Check(
@@ -462,14 +513,14 @@ func (permChapterUpdate) Check(
 	comicID string,
 	onLoadMemberInfo OnLoadMemberInfo,
 	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 ) bool {
-	// 先查找漫画信息，然后根据其所属汉化组来判断用户是否有权限更新章节
-	comicInfo, ok := loadComicInfoForCheck("PermChapterUpdate.Check", comicID, onLoadComicInfo)
+	teamID, ok := loadComicTeamIDForCheck("PermChapterUpdate.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
 	if !ok {
 		return false
 	}
 
-	return isTeamAdmin("PermChapterUpdate.Check", userID, comicInfo.TeamID, onLoadMemberInfo)
+	return isTeamAdmin("PermChapterUpdate.Check", userID, teamID, onLoadMemberInfo)
 }
 
 func (permChapterDelete) Check(
@@ -477,14 +528,14 @@ func (permChapterDelete) Check(
 	comicID string,
 	onLoadMemberInfo OnLoadMemberInfo,
 	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 ) bool {
-	// 先查找漫画信息，然后根据其所属汉化组来判断用户是否有权限删除章节
-	comicInfo, ok := loadComicInfoForCheck("PermChapterDelete.Check", comicID, onLoadComicInfo)
+	teamID, ok := loadComicTeamIDForCheck("PermChapterDelete.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
 	if !ok {
 		return false
 	}
 
-	return isTeamAdmin("PermChapterDelete.Check", userID, comicInfo.TeamID, onLoadMemberInfo)
+	return isTeamAdmin("PermChapterDelete.Check", userID, teamID, onLoadMemberInfo)
 }
 
 type (
@@ -504,6 +555,7 @@ func (permAssignmentList) Check(
 	chapterID string,
 	onLoadChapterInfo OnLoadChapterInfo,
 	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 	onLoadMemberInfo OnLoadMemberInfo,
 ) bool {
 	// 先查找章节信息，然后根据其所属漫画的所属汉化组来判断用户是否有权限查看分配列表
@@ -512,12 +564,12 @@ func (permAssignmentList) Check(
 		return false
 	}
 
-	comicInfo, ok := loadComicInfoForCheck("PermAssignmentList.Check", chapterInfo.ComicID, onLoadComicInfo)
+	teamID, ok := loadComicTeamIDForCheck("PermAssignmentList.Check", chapterInfo.ComicID, onLoadComicInfo, onLoadWorksetInfo)
 	if !ok {
 		return false
 	}
 
-	_, ok = loadMemberInfoForCheck("PermAssignmentList.Check", userID, comicInfo.TeamID, onLoadMemberInfo)
+	_, ok = loadMemberInfoForCheck("PermAssignmentList.Check", userID, teamID, onLoadMemberInfo)
 	if !ok {
 		return false
 	}
@@ -585,6 +637,7 @@ func (permPageList) Check(
 	chapterID string,
 	onLoadChapterInfo OnLoadChapterInfo,
 	onLoadComicInfo OnLoadComicInfo,
+	onLoadWorksetInfo OnLoadWorksetInfo,
 	onLoadMemberInfo OnLoadMemberInfo,
 ) bool {
 	// 先查找章节信息，然后根据其所属漫画的所属汉化组来判断用户是否有权限查看页面列表
@@ -593,12 +646,12 @@ func (permPageList) Check(
 		return false
 	}
 
-	comicInfo, ok := loadComicInfoForCheck("PermPageList.Check", chapterInfo.ComicID, onLoadComicInfo)
+	teamID, ok := loadComicTeamIDForCheck("PermPageList.Check", chapterInfo.ComicID, onLoadComicInfo, onLoadWorksetInfo)
 	if !ok {
 		return false
 	}
 
-	_, ok = loadMemberInfoForCheck("PermPageList.Check", userID, comicInfo.TeamID, onLoadMemberInfo)
+	_, ok = loadMemberInfoForCheck("PermPageList.Check", userID, teamID, onLoadMemberInfo)
 	if !ok {
 		return false
 	}

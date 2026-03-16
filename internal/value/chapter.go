@@ -13,8 +13,8 @@ type ChapterInfo struct {
 	ComicID string     `json:"comic_id"`
 	Comic   *ComicInfo `json:"comic,omitempty"`
 
-	Index     int    `json:"index"`
-	ChapterNo string `json:"chapter_no"`
+	Index    int    `json:"index"`
+	Subtitle string `json:"subtitle"`
 
 	PageCount           int `json:"page_count"`
 	TotalUnitCount      int `json:"total_unit_count"`
@@ -61,8 +61,8 @@ func (args *ListChapterArgs) Validate() error {
 }
 
 type CreateChapterArgs struct {
-	ComicID   string `json:"comic_id"`
-	ChapterNo string `json:"chapter_no"`
+	ComicID  string `json:"comic_id"`
+	Subtitle string `json:"subtitle"`
 }
 
 func (args *CreateChapterArgs) Validate() error {
@@ -74,8 +74,8 @@ func (args *CreateChapterArgs) Validate() error {
 		return errors.New("漫画 ID 不能为空")
 	}
 
-	if args.ChapterNo == "" {
-		return errors.New("章节编号不能为空")
+	if args.Subtitle == "" {
+		return errors.New("章节副标题不能为空")
 	}
 
 	return nil
@@ -88,8 +88,8 @@ type CreateChapterResult struct {
 type UpdateChapterArgs struct {
 	ChapterID string `json:"chapter_id"`
 
-	// ChapterNo 章节编号，最多 10 字符；不传则不更新
-	ChapterNo *string `json:"chapter_no,omitempty"`
+	// Subtitle 章节副标题，最多 10 字符；不传则不更新
+	Subtitle *string `json:"subtitle,omitempty"`
 
 	// UploadStatus 上传状态，可取值：pending（待上传）、completed（已上传）；不传则不更新
 	UploadStatus *model.WorkflowStatus `json:"upload_status,omitempty"`
@@ -114,13 +114,13 @@ func (args *UpdateChapterArgs) Validate() error {
 		return errors.New("章节 ID 不能为空")
 	}
 
-	if args.ChapterNo != nil {
-		chapterNoLen := utf8.RuneCountInString(*args.ChapterNo)
-		if chapterNoLen == 0 {
-			return errors.New("章节编号不能为空字符串")
+	if args.Subtitle != nil {
+		subtitleLen := utf8.RuneCountInString(*args.Subtitle)
+		if subtitleLen == 0 {
+			return errors.New("章节副标题不能为空字符串")
 		}
-		if chapterNoLen > 10 {
-			return errors.New("章节编号长度不能超过 10 字符")
+		if subtitleLen > 10 {
+			return errors.New("章节副标题长度不能超过 10 字符")
 		}
 	}
 

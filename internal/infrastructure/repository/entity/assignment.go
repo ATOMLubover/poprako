@@ -81,19 +81,16 @@ type AssignmentIncludeRow struct {
 	ChapterIndex     int       `gorm:"column:chapter_index"`
 	ChapterSubtitle  string    `gorm:"column:chapter_subtitle"`
 	ChapterPageCount int       `gorm:"column:chapter_page_count"`
-	ChapterCoverURL  string    `gorm:"column:chapter_cover_url"`
 	ChapterCreatorID string    `gorm:"column:chapter_creator_id"`
 	ChapterCreatedAt time.Time `gorm:"column:chapter_created_at"`
 	ChapterUpdatedAt time.Time `gorm:"column:chapter_updated_at"`
 
 	// Comic 别名列（IncludeChapterInfo() 时填充，隐含 chapter.comic）
 	ComicWorksetID    string    `gorm:"column:comic_workset_id"`
-	ComicTeamID       string    `gorm:"column:comic_team_id"`
 	ComicIndex        int       `gorm:"column:comic_index"`
 	ComicTitle        string    `gorm:"column:comic_title"`
 	ComicAuthor       string    `gorm:"column:comic_author"`
 	ComicDescription  string    `gorm:"column:comic_description"`
-	ComicCoverURL     string    `gorm:"column:comic_cover_url"`
 	ComicChapterCount int       `gorm:"column:comic_chapter_count"`
 	ComicCreatorID    string    `gorm:"column:comic_creator_id"`
 	ComicLastActiveAt time.Time `gorm:"column:comic_last_active_at"`
@@ -139,7 +136,6 @@ func ToAssignmentInfoFromIncludeRow(row AssignmentIncludeRow) model.AssignmentIn
 			0,
 			0,
 			0,
-			row.ChapterCoverURL,
 			nil,
 			nil,
 			nil,
@@ -158,13 +154,11 @@ func ToAssignmentInfoFromIncludeRow(row AssignmentIncludeRow) model.AssignmentIn
 			comic := model.NewComicInfo(
 				row.ChapterComicID,
 				row.ComicWorksetID,
-				row.ComicTeamID,
 				nil,
 				row.ComicIndex,
 				row.ComicTitle,
 				row.ComicAuthor,
 				row.ComicDescription,
-				row.ComicCoverURL,
 				row.ComicChapterCount,
 				row.ComicCreatorID,
 				nil,

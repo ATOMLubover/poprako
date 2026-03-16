@@ -8,7 +8,6 @@ CREATE TABLE "comic_table" (
     "author"             TEXT        NOT NULL,
     "description"        TEXT,
 
-    "cover_url"          TEXT,
     "chapter_count"      INTEGER     NOT NULL DEFAULT 0,
 
     "creator_id"         TEXT        NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,

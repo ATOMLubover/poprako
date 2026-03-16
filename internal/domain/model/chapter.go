@@ -7,16 +7,14 @@ type ChapterInfo struct {
 
 	ComicID string
 	// Comic 仅在 includes 指定时填充。
-	Comic     *ComicInfo
-	Index     int
-	ChapterNo string
+	Comic    *ComicInfo
+	Index    int
+	Subtitle string
 
 	PageCount           int
 	TotalUnitCount      int
 	TranslatedUnitCount int
 	ProofreadUnitCount  int
-
-	CoverURL string
 
 	UploadedAt     *time.Time
 	TransalatingAt *time.Time
@@ -40,12 +38,11 @@ func NewChapterDetail(
 	id string,
 	comicID string,
 	index int,
-	chapterNo string,
+	subtitle string,
 	pageCount int,
 	totalUnitCount int,
 	translatedUnitCount int,
 	proofreadUnitCount int,
-	coverURL string,
 	uploadedAt *time.Time,
 	transalatingAt *time.Time,
 	translatedAt *time.Time,
@@ -63,16 +60,15 @@ func NewChapterDetail(
 		ID:                  id,
 		ComicID:             comicID,
 		Index:               index,
-		ChapterNo:           chapterNo,
+		Subtitle:            subtitle,
 		PageCount:           pageCount,
 		TotalUnitCount:      totalUnitCount,
 		TranslatedUnitCount: translatedUnitCount,
 		ProofreadUnitCount:  proofreadUnitCount,
-		CoverURL:            coverURL,
 		UploadedAt:          uploadedAt,
 		TransalatingAt:      transalatingAt,
 		TranslatedAt:        translatedAt,
-		ProofreadingAt:      proofreadAt,
+		ProofreadingAt:      proofreadingAt,
 		ProofreadAt:         proofreadAt,
 		TypesettingAt:       typesettingAt,
 		TypesetAt:           typesetAt,
@@ -109,27 +105,27 @@ func NewChapterStats(
 type ChapterCreation struct {
 	ComicID   string
 	Index     int
-	ChapterNo string
+	Subtitle  string
 	CreatorID string
 }
 
 func NewChapterCreation(
 	comicID string,
 	index int,
-	chapterNo string,
+	subtitle string,
 	creatorID string,
 ) ChapterCreation {
 	return ChapterCreation{
 		ComicID:   comicID,
 		Index:     index,
-		ChapterNo: chapterNo,
+		Subtitle:  subtitle,
 		CreatorID: creatorID,
 	}
 }
 
 type ChapterUpdate struct {
-	ID        string
-	ChapterNo string
+	ID       string
+	Subtitle string
 
 	UploadedAt     *time.Time
 	TransalatingAt *time.Time
@@ -144,7 +140,7 @@ type ChapterUpdate struct {
 
 func NewChapterUpdate(
 	id string,
-	chapterNo *string,
+	subtitle *string,
 	current ChapterInfo,
 	uploadStatus *WorkflowStatus,
 	translateStatus *WorkflowStatus,
@@ -162,14 +158,14 @@ func NewChapterUpdate(
 		return *s
 	}
 
-	chapterNoVal := current.ChapterNo
-	if chapterNo != nil {
-		chapterNoVal = *chapterNo
+	subtitleVal := current.Subtitle
+	if subtitle != nil {
+		subtitleVal = *subtitle
 	}
 
 	update := ChapterUpdate{
-		ID:        id,
-		ChapterNo: chapterNoVal,
+		ID:       id,
+		Subtitle: subtitleVal,
 	}
 
 	// Upload 仅支持 pending / completed

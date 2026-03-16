@@ -32,6 +32,15 @@ func HandleLoadComicInfo(comicRepository repository.ComicRepository) model.OnLoa
 	}
 }
 
+func HandleLoadWorksetInfo(worksetRepository repository.WorksetRepository) model.OnLoadWorksetInfo {
+	return func(worksetID string) (model.WorksetInfo, error) {
+		return worksetRepository.Get(
+			nil,
+			query_option.FilterByID(repository_infra.WorksetTable, worksetID),
+		)
+	}
+}
+
 func HandleLoadAssignmentInfo(assignmentRepository repository.AssignmentRepository) model.OnLoadAssignmentInfo {
 	return func(chapterID string, userID string) (model.AssignmentInfo, error) {
 		return assignmentRepository.Get(

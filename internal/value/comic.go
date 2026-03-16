@@ -16,12 +16,11 @@ type ComicInfo struct {
 	Author      string `json:"author"`
 	Description string `json:"description"`
 
-	CoverURL string `json:"cover_url"`
-
 	ChapterCount int       `json:"chapter_count"`
 	CreatorID    string    `json:"creator_id"`
 	Creator      *UserInfo `json:"creator,omitempty"`
 
+	// FIXME: update?
 	LastActiveAt int64 `json:"last_active_at"`
 
 	CreatedAt int64 `json:"created_at"`

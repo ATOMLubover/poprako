@@ -34,14 +34,16 @@ func (comicQuery) OrderByLastActiveAtDesc() intf.QueryOption {
 // IncludeWorksetInfo 聚合查询 comic 所属工作集字段。
 func (comicQuery) IncludeWorksetInfo() intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
-		return executor.Select(
-			"comic_table.*, workset_table.team_id AS team_id, " +
-				"workset_table.name AS workset_name, " +
-				"workset_table.index AS workset_index, " +
-				"workset_table.comic_count AS workset_comic_count, " +
-				"workset_table.created_at AS workset_created_at, " +
-				"workset_table.updated_at AS workset_updated_at",
-		)
+		return executor.
+			Joins("LEFT JOIN workset_table ON workset_table.id = comic_table.workset_id").
+			Select(
+				"comic_table.*, workset_table.team_id AS workset_team_id, " +
+					"workset_table.name AS workset_name, " +
+					"workset_table.index AS workset_index, " +
+					"workset_table.comic_count AS workset_comic_count, " +
+					"workset_table.created_at AS workset_created_at, " +
+					"workset_table.updated_at AS workset_updated_at",
+			)
 	}
 }
 
@@ -51,7 +53,7 @@ func (comicQuery) IncludeCreatorInfo() intf.QueryOption {
 		return executor.
 			Joins("LEFT JOIN user_table AS creator_table ON creator_table.id = comic_table.creator_id").
 			Select(
-				"comic_table.*, workset_table.team_id AS team_id, " +
+				"comic_table.*, " +
 					"creator_table.name AS creator_name, " +
 					"creator_table.qq AS creator_qq, " +
 					"creator_table.avatar_oss_key AS creator_avatar_oss_key, " +
@@ -67,9 +69,10 @@ func (comicQuery) IncludeCreatorInfo() intf.QueryOption {
 func (comicQuery) IncludeWorksetAndCreatorInfo() intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
 		return executor.
+			Joins("LEFT JOIN workset_table ON workset_table.id = comic_table.workset_id").
 			Joins("LEFT JOIN user_table AS creator_table ON creator_table.id = comic_table.creator_id").
 			Select(
-				"comic_table.*, workset_table.team_id AS team_id, " +
+				"comic_table.*, workset_table.team_id AS workset_team_id, " +
 					"workset_table.name AS workset_name, " +
 					"workset_table.index AS workset_index, " +
 					"workset_table.comic_count AS workset_comic_count, " +

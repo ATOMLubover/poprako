@@ -14,17 +14,15 @@ const (
 type ChapterInfoRow struct {
 	ID string `gorm:"column:id"`
 
-	ComicID   string `gorm:"column:comic_id"`
-	Index     int    `gorm:"column:index"`
-	ChapterNo string `gorm:"column:subtitle"`
+	ComicID  string `gorm:"column:comic_id"`
+	Index    int    `gorm:"column:index"`
+	Subtitle string `gorm:"column:subtitle"`
 
 	PageCount int `gorm:"column:page_count"`
 
 	TotalUnitCount      int `gorm:"column:total_unit_count"`
 	TranslatedUnitCount int `gorm:"column:translated_unit_count"`
 	ProofreadUnitCount  int `gorm:"column:proofread_unit_count"`
-
-	CoverURL string `gorm:"column:cover_url"`
 
 	UploadedAt     *time.Time `gorm:"column:uploaded_at"`
 	TransalatingAt *time.Time `gorm:"column:transalating_at"`
@@ -49,7 +47,7 @@ type ChapterInsertRow struct {
 	ID        string `gorm:"column:id"`
 	ComicID   string `gorm:"column:comic_id"`
 	Index     int    `gorm:"column:index"`
-	ChapterNo string `gorm:"column:subtitle"`
+	Subtitle  string `gorm:"column:subtitle"`
 	CreatorID string `gorm:"column:creator_id"`
 }
 
@@ -132,12 +130,11 @@ func ToChapterInfo(row ChapterInfoRow) model.ChapterInfo {
 		row.ID,
 		row.ComicID,
 		row.Index,
-		row.ChapterNo,
+		row.Subtitle,
 		row.PageCount,
 		row.TotalUnitCount,
 		row.TranslatedUnitCount,
 		row.ProofreadUnitCount,
-		row.CoverURL,
 		row.UploadedAt,
 		row.TransalatingAt,
 		row.TranslatedAt,

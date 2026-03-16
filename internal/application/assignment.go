@@ -49,6 +49,7 @@ type assignmentApplication struct {
 	ossClient            external.OSSClient
 	memberRepository     repository.MemberRepository
 	comicRepository      repository.ComicRepository
+	worksetRepository    repository.WorksetRepository
 	chapterRepository    repository.ChapterRepository
 	assignmentRepository repository.AssignmentRepository
 }
@@ -57,12 +58,14 @@ func NewAssignmentApplication(
 	ossClient external.OSSClient,
 	memberRepository repository.MemberRepository,
 	comicRepository repository.ComicRepository,
+	worksetRepository repository.WorksetRepository,
 	chapterRepository repository.ChapterRepository,
 	assignmentRepository repository.AssignmentRepository,
 ) AssignmentApplication {
 	if ossClient == nil ||
 		memberRepository == nil ||
 		comicRepository == nil ||
+		worksetRepository == nil ||
 		chapterRepository == nil ||
 		assignmentRepository == nil {
 		zap.L().Panic(
@@ -70,6 +73,7 @@ func NewAssignmentApplication(
 			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
+			zap.Bool("worksetRepository_nil", worksetRepository == nil),
 			zap.Bool("chapterRepository_nil", chapterRepository == nil),
 			zap.Bool("assignmentRepository_nil", assignmentRepository == nil),
 		)
@@ -79,6 +83,7 @@ func NewAssignmentApplication(
 		ossClient:            ossClient,
 		memberRepository:     memberRepository,
 		comicRepository:      comicRepository,
+		worksetRepository:    worksetRepository,
 		chapterRepository:    chapterRepository,
 		assignmentRepository: assignmentRepository,
 	}
@@ -109,6 +114,7 @@ func (aa *assignmentApplication) ListChapterAssignments(
 		args.ChapterID,
 		adapter.HandleLoadChapterInfo(aa.chapterRepository),
 		adapter.HandleLoadComicInfo(aa.comicRepository),
+		adapter.HandleLoadWorksetInfo(aa.worksetRepository),
 		adapter.HandleLoadMemberInfo(aa.memberRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")

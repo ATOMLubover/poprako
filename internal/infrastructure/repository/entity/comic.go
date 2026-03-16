@@ -9,20 +9,15 @@ import (
 const ComicTable = "comic_table"
 
 // ComicInfoRow 用于 List、Get，映射完整漫画信息。
-// team_id 通过 workset_table JOIN 别名填充，workset 别名列仅在 IncludeWorksetInfo() 时填充。
+// workset 别名列仅在 IncludeWorksetInfo() 时填充。
 type ComicInfoRow struct {
 	ID        string `gorm:"column:id"`
 	WorksetID string `gorm:"column:workset_id"`
-
-	// team_id 通过 JOIN workset_table 获取，并以 team_id 别名返回（SELECT workset_table.team_id AS team_id）
-	TeamID string `gorm:"column:team_id"`
 
 	Index       int    `gorm:"column:index"`
 	Title       string `gorm:"column:title"`
 	Author      string `gorm:"column:author"`
 	Description string `gorm:"column:description"`
-
-	CoverURL string `gorm:"column:cover_url"`
 
 	ChapterCount int    `gorm:"column:chapter_count"`
 	CreatorID    string `gorm:"column:creator_id"`
@@ -34,6 +29,7 @@ type ComicInfoRow struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at"`
 
 	// Workset 别名列（IncludeWorksetInfo() 时填充）
+	WorksetTeamID     string    `gorm:"column:workset_team_id"`
 	WorksetName       string    `gorm:"column:workset_name"`
 	WorksetIndex      int       `gorm:"column:workset_index"`
 	WorksetComicCount int       `gorm:"column:workset_comic_count"`
@@ -60,7 +56,6 @@ type ComicInsertRow struct {
 	Title       string `gorm:"column:title"`
 	Author      string `gorm:"column:author"`
 	Description string `gorm:"column:description"`
-	CoverURL    string `gorm:"column:cover_url"`
 	CreatorID   string `gorm:"column:creator_id"`
 }
 
@@ -71,7 +66,7 @@ func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 	if !row.WorksetCreatedAt.IsZero() {
 		info := model.NewWorksetInfo(
 			row.WorksetID,
-			row.TeamID,
+			row.WorksetTeamID,
 			nil,
 			row.WorksetIndex,
 			row.WorksetName,
@@ -101,13 +96,11 @@ func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 	return model.NewComicInfo(
 		row.ID,
 		row.WorksetID,
-		row.TeamID,
 		worksetInfo,
 		row.Index,
 		row.Title,
 		row.Author,
 		row.Description,
-		row.CoverURL,
 		row.ChapterCount,
 		row.CreatorID,
 		creatorInfo,

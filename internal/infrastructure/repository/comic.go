@@ -33,12 +33,7 @@ func (r *comicRepository) BeginTransaction() intf.Executor {
 
 func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
-
-	// 始终 JOIN workset_table 以获取 team_id（用于权限检查）
-	executor = executor.Table(entity.ComicTable).
-		Joins("JOIN workset_table ON workset_table.id = comic_table.workset_id").
-		Where("comic_table.deleted_at IS NULL").
-		Select("comic_table.*, workset_table.team_id AS team_id")
+	executor = executor.Table(entity.ComicTable).Where("comic_table.deleted_at IS NULL")
 
 	for _, opt := range options {
 		executor = opt(executor)
@@ -60,12 +55,7 @@ func (r *comicRepository) List(executor intf.Executor, options ...intf.QueryOpti
 
 func (r *comicRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ComicInfo, error) {
 	executor = r.withTransaction(executor)
-
-	// 始终 JOIN workset_table 以获取 team_id（用于权限检查）
-	executor = executor.Table(entity.ComicTable).
-		Joins("JOIN workset_table ON workset_table.id = comic_table.workset_id").
-		Where("comic_table.deleted_at IS NULL").
-		Select("comic_table.*, workset_table.team_id AS team_id")
+	executor = executor.Table(entity.ComicTable).Where("comic_table.deleted_at IS NULL")
 
 	for _, opt := range options {
 		executor = opt(executor)
@@ -117,7 +107,6 @@ func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCre
 		Author:      creation.Author,
 		Description: creation.Description,
 		CreatorID:   creation.CreatorID,
-		CoverURL:    "",
 	}
 
 	if err := executor.Create(&row).Error; err != nil {

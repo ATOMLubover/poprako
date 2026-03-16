@@ -11,7 +11,7 @@ func AssembleChapterInfo(chapterInfo model.ChapterInfo, onLoadURL OnLoadURL) val
 		ID:                  chapterInfo.ID,
 		ComicID:             chapterInfo.ComicID,
 		Index:               chapterInfo.Index,
-		ChapterNo:           chapterInfo.ChapterNo,
+		Subtitle:            chapterInfo.Subtitle,
 		PageCount:           chapterInfo.PageCount,
 		TotalUnitCount:      chapterInfo.TotalUnitCount,
 		TranslatedUnitCount: chapterInfo.TranslatedUnitCount,

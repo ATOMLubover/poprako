@@ -44,6 +44,7 @@ type PageApplication interface {
 type pageApplication struct {
 	ossClient            external.OSSClient
 	comicRepository      repository.ComicRepository
+	worksetRepository    repository.WorksetRepository
 	memberRepository     repository.MemberRepository
 	chapterRepository    repository.ChapterRepository
 	pageRepository       repository.PageRepository
@@ -53,6 +54,7 @@ type pageApplication struct {
 func NewPageApplication(
 	ossClient external.OSSClient,
 	comicRepository repository.ComicRepository,
+	worksetRepository repository.WorksetRepository,
 	memberRepository repository.MemberRepository,
 	chapterRepository repository.ChapterRepository,
 	pageRepository repository.PageRepository,
@@ -60,6 +62,7 @@ func NewPageApplication(
 ) PageApplication {
 	if ossClient == nil ||
 		comicRepository == nil ||
+		worksetRepository == nil ||
 		memberRepository == nil ||
 		chapterRepository == nil ||
 		assignmentRepository == nil ||
@@ -68,6 +71,7 @@ func NewPageApplication(
 			"NewPageApplication: 依赖项不能为空",
 			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
+			zap.Bool("worksetRepository_nil", worksetRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("chapterRepository_nil", chapterRepository == nil),
 			zap.Bool("pageRepository_nil", pageRepository == nil),
@@ -78,6 +82,7 @@ func NewPageApplication(
 	return &pageApplication{
 		ossClient:            ossClient,
 		comicRepository:      comicRepository,
+		worksetRepository:    worksetRepository,
 		memberRepository:     memberRepository,
 		chapterRepository:    chapterRepository,
 		pageRepository:       pageRepository,
@@ -206,6 +211,7 @@ func (pa *pageApplication) ListChapterPages(
 		args.ChapterID,
 		adapter.HandleLoadChapterInfo(pa.chapterRepository),
 		adapter.HandleLoadComicInfo(pa.comicRepository),
+		adapter.HandleLoadWorksetInfo(pa.worksetRepository),
 		adapter.HandleLoadMemberInfo(pa.memberRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")

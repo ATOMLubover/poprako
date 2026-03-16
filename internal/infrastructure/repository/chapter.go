@@ -135,7 +135,7 @@ func (r *chapterRepository) Create(executor intf.Executor, creation model.Chapte
 		ID:        util.GenerateUUID(),
 		ComicID:   creation.ComicID,
 		Index:     creation.Index,
-		ChapterNo: creation.ChapterNo,
+		Subtitle:  creation.Subtitle,
 		CreatorID: creation.CreatorID,
 	}
 
@@ -153,7 +153,7 @@ func (r *chapterRepository) Update(executor intf.Executor, update model.ChapterU
 		Table(entity.ChapterTable).
 		Where("id = ? AND deleted_at IS NULL", update.ID).
 		Updates(map[string]any{
-			"subtitle":        update.ChapterNo,
+			"subtitle":        update.Subtitle,
 			"uploaded_at":     update.UploadedAt,
 			"transalating_at": update.TransalatingAt,
 			"translated_at":   update.TranslatedAt,
