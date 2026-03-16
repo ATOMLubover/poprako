@@ -31,6 +31,18 @@ func (r *chapterRepository) BeginTransaction() intf.Executor {
 	return r.executor.Begin()
 }
 
+func (r *chapterRepository) LockByID(executor intf.Executor, chapterID string) error {
+	executor = r.withTransaction(executor)
+
+	var lockedID string
+
+	return executor.
+		Table(entity.ChapterTable).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ? AND deleted_at IS NULL", chapterID).
+		Pluck("id", &lockedID).Error
+}
+
 func (r *chapterRepository) LockByComicID(executor intf.Executor, comicID string) error {
 	executor = r.withTransaction(executor)
 
@@ -78,6 +90,26 @@ func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOpt
 	}
 
 	return entity.ToChapterWithInfo(row), nil
+}
+
+func (r *chapterRepository) GetStatsByID(executor intf.Executor, chapterID string) (model.ChapterStats, error) {
+	executor = r.withTransaction(executor)
+
+	var row entity.ChapterInfoRow
+	if err := executor.
+		Table(entity.ChapterTable).
+		Select("id, total_unit_count, translated_unit_count, proofread_unit_count").
+		Where("id = ? AND deleted_at IS NULL", chapterID).
+		First(&row).Error; err != nil {
+		return model.ChapterStats{}, err
+	}
+
+	return model.NewChapterStats(
+		row.ID,
+		row.TotalUnitCount,
+		row.TranslatedUnitCount,
+		row.ProofreadUnitCount,
+	), nil
 }
 
 func (r *chapterRepository) Count(executor intf.Executor, options ...intf.QueryOption) (int64, error) {
@@ -131,6 +163,19 @@ func (r *chapterRepository) Update(executor intf.Executor, update model.ChapterU
 			"typeset_at":      update.TypesetAt,
 			"reviewed_at":     update.ReviewedAt,
 			"published_at":    update.PublishedAt,
+		}).Error
+}
+
+func (r *chapterRepository) UpdateStats(executor intf.Executor, chapterStats model.ChapterStats) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.ChapterTable).
+		Where("id = ? AND deleted_at IS NULL", chapterStats.ChapterID).
+		Updates(map[string]any{
+			"total_unit_count":      chapterStats.TotalUnitCount,
+			"translated_unit_count": chapterStats.TranslatedUnitCount,
+			"proofread_unit_count":  chapterStats.ProofreadUnitCount,
 		}).Error
 }
 

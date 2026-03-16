@@ -12,6 +12,10 @@ definitions:
     - WorkflowInProgress
     - WorkflowCompleted
     - WorkflowUnset
+  util.Option-bool:
+    type: object
+  util.Option-string:
+    type: object
   value.AssignmentInfo:
     properties:
       assigned_proofreader_at:
@@ -361,6 +365,13 @@ definitions:
       put_url:
         type: string
     type: object
+  value.SavePageUnitArgs:
+    properties:
+      page_id:
+        type: string
+      unit_diff:
+        $ref: '#/definitions/value.UnitDiff'
+    type: object
   value.TeamInfo:
     properties:
       avatar_url:
@@ -376,6 +387,109 @@ definitions:
       name:
         type: string
       updated_at:
+        type: integer
+    type: object
+  value.UnitCreation:
+    properties:
+      id:
+        type: string
+      index:
+        type: integer
+      is_bubble:
+        type: boolean
+      is_proofread:
+        type: boolean
+      page_id:
+        type: string
+      proofread_text:
+        type: string
+      proofreader_comment:
+        type: string
+      proofreader_id:
+        type: string
+      translated_text:
+        type: string
+      translator_comment:
+        type: string
+      translator_id:
+        type: string
+      x_coord:
+        type: integer
+      y_coord:
+        type: integer
+    type: object
+  value.UnitDiff:
+    properties:
+      delete:
+        description: 仅包含 ID 列表
+        items:
+          type: string
+        type: array
+      insert:
+        items:
+          $ref: '#/definitions/value.UnitCreation'
+        type: array
+      patch:
+        items:
+          $ref: '#/definitions/value.UnitPatch'
+        type: array
+    type: object
+  value.UnitInfo:
+    properties:
+      id:
+        type: string
+      index:
+        type: integer
+      is_bubble:
+        type: boolean
+      is_proofread:
+        type: boolean
+      page_id:
+        type: string
+      proofread_text:
+        type: string
+      proofreader_comment:
+        type: string
+      proofreader_id:
+        type: string
+      translated_text:
+        type: string
+      translator_comment:
+        type: string
+      translator_id:
+        type: string
+      x_coord:
+        type: integer
+      y_coord:
+        type: integer
+    type: object
+  value.UnitPatch:
+    properties:
+      id:
+        type: string
+      index:
+        type: integer
+      is_bubble:
+        type: boolean
+      is_proofread:
+        $ref: '#/definitions/util.Option-bool'
+      page_id:
+        type: string
+      proofread_text:
+        $ref: '#/definitions/util.Option-string'
+      proofreader_comment:
+        $ref: '#/definitions/util.Option-string'
+      proofreader_id:
+        $ref: '#/definitions/util.Option-string'
+      translated_text:
+        $ref: '#/definitions/util.Option-string'
+      translator_comment:
+        $ref: '#/definitions/util.Option-string'
+      translator_id:
+        $ref: '#/definitions/util.Option-string'
+      x_coord:
+        type: integer
+      y_coord:
         type: integer
     type: object
   value.UpdateAssignmentArgs:
@@ -1478,6 +1592,50 @@ paths:
       summary: 获取当前用户所在的汉化组列表（已测试）
       tags:
       - team
+  /units:
+    get:
+      description: 获取指定页面的所有翻校单元，按 index 升序排列，注意当列表为空时返回 null 而非空数组
+      parameters:
+      - description: 页面 ID
+        in: query
+        name: page_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/value.UnitInfo'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: 获取页面 unit 列表
+      tags:
+      - unit
+    put:
+      consumes:
+      - application/json
+      description: 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段
+      parameters:
+      - description: unit diff 参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.SavePageUnitArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 保存页面 unit diff
+      tags:
+      - unit
   /users/{user_id}:
     delete:
       description: 根据用户 ID 删除用户

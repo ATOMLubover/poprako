@@ -51,6 +51,28 @@ func NewPageInfo(
 	}
 }
 
+type PageStats struct {
+	PageID string
+
+	TotalUnitCount      int
+	TranslatedUnitCount int
+	ProofreadUnitCount  int
+}
+
+func NewPageStats(
+	pageID string,
+	totalUnitCount int,
+	translatedUnitCount int,
+	proofreadUnitCount int,
+) PageStats {
+	return PageStats{
+		PageID:              pageID,
+		TotalUnitCount:      totalUnitCount,
+		TranslatedUnitCount: translatedUnitCount,
+		ProofreadUnitCount:  proofreadUnitCount,
+	}
+}
+
 type PageCreation struct {
 	ID string
 

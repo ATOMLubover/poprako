@@ -20,6 +20,10 @@ type ChapterInfoRow struct {
 
 	PageCount int `gorm:"column:page_count"`
 
+	TotalUnitCount      int `gorm:"column:total_unit_count"`
+	TranslatedUnitCount int `gorm:"column:translated_unit_count"`
+	ProofreadUnitCount  int `gorm:"column:proofread_unit_count"`
+
 	CoverURL string `gorm:"column:cover_url"`
 
 	UploadedAt     *time.Time `gorm:"column:uploaded_at"`
@@ -130,9 +134,9 @@ func ToChapterInfo(row ChapterInfoRow) model.ChapterInfo {
 		row.Index,
 		row.ChapterNo,
 		row.PageCount,
-		0,
-		0,
-		0,
+		row.TotalUnitCount,
+		row.TranslatedUnitCount,
+		row.ProofreadUnitCount,
 		row.CoverURL,
 		row.UploadedAt,
 		row.TransalatingAt,

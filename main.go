@@ -50,6 +50,7 @@ func main() {
 	chapterRepository := repository_infra.NewChapterRepository(databaseExecutor)
 	pageRepository := repository_infra.NewPageRepository(databaseExecutor)
 	assignmentRepository := repository_infra.NewAssignmentRepository(databaseExecutor)
+	unitRepository := repository_infra.NewUnitRepository(databaseExecutor)
 	ossClient := external_infra.NewR2OSSClient()
 
 	userApplication := application.NewUserApplication(
@@ -97,6 +98,7 @@ func main() {
 		ossClient,
 		comicRepository,
 		memberRepository,
+		chapterRepository,
 		pageRepository,
 		assignmentRepository,
 	)
@@ -106,6 +108,14 @@ func main() {
 		comicRepository,
 		chapterRepository,
 		assignmentRepository,
+	)
+	unitApplication := application.NewUnitApplication(
+		memberRepository,
+		comicRepository,
+		chapterRepository,
+		pageRepository,
+		assignmentRepository,
+		unitRepository,
 	)
 
 	appState := state.NewAppState(
@@ -119,6 +129,7 @@ func main() {
 		chapterApplication,
 		pageApplication,
 		assignmentApplication,
+		unitApplication,
 	)
 
 	zap.L().Info("应用状态初始化完成，HTTP 服务器启动")

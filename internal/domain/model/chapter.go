@@ -84,6 +84,28 @@ func NewChapterDetail(
 	}
 }
 
+type ChapterStats struct {
+	ChapterID string
+
+	TotalUnitCount      int
+	TranslatedUnitCount int
+	ProofreadUnitCount  int
+}
+
+func NewChapterStats(
+	chapterID string,
+	totalUnitCount int,
+	translatedUnitCount int,
+	proofreadUnitCount int,
+) ChapterStats {
+	return ChapterStats{
+		ChapterID:           chapterID,
+		TotalUnitCount:      totalUnitCount,
+		TranslatedUnitCount: translatedUnitCount,
+		ProofreadUnitCount:  proofreadUnitCount,
+	}
+}
+
 type ChapterCreation struct {
 	ComicID   string
 	Index     int

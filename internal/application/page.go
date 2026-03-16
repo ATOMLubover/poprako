@@ -45,6 +45,7 @@ type pageApplication struct {
 	ossClient            external.OSSClient
 	comicRepository      repository.ComicRepository
 	memberRepository     repository.MemberRepository
+	chapterRepository    repository.ChapterRepository
 	pageRepository       repository.PageRepository
 	assignmentRepository repository.AssignmentRepository
 }
@@ -53,12 +54,14 @@ func NewPageApplication(
 	ossClient external.OSSClient,
 	comicRepository repository.ComicRepository,
 	memberRepository repository.MemberRepository,
+	chapterRepository repository.ChapterRepository,
 	pageRepository repository.PageRepository,
 	assignmentRepository repository.AssignmentRepository,
 ) PageApplication {
 	if ossClient == nil ||
 		comicRepository == nil ||
 		memberRepository == nil ||
+		chapterRepository == nil ||
 		assignmentRepository == nil ||
 		pageRepository == nil {
 		zap.L().Panic(
@@ -66,6 +69,7 @@ func NewPageApplication(
 			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
+			zap.Bool("chapterRepository_nil", chapterRepository == nil),
 			zap.Bool("pageRepository_nil", pageRepository == nil),
 			zap.Bool("assignmentRepository_nil", assignmentRepository == nil),
 		)
@@ -75,6 +79,7 @@ func NewPageApplication(
 		ossClient:            ossClient,
 		comicRepository:      comicRepository,
 		memberRepository:     memberRepository,
+		chapterRepository:    chapterRepository,
 		pageRepository:       pageRepository,
 		assignmentRepository: assignmentRepository,
 	}
@@ -199,9 +204,7 @@ func (pa *pageApplication) ListChapterPages(
 	if !model.PermPageList().Check(
 		currentUserID,
 		args.ChapterID,
-		func(chapterID string) (model.ChapterInfo, error) {
-			return pa.pageRepository.GetChapterByID(nil, chapterID)
-		},
+		adapter.HandleLoadChapterInfo(pa.chapterRepository),
 		adapter.HandleLoadComicInfo(pa.comicRepository),
 		adapter.HandleLoadMemberInfo(pa.memberRepository),
 	) {
@@ -267,9 +270,7 @@ func (pa *pageApplication) UpdatePage(
 				query_option.FilterByID(repository_infra.PageTable, pageID),
 			)
 		},
-		func(chapterID string) (model.ChapterInfo, error) {
-			return pa.pageRepository.GetChapterByID(nil, chapterID)
-		},
+		adapter.HandleLoadChapterInfo(pa.chapterRepository),
 		adapter.HandleLoadAssignmentInfo(pa.assignmentRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")

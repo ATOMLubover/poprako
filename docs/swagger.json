@@ -1504,6 +1504,77 @@
                 }
             }
         },
+        "/units": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定页面的所有翻校单元，按 index 升序排列，注意当列表为空时返回 null 而非空数组",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "unit"
+                ],
+                "summary": "获取页面 unit 列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "页面 ID",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/value.UnitInfo"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "unit"
+                ],
+                "summary": "保存页面 unit diff",
+                "parameters": [
+                    {
+                        "description": "unit diff 参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.SavePageUnitArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/users/mine": {
             "get": {
                 "security": [
@@ -1884,6 +1955,12 @@
                 "WorkflowCompleted",
                 "WorkflowUnset"
             ]
+        },
+        "util.Option-bool": {
+            "type": "object"
+        },
+        "util.Option-string": {
+            "type": "object"
         },
         "value.AssignmentInfo": {
             "type": "object",
@@ -2422,6 +2499,17 @@
                 }
             }
         },
+        "value.SavePageUnitArgs": {
+            "type": "object",
+            "properties": {
+                "page_id": {
+                    "type": "string"
+                },
+                "unit_diff": {
+                    "$ref": "#/definitions/value.UnitDiff"
+                }
+            }
+        },
         "value.TeamInfo": {
             "type": "object",
             "properties": {
@@ -2444,6 +2532,162 @@
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "value.UnitCreation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "is_bubble": {
+                    "type": "boolean"
+                },
+                "is_proofread": {
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "type": "string"
+                },
+                "proofread_text": {
+                    "type": "string"
+                },
+                "proofreader_comment": {
+                    "type": "string"
+                },
+                "proofreader_id": {
+                    "type": "string"
+                },
+                "translated_text": {
+                    "type": "string"
+                },
+                "translator_comment": {
+                    "type": "string"
+                },
+                "translator_id": {
+                    "type": "string"
+                },
+                "x_coord": {
+                    "type": "integer"
+                },
+                "y_coord": {
+                    "type": "integer"
+                }
+            }
+        },
+        "value.UnitDiff": {
+            "type": "object",
+            "properties": {
+                "delete": {
+                    "description": "仅包含 ID 列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "insert": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/value.UnitCreation"
+                    }
+                },
+                "patch": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/value.UnitPatch"
+                    }
+                }
+            }
+        },
+        "value.UnitInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "is_bubble": {
+                    "type": "boolean"
+                },
+                "is_proofread": {
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "type": "string"
+                },
+                "proofread_text": {
+                    "type": "string"
+                },
+                "proofreader_comment": {
+                    "type": "string"
+                },
+                "proofreader_id": {
+                    "type": "string"
+                },
+                "translated_text": {
+                    "type": "string"
+                },
+                "translator_comment": {
+                    "type": "string"
+                },
+                "translator_id": {
+                    "type": "string"
+                },
+                "x_coord": {
+                    "type": "integer"
+                },
+                "y_coord": {
+                    "type": "integer"
+                }
+            }
+        },
+        "value.UnitPatch": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "is_bubble": {
+                    "type": "boolean"
+                },
+                "is_proofread": {
+                    "$ref": "#/definitions/util.Option-bool"
+                },
+                "page_id": {
+                    "type": "string"
+                },
+                "proofread_text": {
+                    "$ref": "#/definitions/util.Option-string"
+                },
+                "proofreader_comment": {
+                    "$ref": "#/definitions/util.Option-string"
+                },
+                "proofreader_id": {
+                    "$ref": "#/definitions/util.Option-string"
+                },
+                "translated_text": {
+                    "$ref": "#/definitions/util.Option-string"
+                },
+                "translator_comment": {
+                    "$ref": "#/definitions/util.Option-string"
+                },
+                "translator_id": {
+                    "$ref": "#/definitions/util.Option-string"
+                },
+                "x_coord": {
+                    "type": "integer"
+                },
+                "y_coord": {
                     "type": "integer"
                 }
             }

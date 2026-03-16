@@ -137,6 +137,13 @@ func initialize(appState *state.AppState) *iris.Application {
 		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))
 	}
 
+	// unit 相关路由
+	unitParty := authorizedParty.Party("/units")
+	{
+		unitParty.Get("/", ListPageUnits(appState))
+		unitParty.Put("/", SavePageUnits(appState))
+	}
+
 	// 初始化 Swagger UI
 	initializeSwagger(app, appState.AppConfig)
 

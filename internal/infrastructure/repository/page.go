@@ -28,6 +28,18 @@ func (r *pageRepository) BeginTransaction() intf.Executor {
 	return r.executor.Begin()
 }
 
+func (r *pageRepository) LockByID(executor intf.Executor, pageID string) error {
+	executor = r.withTransaction(executor)
+
+	var lockedID string
+
+	return executor.
+		Table(entity.PageTable).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ?", pageID).
+		Pluck("id", &lockedID).Error
+}
+
 func (r *pageRepository) LockByChapterID(executor intf.Executor, chapterID string) error {
 	executor = r.withTransaction(executor)
 
@@ -77,16 +89,24 @@ func (r *pageRepository) Get(executor intf.Executor, options ...intf.QueryOption
 	return entity.ToPageInfo(row), nil
 }
 
-func (r *pageRepository) GetChapterByID(executor intf.Executor, chapterID string) (model.ChapterInfo, error) {
+func (r *pageRepository) GetStatsByID(executor intf.Executor, pageID string) (model.PageStats, error) {
 	executor = r.withTransaction(executor)
-	executor = executor.Table(entity.ChapterTable).Where("id = ?", chapterID)
 
-	var row entity.ChapterInfoRow
-	if err := executor.First(&row).Error; err != nil {
-		return model.ChapterInfo{}, err
+	var row entity.PageInfoRow
+	if err := executor.
+		Table(entity.PageTable).
+		Select("id, total_unit_count, translated_unit_count, proofread_unit_count").
+		Where("id = ?", pageID).
+		First(&row).Error; err != nil {
+		return model.PageStats{}, err
 	}
 
-	return entity.ToChapterInfo(row), nil
+	return model.NewPageStats(
+		row.ID,
+		row.TotalUnitCount,
+		row.TranslatedUnitCount,
+		row.ProofreadUnitCount,
+	), nil
 }
 
 func (r *pageRepository) CreateBatch(executor intf.Executor, pages []model.PageCreation) error {
@@ -108,6 +128,19 @@ func (r *pageRepository) CreateBatch(executor intf.Executor, pages []model.PageC
 	}
 
 	return executor.Create(&rows).Error
+}
+
+func (r *pageRepository) UpdateStats(executor intf.Executor, pageStats model.PageStats) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.PageTable).
+		Where("id = ?", pageStats.PageID).
+		Updates(map[string]any{
+			"total_unit_count":      pageStats.TotalUnitCount,
+			"translated_unit_count": pageStats.TranslatedUnitCount,
+			"proofread_unit_count":  pageStats.ProofreadUnitCount,
+		}).Error
 }
 
 func (r *pageRepository) Update(executor intf.Executor, update model.PageUpdate) error {

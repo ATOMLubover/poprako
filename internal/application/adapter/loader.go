@@ -50,3 +50,12 @@ func HandleLoadChapterInfo(chapterRepository repository.ChapterRepository) model
 		)
 	}
 }
+
+func HandleLoadPageInfo(pageRepository repository.PageRepository) model.OnLoadPageInfo {
+	return func(pageID string) (model.PageInfo, error) {
+		return pageRepository.Get(
+			nil,
+			query_option.FilterByID(repository_infra.PageTable, pageID),
+		)
+	}
+}

@@ -1,0 +1,25 @@
+package application
+
+import (
+	"labelplus-next-web-be/internal/util"
+	"labelplus-next-web-be/internal/value"
+)
+
+type UnitApplication interface{}
+
+type unitApplication struct{}
+
+func NewUnitApplication() UnitApplication {
+	return &unitApplication{}
+}
+
+func (ua *unitApplication) ListPageUnits() {}
+
+// 需要注意的是，在 Save 时，要求 repo 层不对没有匹配到的 Update 和 Delete 报错
+// 为了提升协作的体验，可以牺牲一部分的数据一致性
+func (ua *unitApplication) SavePageUnits(
+	scope util.TraceScope,
+	currentUserID string,
+    args value.SavePageUnitArgs,
+) {
+}

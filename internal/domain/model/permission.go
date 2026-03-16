@@ -673,12 +673,44 @@ func (permPageDelete) Check(
 	return assignmentInfo.HasAnyRole(RoleReviewer, RoleRawProvider)
 }
 
-type permUnitSave struct {
-	role RoleFlag
+type (
+	permUnitList struct{}
+	permUnitSave struct{}
+)
+
+func PermUnitList() permUnitList {
+	return permUnitList{}
 }
 
-func PermUnitSave(role RoleFlag) permUnitSave {
-	return permUnitSave{role: role}
+func (p permUnitList) Check(
+	userID string,
+	pageID string,
+	onLoadPageInfo OnLoadPageInfo,
+	onLoadChapterInfo OnLoadChapterInfo,
+	onLoadAssignmentInfo OnLoadAssignmentInfo,
+) bool {
+	// 先查找页面信息，然后根据其所属章节的分工信息来判断用户是否有权限查看单元列表
+	pageInfo, ok := loadPageInfoForCheck("PermUnitList.Check", pageID, onLoadPageInfo)
+	if !ok {
+		return false
+	}
+
+	chapterInfo, ok := loadChapterInfoForCheck("PermUnitList.Check", pageInfo.ChapterID, onLoadChapterInfo)
+	if !ok {
+		return false
+	}
+
+	assignmentInfo, ok := loadAssignmentInfoForCheck("PermUnitList.Check", chapterInfo.ComicID, userID, onLoadAssignmentInfo)
+	if !ok {
+		return false
+	}
+
+	// 只有当用户有对应分工时，才有权限查看单元列表
+	return assignmentInfo.HasAnyRole(RoleTranslator, RoleProofreader)
+}
+
+func PermUnitSave() permUnitSave {
+	return permUnitSave{}
 }
 
 func (p permUnitSave) Check(
@@ -705,7 +737,7 @@ func (p permUnitSave) Check(
 	}
 
 	// 只有当用户有对应分工时，才有权限保存单元
-	return assignmentInfo.HasAnyRole(p.role)
+	return assignmentInfo.HasAnyRole(RoleTranslator, RoleProofreader)
 }
 
 type (

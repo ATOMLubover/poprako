@@ -13,4 +13,5 @@ const (
 	PageTable       = entity.PageTable
 	InvitationTable = entity.InvitationTable
 	AssignmentTable = entity.AssignmentTable
+	UnitTable       = entity.UnitTable
 )
