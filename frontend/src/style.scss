@@ -1,0 +1,146 @@
+/* =========================================
+ * 全局基础色板（品牌色）
+ * ========================================= */
+$brand-primary: #006d77;
+$brand-secondary: #83c5be;
+$brand-accent: #e29578;
+
+/* =========================================
+ * 亮色主题 token
+ * ========================================= */
+$light-surface: rgba(255, 255, 255, 0.88);
+$light-text-primary: #1f2937;
+$light-text-muted: #5b6473;
+$light-shadow-heavy: 0 20px 45px rgba(13, 38, 59, 0.18);
+$light-page-grad-start: #f1f5f9;
+$light-page-grad-end: #eaf4f2;
+$light-layer-primary: rgba(0, 109, 119, 0.14);
+$light-layer-accent: rgba(226, 149, 120, 0.12);
+$light-login-grad-primary: rgba(0, 109, 119, 0.18);
+$light-login-grad-accent: rgba(226, 149, 120, 0.15);
+$light-login-glow-primary: rgba(0, 109, 119, 0.3);
+$light-login-glow-accent: rgba(226, 149, 120, 0.35);
+$light-dashboard-sider-start: #0b3c49;
+$light-dashboard-sider-end: #0d5a6a;
+$light-dashboard-header: rgba(255, 255, 255, 0.86);
+$light-dashboard-header-border: rgba(13, 109, 119, 0.14);
+$light-panel-bg: rgba(255, 255, 255, 0.95);
+$light-float-bg: rgba(255, 255, 255, 0.65);
+$light-float-shadow: 0 12px 30px rgba(22, 44, 68, 0.2);
+
+/* =========================================
+ * 暗黑主题 token
+ * ========================================= */
+$dark-surface: rgba(20, 24, 33, 0.86);
+$dark-text-primary: #e6eef8;
+$dark-text-muted: #9fb0c6;
+$dark-shadow-heavy: 0 20px 45px rgba(0, 0, 0, 0.44);
+$dark-page-grad-start: #0f141c;
+$dark-page-grad-end: #111d29;
+$dark-layer-primary: rgba(0, 109, 119, 0.26);
+$dark-layer-accent: rgba(226, 149, 120, 0.2);
+$dark-login-grad-primary: rgba(0, 109, 119, 0.25);
+$dark-login-grad-accent: rgba(226, 149, 120, 0.2);
+$dark-login-card-bg: rgba(18, 23, 31, 0.86);
+$dark-dashboard-sider-start: #0a2630;
+$dark-dashboard-sider-end: #11394a;
+$dark-dashboard-header: rgba(15, 20, 30, 0.86);
+$dark-dashboard-header-border: rgba(79, 107, 138, 0.28);
+$dark-panel-bg: rgba(20, 26, 36, 0.88);
+$dark-float-bg: rgba(24, 24, 24, 0.72);
+$dark-float-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+
+/* =========================================
+ * 运行时 CSS 变量（亮色默认）
+ * ========================================= */
+:root {
+  --brand-primary: #{$brand-primary};
+  --brand-secondary: #{$brand-secondary};
+  --brand-accent: #{$brand-accent};
+
+  --surface: #{$light-surface};
+  --text-primary: #{$light-text-primary};
+  --text-muted: #{$light-text-muted};
+  --shadow-heavy: #{$light-shadow-heavy};
+
+  --page-grad-start: #{$light-page-grad-start};
+  --page-grad-end: #{$light-page-grad-end};
+  --layer-primary: #{$light-layer-primary};
+  --layer-accent: #{$light-layer-accent};
+
+  --login-grad-primary: #{$light-login-grad-primary};
+  --login-grad-accent: #{$light-login-grad-accent};
+  --login-glow-primary: #{$light-login-glow-primary};
+  --login-glow-accent: #{$light-login-glow-accent};
+
+  --dashboard-sider-start: #{$light-dashboard-sider-start};
+  --dashboard-sider-end: #{$light-dashboard-sider-end};
+  --dashboard-header-bg: #{$light-dashboard-header};
+  --dashboard-header-border: #{$light-dashboard-header-border};
+  --panel-bg: #{$light-panel-bg};
+
+  --float-bg: #{$light-float-bg};
+  --float-shadow: #{$light-float-shadow};
+  --logo-text: #ffffff;
+}
+
+/* =========================================
+ * 暗黑模式变量覆盖
+ * ========================================= */
+html[data-theme="dark"] {
+  --surface: #{$dark-surface};
+  --text-primary: #{$dark-text-primary};
+  --text-muted: #{$dark-text-muted};
+  --shadow-heavy: #{$dark-shadow-heavy};
+
+  --page-grad-start: #{$dark-page-grad-start};
+  --page-grad-end: #{$dark-page-grad-end};
+  --layer-primary: #{$dark-layer-primary};
+  --layer-accent: #{$dark-layer-accent};
+
+  --login-grad-primary: #{$dark-login-grad-primary};
+  --login-grad-accent: #{$dark-login-grad-accent};
+  --login-card-bg: #{$dark-login-card-bg};
+
+  --dashboard-sider-start: #{$dark-dashboard-sider-start};
+  --dashboard-sider-end: #{$dark-dashboard-sider-end};
+  --dashboard-header-bg: #{$dark-dashboard-header};
+  --dashboard-header-border: #{$dark-dashboard-header-border};
+  --panel-bg: #{$dark-panel-bg};
+
+  --float-bg: #{$dark-float-bg};
+  --float-shadow: #{$dark-float-shadow};
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text-primary);
+}
+
+body {
+  /* 页面主背景由全局色板变量统一驱动。 */
+  background:
+    radial-gradient(circle at 20% 20%, var(--layer-primary), transparent 36%),
+    radial-gradient(circle at 80% 0%, var(--layer-accent), transparent 35%),
+    linear-gradient(180deg, var(--page-grad-start) 0%, var(--page-grad-end) 100%);
+  transition: background 0.28s ease;
+}
+
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.35s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(14px);
+}

@@ -1,56 +1,109 @@
-import { httpClient } from '@/api/http';
-import type { UserInfo } from '@/types/domain';
+/**
+ * 文件用途：封装认证与当前用户信息相关接口。
+ */
+import { httpClient } from "../http";
+import type { UserInfo } from "../../types/domain";
 
 /**
  * 登录参数，对应 swagger 的 value.LoginUserArgs。
  */
 export interface LoginUserArgs {
+  /** 登录用 QQ 账号。 */
   qq: string;
+  /** 登录密码。 */
   password: string;
 }
+
+/**
+ * 登录请求体类型。
+ */
+export type LoginUserRequest = LoginUserArgs;
 
 /**
  * 注册参数，对应 swagger 的 value.RegisterUserArgs。
  */
 export interface RegisterUserArgs {
+  /** 注册用户名。 */
   username: string;
+  /** 注册用 QQ 账号。 */
   qq: string;
+  /** 注册密码。 */
   password: string;
 }
+
+/**
+ * 注册请求体类型。
+ */
+export type RegisterUserRequest = RegisterUserArgs;
 
 /**
  * 登录结果，对应 swagger 的 value.LoginUserResult。
  */
 export interface LoginUserResult {
+  /** 登录成功后签发的访问令牌。 */
   access_token: string;
+  /** 当前登录用户信息。 */
   user: UserInfo;
 }
+
+/**
+ * 登录响应体类型。
+ */
+export type LoginUserResponse = LoginUserResult;
 
 /**
  * 注册结果，对应 swagger 的 value.RegisterUserResult。
  */
 export interface RegisterUserResult {
+  /** 注册后自动登录的访问令牌。 */
   access_token: string;
+  /** 新注册用户信息。 */
   user: UserInfo;
 }
 
 /**
- * 调用 swagger 的 POST /auth/login。
+ * 注册响应体类型。
  */
-export async function loginUser(loginUserArgs: LoginUserArgs): Promise<LoginUserResult> {
-  return httpClient.post<LoginUserResult, LoginUserArgs>('/auth/login', loginUserArgs);
+export type RegisterUserResponse = RegisterUserResult;
+
+/**
+ * 获取当前用户信息的响应体类型。
+ */
+export type GetCurrentUserProfileResponse = UserInfo;
+
+/**
+ * 调用 swagger 的 POST /auth/login。
+ * 请求类型：LoginUserRequest。
+ * 返回类型：LoginUserResponse。
+ */
+export async function loginUser(
+  loginUserArgs: LoginUserRequest,
+): Promise<LoginUserResponse> {
+  return httpClient.post<LoginUserResponse, LoginUserRequest>(
+    "/auth/login",
+    loginUserArgs,
+  );
 }
 
 /**
  * 调用 swagger 的 POST /auth/register。
+ * 请求类型：RegisterUserRequest。
+ * 返回类型：RegisterUserResponse。
  */
-export async function registerUser(registerUserArgs: RegisterUserArgs): Promise<RegisterUserResult> {
-  return httpClient.post<RegisterUserResult, RegisterUserArgs>('/auth/register', registerUserArgs);
+export async function registerUser(
+  registerUserArgs: RegisterUserRequest,
+): Promise<RegisterUserResponse> {
+  return httpClient.post<RegisterUserResponse, RegisterUserRequest>(
+    "/auth/register",
+    registerUserArgs,
+  );
 }
 
 /**
  * 调用 swagger 的 GET /users/mine。
+ * 请求类型：无。
+ * 返回类型：GetCurrentUserProfileResponse。
  */
-export async function getCurrentUserProfile(): Promise<UserInfo> {
-  return httpClient.get<UserInfo>('/users/mine');
+export async function getCurrentUserProfile(): Promise<GetCurrentUserProfileResponse> {
+  return httpClient.get<GetCurrentUserProfileResponse>("/users/mine");
 }

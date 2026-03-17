@@ -1,22 +1,30 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+/**
+ * 文件用途：前端路由配置，定义页面入口与登录态守卫逻辑。
+ */
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+} from "vue-router";
+import { useAuthStore } from "../stores/auth";
 
 /**
  * 路由表定义。
  */
 const routes: RouteRecordRaw[] = [
   {
-    path: '/',
-    redirect: '/dashboard',
+    path: "/",
+    redirect: "/dashboard",
   },
   {
-    path: '/login',
-    name: 'login',
-    component: () => import('@/views/LoginView.vue'),
+    path: "/login",
+    name: "login",
+    component: () => import("../views/LoginView.vue"),
   },
   {
-    path: '/dashboard',
-    name: 'dashboard',
-    component: () => import('@/views/DashboardView.vue'),
+    path: "/dashboard",
+    name: "dashboard",
+    component: () => import("../views/DashboardView.vue"),
   },
 ];
 
@@ -32,12 +40,12 @@ const router = createRouter({
  * 路由前置守卫，用于校验登录态。
  */
 router.beforeEach((to) => {
-  const token = localStorage.getItem('access_token');
-  if (to.path !== '/login' && !token) {
-    return '/login';
+  const authStore = useAuthStore();
+  if (to.path !== "/login" && !authStore.isLoggedIn) {
+    return "/login";
   }
-  if (to.path === '/login' && token) {
-    return '/dashboard';
+  if (to.path === "/login" && authStore.isLoggedIn) {
+    return "/dashboard";
   }
   return true;
 });
