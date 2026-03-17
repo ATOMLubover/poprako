@@ -51,7 +51,7 @@ func main() {
 	pageRepository := repository_infra.NewPageRepository(databaseExecutor)
 	assignmentRepository := repository_infra.NewAssignmentRepository(databaseExecutor)
 	unitRepository := repository_infra.NewUnitRepository(databaseExecutor)
-	ossClient := external_infra.NewR2OSSClient()
+	ossClient := external_infra.NewOSSClient()
 
 	userApplication := application.NewUserApplication(
 		&appConfig.AuthConfig,

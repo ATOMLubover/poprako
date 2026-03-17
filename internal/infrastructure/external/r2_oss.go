@@ -18,6 +18,7 @@ import (
 	intf "labelplus-next-web-be/internal/domain/external"
 )
 
+// R2OSSClient 是 Cloudflare R2 的 OSSClient 实现。
 type R2OSSClient struct {
 	client        *s3.Client
 	presignClient *s3.PresignClient
@@ -26,6 +27,17 @@ type R2OSSClient struct {
 	customDomain string
 }
 
+// NewR2OSSClient 创建 Cloudflare R2 的 OSS 客户端。
+//
+// 必填环境变量:
+// - R2_ACCOUNT_ID
+// - R2_ACCESS_KEY_ID
+// - R2_SECRET_ACCESS_KEY
+// - R2_BUCKET_NAME
+//
+// 可选环境变量:
+// - R2_REGION（默认 auto）
+// - R2_CUSTOM_DOMAIN
 func NewR2OSSClient() intf.OSSClient {
 	accountID := os.Getenv("R2_ACCOUNT_ID")
 	if accountID == "" {
@@ -78,6 +90,7 @@ func NewR2OSSClient() intf.OSSClient {
 	}
 }
 
+// GeneratePutPresignedURL 生成上传对象的预签名 URL。
 func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error) {
 	const exp = 10 * time.Minute
 
@@ -98,6 +111,9 @@ func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error)
 	return req.URL, nil
 }
 
+// GenerateGetPresignedURL 生成读取对象的 URL。
+//
+// 当前实现依赖自定义域名直链，不使用短时签名 URL。
 func (r2 *R2OSSClient) GenerateGetPresignedURL(objectKey string) (string, error) {
 	if r2.customDomain != "" {
 		return fmt.Sprintf("https://%s/%s", r2.customDomain, objectKey), nil
@@ -106,6 +122,7 @@ func (r2 *R2OSSClient) GenerateGetPresignedURL(objectKey string) (string, error)
 	return "", fmt.Errorf("未配置自定义域名")
 }
 
+// Delete 删除单个对象。
 func (r2 *R2OSSClient) Delete(objectKey string) error {
 	const maxRetries = 3
 	const retryDelay = 500 * time.Millisecond
@@ -139,6 +156,7 @@ func (r2 *R2OSSClient) Delete(objectKey string) error {
 	return fmt.Errorf("在 %d 次尝试后删除对象失败: %w", maxRetries, lastErr)
 }
 
+// DeleteBatch 批量删除对象。
 func (r2 *R2OSSClient) DeleteBatch(objectKeys []string) error {
 	if len(objectKeys) == 0 {
 		return nil
@@ -197,6 +215,7 @@ func (r2 *R2OSSClient) DeleteBatch(objectKeys []string) error {
 	return fmt.Errorf("在 %d 次尝试后批量删除对象失败: %w", maxRetries, lastErr)
 }
 
+// detectImageContentType 根据对象后缀推断常见图片 Content-Type。
 func detectImageContentType(key string) string {
 	ext := strings.ToLower(filepath.Ext(key))
 	if ext == ".jpg" || ext == ".jpeg" {
