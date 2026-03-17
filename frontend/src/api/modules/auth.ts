@@ -2,7 +2,6 @@
  * 文件用途：封装认证与当前用户信息相关接口。
  */
 import { httpClient } from "../http";
-import type { UserInfo } from "../../types/domain";
 
 /**
  * 登录参数，对应 swagger 的 value.LoginUserArgs。
@@ -42,8 +41,8 @@ export type RegisterUserRequest = RegisterUserArgs;
 export interface LoginUserResult {
   /** 登录成功后签发的访问令牌。 */
   access_token: string;
-  /** 当前登录用户信息。 */
-  user: UserInfo;
+  /** 当前登录用户 ID。 */
+  user_id: string;
 }
 
 /**
@@ -57,8 +56,8 @@ export type LoginUserResponse = LoginUserResult;
 export interface RegisterUserResult {
   /** 注册后自动登录的访问令牌。 */
   access_token: string;
-  /** 新注册用户信息。 */
-  user: UserInfo;
+  /** 新注册用户 ID。 */
+  user_id: string;
 }
 
 /**

@@ -11,6 +11,21 @@ import axios, {
 } from "axios";
 import type { ApiErrorPayload } from "../types/common";
 
+interface ApiResponseEnvelope<T> {
+  code: number;
+  message: string;
+  data?: T;
+}
+
+function resolveApiBaseURL(): string {
+  const configuredBaseURL = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (configuredBaseURL) {
+    return configuredBaseURL;
+  }
+
+  return "/api/v1";
+}
+
 /**
  * 统一请求客户端。
  * 该类负责请求头注入、错误处理、响应解包与通用 HTTP 方法封装。
@@ -26,7 +41,7 @@ class ApiHttpClient {
    */
   public constructor() {
     this.instance = axios.create({
-      baseURL: "/api/v1",
+      baseURL: resolveApiBaseURL(),
       timeout: 15_000,
     });
     this.setupInterceptors();
@@ -85,8 +100,15 @@ class ApiHttpClient {
    * 统一请求入口。
    */
   public async request<T>(config: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.instance.request<T>(config);
-    return response.data;
+    const response: AxiosResponse<ApiResponseEnvelope<T>> =
+      await this.instance.request<ApiResponseEnvelope<T>>(config);
+    const responseBody = response.data;
+
+    if (responseBody.code !== 200) {
+      return Promise.reject(new Error(responseBody.message || "请求失败"));
+    }
+
+    return (responseBody.data ?? (undefined as T)) as T;
   }
 
   /**

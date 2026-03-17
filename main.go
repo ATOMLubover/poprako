@@ -10,6 +10,9 @@
 package main
 
 import (
+	"os"
+	"strings"
+
 	"labelplus-next-web-be/internal/api/http"
 	"labelplus-next-web-be/internal/application"
 	"labelplus-next-web-be/internal/config"
@@ -39,6 +42,14 @@ func main() {
 	)
 	if err != nil {
 		panic("创建数据库执行器失败: " + err.Error())
+	}
+
+	if shouldRunAutoMigrations() {
+		if err := repository_infra.RunMigrations(databaseExecutor); err != nil {
+			panic("自动执行数据库迁移失败: " + err.Error())
+		}
+	} else {
+		zap.L().Warn("已关闭自动执行数据库迁移，请确认目标数据库结构已就绪")
 	}
 
 	userRepository := repository_infra.NewUserRepository(databaseExecutor)
@@ -142,4 +153,17 @@ func main() {
 	}
 
 	zap.L().Info("HTTP 服务器已正常退出")
+}
+
+func shouldRunAutoMigrations() bool {
+	rawValue := strings.TrimSpace(strings.ToLower(os.Getenv("AUTO_RUN_MIGRATIONS")))
+	if rawValue == "" {
+		return true
+	}
+
+	if rawValue == "0" || rawValue == "false" || rawValue == "off" || rawValue == "no" {
+		return false
+	}
+
+	return true
 }

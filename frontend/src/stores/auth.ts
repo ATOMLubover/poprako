@@ -28,9 +28,10 @@ export const useAuthStore = defineStore("auth", () => {
   /**
    * 设置访问令牌并同步到本地存储。
    */
-  function setAccessToken(nextAccessToken: string): void {
-    accessToken.value = nextAccessToken;
-    localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, nextAccessToken);
+  function setAccessToken(nextAccessToken: string | undefined): void {
+    const normalizedAccessToken = nextAccessToken ?? "";
+    accessToken.value = normalizedAccessToken;
+    localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, normalizedAccessToken);
   }
 
   /**
