@@ -72,6 +72,29 @@ export type RegisterUserResponse = RegisterUserResult;
 export type GetCurrentUserProfileResponse = UserInfo;
 
 /**
+ * 预留用户头像上传响应体，对应 value.ReserveUserAvatarResult。
+ */
+export interface ReserveUserAvatarResult {
+  /** 后端签发的预签名 PUT URL。 */
+  put_url: string;
+}
+
+/**
+ * 预留用户头像上传请求体。
+ */
+export interface ReserveUserAvatarArgs {
+  /**
+   * 上传请求使用的 Content-Type，需要与后续 PUT 保持一致。
+   */
+  content_type: string;
+}
+
+/**
+ * 预留用户头像上传响应类型。
+ */
+export type ReserveUserAvatarResponse = ReserveUserAvatarResult;
+
+/**
  * 调用 swagger 的 POST /auth/login。
  * 请求类型：LoginUserRequest。
  * 返回类型：LoginUserResponse。
@@ -106,4 +129,28 @@ export async function registerUser(
  */
 export async function getCurrentUserProfile(): Promise<GetCurrentUserProfileResponse> {
   return httpClient.get<GetCurrentUserProfileResponse>("/users/mine");
+}
+
+/**
+ * 调用 swagger 的 POST /users/{user_id}/avatar。
+ * 请求类型：无。
+ * 返回类型：ReserveUserAvatarResponse。
+ */
+export async function reserveUserAvatar(
+  userID: string,
+  reserveUserAvatarArgs: ReserveUserAvatarArgs,
+): Promise<ReserveUserAvatarResponse> {
+  return httpClient.post<ReserveUserAvatarResponse, ReserveUserAvatarArgs>(
+    `/users/${userID}/avatar`,
+    reserveUserAvatarArgs,
+  );
+}
+
+/**
+ * 调用 swagger 的 POST /users/{user_id}/avatar/confirm。
+ * 请求类型：无。
+ * 返回类型：无。
+ */
+export async function confirmUserAvatarUploaded(userID: string): Promise<void> {
+  await httpClient.post<void>(`/users/${userID}/avatar/confirm`);
 }

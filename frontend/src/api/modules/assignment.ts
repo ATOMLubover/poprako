@@ -77,10 +77,12 @@ export async function getAssignmentList(
 export async function getMyAssignments(
   paginationQuery: GetMyAssignmentsRequest,
 ): Promise<GetMyAssignmentsResponse> {
-  return httpClient.get<GetMyAssignmentsResponse>(
+  const assignmentList = await httpClient.get<GetMyAssignmentsResponse>(
     "/assignments/mine",
     paginationQuery,
   );
+
+  return Array.isArray(assignmentList) ? assignmentList : [];
 }
 
 /**

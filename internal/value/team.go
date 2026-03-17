@@ -49,6 +49,22 @@ type ReserveTeamAvatarResult struct {
 	PutURL       string `json:"put_url"`
 }
 
+type ReserveTeamAvatarArgs struct {
+	ContentType string `json:"content_type"`
+}
+
+func (args *ReserveTeamAvatarArgs) Validate() error {
+	if args == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if args.ContentType == "" {
+		return errors.New("content_type 不能为空")
+	}
+
+	return nil
+}
+
 type UpdateTeamArgs struct {
 	ID string
 

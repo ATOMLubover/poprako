@@ -101,6 +101,7 @@ import { message, type MenuProps, type TableColumnsType } from "ant-design-vue";
 import {
   AppstoreOutlined,
   BarsOutlined,
+  CloudUploadOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   TeamOutlined,
@@ -132,6 +133,11 @@ const menuItems: MenuProps["items"] = [
     key: "assignment",
     label: "任务分配",
     icon: () => h(BarsOutlined),
+  },
+  {
+    key: "file-test",
+    label: "文件测试",
+    icon: () => h(CloudUploadOutlined),
   },
 ];
 
@@ -194,9 +200,18 @@ function toggleSider(): void {
  */
 function handleMenuClick(menuInfo: { key: string }): void {
   selectedMenuKeys.value = [menuInfo.key];
-  if (menuInfo.key !== "dashboard") {
-    message.info("该菜单页可按同样模式继续扩展");
+
+  if (menuInfo.key === "dashboard") {
+    router.push("/dashboard");
+    return;
   }
+
+  if (menuInfo.key === "file-test") {
+    router.push("/file-test");
+    return;
+  }
+
+  message.info("该菜单页可按同样模式继续扩展");
 }
 
 /**

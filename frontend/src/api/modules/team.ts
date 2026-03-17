@@ -46,6 +46,31 @@ export type GetTeamListResponse = TeamInfo[];
 export type CreateTeamResponse = TeamInfo;
 
 /**
+ * 预留团队头像上传响应体，对应 value.ReserveTeamAvatarResult。
+ */
+export interface ReserveTeamAvatarResult {
+  /** 头像 OSS Key。 */
+  avatar_oss_key: string;
+  /** 后端签发的预签名 PUT URL。 */
+  put_url: string;
+}
+
+/**
+ * 预留团队头像上传请求体。
+ */
+export interface ReserveTeamAvatarArgs {
+  /**
+   * 上传请求使用的 Content-Type，需要与后续 PUT 保持一致。
+   */
+  content_type: string;
+}
+
+/**
+ * 预留团队头像上传响应类型。
+ */
+export type ReserveTeamAvatarResponse = ReserveTeamAvatarResult;
+
+/**
  * 获取当前用户团队列表，对应 GET /teams/mine。
  * 请求类型：GetTeamListRequest。
  * 返回类型：GetMyTeamsResponse。
@@ -56,7 +81,11 @@ export async function getMyTeams(
     limit: 20,
   },
 ): Promise<GetMyTeamsResponse> {
-  return httpClient.get<GetMyTeamsResponse>("/teams/mine", teamListQuery);
+  const teamList = await httpClient.get<GetMyTeamsResponse>(
+    "/teams/mine",
+    teamListQuery,
+  );
+  return Array.isArray(teamList) ? teamList : [];
 }
 
 /**
@@ -82,4 +111,24 @@ export async function createTeam(
     "/teams",
     createTeamArgs,
   );
+}
+
+/**
+ * 预留团队头像上传，对应 POST /teams/{team_id}/avatar。
+ */
+export async function reserveTeamAvatar(
+  teamID: string,
+  reserveTeamAvatarArgs: ReserveTeamAvatarArgs,
+): Promise<ReserveTeamAvatarResponse> {
+  return httpClient.post<ReserveTeamAvatarResponse, ReserveTeamAvatarArgs>(
+    `/teams/${teamID}/avatar`,
+    reserveTeamAvatarArgs,
+  );
+}
+
+/**
+ * 确认团队头像上传完成，对应 POST /teams/{team_id}/avatar/confirm。
+ */
+export async function confirmTeamAvatarUploaded(teamID: string): Promise<void> {
+  await httpClient.post<void>(`/teams/${teamID}/avatar/confirm`);
 }

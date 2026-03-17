@@ -91,7 +91,7 @@ func NewR2OSSClient() intf.OSSClient {
 }
 
 // GeneratePutPresignedURL 生成上传对象的预签名 URL。
-func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error) {
+func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string, contentType string) (string, error) {
 	const exp = 10 * time.Minute
 
 	input := &s3.PutObjectInput{
@@ -99,8 +99,10 @@ func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error)
 		Key:    aws.String(objectKey),
 	}
 
-	if contentType := detectImageContentType(objectKey); contentType != "" {
-		input.ContentType = aws.String(contentType)
+	if strings.TrimSpace(contentType) != "" {
+		input.ContentType = aws.String(strings.TrimSpace(contentType))
+	} else if detectedContentType := detectImageContentType(objectKey); detectedContentType != "" {
+		input.ContentType = aws.String(detectedContentType)
 	}
 
 	req, err := r2.presignClient.PresignPutObject(context.TODO(), input, s3.WithPresignExpires(exp))
@@ -115,6 +117,10 @@ func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error)
 //
 // 当前实现依赖自定义域名直链，不使用短时签名 URL。
 func (r2 *R2OSSClient) GenerateGetPresignedURL(objectKey string) (string, error) {
+	if strings.TrimSpace(objectKey) == "" {
+		return "", nil
+	}
+
 	if r2.customDomain != "" {
 		return fmt.Sprintf("https://%s/%s", r2.customDomain, objectKey), nil
 	}

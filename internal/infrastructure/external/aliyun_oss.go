@@ -3,7 +3,9 @@ package external
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
@@ -16,8 +18,8 @@ import (
 type AliyunOSSClient struct {
 	client *oss.Client
 
-	bucketName   string
-	customDomain string
+	bucketName      string
+	customDomainCDN string
 }
 
 // NewAliyunOSSClient 创建阿里云 OSS 客户端。
@@ -30,7 +32,9 @@ type AliyunOSSClient struct {
 //
 // 可选环境变量:
 // - ALIYUN_OSS_ENDPOINT（默认根据 region 推导）
-// - ALIYUN_OSS_CUSTOM_DOMAIN
+//
+// 必填环境变量（用于下载直链，不参与签名）:
+// - ALIYUN_OSS_CUSTOM_DOMAIN_CDN
 func NewAliyunOSSClient() intf.OSSClient {
 	accessKeyID := os.Getenv("ALIYUN_OSS_ACCESS_KEY_ID")
 	if accessKeyID == "" {
@@ -57,7 +61,12 @@ func NewAliyunOSSClient() intf.OSSClient {
 		endpoint = fmt.Sprintf("https://oss-%s.aliyuncs.com", region)
 	}
 
-	customDomain := os.Getenv("ALIYUN_OSS_CUSTOM_DOMAIN")
+	customDomainCDN := strings.TrimSpace(os.Getenv("ALIYUN_OSS_CUSTOM_DOMAIN_CDN"))
+	if customDomainCDN == "" {
+		panic("未设置 ALIYUN_OSS_CUSTOM_DOMAIN_CDN 环境变量")
+	}
+
+	customDomainCDN = strings.TrimRight(customDomainCDN, "/")
 
 	cfg := oss.LoadDefaultConfig().
 		WithRegion(region).
@@ -65,14 +74,14 @@ func NewAliyunOSSClient() intf.OSSClient {
 		WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyID, accessKeySecret))
 
 	return &AliyunOSSClient{
-		client:       oss.NewClient(cfg),
-		bucketName:   bucketName,
-		customDomain: customDomain,
+		client:          oss.NewClient(cfg),
+		bucketName:      bucketName,
+		customDomainCDN: customDomainCDN,
 	}
 }
 
 // GeneratePutPresignedURL 生成上传对象的预签名 URL。
-func (aoc *AliyunOSSClient) GeneratePutPresignedURL(objectKey string) (string, error) {
+func (aoc *AliyunOSSClient) GeneratePutPresignedURL(objectKey string, contentType string) (string, error) {
 	const exp = 10 * time.Minute
 
 	input := &oss.PutObjectRequest{
@@ -80,8 +89,10 @@ func (aoc *AliyunOSSClient) GeneratePutPresignedURL(objectKey string) (string, e
 		Key:    oss.Ptr(objectKey),
 	}
 
-	if contentType := detectImageContentType(objectKey); contentType != "" {
-		input.ContentType = oss.Ptr(contentType)
+	if strings.TrimSpace(contentType) != "" {
+		input.ContentType = oss.Ptr(strings.TrimSpace(contentType))
+	} else if detectedContentType := detectImageContentType(objectKey); detectedContentType != "" {
+		input.ContentType = oss.Ptr(detectedContentType)
 	}
 
 	result, err := aoc.client.Presign(context.TODO(), input, oss.PresignExpires(exp))
@@ -94,28 +105,28 @@ func (aoc *AliyunOSSClient) GeneratePutPresignedURL(objectKey string) (string, e
 
 // GenerateGetPresignedURL 生成读取对象的 URL。
 //
-// 当配置了自定义域名时，优先返回自定义域名直链；
-// 未配置时则返回有效期 10 分钟的预签名 GET URL。
+// 阿里云下载统一返回 CDN 自定义域名直链，不使用签名 URL。
 func (aoc *AliyunOSSClient) GenerateGetPresignedURL(objectKey string) (string, error) {
-	if aoc.customDomain != "" {
-		return fmt.Sprintf("https://%s/%s", aoc.customDomain, objectKey), nil
+	normalizedObjectKey := normalizeOSSObjectKey(objectKey)
+	if normalizedObjectKey == "" {
+		return "", nil
 	}
 
-	const exp = 10 * time.Minute
+	return fmt.Sprintf("%s/%s", aoc.customDomainCDN, normalizedObjectKey), nil
+}
 
-	result, err := aoc.client.Presign(
-		context.TODO(),
-		&oss.GetObjectRequest{
-			Bucket: oss.Ptr(aoc.bucketName),
-			Key:    oss.Ptr(objectKey),
-		},
-		oss.PresignExpires(exp),
-	)
-	if err != nil {
-		return "", fmt.Errorf("生成下载预签名 URL 失败: %w", err)
+// normalizeOSSObjectKey 兼容历史数据中存储完整 URL 的场景，统一提取对象键。
+func normalizeOSSObjectKey(rawObjectKey string) string {
+	trimmedObjectKey := strings.TrimSpace(rawObjectKey)
+	if trimmedObjectKey == "" {
+		return ""
 	}
 
-	return result.URL, nil
+	if parsedURL, err := url.Parse(trimmedObjectKey); err == nil && parsedURL.Scheme != "" && parsedURL.Host != "" {
+		return strings.TrimPrefix(parsedURL.EscapedPath(), "/")
+	}
+
+	return strings.TrimPrefix(trimmedObjectKey, "/")
 }
 
 // Delete 删除单个对象。

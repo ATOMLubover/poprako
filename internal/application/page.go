@@ -164,7 +164,7 @@ func (pa *pageApplication) ReserveChapterPages(
 	// 生成预签名 URL
 	creationResults := make([]value.PageCreationResult, args.PageCount)
 	for i, pageCreation := range pageCreations {
-		presignedURL, err := pa.ossClient.GeneratePutPresignedURL(pageCreation.OSSKey)
+		presignedURL, err := pa.ossClient.GeneratePutPresignedURL(pageCreation.OSSKey, "")
 		if err != nil {
 			// 防止变量掩蔽导致 defer 中无法正确回滚事务
 			transactionErr = err

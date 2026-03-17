@@ -26,6 +26,11 @@ const routes: RouteRecordRaw[] = [
     name: "dashboard",
     component: () => import("../views/DashboardView.vue"),
   },
+  {
+    path: "/file-test",
+    name: "file-test",
+    component: () => import("../views/FileTransferTestView.vue"),
+  },
 ];
 
 /**

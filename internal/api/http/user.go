@@ -13,8 +13,10 @@ import (
 //
 // @Tags 		user
 // @Security 	ApiKeyAuth
+// @Accept 		json
 // @Produce 	json
 // @Param 		user_id path string true "用户 ID"
+// @Param 		body body value.ReserveUserAvatarArgs true "预留用户头像上传参数"
 //
 // @Success 	200 {object} value.UserInfo
 //
@@ -120,10 +122,17 @@ func ReserveUserAvatar(appState *state.AppState) iris.Handler {
 			return
 		}
 
+		var args value.ReserveUserAvatarArgs
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
 		result, err := userApplication.ReserveUserAvatar(
 			buildTraceScope(ctx),
 			currentUserID,
 			targetUserID,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
