@@ -2,6 +2,7 @@
  * 文件用途：封装认证与当前用户信息相关接口。
  */
 import { httpClient } from "../http";
+import type { UserInfo } from "../../types/domain";
 
 /**
  * 登录参数，对应 swagger 的 value.LoginUserArgs。

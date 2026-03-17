@@ -47,11 +47,16 @@ export type CreateTeamResponse = TeamInfo;
 
 /**
  * 获取当前用户团队列表，对应 GET /teams/mine。
- * 请求类型：无。
+ * 请求类型：GetTeamListRequest。
  * 返回类型：GetMyTeamsResponse。
  */
-export async function getMyTeams(): Promise<GetMyTeamsResponse> {
-  return httpClient.get<GetMyTeamsResponse>("/teams/mine");
+export async function getMyTeams(
+  teamListQuery: GetTeamListRequest = {
+    offset: 0,
+    limit: 20,
+  },
+): Promise<GetMyTeamsResponse> {
+  return httpClient.get<GetMyTeamsResponse>("/teams/mine", teamListQuery);
 }
 
 /**
