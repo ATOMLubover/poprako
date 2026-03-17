@@ -19,12 +19,12 @@ CREATE TABLE "comic_table" (
     "deleted_at"         TIMESTAMPTZ
 );
 
-CREATE UNIQUE INDEX "uidx_comic_team_id_index"
-    ON "comic_table" ("team_id", "index")
+CREATE UNIQUE INDEX "uidx_comic_workset_id_index"
+    ON "comic_table" ("workset_id", "index")
     WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "idx_comic_team_created_at_desc"
-    ON "comic_table" ("team_id", "created_at" DESC)
+CREATE INDEX "idx_comic_workset_id_created_at_desc"
+    ON "comic_table" ("workset_id", "created_at" DESC)
     WHERE "deleted_at" IS NULL;
 
 CREATE INDEX "idx_comic_creator_id"
@@ -32,5 +32,5 @@ CREATE INDEX "idx_comic_creator_id"
     WHERE "deleted_at" IS NULL;
 
 CREATE INDEX "idx_comic_last_active_at_desc"
-    ON "comic_table" ("team_id", "last_active_at" DESC)
+    ON "comic_table" ("workset_id", "last_active_at" DESC)
     WHERE "deleted_at" IS NULL;
