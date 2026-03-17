@@ -373,7 +373,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在指定漫画中创建章节",
+                "description": "在指定漫画中创建章节，并写入章节副标题",
                 "consumes": [
                     "application/json"
                 ],
@@ -441,7 +441,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "局部更新指定章节的信息，未传的字段不会被修改",
+                "description": "局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改",
                 "consumes": [
                     "application/json"
                 ],
@@ -451,7 +451,7 @@ const docTemplate = `{
                 "tags": [
                     "chapter"
                 ],
-                "summary": "更新章节（PATCH 语义，仅传需要更新的字段）",
+                "summary": "更新章节",
                 "parameters": [
                     {
                         "type": "string",
@@ -2021,9 +2021,6 @@ const docTemplate = `{
         "value.ChapterInfo": {
             "type": "object",
             "properties": {
-                "chapter_no": {
-                    "type": "string"
-                },
                 "comic": {
                     "$ref": "#/definitions/value.ComicInfo"
                 },
@@ -2063,6 +2060,9 @@ const docTemplate = `{
                 "reviewed_at": {
                     "type": "integer"
                 },
+                "subtitle": {
+                    "type": "string"
+                },
                 "total_unit_count": {
                     "type": "integer"
                 },
@@ -2098,9 +2098,6 @@ const docTemplate = `{
                 "chapter_count": {
                     "type": "integer"
                 },
-                "cover_url": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "integer"
                 },
@@ -2120,6 +2117,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "last_active_at": {
+                    "description": "FIXME: update?",
                     "type": "integer"
                 },
                 "title": {
@@ -2139,10 +2137,10 @@ const docTemplate = `{
         "value.CreateChapterArgs": {
             "type": "object",
             "properties": {
-                "chapter_no": {
+                "comic_id": {
                     "type": "string"
                 },
-                "comic_id": {
+                "subtitle": {
                     "type": "string"
                 }
             }
@@ -2716,10 +2714,6 @@ const docTemplate = `{
                 "chapter_id": {
                     "type": "string"
                 },
-                "chapter_no": {
-                    "description": "ChapterNo 章节编号，最多 10 字符；不传则不更新",
-                    "type": "string"
-                },
                 "proofread_status": {
                     "description": "ProofreadStatus 校对状态，可取值：pending（待校对）、in_progress（校对中）、completed（已校对）；不传则不更新",
                     "allOf": [
@@ -2743,6 +2737,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.WorkflowStatus"
                         }
                     ]
+                },
+                "subtitle": {
+                    "description": "Subtitle 章节副标题，最多 10 字符；不传则不更新",
+                    "type": "string"
                 },
                 "translate_status": {
                     "description": "TranslateStatus 翻译状态，可取值：pending（待翻译）、in_progress（翻译中）、completed（已翻译）；不传则不更新",
