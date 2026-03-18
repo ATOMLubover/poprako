@@ -44,25 +44,33 @@ type TeamInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-type ReserveTeamAvatarResult struct {
-	AvatarOSSKey string `json:"avatar_oss_key"`
-	PutURL       string `json:"put_url"`
-}
-
 type ReserveTeamAvatarArgs struct {
+	Extension   string `json:"extension"`
 	ContentType string `json:"content_type"`
 }
 
-func (args *ReserveTeamAvatarArgs) Validate() error {
-	if args == nil {
+func (rtaa *ReserveTeamAvatarArgs) Validate() error {
+	if rtaa == nil {
 		return errors.New("参数不能为空")
 	}
 
-	if args.ContentType == "" {
+	if rtaa.Extension == "" {
+		return errors.New("文件扩展名不能为空")
+	}
+
+	if rtaa.Extension != "jpg" && rtaa.Extension != "jpeg" && rtaa.Extension != "png" && rtaa.Extension != "webp" {
+		return errors.New("不支持的文件扩展名，仅支持 jpg/jpeg、png 和 webp")
+	}
+
+	if rtaa.ContentType == "" {
 		return errors.New("content_type 不能为空")
 	}
 
 	return nil
+}
+
+type ReserveTeamAvatarResult struct {
+	PutURL string `json:"put_url"`
 }
 
 type UpdateTeamArgs struct {

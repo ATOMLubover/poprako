@@ -88,24 +88,24 @@ type UserInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-type ReserveUserAvatarResult struct {
-	PutURL string `json:"put_url"`
-}
-
 type ReserveUserAvatarArgs struct {
 	ContentType string `json:"content_type"`
 }
 
-func (args *ReserveUserAvatarArgs) Validate() error {
-	if args == nil {
+func (ruaa *ReserveUserAvatarArgs) Validate() error {
+	if ruaa == nil {
 		return errors.New("参数不能为空")
 	}
 
-	if args.ContentType == "" {
+	if ruaa.ContentType == "" {
 		return errors.New("content_type 不能为空")
 	}
 
 	return nil
+}
+
+type ReserveUserAvatarResult struct {
+	PutURL string `json:"put_url"`
 }
 
 type GetUserArgs struct{}

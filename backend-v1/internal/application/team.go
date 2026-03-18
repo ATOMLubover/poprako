@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"fmt"
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/application/assembler"
@@ -201,6 +202,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 		WithFields(
 			zap.String("current_user_id", currentUserID),
 			zap.String("team_id", teamID),
+			zap.Any("args", args),
 		).
 		Logger().
 		Debug(fn + ": 被调用")
@@ -219,7 +221,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 		return value.ReserveTeamAvatarResult{}, errors.New("权限不足")
 	}
 
-	avatarOSSKey := service.GenerateTeamAvatarOSSKey(teamID)
+	avatarOSSKey := fmt.Sprintf("%s.%s", service.GenerateTeamAvatarOSSKey(teamID), args.Extension)
 
 	putURL, err := ta.ossClient.GeneratePutPresignedURL(avatarOSSKey, args.ContentType)
 	if err != nil {
@@ -233,8 +235,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 	}
 
 	return value.ReserveTeamAvatarResult{
-		AvatarOSSKey: avatarOSSKey,
-		PutURL:       putURL,
+		PutURL: putURL,
 	}, nil
 }
 
