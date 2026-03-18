@@ -13,10 +13,20 @@
 - [style.scss](file://frontend/src/style.scss)
 - [DashboardView.vue](file://frontend/src/views/DashboardView.vue)
 - [LoginView.vue](file://frontend/src/views/LoginView.vue)
+- [FileTransferTestView.vue](file://frontend/src/views/FileTransferTestView.vue)
 - [domain.ts](file://frontend/src/types/domain.ts)
 - [tsconfig.app.json](file://frontend/tsconfig.app.json)
 - [index.html](file://frontend/index.html)
+- [team.ts](file://frontend/src/api/modules/team.ts)
+- [auth.ts](file://frontend/src/api/modules/auth.ts)
 </cite>
+
+## 更新摘要
+**变更内容**
+- 新增FileTransferTestView测试界面组件，提供头像上传下载功能
+- 更新路由系统，添加文件测试路由和菜单入口
+- 扩展API模块，新增用户和团队头像相关接口
+- 更新仪表盘菜单，增加文件测试入口
 
 ## 目录
 1. [简介](#简介)
@@ -33,7 +43,7 @@
 
 poprako-web-ms 项目是一个基于 Vue 3 的前端管理系统，采用现代化的前端技术栈构建。该项目展示了如何在 Vue 3 应用中集成 Pinia 状态管理、Vue Router 路由系统、Ant Design Vue 组件库，以及完整的主题切换机制。
 
-本项目的核心目标是为用户提供一个功能完整、界面美观、交互流畅的管理平台，支持用户登录、团队管理、任务分配等核心业务功能。
+本项目的核心目标是为用户提供一个功能完整、界面美观、交互流畅的管理平台，支持用户登录、团队管理、任务分配等核心业务功能。**新增的FileTransferTestView测试界面进一步增强了应用的文件传输测试能力**。
 
 ## 项目结构
 
@@ -80,13 +90,14 @@ end
 subgraph "views/"
 G --> G1[DashboardView.vue]
 G --> G2[LoginView.vue]
+G --> G3[FileTransferTestView.vue]
 end
 ```
 
 **图表来源**
 - [main.ts:1-26](file://frontend/src/main.ts#L1-L26)
 - [App.vue:1-45](file://frontend/src/App.vue#L1-L45)
-- [index.ts:1-54](file://frontend/src/router/index.ts#L1-L54)
+- [index.ts:1-59](file://frontend/src/router/index.ts#L1-L59)
 
 **章节来源**
 - [main.ts:1-26](file://frontend/src/main.ts#L1-L26)
@@ -201,6 +212,8 @@ P --> S[主题系统]
 T[视图组件] --> U[业务页面]
 U --> V[登录页面]
 U --> W[仪表盘页面]
+U --> X[文件测试页面]
+X --> Y[FileTransferTestView.vue]
 end
 A --> N
 D --> E
@@ -232,7 +245,9 @@ InitTheme --> Ready([应用就绪])
 Ready --> LoadViews["加载视图组件"]
 LoadViews --> LoginView["登录视图"]
 LoadViews --> DashboardView["仪表盘视图"]
-LoginView --> RouterGuard["路由守卫检查"]
+LoadViews --> FileTestView["文件测试视图"]
+FileTestView --> RouterGuard["路由守卫检查"]
+LoginView --> RouterGuard
 DashboardView --> RouterGuard
 RouterGuard --> AuthCheck{"认证状态检查"}
 AuthCheck --> |未登录| RedirectLogin["重定向到登录页"]
@@ -248,7 +263,7 @@ AuthCheck --> |已登录| ShowPage["显示目标页面"]
 
 ### 路由系统
 
-路由系统采用 Vue Router 4.x，实现了基本的页面导航和登录态保护。
+路由系统采用 Vue Router 4.x，实现了基本的页面导航和登录态保护。**新增的文件测试路由为开发者提供了专门的文件传输测试入口**。
 
 ```mermaid
 sequenceDiagram
@@ -258,7 +273,8 @@ participant Guard as "路由守卫"
 participant AuthStore as "认证状态"
 participant LoginPage as "登录页"
 participant Dashboard as "仪表盘"
-User->>Router : 访问 /dashboard
+participant FileTest as "文件测试页"
+User->>Router : 访问 /file-test
 Router->>Guard : 触发 beforeEach 守卫
 Guard->>AuthStore : 检查登录状态
 AuthStore-->>Guard : 返回未登录状态
@@ -273,10 +289,10 @@ Router-->>User : 导航到仪表盘
 ```
 
 **图表来源**
-- [index.ts:42-51](file://frontend/src/router/index.ts#L42-L51)
+- [index.ts:47-56](file://frontend/src/router/index.ts#L47-L56)
 
 **章节来源**
-- [index.ts:1-54](file://frontend/src/router/index.ts#L1-L54)
+- [index.ts:1-59](file://frontend/src/router/index.ts#L1-L59)
 
 ### 状态管理
 
@@ -372,10 +388,97 @@ Router-->>User : 显示仪表盘页面
 
 #### 仪表盘页面
 
-仪表盘页面展示了用户的核心工作界面，包含团队管理、任务分配等功能。
+仪表盘页面展示了用户的核心工作界面，包含团队管理、任务分配等功能。**新增的文件测试菜单项为开发者提供了便捷的文件传输测试入口**。
+
+```mermaid
+sequenceDiagram
+participant User as "用户"
+participant Dashboard as "仪表盘"
+participant Menu as "菜单系统"
+participant FileTest as "文件测试页"
+User->>Dashboard : 访问仪表盘
+Dashboard->>Menu : 渲染菜单项
+Menu->>Menu : 显示"文件测试"菜单
+User->>Menu : 点击"文件测试"
+Menu->>FileTest : 导航到 /file-test
+FileTest-->>User : 显示文件测试界面
+```
+
+**图表来源**
+- [DashboardView.vue:138-142](file://frontend/src/views/DashboardView.vue#L138-L142)
 
 **章节来源**
-- [DashboardView.vue:1-348](file://frontend/src/views/DashboardView.vue#L1-L348)
+- [DashboardView.vue:1-363](file://frontend/src/views/DashboardView.vue#L1-L363)
+
+#### 文件测试页面
+
+**新增** FileTransferTestView组件提供了完整的头像上传下载测试功能，包含响应式的两列布局设计。
+
+```mermaid
+classDiagram
+class FileTransferTestView {
++targetType Ref~"user"|"team"~
++selectedTeamID Ref~string~
++uploadUrl Ref~string~
++downloadUrl Ref~string~
++selectedFile Ref~File|null~
++uploadFileList Ref~UploadFile[]~
++reserving Ref~boolean~
++uploading Ref~boolean~
++downloading Ref~boolean~
++refreshing Ref~boolean~
++reserveUploadUrl() Promise~void~
++uploadAndConfirm() Promise~void~
++downloadFile() Promise~void~
++refreshTargetData() Promise~void~
++syncDownloadUrl() void
+}
+class UploadTargetType {
+<<enumeration>>
+"user"
+"team"
+}
+class TeamOption {
++label string
++value string
+}
+FileTransferTestView --> UploadTargetType : "使用"
+FileTransferTestView --> TeamOption : "生成选项"
+```
+
+**图表来源**
+- [FileTransferTestView.vue:128-177](file://frontend/src/views/FileTransferTestView.vue#L128-L177)
+
+**章节来源**
+- [FileTransferTestView.vue:1-405](file://frontend/src/views/FileTransferTestView.vue#L1-L405)
+
+### API模块扩展
+
+**新增** 用户和团队头像相关的API函数，支持完整的头像上传下载流程。
+
+```mermaid
+sequenceDiagram
+participant Client as "客户端"
+participant API as "API模块"
+participant Backend as "后端服务"
+Client->>API : reserveUserAvatar(user_id, args)
+API->>Backend : POST /users/{user_id}/avatar
+Backend-->>API : 200 OK {put_url}
+API-->>Client : 返回上传URL
+Client->>Backend : PUT 文件到 put_url
+Client->>API : confirmUserAvatarUploaded(user_id)
+API->>Backend : POST /users/{user_id}/avatar/confirm
+Backend-->>API : 200 OK
+API-->>Client : 确认成功
+```
+
+**图表来源**
+- [auth.ts:139-156](file://frontend/src/api/modules/auth.ts#L139-L156)
+- [team.ts:119-134](file://frontend/src/api/modules/team.ts#L119-L134)
+
+**章节来源**
+- [auth.ts:1-157](file://frontend/src/api/modules/auth.ts#L1-L157)
+- [team.ts:1-135](file://frontend/src/api/modules/team.ts#L1-L135)
 
 ### 样式系统
 
@@ -430,19 +533,22 @@ end
 subgraph "视图层"
 B --> F[views/LoginView.vue]
 B --> G[views/DashboardView.vue]
+B --> H[views/FileTransferTestView.vue]
 F --> D
 G --> D
-G --> H[types/domain.ts]
+G --> I[types/domain.ts]
+H --> J[api/modules/auth.ts]
+H --> K[api/modules/team.ts]
 end
 subgraph "API层"
-I[api/modules/] --> J[auth.ts]
-I --> K[assignment.ts]
-I --> L[team.ts]
-I --> M[workset.ts]
+L[api/modules/] --> M[auth.ts]
+L --> N[assignment.ts]
+L --> O[team.ts]
+L --> P[workset.ts]
 end
 subgraph "样式层"
-N[style.scss] --> O[全局样式]
-E --> O
+Q[style.scss] --> R[全局样式]
+E --> Q
 end
 ```
 
@@ -457,10 +563,10 @@ end
 
 ### 代码分割和懒加载
 
-项目采用了动态导入的方式实现路由级别的代码分割，优化了首屏加载性能。
+项目采用了动态导入的方式实现路由级别的代码分割，优化了首屏加载性能。**文件测试页面也采用了懒加载策略，只有在访问时才加载组件代码**。
 
 **章节来源**
-- [index.ts:20-28](file://frontend/src/router/index.ts#L20-L28)
+- [index.ts:22-32](file://frontend/src/router/index.ts#L22-L32)
 
 ### 样式优化
 
@@ -495,9 +601,14 @@ Pinia 的响应式状态管理提供了高效的更新机制，减少了不必�
    - 验证 CSS 变量的更新机制
    - 确认 DOM 属性的设置逻辑
 
+4. **文件测试功能异常**
+   - 检查CORS配置是否正确
+   - 验证上传URL的有效性
+   - 确认文件类型和大小限制
+
 **章节来源**
 - [main.ts:16-23](file://frontend/src/main.ts#L16-L23)
-- [index.ts:42-51](file://frontend/src/router/index.ts#L42-L51)
+- [index.ts:47-56](file://frontend/src/router/index.ts#L47-L56)
 - [provider.ts:80-88](file://frontend/src/theme/provider.ts#L80-L88)
 
 ## 结论
@@ -508,5 +619,6 @@ poprako-web-ms 项目展示了现代 Vue 3 应用的最佳实践，包括：
 2. **完善的依赖管理**：合理的包依赖和内部模块依赖关系
 3. **优秀的用户体验**：主题切换、路由守卫、表单验证等特性
 4. **良好的代码组织**：模块化的设计和清晰的文件结构
+5. **增强的测试能力**：新增的FileTransferTestView提供了专业的文件传输测试功能
 
-该项目为后续的功能扩展提供了坚实的基础，开发者可以在此基础上继续完善业务功能和用户体验。
+**新增的FileTransferTestView组件为开发者提供了便捷的头像上传下载测试入口，支持用户和团队两种头像类型的测试，包含完整的CORS配置提示和错误处理机制**。该项目为后续的功能扩展提供了坚实的基础，开发者可以在此基础上继续完善业务功能和用户体验。
