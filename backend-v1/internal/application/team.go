@@ -37,6 +37,7 @@ type TeamApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		teamID string,
+		args value.ReserveTeamAvatarArgs,
 	) (value.ReserveTeamAvatarResult, error)
 	ConfirmTeamAvatarUploaded(
 		scope util.TraceScope,
@@ -187,8 +188,14 @@ func (ta *teamApplication) ReserveTeamAvatar(
 	scope util.TraceScope,
 	currentUserID string,
 	teamID string,
+	args value.ReserveTeamAvatarArgs,
 ) (value.ReserveTeamAvatarResult, error) {
 	const fn = "TeamApplication.ReserveTeamAvatar"
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return value.ReserveTeamAvatarResult{}, errors.New("参数错误: " + err.Error())
+	}
 
 	scope.
 		WithFields(
@@ -214,7 +221,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 
 	avatarOSSKey := service.GenerateTeamAvatarOSSKey(teamID)
 
-	putURL, err := ta.ossClient.GeneratePutPresignedURL(avatarOSSKey)
+	putURL, err := ta.ossClient.GeneratePutPresignedURL(avatarOSSKey, args.ContentType)
 	if err != nil {
 		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
 		return value.ReserveTeamAvatarResult{}, errors.New("预留汉化组头像失败")

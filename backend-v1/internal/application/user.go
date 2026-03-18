@@ -45,6 +45,7 @@ type UserApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		targetUserID string,
+		args value.ReserveUserAvatarArgs,
 	) (value.ReserveUserAvatarResult, error)
 	ConfirmUserAvatarUploaded(
 		scope util.TraceScope,
@@ -427,8 +428,14 @@ func (ua *userApplication) ReserveUserAvatar(
 	scope util.TraceScope,
 	currentUserID string,
 	targetUserID string,
+	args value.ReserveUserAvatarArgs,
 ) (value.ReserveUserAvatarResult, error) {
 	const fn = "UserApplication.ReserveUserAvatar"
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return value.ReserveUserAvatarResult{}, err
+	}
 
 	scope.
 		WithFields(
@@ -453,7 +460,7 @@ func (ua *userApplication) ReserveUserAvatar(
 
 	avatarOSSKey := service.GenerateUserAvatarOSSKey(targetUserID)
 
-	putURL, err := ua.ossClient.GeneratePutPresignedURL(avatarOSSKey)
+	putURL, err := ua.ossClient.GeneratePutPresignedURL(avatarOSSKey, args.ContentType)
 	if err != nil {
 		scope.Logger().Error(fn+": 生成头像访问链接失败", zap.Error(err))
 		return value.ReserveUserAvatarResult{}, errors.New("预留用户头像失败")

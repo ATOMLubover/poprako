@@ -1,5 +1,5 @@
 {
-  "server_address": "127.0.0.1:8080",
+  "server_address": "127.0.0.1:18880",
   "auth": {
     "expiration_hours": 144
   },

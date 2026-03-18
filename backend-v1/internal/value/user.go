@@ -92,6 +92,22 @@ type ReserveUserAvatarResult struct {
 	PutURL string `json:"put_url"`
 }
 
+type ReserveUserAvatarArgs struct {
+	ContentType string `json:"content_type"`
+}
+
+func (args *ReserveUserAvatarArgs) Validate() error {
+	if args == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if args.ContentType == "" {
+		return errors.New("content_type 不能为空")
+	}
+
+	return nil
+}
+
 type GetUserArgs struct{}
 
 type GetMyUserArgs struct{}
