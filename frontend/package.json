@@ -1,0 +1,35 @@
+{
+  "name": "poprako-web-ms-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "lint": "eslint \"src/**/*.{ts,vue}\" --max-warnings=0",
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json",
+    "build": "pnpm lint && pnpm type-check && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "ant-design-vue": "^4.2.6",
+    "axios": "^1.8.4",
+    "pinia": "^3.0.3",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.13.11",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "eslint": "^9.22.0",
+    "eslint-plugin-vue": "^9.33.0",
+    "sass": "^1.83.4",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2",
+    "vue-eslint-parser": "^9.4.3",
+    "vue-tsc": "^2.2.8"
+  }
+}
