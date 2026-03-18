@@ -298,3 +298,33 @@ func GetMyUser(appState *state.AppState) iris.Handler {
 		accept(ctx, "获取当前用户信息成功", result)
 	}
 }
+
+// GetMyUserStats godoc
+// @Summary  获取当前登录用户统计信息
+// @Description 获取当前登录用户的任务统计信息
+//
+// @Tags    user
+// @Security    ApiKeyAuth
+// @Produce json
+//
+// @Success 200 {object} value.UserStatsInfo
+//
+// @Router  /users/mine/stats [get]
+func GetMyUserStats(appState *state.AppState) iris.Handler {
+	userApplication := appState.UserApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		result, err := userApplication.GetMyUserStats(buildTraceScope(ctx), currentUserID)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取当前用户统计信息成功", result)
+	}
+}

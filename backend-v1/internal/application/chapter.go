@@ -41,41 +41,56 @@ type ChapterApplication interface {
 }
 
 type chapterApplication struct {
-	ossClient         external.OSSClient
-	memberRepository  repository.MemberRepository
-	worksetRepository repository.WorksetRepository
-	comicRepository   repository.ComicRepository
-	chapterRepository repository.ChapterRepository
+	ossClient            external.OSSClient
+	userRepository       repository.UserRepository
+	memberRepository     repository.MemberRepository
+	worksetRepository    repository.WorksetRepository
+	comicRepository      repository.ComicRepository
+	chapterRepository    repository.ChapterRepository
+	assignmentRepository repository.AssignmentRepository
+	pageRepository       repository.PageRepository
 }
 
 func NewChapterApplication(
 	ossClient external.OSSClient,
+	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
 	worksetRepository repository.WorksetRepository,
 	comicRepository repository.ComicRepository,
 	chapterRepository repository.ChapterRepository,
+	assignmentRepository repository.AssignmentRepository,
+	pageRepository repository.PageRepository,
 ) ChapterApplication {
 	if ossClient == nil ||
+		userRepository == nil ||
 		memberRepository == nil ||
 		worksetRepository == nil ||
 		comicRepository == nil ||
-		chapterRepository == nil {
+		chapterRepository == nil ||
+		assignmentRepository == nil ||
+		pageRepository == nil {
 		zap.L().Panic(
 			"NewChapterApplication: 依赖项不能为空",
 			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("worksetRepository_nil", worksetRepository == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
 			zap.Bool("chapterRepository_nil", chapterRepository == nil),
+			zap.Bool("assignmentRepository_nil", assignmentRepository == nil),
+			zap.Bool("pageRepository_nil", pageRepository == nil),
 		)
 	}
 
 	return &chapterApplication{
-		ossClient:         ossClient,
-		memberRepository:  memberRepository,
-		worksetRepository: worksetRepository,
-		comicRepository:   comicRepository,
-		chapterRepository: chapterRepository,
+		ossClient:            ossClient,
+		userRepository:       userRepository,
+		memberRepository:     memberRepository,
+		worksetRepository:    worksetRepository,
+		comicRepository:      comicRepository,
+		chapterRepository:    chapterRepository,
+		assignmentRepository: assignmentRepository,
+		pageRepository:       pageRepository,
 	}
 }
 
@@ -240,21 +255,62 @@ func (ca *chapterApplication) UpdateChapter(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	targetChapter, err := ca.chapterRepository.Get(
-		nil,
+	transactionExecutor := ca.chapterRepository.BeginTransaction()
+	if transactionExecutor.Error != nil {
+		scope.Logger().Error(fn+": 开启事务失败", zap.Error(transactionExecutor.Error))
+		return errors.New("更新章节失败")
+	}
+
+	var transactionError error
+
+	defer func() {
+		if transactionError != nil {
+			if rollbackError := transactionExecutor.Rollback().Error; rollbackError != nil {
+				scope.Logger().Error(fn+": 回滚事务失败", zap.Error(rollbackError))
+			}
+		}
+	}()
+
+	transactionError = ca.chapterRepository.LockByID(transactionExecutor, args.ChapterID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 锁定章节失败", zap.Error(transactionError))
+		return errors.New("更新章节失败")
+	}
+
+	targetChapter, transactionError := ca.chapterRepository.Get(
+		transactionExecutor,
 		query_option.FilterByID(repository_infra.ChapterTable, args.ChapterID),
 	)
-	if err != nil {
-		scope.Logger().Error(fn+": 获取目标章节信息失败", zap.Error(err))
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 获取目标章节信息失败", zap.Error(transactionError))
 		return errors.New("无法获取章节信息")
+	}
+
+	workflowsToUpdate := make([]model.Workflow, 0, 6)
+	if args.UploadStatus != nil {
+		workflowsToUpdate = append(workflowsToUpdate, model.WorkflowUploading)
+	}
+	if args.TranslateStatus != nil {
+		workflowsToUpdate = append(workflowsToUpdate, model.WorkflowTranslating)
+	}
+	if args.ProofreadStatus != nil {
+		workflowsToUpdate = append(workflowsToUpdate, model.WorkflowProofreading)
+	}
+	if args.TypesetStatus != nil {
+		workflowsToUpdate = append(workflowsToUpdate, model.WorkflowTypesetting)
+	}
+	if args.ReviewStatus != nil {
+		workflowsToUpdate = append(workflowsToUpdate, model.WorkflowReviewing)
+	}
+	if args.PublishStatus != nil {
+		workflowsToUpdate = append(workflowsToUpdate, model.WorkflowPublishing)
 	}
 
 	if !model.PermChapterUpdate().Check(
 		currentUserID,
-		targetChapter.ComicID,
-		adapter.HandleLoadMemberInfo(ca.memberRepository),
-		adapter.HandleLoadComicInfo(ca.comicRepository),
-		adapter.HandleLoadWorksetInfo(ca.worksetRepository),
+		targetChapter.ID,
+		workflowsToUpdate,
+		adapter.HandleLoadAssignmentInfo(ca.assignmentRepository),
 	) {
 		scope.Logger().Warn(fn + ": 权限检查失败")
 		return errors.New("权限不足")
@@ -272,12 +328,130 @@ func (ca *chapterApplication) UpdateChapter(
 		args.PublishStatus,
 	)
 
-	if err := ca.chapterRepository.Update(nil, chapterUpdate); err != nil {
-		scope.Logger().Error(fn+": 更新章节失败", zap.Error(err))
+	uploadedCompletedNow := targetChapter.UploadedAt == nil && chapterUpdate.UploadedAt != nil
+	afterCommitTask := func() {
+		go ca.cleanupChapterPagesAfterUploaded(args.ChapterID)
+	}
+
+	transactionError = ca.chapterRepository.Update(transactionExecutor, chapterUpdate)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 更新章节失败", zap.Error(transactionError))
 		return errors.New("更新章节失败")
 	}
 
+	if uploadedCompletedNow {
+		transactionError = ca.handleChapterUploaded(transactionExecutor, args.ChapterID, &afterCommitTask)
+		if transactionError != nil {
+			scope.Logger().Error(fn+": 处理章节上传完成失败", zap.Error(transactionError))
+			return errors.New("更新章节失败")
+		}
+	}
+
+	if commitError := transactionExecutor.Commit().Error; commitError != nil {
+		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitError))
+		return errors.New("更新章节失败")
+	}
+
+	if afterCommitTask != nil {
+		afterCommitTask()
+	}
+
 	return nil
+}
+
+func (ca *chapterApplication) handleChapterUploaded(
+	transactionExecutor repository.Executor,
+	chapterID string,
+	afterCommitTask *func(),
+) error {
+	assignments, listError := ca.assignmentRepository.List(
+		transactionExecutor,
+		query_option.AssignmentQuery().FilterByChapterID(chapterID),
+	)
+	if listError != nil {
+		return listError
+	}
+
+	for _, assignment := range assignments {
+		ensureError := ca.ensureUserStatsInTransaction(transactionExecutor, assignment.UserID)
+		if ensureError != nil {
+			return ensureError
+		}
+
+		incrementError := ca.userRepository.IncrementStats(
+			transactionExecutor,
+			model.NewUserStatsDelta(assignment.UserID, 0, -1, 1),
+		)
+		if incrementError != nil {
+			return incrementError
+		}
+	}
+
+	*afterCommitTask = func() {
+		go ca.cleanupChapterPagesAfterUploaded(chapterID)
+	}
+
+	return nil
+}
+
+func (ca *chapterApplication) ensureUserStatsInTransaction(
+	transactionExecutor repository.Executor,
+	userID string,
+) error {
+	_, getError := ca.userRepository.GetStats(
+		transactionExecutor,
+		query_option.UserStatsQuery().FilterByUserID(userID),
+	)
+	if getError == nil {
+		return nil
+	}
+
+	if !errors.Is(getError, repository_infra.ErrRecordNotFound) {
+		return getError
+	}
+
+	return ca.userRepository.CreateStats(
+		transactionExecutor,
+		model.NewUserStatsCreation(userID, 0, 0, 0),
+	)
+}
+
+func (ca *chapterApplication) cleanupChapterPagesAfterUploaded(chapterID string) {
+	const fn = "ChapterApplication.cleanupChapterPagesAfterUploaded"
+
+	pages, listError := ca.pageRepository.List(
+		nil,
+		query_option.PageQuery().FilterByChapterID(chapterID),
+		query_option.PageQuery().OrderByIndexAsc(),
+	)
+	if listError != nil {
+		zap.L().Error(fn+": 查询页面失败", zap.String("chapter_id", chapterID), zap.Error(listError))
+		return
+	}
+
+	for _, page := range pages {
+		if page.OSSKey != "" {
+			if deleteOSSError := ca.ossClient.Delete(page.OSSKey); deleteOSSError != nil {
+				zap.L().Error(
+					fn+": 删除页面 OSS 资源失败",
+					zap.String("chapter_id", chapterID),
+					zap.String("page_id", page.ID),
+					zap.String("oss_key", page.OSSKey),
+					zap.Error(deleteOSSError),
+				)
+				continue
+			}
+		}
+
+		if deletePageError := ca.pageRepository.Delete(nil, page.ID); deletePageError != nil {
+			zap.L().Error(
+				fn+": 删除页面记录失败",
+				zap.String("chapter_id", chapterID),
+				zap.String("page_id", page.ID),
+				zap.Error(deletePageError),
+			)
+		}
+	}
 }
 
 func (ca *chapterApplication) DeleteComicChapter(

@@ -7,6 +7,8 @@ import (
 	intf "labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/infrastructure/repository/entity"
 	"labelplus-next-web-be/internal/util"
+
+	"gorm.io/gorm"
 )
 
 type userRepository struct {
@@ -68,6 +70,52 @@ func (r *userRepository) Get(executor intf.Executor, options ...intf.QueryOption
 	info := entity.ToUserInfo(row)
 
 	return info, nil
+}
+
+func (r *userRepository) GetStats(executor intf.Executor, options ...intf.QueryOption) (model.UserStats, error) {
+	executor = r.withTransaction(executor)
+
+	executor = executor.Table(entity.UserStatsTable)
+	for _, option := range options {
+		executor = option(executor)
+	}
+
+	var row entity.UserStatsRow
+
+	if err := executor.First(&row).Error; err != nil {
+		return model.UserStats{}, err
+	}
+
+	userStats := entity.ToUserStats(row)
+
+	return userStats, nil
+}
+
+func (r *userRepository) CreateStats(executor intf.Executor, creation model.UserStatsCreation) error {
+	executor = r.withTransaction(executor)
+
+	row := entity.UserStatsRow{
+		ID:                      util.GenerateUUID(),
+		UserID:                  creation.UserID,
+		TotalAssignmentCount:    creation.TotalAssignmentCount,
+		ActiveAssignmentCount:   creation.ActiveAssignmentCount,
+		FinishedAssignmentCount: creation.FinishedAssignmentCount,
+	}
+
+	return executor.Create(&row).Error
+}
+
+func (r *userRepository) IncrementStats(executor intf.Executor, delta model.UserStatsDelta) error {
+	executor = r.withTransaction(executor)
+
+	return executor.
+		Table(entity.UserStatsTable).
+		Where("user_id = ?", delta.UserID).
+		Updates(map[string]any{
+			"total_assignment_count":    gorm.Expr("total_assignment_count + ?", delta.TotalAssignmentCountDelta),
+			"active_assignment_count":   gorm.Expr("active_assignment_count + ?", delta.ActiveAssignmentCountDelta),
+			"finished_assignment_count": gorm.Expr("finished_assignment_count + ?", delta.FinishedAssignmentCountDelta),
+		}).Error
 }
 
 func (r *userRepository) GetCredentials(executor intf.Executor, options ...intf.QueryOption) (model.UserCredentials, error) {

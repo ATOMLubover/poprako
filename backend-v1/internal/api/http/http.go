@@ -52,6 +52,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	{
 		userParty.Get("/mine", GetMyUser(appState))
 		userParty.Get("/{user_id}", GetUserByID(appState))
+		userParty.Get("/mine/stats", GetMyUserStats(appState))
 		// userParty.Get("/", ListUsers(appState))
 		userParty.Post("/{user_id}/avatar", ReserveUserAvatar(appState))
 		userParty.Post("/{user_id}/avatar/confirm", ConfirmUserAvatarUploaded(appState))

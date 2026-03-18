@@ -37,6 +37,10 @@ type UserApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 	) (value.UserInfo, error)
+	GetMyUserStats(
+		scope util.TraceScope,
+		currentUserID string,
+	) (value.UserStatsInfo, error)
 	/* 	ListUsers(
 		scope util.TraceScope,
 		currentUserID string,
@@ -360,6 +364,77 @@ func (ua *userApplication) GetMyUser(
 	}
 
 	return assembler.AssembleUserInfo(userInfo, ua.ossClient.GenerateGetPresignedURL), nil
+}
+
+func (ua *userApplication) GetMyUserStats(
+	scope util.TraceScope,
+	currentUserID string,
+) (value.UserStatsInfo, error) {
+	const fn = "UserApplication.GetMyUserStats"
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	if currentUserID == "" {
+		return value.UserStatsInfo{}, errors.New("用户 ID 不能为空")
+	}
+
+	if !model.PermUserView().Check(
+		currentUserID,
+		currentUserID,
+	) {
+		scope.Logger().Warn(fn + ":权限检查不通过")
+		return value.UserStatsInfo{}, errors.New("没有权限查看用户统计信息")
+	}
+
+	userStats, err := ua.userRepository.GetStats(
+		nil,
+		query_option.UserStatsQuery().FilterByUserID(currentUserID),
+	)
+	if err != nil {
+		if !errors.Is(err, repository_infra.ErrRecordNotFound) {
+			scope.Logger().Error(fn+": 获取用户统计信息失败", zap.Error(err))
+			return value.UserStatsInfo{}, errors.New("无法获取用户统计信息")
+		}
+
+		transactionExecutor := ua.userRepository.BeginTransaction()
+		if transactionExecutor.Error != nil {
+			scope.Logger().Error(fn+": 开启事务失败", zap.Error(transactionExecutor.Error))
+			return value.UserStatsInfo{}, errors.New("无法获取用户统计信息")
+		}
+
+		if createError := ua.userRepository.CreateStats(
+			transactionExecutor,
+			model.NewUserStatsCreation(currentUserID, 0, 0, 0),
+		); createError != nil {
+			if rollbackError := transactionExecutor.Rollback().Error; rollbackError != nil {
+				scope.Logger().Error(fn+": 回滚事务失败", zap.Error(rollbackError))
+			}
+
+			scope.Logger().Error(fn+": 懒创建用户统计信息失败", zap.Error(createError))
+			return value.UserStatsInfo{}, errors.New("无法获取用户统计信息")
+		}
+
+		if commitError := transactionExecutor.Commit().Error; commitError != nil {
+			scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitError))
+			return value.UserStatsInfo{}, errors.New("无法获取用户统计信息")
+		}
+
+		userStats, err = ua.userRepository.GetStats(
+			nil,
+			query_option.UserStatsQuery().FilterByUserID(currentUserID),
+		)
+		if err != nil {
+			scope.Logger().Error(fn+": 懒创建后读取用户统计信息失败", zap.Error(err))
+			return value.UserStatsInfo{}, errors.New("无法获取用户统计信息")
+		}
+	}
+
+	return assembler.AssembleUserStatsInfo(userStats), nil
 }
 
 /* func (ua *userApplication) ListUsers(

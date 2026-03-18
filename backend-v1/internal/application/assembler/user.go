@@ -31,3 +31,12 @@ func AssembleUserInfo(userInfo model.UserInfo, onLoadURL OnLoadURL) value.UserIn
 		UpdatedAt:        userInfo.UpdatedAt.UnixMilli(),
 	}
 }
+
+func AssembleUserStatsInfo(userStats model.UserStats) value.UserStatsInfo {
+	return value.UserStatsInfo{
+		UserID:                  userStats.UserID,
+		TotalAssignmentCount:    userStats.TotalAssignmentCount,
+		ActiveAssignmentCount:   userStats.ActiveAssignmentCount,
+		FinishedAssignmentCount: userStats.FinishedAssignmentCount,
+	}
+}

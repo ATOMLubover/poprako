@@ -47,6 +47,7 @@ type AssignmentApplication interface {
 
 type assignmentApplication struct {
 	ossClient            external.OSSClient
+	userRepository       repository.UserRepository
 	memberRepository     repository.MemberRepository
 	comicRepository      repository.ComicRepository
 	worksetRepository    repository.WorksetRepository
@@ -56,6 +57,7 @@ type assignmentApplication struct {
 
 func NewAssignmentApplication(
 	ossClient external.OSSClient,
+	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
 	comicRepository repository.ComicRepository,
 	worksetRepository repository.WorksetRepository,
@@ -63,6 +65,7 @@ func NewAssignmentApplication(
 	assignmentRepository repository.AssignmentRepository,
 ) AssignmentApplication {
 	if ossClient == nil ||
+		userRepository == nil ||
 		memberRepository == nil ||
 		comicRepository == nil ||
 		worksetRepository == nil ||
@@ -71,6 +74,7 @@ func NewAssignmentApplication(
 		zap.L().Panic(
 			"NewAssignmentApplication: 依赖项不能为空",
 			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("comicRepository_nil", comicRepository == nil),
 			zap.Bool("worksetRepository_nil", worksetRepository == nil),
@@ -81,6 +85,7 @@ func NewAssignmentApplication(
 
 	return &assignmentApplication{
 		ossClient:            ossClient,
+		userRepository:       userRepository,
 		memberRepository:     memberRepository,
 		comicRepository:      comicRepository,
 		worksetRepository:    worksetRepository,
@@ -240,8 +245,43 @@ func (aa *assignmentApplication) CreateChapterAssignment(
 		return value.CreateChapterAssignmentResult{}, errors.New("权限不足")
 	}
 
+	transactionExecutor := aa.assignmentRepository.BeginTransaction()
+	if transactionExecutor.Error != nil {
+		scope.Logger().Error(fn+": 开启事务失败", zap.Error(transactionExecutor.Error))
+		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
+	}
+
+	var transactionError error
+
+	defer func() {
+		if transactionError != nil {
+			if rollbackError := transactionExecutor.Rollback().Error; rollbackError != nil {
+				scope.Logger().Error(fn+": 回滚事务失败", zap.Error(rollbackError))
+			}
+		}
+	}()
+
+	transactionError = aa.chapterRepository.LockByID(transactionExecutor, args.ChapterID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 锁定章节失败", zap.Error(transactionError))
+		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
+	}
+
+	targetChapter, transactionError := aa.chapterRepository.Get(
+		transactionExecutor,
+		query_option.FilterByID(repository_infra.ChapterTable, args.ChapterID),
+	)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 获取章节信息失败", zap.Error(transactionError))
+		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
+	}
+
+	if targetChapter.PublishedAt != nil {
+		return value.CreateChapterAssignmentResult{}, errors.New("章节流程已完成，无法继续创建分配")
+	}
+
 	isExisting, err := aa.assignmentRepository.Exist(
-		nil,
+		transactionExecutor,
 		query_option.AssignmentQuery().FilterByChapterID(args.ChapterID),
 		query_option.AssignmentQuery().FilterByUserID(args.UserID),
 	)
@@ -255,13 +295,55 @@ func (aa *assignmentApplication) CreateChapterAssignment(
 
 	creation := model.NewAssignmentCreation(args.ChapterID, args.UserID, args.Role)
 
-	assignmentID, err := aa.assignmentRepository.Create(nil, creation)
-	if err != nil {
-		scope.Logger().Error(fn+": 创建分配失败", zap.Error(err))
+	assignmentID, transactionError := aa.assignmentRepository.Create(transactionExecutor, creation)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 创建分配失败", zap.Error(transactionError))
+		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
+	}
+
+	transactionError = aa.ensureUserStatsInTransaction(transactionExecutor, args.UserID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 初始化用户统计失败", zap.Error(transactionError))
+		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
+	}
+
+	transactionError = aa.userRepository.IncrementStats(
+		transactionExecutor,
+		model.NewUserStatsDelta(args.UserID, 1, 1, 0),
+	)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 更新用户统计失败", zap.Error(transactionError))
+		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
+	}
+
+	if commitError := transactionExecutor.Commit().Error; commitError != nil {
+		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitError))
 		return value.CreateChapterAssignmentResult{}, errors.New("创建分配失败")
 	}
 
 	return value.CreateChapterAssignmentResult{ID: assignmentID}, nil
+}
+
+func (aa *assignmentApplication) ensureUserStatsInTransaction(
+	transactionExecutor repository.Executor,
+	userID string,
+) error {
+	_, getError := aa.userRepository.GetStats(
+		transactionExecutor,
+		query_option.UserStatsQuery().FilterByUserID(userID),
+	)
+	if getError == nil {
+		return nil
+	}
+
+	if !errors.Is(getError, repository_infra.ErrRecordNotFound) {
+		return getError
+	}
+
+	return aa.userRepository.CreateStats(
+		transactionExecutor,
+		model.NewUserStatsCreation(userID, 0, 0, 0),
+	)
 }
 
 func (aa *assignmentApplication) UpdateAssignment(

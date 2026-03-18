@@ -3,6 +3,8 @@ package model
 type Workflow string
 
 const (
+	// 一个特殊的状态，用于代表不应被检查的工作流分类
+	WorkflowNone         Workflow = "none"
 	WorkflowUploading    Workflow = "uploading"
 	WorkflowTranslating  Workflow = "translating"
 	WorkflowProofreading Workflow = "proofreading"

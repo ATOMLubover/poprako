@@ -647,6 +647,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/comics/{comic_id}/cover": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "返回最新（index 最大且未删除）的章节第一页封面链接；若不存在则返回 null",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "获取漫画封面",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/value.ComicCoverResult"
+                        }
+                    }
+                }
+            }
+        },
         "/invitations": {
             "get": {
                 "security": [
@@ -1454,6 +1488,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1468,6 +1505,15 @@ const docTemplate = `{
                         "name": "team_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "预留汉化组头像参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.ReserveTeamAvatarArgs"
+                        }
                     }
                 ],
                 "responses": {
@@ -1607,6 +1653,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/mine/stats": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取当前登录用户的任务统计信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "获取当前登录用户统计信息",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/value.UserStatsInfo"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{user_id}": {
             "get": {
                 "security": [
@@ -1615,6 +1686,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "根据用户 ID 获取用户详细信息",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1629,6 +1703,15 @@ const docTemplate = `{
                         "name": "user_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "预留用户头像参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/value.ReserveUserAvatarArgs"
+                        }
                     }
                 ],
                 "responses": {
@@ -2089,6 +2172,14 @@ const docTemplate = `{
                 }
             }
         },
+        "value.ComicCoverResult": {
+            "type": "object",
+            "properties": {
+                "cover_url": {
+                    "type": "string"
+                }
+            }
+        },
         "value.ComicInfo": {
             "type": "object",
             "properties": {
@@ -2469,6 +2560,9 @@ const docTemplate = `{
                 "chapter_id": {
                     "type": "string"
                 },
+                "extension": {
+                    "type": "string"
+                },
                 "page_count": {
                     "type": "integer"
                 }
@@ -2485,13 +2579,26 @@ const docTemplate = `{
                 }
             }
         },
+        "value.ReserveTeamAvatarArgs": {
+            "type": "object",
+            "properties": {
+                "extension": {
+                    "type": "string"
+                }
+            }
+        },
         "value.ReserveTeamAvatarResult": {
             "type": "object",
             "properties": {
-                "avatar_oss_key": {
-                    "type": "string"
-                },
                 "put_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "value.ReserveUserAvatarArgs": {
+            "type": "object",
+            "properties": {
+                "extension": {
                     "type": "string"
                 }
             }
@@ -2893,6 +3000,23 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                }
+            }
+        },
+        "value.UserStatsInfo": {
+            "type": "object",
+            "properties": {
+                "active_assignment_count": {
+                    "type": "integer"
+                },
+                "finished_assignment_count": {
+                    "type": "integer"
+                },
+                "total_assignment_count": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },

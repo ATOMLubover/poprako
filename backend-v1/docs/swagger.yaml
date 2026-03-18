@@ -96,6 +96,11 @@ definitions:
       uploaded_at:
         type: integer
     type: object
+  value.ComicCoverResult:
+    properties:
+      cover_url:
+        type: string
+    type: object
   value.ComicInfo:
     properties:
       author:
@@ -342,6 +347,8 @@ definitions:
     properties:
       chapter_id:
         type: string
+      extension:
+        type: string
       page_count:
         type: integer
     type: object
@@ -352,11 +359,19 @@ definitions:
           $ref: '#/definitions/value.PageCreationResult'
         type: array
     type: object
+  value.ReserveTeamAvatarArgs:
+    properties:
+      extension:
+        type: string
+    type: object
   value.ReserveTeamAvatarResult:
     properties:
-      avatar_oss_key:
-        type: string
       put_url:
+        type: string
+    type: object
+  value.ReserveUserAvatarArgs:
+    properties:
+      extension:
         type: string
     type: object
   value.ReserveUserAvatarResult:
@@ -614,6 +629,17 @@ definitions:
         type: string
       updated_at:
         type: integer
+    type: object
+  value.UserStatsInfo:
+    properties:
+      active_assignment_count:
+        type: integer
+      finished_assignment_count:
+        type: integer
+      total_assignment_count:
+        type: integer
+      user_id:
+        type: string
     type: object
   value.WorksetInfo:
     properties:
@@ -1043,6 +1069,27 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 更新漫画（已测试）
+      tags:
+      - comic
+  /comics/{comic_id}/cover:
+    get:
+      description: 返回最新（index 最大且未删除）的章节第一页封面链接；若不存在则返回 null
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/value.ComicCoverResult'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取漫画封面
       tags:
       - comic
   /invitations:
@@ -1525,6 +1572,8 @@ paths:
       - team
   /teams/{team_id}/avatar:
     post:
+      consumes:
+      - application/json
       description: 为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key
       parameters:
       - description: 汉化组 ID
@@ -1532,6 +1581,12 @@ paths:
         name: team_id
         required: true
         type: string
+      - description: 预留汉化组头像参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.ReserveTeamAvatarArgs'
       produces:
       - application/json
       responses:
@@ -1655,6 +1710,8 @@ paths:
       tags:
       - user
     get:
+      consumes:
+      - application/json
       description: 根据用户 ID 获取用户详细信息
       parameters:
       - description: 用户 ID
@@ -1662,6 +1719,12 @@ paths:
         name: user_id
         required: true
         type: string
+      - description: 预留用户头像参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/value.ReserveUserAvatarArgs'
       produces:
       - application/json
       responses:
@@ -1753,6 +1816,21 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 获取当前登录用户信息
+      tags:
+      - user
+  /users/mine/stats:
+    get:
+      description: 获取当前登录用户的任务统计信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/value.UserStatsInfo'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取当前登录用户统计信息
       tags:
       - user
   /worksets:

@@ -91,10 +91,13 @@ func main() {
 	)
 	chapterApplication := application.NewChapterApplication(
 		ossClient,
+		userRepository,
 		memberRepository,
 		worksetRepository,
 		comicRepository,
 		chapterRepository,
+		assignmentRepository,
+		pageRepository,
 	)
 	pageApplication := application.NewPageApplication(
 		ossClient,
@@ -107,6 +110,7 @@ func main() {
 	)
 	assignmentApplication := application.NewAssignmentApplication(
 		ossClient,
+		userRepository,
 		memberRepository,
 		comicRepository,
 		worksetRepository,

@@ -510,17 +510,43 @@ func (permChapterCreate) Check(
 
 func (permChapterUpdate) Check(
 	userID string,
-	comicID string,
-	onLoadMemberInfo OnLoadMemberInfo,
-	onLoadComicInfo OnLoadComicInfo,
-	onLoadWorksetInfo OnLoadWorksetInfo,
+	chapterID string,
+	workflows []Workflow,
+	onLoadAssignmentInfo OnLoadAssignmentInfo,
 ) bool {
-	teamID, ok := loadComicTeamIDForCheck("PermChapterUpdate.Check", comicID, onLoadComicInfo, onLoadWorksetInfo)
+	// 先获取章节的分配信息，然后判断用户是否有权限更新章节
+	assignmentInfo, ok := loadAssignmentInfoForCheck("PermChapterUpdate.Check", chapterID, userID, onLoadAssignmentInfo)
 	if !ok {
 		return false
 	}
 
-	return isTeamAdmin("PermChapterUpdate.Check", userID, teamID, onLoadMemberInfo)
+	// 如果是该章节的监修，则无条件运行更新
+	if assignmentInfo.HasAnyRole(RoleReviewer) {
+		return true
+	}
+
+	// 否则，只允许更新自己负责的工作流
+	// 这里有一个特例，即美工不可以修改嵌字状态
+	// 使用循环检测
+	for _, w := range workflows {
+		if w == WorkflowUploading && !assignmentInfo.HasAnyRole(RoleRawProvider) {
+			return false
+		}
+		if w == WorkflowTranslating && !assignmentInfo.HasAnyRole(RoleTranslator) {
+			return false
+		}
+		if w == WorkflowProofreading && !assignmentInfo.HasAnyRole(RoleProofreader) {
+			return false
+		}
+		if w == WorkflowTypesetting && !assignmentInfo.HasAnyRole(RoleTypesetter) {
+			return false
+		}
+		if w == WorkflowPublishing && !assignmentInfo.HasAnyRole(RolePublisher) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (permChapterDelete) Check(
