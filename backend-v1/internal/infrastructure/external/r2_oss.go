@@ -18,7 +18,7 @@ import (
 	intf "labelplus-next-web-be/internal/domain/external"
 )
 
-type R2OSSClient struct {
+type r2OSSClient struct {
 	client        *s3.Client
 	presignClient *s3.PresignClient
 
@@ -70,7 +70,7 @@ func NewR2OSSClient() intf.OSSClient {
 		o.BaseEndpoint = aws.String(r2Endpoint)
 	})
 
-	return &R2OSSClient{
+	return &r2OSSClient{
 		client:        client,
 		presignClient: s3.NewPresignClient(client),
 		bucketName:    bucketName,
@@ -78,7 +78,7 @@ func NewR2OSSClient() intf.OSSClient {
 	}
 }
 
-func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error) {
+func (r2 *r2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error) {
 	const exp = 10 * time.Minute
 
 	input := &s3.PutObjectInput{
@@ -98,7 +98,7 @@ func (r2 *R2OSSClient) GeneratePutPresignedURL(objectKey string) (string, error)
 	return req.URL, nil
 }
 
-func (r2 *R2OSSClient) GenerateGetPresignedURL(objectKey string) (string, error) {
+func (r2 *r2OSSClient) GenerateGetPresignedURL(objectKey string) (string, error) {
 	if r2.customDomain != "" {
 		return fmt.Sprintf("https://%s/%s", r2.customDomain, objectKey), nil
 	}
@@ -106,7 +106,7 @@ func (r2 *R2OSSClient) GenerateGetPresignedURL(objectKey string) (string, error)
 	return "", fmt.Errorf("未配置自定义域名")
 }
 
-func (r2 *R2OSSClient) Delete(objectKey string) error {
+func (r2 *r2OSSClient) Delete(objectKey string) error {
 	const maxRetries = 3
 	const retryDelay = 500 * time.Millisecond
 
@@ -139,7 +139,7 @@ func (r2 *R2OSSClient) Delete(objectKey string) error {
 	return fmt.Errorf("在 %d 次尝试后删除对象失败: %w", maxRetries, lastErr)
 }
 
-func (r2 *R2OSSClient) DeleteBatch(objectKeys []string) error {
+func (r2 *r2OSSClient) DeleteBatch(objectKeys []string) error {
 	if len(objectKeys) == 0 {
 		return nil
 	}

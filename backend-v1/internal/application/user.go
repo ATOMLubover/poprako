@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"fmt"
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/application/assembler"
@@ -45,6 +46,7 @@ type UserApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		targetUserID string,
+		args value.ReserveUserAvatarArgs,
 	) (value.ReserveUserAvatarResult, error)
 	ConfirmUserAvatarUploaded(
 		scope util.TraceScope,
@@ -427,13 +429,20 @@ func (ua *userApplication) ReserveUserAvatar(
 	scope util.TraceScope,
 	currentUserID string,
 	targetUserID string,
+	args value.ReserveUserAvatarArgs,
 ) (value.ReserveUserAvatarResult, error) {
 	const fn = "UserApplication.ReserveUserAvatar"
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return value.ReserveUserAvatarResult{}, errors.New("参数错误: " + err.Error())
+	}
 
 	scope.
 		WithFields(
 			zap.String("current_user_id", currentUserID),
 			zap.String("target_user_id", targetUserID),
+			zap.Any("args", args),
 		).
 		Logger().
 		Debug(fn + ": 被调用")
@@ -451,7 +460,7 @@ func (ua *userApplication) ReserveUserAvatar(
 		return value.ReserveUserAvatarResult{}, errors.New("没有权限预留用户头像")
 	}
 
-	avatarOSSKey := service.GenerateUserAvatarOSSKey(targetUserID)
+	avatarOSSKey := fmt.Sprintf("%s.%s", service.GenerateUserAvatarOSSKey(targetUserID), args.Extension)
 
 	putURL, err := ua.ossClient.GeneratePutPresignedURL(avatarOSSKey)
 	if err != nil {

@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"fmt"
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/application/assembler"
@@ -37,6 +38,7 @@ type TeamApplication interface {
 		scope util.TraceScope,
 		currentUserID string,
 		teamID string,
+		args value.ReserveTeamAvatarArgs,
 	) (value.ReserveTeamAvatarResult, error)
 	ConfirmTeamAvatarUploaded(
 		scope util.TraceScope,
@@ -187,13 +189,20 @@ func (ta *teamApplication) ReserveTeamAvatar(
 	scope util.TraceScope,
 	currentUserID string,
 	teamID string,
+	args value.ReserveTeamAvatarArgs,
 ) (value.ReserveTeamAvatarResult, error) {
 	const fn = "TeamApplication.ReserveTeamAvatar"
+
+	if err := args.Validate(); err != nil {
+		scope.Logger().Warn(fn+": 参数验证失败", zap.Error(err))
+		return value.ReserveTeamAvatarResult{}, errors.New("参数错误: " + err.Error())
+	}
 
 	scope.
 		WithFields(
 			zap.String("current_user_id", currentUserID),
 			zap.String("team_id", teamID),
+			zap.Any("args", args),
 		).
 		Logger().
 		Debug(fn + ": 被调用")
@@ -212,7 +221,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 		return value.ReserveTeamAvatarResult{}, errors.New("权限不足")
 	}
 
-	avatarOSSKey := service.GenerateTeamAvatarOSSKey(teamID)
+	avatarOSSKey := fmt.Sprintf("%s.%s", service.GenerateTeamAvatarOSSKey(teamID), args.Extension)
 
 	putURL, err := ta.ossClient.GeneratePutPresignedURL(avatarOSSKey)
 	if err != nil {
@@ -226,8 +235,7 @@ func (ta *teamApplication) ReserveTeamAvatar(
 	}
 
 	return value.ReserveTeamAvatarResult{
-		AvatarOSSKey: avatarOSSKey,
-		PutURL:       putURL,
+		PutURL: putURL,
 	}, nil
 }
 

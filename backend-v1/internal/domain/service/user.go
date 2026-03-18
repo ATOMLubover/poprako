@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"labelplus-next-web-be/internal/domain/model"
-	"labelplus-next-web-be/internal/util"
 
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
@@ -84,9 +83,5 @@ func HashPassword(plainPassword string) (string, error) {
 }
 
 func GenerateUserAvatarOSSKey(userID string) string {
-	return strings.Join([]string{"user-avatar", userID, util.GenerateUUID()}, "-")
-}
-
-func GenerateTeamAvatarOSSKey(teamID string) string {
-	return strings.Join([]string{"team-avatar", teamID, util.GenerateUUID()}, "_")
+	return strings.Join([]string{"user-avatar", userID}, "_")
 }

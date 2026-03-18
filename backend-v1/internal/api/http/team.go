@@ -176,8 +176,10 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 //
 // @Tags 		team
 // @Security 	ApiKeyAuth
+// @Accept 		json
 // @Produce 	json
 // @Param 		team_id path string true "汉化组 ID"
+// @Param 		body body value.ReserveTeamAvatarArgs true "预留汉化组头像参数"
 //
 // @Success 	200 {object} value.ReserveTeamAvatarResult
 //
@@ -197,10 +199,17 @@ func ReserveTeamAvatar(appState *state.AppState) iris.Handler {
 			return
 		}
 
+		var args value.ReserveTeamAvatarArgs
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
 		result, err := teamApplication.ReserveTeamAvatar(
 			buildTraceScope(ctx),
 			currentUserID,
 			teamID,
+			args,
 		)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())

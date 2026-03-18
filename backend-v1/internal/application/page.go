@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"fmt"
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/domain/external"
@@ -150,7 +151,7 @@ func (pa *pageApplication) ReserveChapterPages(
 			util.GenerateUUID(),
 			args.ChapterID,
 			i,
-			service.GeneratePageOSSKey(i),
+			fmt.Sprintf("%s.%s", service.GeneratePageOSSKey(i), args.Extension),
 			currentUserID,
 		)
 	}

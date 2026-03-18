@@ -7,6 +7,7 @@ import (
 type ReserveChapterPagesArgs struct {
 	ChapterID string `json:"chapter_id"`
 	PageCount int    `json:"page_count"`
+	Extension string `json:"extension"`
 }
 
 func (args *ReserveChapterPagesArgs) Validate() error {
@@ -20,6 +21,14 @@ func (args *ReserveChapterPagesArgs) Validate() error {
 
 	if args.PageCount <= 0 {
 		return errors.New("页面数量必须大于 0")
+	}
+
+	if args.Extension == "" {
+		return errors.New("文件扩展名不能为空")
+	}
+
+	if args.Extension != "jpg" && args.Extension != "jpeg" && args.Extension != "png" && args.Extension != "webp" {
+		return errors.New("不支持的文件扩展名，仅支持 jpg/jpeg、png 和 webp")
 	}
 
 	return nil

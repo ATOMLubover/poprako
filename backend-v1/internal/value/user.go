@@ -88,6 +88,26 @@ type UserInfo struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
+type ReserveUserAvatarArgs struct {
+	Extension string `json:"extension"`
+}
+
+func (ruaa *ReserveUserAvatarArgs) Validate() error {
+	if ruaa == nil {
+		return errors.New("参数不能为空")
+	}
+
+	if ruaa.Extension == "" {
+		return errors.New("文件扩展名不能为空")
+	}
+
+	if ruaa.Extension != "jpg" && ruaa.Extension != "jpeg" && ruaa.Extension != "png" && ruaa.Extension != "webp" {
+		return errors.New("不支持的文件扩展名，仅支持 jpg/jpeg、png 和 webp")
+	}
+
+	return nil
+}
+
 type ReserveUserAvatarResult struct {
 	PutURL string `json:"put_url"`
 }
