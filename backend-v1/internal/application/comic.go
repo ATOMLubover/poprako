@@ -5,6 +5,7 @@ import (
 
 	"labelplus-next-web-be/internal/application/adapter"
 	"labelplus-next-web-be/internal/application/assembler"
+	"labelplus-next-web-be/internal/domain/external"
 	"labelplus-next-web-be/internal/domain/model"
 	"labelplus-next-web-be/internal/domain/repository"
 	"labelplus-next-web-be/internal/domain/service"
@@ -37,9 +38,15 @@ type ComicApplication interface {
 		currentUserID string,
 		comicID string,
 	) error
+	GetComicCover(
+		scope util.TraceScope,
+		currentUserID string,
+		comicID string,
+	) (string, error)
 }
 
 type comicApplication struct {
+	ossClient         external.OSSClient
 	userRepository    repository.UserRepository
 	memberRepository  repository.MemberRepository
 	worksetRepository repository.WorksetRepository
@@ -47,17 +54,20 @@ type comicApplication struct {
 }
 
 func NewComicApplication(
+	ossClient external.OSSClient,
 	userRepository repository.UserRepository,
 	memberRepository repository.MemberRepository,
 	worksetRepository repository.WorksetRepository,
 	comicRepository repository.ComicRepository,
 ) ComicApplication {
-	if userRepository == nil ||
+	if ossClient == nil ||
+		userRepository == nil ||
 		memberRepository == nil ||
 		worksetRepository == nil ||
 		comicRepository == nil {
 		zap.L().Panic(
 			"NewComicApplication: 依赖项不能为空",
+			zap.Bool("ossClient_nil", ossClient == nil),
 			zap.Bool("userRepository_nil", userRepository == nil),
 			zap.Bool("memberRepository_nil", memberRepository == nil),
 			zap.Bool("worksetRepository_nil", worksetRepository == nil),
@@ -66,6 +76,7 @@ func NewComicApplication(
 	}
 
 	return &comicApplication{
+		ossClient:         ossClient,
 		userRepository:    userRepository,
 		memberRepository:  memberRepository,
 		worksetRepository: worksetRepository,
@@ -350,4 +361,70 @@ func (ca *comicApplication) DeleteComic(
 	}
 
 	return nil
+}
+
+func (ca *comicApplication) GetComicCover(
+	scope util.TraceScope,
+	currentUserID string,
+	comicID string,
+) (string, error) {
+	const fn = "ComicApplication.GetComicCover"
+
+	if comicID == "" {
+		scope.Logger().Warn(fn + ": comicID 为空")
+		return "", errors.New("漫画 ID 不能为空")
+	}
+
+	scope.
+		WithFields(
+			zap.String("current_user_id", currentUserID),
+			zap.String("comic_id", comicID),
+		).
+		Logger().
+		Debug(fn + ": 被调用")
+
+	comicInfo, err := ca.comicRepository.Get(
+		nil,
+		query_option.FilterByID(repository_infra.ComicTable, comicID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取目标漫画信息失败", zap.Error(err))
+		return "", errors.New("无法获取漫画信息")
+	}
+
+	worksetInfo, err := ca.worksetRepository.Get(
+		nil,
+		query_option.FilterByID(repository_infra.WorksetTable, comicInfo.WorksetID),
+	)
+	if err != nil {
+		scope.Logger().Error(fn+": 获取目标工作集信息失败", zap.Error(err))
+		return "", errors.New("无法获取工作集信息")
+	}
+
+	if !model.PermComicList().Check(
+		currentUserID,
+		worksetInfo.TeamID,
+		adapter.HandleLoadMemberInfo(ca.memberRepository),
+	) {
+		scope.Logger().Warn(fn + ": 权限检查失败")
+		return "", errors.New("权限不足")
+	}
+
+	coverOSSKey, err := ca.comicRepository.GetLatestChapterFirstPageOSSKey(nil, comicID)
+	if err != nil {
+		scope.Logger().Error(fn+": 查询封面 OSS Key 失败", zap.Error(err))
+		return "", errors.New("无法获取漫画封面")
+	}
+
+	if coverOSSKey == nil {
+		return "", nil
+	}
+
+	coverURL, err := ca.ossClient.GenerateGetPresignedURL(*coverOSSKey)
+	if err != nil {
+		scope.Logger().Error(fn+": 生成封面访问链接失败", zap.Error(err))
+		return "", errors.New("无法获取漫画封面")
+	}
+
+	return coverURL, nil
 }

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
 	"labelplus-next-web-be/internal/domain/model"
@@ -8,6 +9,7 @@ import (
 	"labelplus-next-web-be/internal/infrastructure/repository/entity"
 	"labelplus-next-web-be/internal/util"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -67,6 +69,34 @@ func (r *comicRepository) Get(executor intf.Executor, options ...intf.QueryOptio
 	}
 
 	return entity.ToComicInfo(row), nil
+}
+
+func (r *comicRepository) GetLatestChapterFirstPageOSSKey(executor intf.Executor, comicID string) (*string, error) {
+	executor = r.withTransaction(executor)
+
+	type pageOSSKeyRow struct {
+		OSSKey string `gorm:"column:oss_key"`
+	}
+
+	var row pageOSSKeyRow
+	err := executor.
+		Table(entity.PageTable+" AS page_table").
+		Select("page_table.oss_key").
+		Joins("JOIN chapter_table ON chapter_table.id = page_table.chapter_id AND chapter_table.deleted_at IS NULL").
+		Where("chapter_table.comic_id = ?", comicID).
+		Order("chapter_table.index DESC").
+		Order("page_table.index ASC").
+		Limit(1).
+		Take(&row).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &row.OSSKey, nil
 }
 
 func (r *comicRepository) LockByWorksetID(executor intf.Executor, worksetID string) error {

@@ -6,6 +6,7 @@ type ComicRepository interface {
 	Transactor
 	List(executor Executor, options ...QueryOption) ([]model.ComicInfo, error)
 	Get(executor Executor, options ...QueryOption) (model.ComicInfo, error)
+	GetLatestChapterFirstPageOSSKey(executor Executor, comicID string) (*string, error)
 	Count(executor Executor, options ...QueryOption) (int64, error)
 	LockByWorksetID(executor Executor, worksetID string) error
 	Create(executor Executor, creation model.ComicCreation) (string, error)

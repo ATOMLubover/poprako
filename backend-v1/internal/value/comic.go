@@ -88,6 +88,14 @@ type CreateComicResult struct {
 	ID string `json:"id"`
 }
 
+type ComicCoverResult struct {
+	CoverURL string `json:"cover_url"`
+}
+
+func NewComicCoverResult(coverURL string) ComicCoverResult {
+	return ComicCoverResult{CoverURL: coverURL}
+}
+
 type UpdateComicArgs struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`

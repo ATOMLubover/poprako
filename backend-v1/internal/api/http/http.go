@@ -95,6 +95,7 @@ func initialize(appState *state.AppState) *iris.Application {
 	comicParty := authorizedParty.Party("/comics")
 	{
 		comicParty.Get("/", ListComics(appState))
+		comicParty.Get("/{comic_id}/cover", GetComicCover(appState))
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))

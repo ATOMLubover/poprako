@@ -83,6 +83,7 @@ func main() {
 		worksetRepository,
 	)
 	comicApplication := application.NewComicApplication(
+		ossClient,
 		userRepository,
 		memberRepository,
 		worksetRepository,

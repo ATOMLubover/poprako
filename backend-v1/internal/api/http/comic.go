@@ -186,3 +186,49 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 		accept(ctx, "删除漫画成功", nil)
 	}
 }
+
+// GetComicCover godoc
+// @Summary 		获取漫画封面
+// @Description 返回最新（index 最大且未删除）的章节第一页封面链接；若不存在则返回 null
+//
+// @Tags 		comic
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		comic_id path string true "漫画 ID"
+//
+// @Success 	200 {object} value.ComicCoverResult
+//
+// @Router 		/comics/{comic_id}/cover [get]
+func GetComicCover(appState *state.AppState) iris.Handler {
+	comicApplication := appState.ComicApplication
+
+	return func(ctx iris.Context) {
+		currentUserID, ok := extractCurrentUserID(ctx)
+		if !ok {
+			return
+		}
+
+		comicID := ctx.Params().Get("comic_id")
+		if comicID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 comic_id 路径参数")
+			return
+		}
+
+		coverURL, err := comicApplication.GetComicCover(
+			buildTraceScope(ctx),
+			currentUserID,
+			comicID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		if coverURL == "" {
+			accept(ctx, "获取漫画封面成功", nil)
+			return
+		}
+
+		accept(ctx, "获取漫画封面成功", value.NewComicCoverResult(coverURL))
+	}
+}
