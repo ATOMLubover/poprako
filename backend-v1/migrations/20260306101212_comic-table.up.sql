@@ -10,6 +10,16 @@ CREATE TABLE "comic_table" (
 
     "chapter_count"      INTEGER     NOT NULL DEFAULT 0,
 
+    "latest_uploaded_at"     TIMESTAMPTZ,
+    "latest_transalating_at" TIMESTAMPTZ,
+    "latest_translated_at"   TIMESTAMPTZ,
+    "latest_proofreading_at" TIMESTAMPTZ,
+    "latest_proofread_at"    TIMESTAMPTZ,
+    "latest_typesetting_at"  TIMESTAMPTZ,
+    "latest_typeset_at"      TIMESTAMPTZ,
+    "latest_reviewed_at"     TIMESTAMPTZ,
+    "latest_published_at"    TIMESTAMPTZ,
+
     "creator_id"         TEXT        NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
 
     "last_active_at"     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -33,4 +43,36 @@ CREATE INDEX "idx_comic_creator_id"
 
 CREATE INDEX "idx_comic_last_active_at_desc"
     ON "comic_table" ("workset_id", "last_active_at" DESC)
+    WHERE "deleted_at" IS NULL;
+
+CREATE INDEX "idx_comic_latest_uploaded_at"
+    ON "comic_table" ("workset_id", "latest_uploaded_at")
+    WHERE "deleted_at" IS NULL;
+
+CREATE INDEX "idx_comic_latest_transalating_translated_at"
+    ON "comic_table" ("workset_id", "latest_transalating_at", "latest_translated_at")
+    WHERE "deleted_at" IS NULL;
+
+CREATE INDEX "idx_comic_latest_proofreading_proofread_at"
+    ON "comic_table" ("workset_id", "latest_proofreading_at", "latest_proofread_at")
+    WHERE "deleted_at" IS NULL;
+
+CREATE INDEX "idx_comic_latest_typesetting_typeset_at"
+    ON "comic_table" ("workset_id", "latest_typesetting_at", "latest_typeset_at")
+    WHERE "deleted_at" IS NULL;
+
+CREATE INDEX "idx_comic_latest_reviewed_at"
+    ON "comic_table" ("workset_id", "latest_reviewed_at")
+    WHERE "deleted_at" IS NULL;
+
+CREATE INDEX "idx_comic_latest_published_at"
+    ON "comic_table" ("workset_id", "latest_published_at")
+    WHERE "deleted_at" IS NULL;
+
+-- trigram index for fuzzy title search combined with workset_id (partial: only non-deleted rows)
+-- Uses concatenation of workset_id and title so planner can use it when filtering by workset_id and fuzzy title
+-- trigram index for fuzzy title search (partial: only non-deleted rows)
+CREATE INDEX "idx_comic_title_trgm"
+    ON "comic_table"
+    USING gin (title gin_trgm_ops)
     WHERE "deleted_at" IS NULL;

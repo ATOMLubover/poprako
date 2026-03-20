@@ -126,6 +126,50 @@ func (r *comicRepository) Count(executor intf.Executor, options ...intf.QueryOpt
 	return count, nil
 }
 
+func (r *comicRepository) SyncLatestChapterReplica(executor intf.Executor, comicID string) error {
+	executor = r.withTransaction(executor)
+
+	return executor.Exec(`
+UPDATE comic_table AS comic
+SET
+	chapter_count = chapter_stats.chapter_count,
+	latest_uploaded_at = latest_chapter.uploaded_at,
+	latest_transalating_at = latest_chapter.transalating_at,
+	latest_translated_at = latest_chapter.translated_at,
+	latest_proofreading_at = latest_chapter.proofreading_at,
+	latest_proofread_at = latest_chapter.proofread_at,
+	latest_typesetting_at = latest_chapter.typesetting_at,
+	latest_typeset_at = latest_chapter.typeset_at,
+	latest_reviewed_at = latest_chapter.reviewed_at,
+	latest_published_at = latest_chapter.published_at
+FROM (
+	SELECT COUNT(*)::INTEGER AS chapter_count
+	FROM chapter_table
+	WHERE chapter_table.comic_id = ?
+		AND chapter_table.deleted_at IS NULL
+) AS chapter_stats
+LEFT JOIN LATERAL (
+	SELECT
+		uploaded_at,
+		transalating_at,
+		translated_at,
+		proofreading_at,
+		proofread_at,
+		typesetting_at,
+		typeset_at,
+		reviewed_at,
+		published_at
+	FROM chapter_table
+	WHERE chapter_table.comic_id = ?
+		AND chapter_table.deleted_at IS NULL
+	ORDER BY chapter_table.index DESC
+	LIMIT 1
+) AS latest_chapter ON TRUE
+WHERE comic.id = ?
+	AND comic.deleted_at IS NULL
+`, comicID, comicID, comicID).Error
+}
+
 func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCreation) (string, error) {
 	executor = r.withTransaction(executor)
 

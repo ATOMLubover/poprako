@@ -131,6 +131,27 @@ func (ca *comicApplication) ListComics(
 		query_option.ComicQuery().OrderByLastActiveAtDesc(),
 		query_option.Paginate(args.Offset, args.Limit),
 	}
+	if args.FuzzyTitle != "" {
+		queryOptions = append(queryOptions, query_option.ComicQuery().FuzzyFilterByTitle(args.FuzzyTitle))
+	}
+	if args.UploadStatus != nil ||
+		args.TranslateStatus != nil ||
+		args.ProofreadStatus != nil ||
+		args.TypesetStatus != nil ||
+		args.ReviewStatus != nil ||
+		args.PublishStatus != nil {
+		queryOptions = append(
+			queryOptions,
+			query_option.ComicQuery().FilterByLatestChapterStatus(
+				args.UploadStatus,
+				args.TranslateStatus,
+				args.ProofreadStatus,
+				args.TypesetStatus,
+				args.ReviewStatus,
+				args.PublishStatus,
+			),
+		)
+	}
 	switch {
 	case includeSpec.NeedWorkset && includeSpec.NeedCreator:
 		queryOptions = append(queryOptions, query_option.ComicQuery().IncludeWorksetAndCreatorInfo())

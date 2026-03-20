@@ -171,6 +171,12 @@ func (ca *chapterApplication) CreateComicChapter(
 		return value.CreateChapterResult{}, errors.New("创建章节失败")
 	}
 
+	transactionErr = ca.comicRepository.SyncLatestChapterReplica(transactionExecutor, args.ComicID)
+	if transactionErr != nil {
+		scope.Logger().Error(fn+": 同步漫画最新章节副本失败", zap.Error(transactionErr))
+		return value.CreateChapterResult{}, errors.New("创建章节失败")
+	}
+
 	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {
 		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitErr))
 		return value.CreateChapterResult{}, errors.New("创建章节失败")
@@ -339,6 +345,12 @@ func (ca *chapterApplication) UpdateChapter(
 		return errors.New("更新章节失败")
 	}
 
+	transactionError = ca.comicRepository.SyncLatestChapterReplica(transactionExecutor, targetChapter.ComicID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 同步漫画最新章节副本失败", zap.Error(transactionError))
+		return errors.New("更新章节失败")
+	}
+
 	if uploadedCompletedNow {
 		transactionError = ca.handleChapterUploaded(transactionExecutor, args.ChapterID, &afterCommitTask)
 		if transactionError != nil {
@@ -494,8 +506,51 @@ func (ca *chapterApplication) DeleteComicChapter(
 		return errors.New("权限不足")
 	}
 
-	if err := ca.chapterRepository.Delete(nil, chapterID); err != nil {
-		scope.Logger().Error(fn+": 删除章节失败", zap.Error(err))
+	transactionExecutor := ca.chapterRepository.BeginTransaction()
+	if transactionExecutor.Error != nil {
+		scope.Logger().Error(fn+": 开启事务失败", zap.Error(transactionExecutor.Error))
+		return errors.New("删除章节失败")
+	}
+
+	var transactionError error
+
+	defer func() {
+		if transactionError != nil {
+			if rollbackError := transactionExecutor.Rollback().Error; rollbackError != nil {
+				scope.Logger().Error(fn+": 回滚事务失败", zap.Error(rollbackError))
+			}
+		}
+	}()
+
+	transactionError = ca.chapterRepository.LockByID(transactionExecutor, chapterID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 锁定章节失败", zap.Error(transactionError))
+		return errors.New("删除章节失败")
+	}
+
+	targetChapter, transactionError = ca.chapterRepository.Get(
+		transactionExecutor,
+		query_option.FilterByID(repository_infra.ChapterTable, chapterID),
+	)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 获取目标章节信息失败", zap.Error(transactionError))
+		return errors.New("无法获取章节信息")
+	}
+
+	transactionError = ca.chapterRepository.Delete(transactionExecutor, chapterID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 删除章节失败", zap.Error(transactionError))
+		return errors.New("删除章节失败")
+	}
+
+	transactionError = ca.comicRepository.SyncLatestChapterReplica(transactionExecutor, targetChapter.ComicID)
+	if transactionError != nil {
+		scope.Logger().Error(fn+": 同步漫画最新章节副本失败", zap.Error(transactionError))
+		return errors.New("删除章节失败")
+	}
+
+	if commitError := transactionExecutor.Commit().Error; commitError != nil {
+		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitError))
 		return errors.New("删除章节失败")
 	}
 

@@ -1,6 +1,7 @@
 package query_option
 
 import (
+	"labelplus-next-web-be/internal/domain/model"
 	intf "labelplus-next-web-be/internal/domain/repository"
 )
 
@@ -21,6 +22,90 @@ func (comicQuery) FilterByCreatorID(creatorID string) intf.QueryOption {
 func (comicQuery) FilterByWorksetID(worksetID string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
 		return executor.Where("comic_table.workset_id = ?", worksetID)
+	}
+}
+
+// FuzzyFilterByTitle 对漫画标题进行模糊匹配（不区分大小写）。
+func (comicQuery) FuzzyFilterByTitle(title string) intf.QueryOption {
+	return func(executor intf.Executor) intf.Executor {
+		return executor.Where("comic_table.title ILIKE ?", "%"+title+"%")
+	}
+}
+
+// FilterByLatestChapterStatus 基于 comic 表中的最新章节副本时间戳字段筛选。
+func (comicQuery) FilterByLatestChapterStatus(
+	uploadStatus *model.WorkflowStatus,
+	translateStatus *model.WorkflowStatus,
+	proofreadStatus *model.WorkflowStatus,
+	typesetStatus *model.WorkflowStatus,
+	reviewStatus *model.WorkflowStatus,
+	publishStatus *model.WorkflowStatus,
+) intf.QueryOption {
+	return func(executor intf.Executor) intf.Executor {
+		if uploadStatus != nil {
+			switch *uploadStatus {
+			case model.WorkflowPending:
+				executor = executor.Where("comic_table.latest_uploaded_at IS NULL")
+			case model.WorkflowCompleted:
+				executor = executor.Where("comic_table.latest_uploaded_at IS NOT NULL")
+			}
+		}
+
+		if translateStatus != nil {
+			switch *translateStatus {
+			case model.WorkflowPending:
+				executor = executor.Where("comic_table.latest_transalating_at IS NULL")
+			case model.WorkflowInProgress:
+				executor = executor.Where("comic_table.latest_transalating_at IS NOT NULL").
+					Where("comic_table.latest_translated_at IS NULL")
+			case model.WorkflowCompleted:
+				executor = executor.Where("comic_table.latest_translated_at IS NOT NULL")
+			}
+		}
+
+		if proofreadStatus != nil {
+			switch *proofreadStatus {
+			case model.WorkflowPending:
+				executor = executor.Where("comic_table.latest_proofreading_at IS NULL")
+			case model.WorkflowInProgress:
+				executor = executor.Where("comic_table.latest_proofreading_at IS NOT NULL").
+					Where("comic_table.latest_proofread_at IS NULL")
+			case model.WorkflowCompleted:
+				executor = executor.Where("comic_table.latest_proofread_at IS NOT NULL")
+			}
+		}
+
+		if typesetStatus != nil {
+			switch *typesetStatus {
+			case model.WorkflowPending:
+				executor = executor.Where("comic_table.latest_typesetting_at IS NULL")
+			case model.WorkflowInProgress:
+				executor = executor.Where("comic_table.latest_typesetting_at IS NOT NULL").
+					Where("comic_table.latest_typeset_at IS NULL")
+			case model.WorkflowCompleted:
+				executor = executor.Where("comic_table.latest_typeset_at IS NOT NULL")
+			}
+		}
+
+		if reviewStatus != nil {
+			switch *reviewStatus {
+			case model.WorkflowPending:
+				executor = executor.Where("comic_table.latest_reviewed_at IS NULL")
+			case model.WorkflowCompleted:
+				executor = executor.Where("comic_table.latest_reviewed_at IS NOT NULL")
+			}
+		}
+
+		if publishStatus != nil {
+			switch *publishStatus {
+			case model.WorkflowPending:
+				executor = executor.Where("comic_table.latest_published_at IS NULL")
+			case model.WorkflowCompleted:
+				executor = executor.Where("comic_table.latest_published_at IS NOT NULL")
+			}
+		}
+
+		return executor
 	}
 }
 

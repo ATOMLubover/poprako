@@ -9,7 +9,8 @@ import (
 
 // ListComics godoc
 // @Summary 		获取指定工作集的漫画列表
-// @Description 获取指定工作集的漫画列表，支持分页和 includes 嵌套信息查询
+// @Description 获取指定工作集的漫画列表，支持分页、includes 嵌套信息查询及基于最新章节状态的筛选。
+// @Description 注意：所有状态筛选均针对每个漫画的 "最新章节"（即该漫画中 index 最大且未删除的那一章）。
 //
 // @Tags 		comic
 // @Security 	ApiKeyAuth
@@ -18,6 +19,13 @@ import (
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 // @Param 		"includes[]" query []string false "include 关联信息，可选值：workset, creator"
+// @Param 		fuzzy_title query string false "漫画标题模糊搜索（不区分大小写，空字符串时忽略）"
+// @Param 		upload_status query string false "最新章节上传状态，可选值: pending, completed"
+// @Param 		translate_status query string false "最新章节翻译状态，可选值: pending, in_progress, completed"
+// @Param 		proofread_status query string false "最新章节校对状态，可选值: pending, in_progress, completed"
+// @Param 		typeset_status query string false "最新章节嵌字状态，可选值: pending, in_progress, completed"
+// @Param 		review_status query string false "最新章节审核状态，可选值: pending, completed"
+// @Param 		publish_status query string false "最新章节发布状态，可选值: pending, completed"
 //
 // @Success 	200 {object} []value.ComicInfo
 //

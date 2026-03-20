@@ -3,6 +3,8 @@ package value
 import (
 	"errors"
 	"unicode/utf8"
+
+	"labelplus-next-web-be/internal/domain/model"
 )
 
 type ComicInfo struct {
@@ -31,6 +33,16 @@ type ComicInfo struct {
 type ListComicArgs struct {
 	WorksetID string   `url:"workset_id"`
 	Includes  []string `url:"includes[]"`
+
+	FuzzyTitle string `url:"fuzzy_title,omitempty"`
+
+	UploadStatus    *model.WorkflowStatus `url:"upload_status,omitempty"`
+	TranslateStatus *model.WorkflowStatus `url:"translate_status,omitempty"`
+	ProofreadStatus *model.WorkflowStatus `url:"proofread_status,omitempty"`
+	TypesetStatus   *model.WorkflowStatus `url:"typeset_status,omitempty"`
+	ReviewStatus    *model.WorkflowStatus `url:"review_status,omitempty"`
+	PublishStatus   *model.WorkflowStatus `url:"publish_status,omitempty"`
+
 	PaginationParams
 }
 
@@ -45,6 +57,30 @@ func (args *ListComicArgs) Validate() error {
 
 	if err := args.PaginationParams.Validate(); err != nil {
 		return errors.New("分页参数无效: " + err.Error())
+	}
+
+	if args.UploadStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowUploading, *args.UploadStatus) {
+		return errors.New("上传状态参数无效")
+	}
+
+	if args.TranslateStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowTranslating, *args.TranslateStatus) {
+		return errors.New("翻译状态参数无效")
+	}
+
+	if args.ProofreadStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowProofreading, *args.ProofreadStatus) {
+		return errors.New("校对状态参数无效")
+	}
+
+	if args.TypesetStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowTypesetting, *args.TypesetStatus) {
+		return errors.New("嵌字状态参数无效")
+	}
+
+	if args.ReviewStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowReviewing, *args.ReviewStatus) {
+		return errors.New("审核状态参数无效")
+	}
+
+	if args.PublishStatus != nil && !model.IsValidWorkflowCombination(model.WorkflowPublishing, *args.PublishStatus) {
+		return errors.New("发布状态参数无效")
 	}
 
 	return nil
