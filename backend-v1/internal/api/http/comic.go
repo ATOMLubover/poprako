@@ -19,7 +19,7 @@ import (
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 // @Param 		"includes[]" query []string false "include 关联信息，可选值：workset, creator"
-// @Param 		fuzzy_title query string false "漫画标题模糊搜索（不区分大小写，空字符串时忽略）"
+// @Param 		fuzzy_title query string false "漫画组合标题模糊搜索（格式：【index】[author]title，不区分大小写，空字符串时忽略）"
 // @Param 		upload_status query string false "最新章节上传状态，可选值: pending, completed"
 // @Param 		translate_status query string false "最新章节翻译状态，可选值: pending, in_progress, completed"
 // @Param 		proofread_status query string false "最新章节校对状态，可选值: pending, in_progress, completed"

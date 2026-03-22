@@ -50,13 +50,14 @@ func (ComicInfoRow) TableName() string { return ComicTable }
 
 // ComicInsertRow 用于 Create，仅包含写入所需字段。
 type ComicInsertRow struct {
-	ID          string `gorm:"column:id"`
-	WorksetID   string `gorm:"column:workset_id"`
-	Index       int    `gorm:"column:index"`
-	Title       string `gorm:"column:title"`
-	Author      string `gorm:"column:author"`
-	Description string `gorm:"column:description"`
-	CreatorID   string `gorm:"column:creator_id"`
+	ID            string `gorm:"column:id"`
+	WorksetID     string `gorm:"column:workset_id"`
+	Index         int    `gorm:"column:index"`
+	Title         string `gorm:"column:title"`
+	Author        string `gorm:"column:author"`
+	ComposedTitle string `gorm:"column:composed_title"`
+	Description   string `gorm:"column:description"`
+	CreatorID     string `gorm:"column:creator_id"`
 }
 
 func (ComicInsertRow) TableName() string { return ComicTable }

@@ -25,10 +25,11 @@ func (comicQuery) FilterByWorksetID(worksetID string) intf.QueryOption {
 	}
 }
 
-// FuzzyFilterByTitle 对漫画标题进行模糊匹配（不区分大小写）。
+// FuzzyFilterByTitle 对漫画组合标题进行模糊匹配（不区分大小写）。
+// 组合标题格式为：【index】[author]title。
 func (comicQuery) FuzzyFilterByTitle(title string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
-		return executor.Where("comic_table.title ILIKE ?", "%"+title+"%")
+		return executor.Where("comic_table.composed_title ILIKE ?", "%"+title+"%")
 	}
 }
 

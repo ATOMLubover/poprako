@@ -6,6 +6,7 @@ CREATE TABLE "comic_table" (
     "index"              INTEGER     NOT NULL DEFAULT 0,
     "title"              TEXT        NOT NULL,
     "author"             TEXT        NOT NULL,
+    "composed_title"     TEXT        NOT NULL,
     "description"        TEXT,
 
     "chapter_count"      INTEGER     NOT NULL DEFAULT 0,
@@ -69,10 +70,7 @@ CREATE INDEX "idx_comic_latest_published_at"
     ON "comic_table" ("workset_id", "latest_published_at")
     WHERE "deleted_at" IS NULL;
 
--- trigram index for fuzzy title search combined with workset_id (partial: only non-deleted rows)
--- Uses concatenation of workset_id and title so planner can use it when filtering by workset_id and fuzzy title
--- trigram index for fuzzy title search (partial: only non-deleted rows)
-CREATE INDEX "idx_comic_title_trgm"
+CREATE INDEX "idx_comic_composed_title_trgm"
     ON "comic_table"
-    USING gin (title gin_trgm_ops)
+    USING gin (composed_title gin_trgm_ops)
     WHERE "deleted_at" IS NULL;

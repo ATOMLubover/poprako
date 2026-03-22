@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"labelplus-next-web-be/internal/domain/model"
@@ -19,6 +20,10 @@ type comicRepository struct {
 
 func NewComicRepository(executor intf.Executor) intf.ComicRepository {
 	return &comicRepository{executor: executor}
+}
+
+func composeComicTitle(index int, author string, title string) string {
+	return fmt.Sprintf("【%d】[%s]%s", index, author, title)
 }
 
 func (r *comicRepository) withTransaction(executor intf.Executor) intf.Executor {
@@ -174,13 +179,14 @@ func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCre
 	executor = r.withTransaction(executor)
 
 	row := entity.ComicInsertRow{
-		ID:          util.GenerateUUID(),
-		WorksetID:   creation.WorksetID,
-		Index:       creation.Index,
-		Title:       creation.Title,
-		Author:      creation.Author,
-		Description: creation.Description,
-		CreatorID:   creation.CreatorID,
+		ID:            util.GenerateUUID(),
+		WorksetID:     creation.WorksetID,
+		Index:         creation.Index,
+		Title:         creation.Title,
+		Author:        creation.Author,
+		ComposedTitle: composeComicTitle(creation.Index, creation.Author, creation.Title),
+		Description:   creation.Description,
+		CreatorID:     creation.CreatorID,
 	}
 
 	if err := executor.Create(&row).Error; err != nil {
@@ -197,9 +203,10 @@ func (r *comicRepository) Update(executor intf.Executor, update model.ComicUpdat
 		Table(entity.ComicTable).
 		Where("id = ? AND deleted_at IS NULL", update.ID).
 		Updates(map[string]any{
-			"title":       update.Title,
-			"author":      update.Author,
-			"description": update.Description,
+			"title":          update.Title,
+			"author":         update.Author,
+			"composed_title": gorm.Expr("CONCAT('【', \"index\", '】[', ?, ']', ?)", update.Author, update.Title),
+			"description":    update.Description,
 		}).Error
 }
 

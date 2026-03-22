@@ -326,8 +326,30 @@ func (ca *comicApplication) UpdateComic(
 		args.Description,
 	)
 
-	if err := ca.comicRepository.Update(nil, comicUpdate); err != nil {
-		scope.Logger().Error(fn+": 更新漫画失败", zap.Error(err))
+	transactionExecutor := ca.comicRepository.BeginTransaction()
+	if transactionExecutor.Error != nil {
+		scope.Logger().Error(fn+": 开启事务失败", zap.Error(transactionExecutor.Error))
+		return errors.New("更新漫画失败")
+	}
+
+	var transactionErr error
+
+	defer func() {
+		if transactionErr != nil {
+			if rollbackErr := transactionExecutor.Rollback().Error; rollbackErr != nil {
+				scope.Logger().Error(fn+": 回滚事务失败", zap.Error(rollbackErr))
+			}
+		}
+	}()
+
+	transactionErr = ca.comicRepository.Update(transactionExecutor, comicUpdate)
+	if transactionErr != nil {
+		scope.Logger().Error(fn+": 更新漫画失败", zap.Error(transactionErr))
+		return errors.New("更新漫画失败")
+	}
+
+	if commitErr := transactionExecutor.Commit().Error; commitErr != nil {
+		scope.Logger().Error(fn+": 提交事务失败", zap.Error(commitErr))
 		return errors.New("更新漫画失败")
 	}
 
