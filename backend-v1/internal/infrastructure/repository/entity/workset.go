@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"database/sql"
 	"time"
 
 	"labelplus-next-web-be/internal/domain/model"
@@ -15,19 +16,19 @@ type WorksetInfoRow struct {
 
 	Index int `gorm:"column:index"`
 
-	Name        string `gorm:"column:name"`
-	Description string `gorm:"column:description"`
-	ComicCount  int    `gorm:"column:comic_count"`
+	Name        string         `gorm:"column:name"`
+	Description sql.NullString `gorm:"column:description"`
+	ComicCount  int            `gorm:"column:comic_count"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 
-	TeamName             string    `gorm:"column:team_name"`
-	TeamDescription      string    `gorm:"column:team_description"`
-	TeamAvatarOSSKey     string    `gorm:"column:team_avatar_oss_key"`
-	TeamIsAvatarUploaded bool      `gorm:"column:team_is_avatar_uploaded"`
-	TeamCreatedAt        time.Time `gorm:"column:team_created_at"`
-	TeamUpdatedAt        time.Time `gorm:"column:team_updated_at"`
+	TeamName             string         `gorm:"column:team_name"`
+	TeamDescription      sql.NullString `gorm:"column:team_description"`
+	TeamAvatarOSSKey     string         `gorm:"column:team_avatar_oss_key"`
+	TeamIsAvatarUploaded bool           `gorm:"column:team_is_avatar_uploaded"`
+	TeamCreatedAt        time.Time      `gorm:"column:team_created_at"`
+	TeamUpdatedAt        time.Time      `gorm:"column:team_updated_at"`
 }
 
 func (WorksetInfoRow) TableName() string { return WorksetTable }
@@ -44,12 +45,22 @@ type WorksetInsertRow struct {
 func (WorksetInsertRow) TableName() string { return WorksetTable }
 
 func ToWorksetInfo(row WorksetInfoRow) model.WorksetInfo {
+	description := ""
+	if row.Description.Valid {
+		description = row.Description.String
+	}
+
 	var teamInfo *model.TeamInfo
 	if !row.TeamCreatedAt.IsZero() {
+		teamDescription := ""
+		if row.TeamDescription.Valid {
+			teamDescription = row.TeamDescription.String
+		}
+
 		teamData := model.NewTeamInfo(
 			row.TeamID,
 			row.TeamName,
-			row.TeamDescription,
+			teamDescription,
 			row.TeamAvatarOSSKey,
 			row.TeamIsAvatarUploaded,
 			row.TeamCreatedAt,
@@ -64,7 +75,7 @@ func ToWorksetInfo(row WorksetInfoRow) model.WorksetInfo {
 		teamInfo,
 		row.Index,
 		row.Name,
-		row.Description,
+		description,
 		row.ComicCount,
 		row.CreatedAt,
 		row.UpdatedAt,

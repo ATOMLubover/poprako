@@ -12,7 +12,7 @@ const InvitationTable = "invitation_table"
 type InvitationInfoRow struct {
 	ID             string `gorm:"column:id"`
 	InvitorID      string `gorm:"column:invitor_id"`
-	TargetTeamID   string `gorm:"column:target_team_id"`
+	TargetTeamID   string `gorm:"column:team_id"`
 	InviteeQQ      string `gorm:"column:invitee_qq"`
 	InvitationCode string `gorm:"column:invitation_code"`
 
@@ -44,7 +44,7 @@ func (InvitationInfoRow) TableName() string { return InvitationTable }
 type InvitationInsertRow struct {
 	ID             string `gorm:"column:id"`
 	InvitorID      string `gorm:"column:invitor_id"`
-	TargetTeamID   string `gorm:"column:target_team_id"`
+	TargetTeamID   string `gorm:"column:team_id"`
 	InviteeQQ      string `gorm:"column:invitee_qq"`
 	InvitationCode string `gorm:"column:invitation_code"`
 

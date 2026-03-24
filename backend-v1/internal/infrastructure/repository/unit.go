@@ -72,7 +72,7 @@ func (r *unitRepository) CreateBatch(executor intf.Executor, units []model.UnitC
 	rows := make([]entity.UnitInsertRow, len(units))
 	for i, unit := range units {
 		rows[i] = entity.UnitInsertRow{
-			ID:                 util.GenerateUUID(),
+			ID:                 unit.ID,
 			PageID:             unit.PageID,
 			Index:              unit.Index,
 			XCoord:             float64(unit.XCoord),

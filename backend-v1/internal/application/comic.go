@@ -297,7 +297,7 @@ func (ca *comicApplication) UpdateComic(
 		Logger().
 		Debug(fn + ": 被调用")
 
-	_, err := ca.comicRepository.Get(
+	comicInfo, err := ca.comicRepository.Get(
 		nil,
 		query_option.FilterByID(repository_infra.ComicTable, args.ID),
 	)
@@ -324,6 +324,7 @@ func (ca *comicApplication) UpdateComic(
 		args.Title,
 		args.Author,
 		args.Description,
+		model.ComposeComicTitle(comicInfo.Index, args.Author, args.Title),
 	)
 
 	transactionExecutor := ca.comicRepository.BeginTransaction()

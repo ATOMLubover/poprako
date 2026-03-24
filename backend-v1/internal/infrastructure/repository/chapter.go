@@ -57,7 +57,7 @@ func (r *chapterRepository) LockByComicID(executor intf.Executor, comicID string
 
 func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOption) ([]model.ChapterInfo, error) {
 	executor = r.withTransaction(executor)
-	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+	executor = executor.Table(entity.ChapterTable).Where("chapter_table.deleted_at IS NULL")
 
 	for _, opt := range options {
 		executor = opt(executor)
@@ -78,7 +78,7 @@ func (r *chapterRepository) List(executor intf.Executor, options ...intf.QueryOp
 
 func (r *chapterRepository) Get(executor intf.Executor, options ...intf.QueryOption) (model.ChapterInfo, error) {
 	executor = r.withTransaction(executor)
-	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+	executor = executor.Table(entity.ChapterTable).Where("chapter_table.deleted_at IS NULL")
 
 	for _, opt := range options {
 		executor = opt(executor)
@@ -114,7 +114,7 @@ func (r *chapterRepository) GetStatsByID(executor intf.Executor, chapterID strin
 
 func (r *chapterRepository) Count(executor intf.Executor, options ...intf.QueryOption) (int64, error) {
 	executor = r.withTransaction(executor)
-	executor = executor.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+	executor = executor.Table(entity.ChapterTable).Where("chapter_table.deleted_at IS NULL")
 
 	for _, opt := range options {
 		executor = opt(executor)

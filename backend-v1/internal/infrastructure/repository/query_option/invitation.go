@@ -12,7 +12,7 @@ func InvitationQuery() invitationQuery {
 
 func (invitationQuery) FilterByTeamID(teamID string) intf.QueryOption {
 	return func(executor intf.Executor) intf.Executor {
-		return executor.Where("invitation_table.target_team_id = ?", teamID)
+		return executor.Where("invitation_table.team_id = ?", teamID)
 	}
 }
 

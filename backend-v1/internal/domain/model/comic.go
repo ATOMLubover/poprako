@@ -1,6 +1,13 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+func ComposeComicTitle(index int, author string, title string) string {
+	return fmt.Sprintf("【%d】[%s] %s", index, author, title)
+}
 
 type ComicInfo struct {
 	ID        string
@@ -85,10 +92,11 @@ func NewComicCreation(
 }
 
 type ComicUpdate struct {
-	ID          string
-	Title       string
-	Author      string
-	Description string
+	ID            string
+	Title         string
+	Author        string
+	Description   string
+	ComposedTitle string
 }
 
 func NewComicUpdate(
@@ -96,11 +104,13 @@ func NewComicUpdate(
 	title string,
 	author string,
 	description string,
+	composedTitle string,
 ) ComicUpdate {
 	return ComicUpdate{
-		ID:          id,
-		Title:       title,
-		Author:      author,
-		Description: description,
+		ID:            id,
+		Title:         title,
+		Author:        author,
+		Description:   description,
+		ComposedTitle: composedTitle,
 	}
 }

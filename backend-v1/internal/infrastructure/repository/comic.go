@@ -2,7 +2,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"labelplus-next-web-be/internal/domain/model"
@@ -20,10 +19,6 @@ type comicRepository struct {
 
 func NewComicRepository(executor intf.Executor) intf.ComicRepository {
 	return &comicRepository{executor: executor}
-}
-
-func composeComicTitle(index int, author string, title string) string {
-	return fmt.Sprintf("【%d】[%s]%s", index, author, title)
 }
 
 func (r *comicRepository) withTransaction(executor intf.Executor) intf.Executor {
@@ -184,7 +179,7 @@ func (r *comicRepository) Create(executor intf.Executor, creation model.ComicCre
 		Index:         creation.Index,
 		Title:         creation.Title,
 		Author:        creation.Author,
-		ComposedTitle: composeComicTitle(creation.Index, creation.Author, creation.Title),
+		ComposedTitle: model.ComposeComicTitle(creation.Index, creation.Author, creation.Title),
 		Description:   creation.Description,
 		CreatorID:     creation.CreatorID,
 	}
@@ -205,7 +200,7 @@ func (r *comicRepository) Update(executor intf.Executor, update model.ComicUpdat
 		Updates(map[string]any{
 			"title":          update.Title,
 			"author":         update.Author,
-			"composed_title": gorm.Expr("CONCAT('【', \"index\", '】[', ?, ']', ?)", update.Author, update.Title),
+			"composed_title": update.ComposedTitle,
 			"description":    update.Description,
 		}).Error
 }
