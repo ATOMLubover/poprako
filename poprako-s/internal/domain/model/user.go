@@ -28,7 +28,7 @@ type UserInfo struct {
 	// 在刚注册时，LastLogin 应该是注册时间
 	// 这个值与 UpdatedAt 不同，
 	// UpdatedAt 是用户信息最后一次被修改的时间，而 LastLogin 是用户最后一次登录的时间
-	LastLogin time.Time
+	LastLoginAt time.Time
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

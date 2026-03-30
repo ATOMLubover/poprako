@@ -10,7 +10,11 @@ func (*UserLoginEvent) EventType() EventType {
 	return EventTypeUserLogin
 }
 
-// 返回 string 类型的 UserID，表示登录的用户 ID
+func (*UserLoginEvent) PubType() PubType {
+	return PubTypeAsync
+}
+
+// Payload 返回 *UserLoginEvent 本身，供事件处理器使用
 func (e *UserLoginEvent) Payload() any {
-	return e.UserQQ
+	return e
 }
