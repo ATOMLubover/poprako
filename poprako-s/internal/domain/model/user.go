@@ -1,9 +1,7 @@
 package model
 
 import (
-	"errors"
 	"time"
-	"unicode/utf8"
 
 	"poprako-s/internal/domain/event"
 
@@ -89,28 +87,13 @@ func (c *UserCreds) Events() []event.Event {
 }
 
 // UserReg 是用户注册信息的 view
-type UserReg struct {
+type UserCreation struct {
+	// ID 由 domain service 生成，外部不提供
+	ID string
+
 	Name    string
 	QQ      string
 	PwdHash string
-}
-
-func (r *UserReg) Validate() error {
-	nameLen := utf8.RuneCountInString(r.Name)
-	if nameLen < 2 || nameLen > 20 {
-		return errors.New("用户名长度应在 2-20 字符之间")
-	}
-
-	qqLen := utf8.RuneCountInString(r.QQ)
-	if qqLen < 7 || qqLen > 12 {
-		return errors.New("QQ 号长度应在 7-12 字符之间")
-	}
-
-	if r.PwdHash == "" {
-		return errors.New("密码不能为空")
-	}
-
-	return nil
 }
 
 // UserUpdate 是用户更新信息的 view，是 PUT 语义的载荷
@@ -121,18 +104,4 @@ type UserUpdate struct {
 	// 以下字段都是必填
 	Name string
 	QQ   string
-}
-
-func (u *UserUpdate) Validate() error {
-	nameLen := utf8.RuneCountInString(u.Name)
-	if nameLen < 2 || nameLen > 20 {
-		return errors.New("用户名长度应在 2-20 字符之间")
-	}
-
-	qqLen := utf8.RuneCountInString(u.QQ)
-	if qqLen < 7 || qqLen > 12 {
-		return errors.New("QQ 号长度应在 7-12 字符之间")
-	}
-
-	return nil
 }

@@ -8,7 +8,7 @@ type Workflow uint32
 // 为每个阶段保留两个位，即 0x0~0x3 用于表示阶段的状态（Pending、Ongoing、Completed）
 // 剩下的位用于保证扩展性
 const (
-	WorkflowUpload Workflow = 1 << (iota * 2)
+	WorkflowUpload Workflow = iota * 2
 	WorkflowTranslate
 	WorkflowProofread
 	WorkflowTypesett

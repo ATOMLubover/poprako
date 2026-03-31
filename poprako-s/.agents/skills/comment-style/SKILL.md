@@ -33,7 +33,7 @@ func FunctionName() ReturnType {
 
 ## When to use
 
-任何 Go 文件都必须遵循这套注释风格，以确保代码的可读性和一致性。
+任何 Go 文件都必须遵循这套注释风格，以确保代码的可读性和一致性
 
 ## Instructions
 

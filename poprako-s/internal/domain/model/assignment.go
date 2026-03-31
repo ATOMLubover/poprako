@@ -6,11 +6,11 @@ type AssignmentInfo struct {
 	ID string
 
 	ChapterID string
-	// Chapter 仅在 includes 指定时填充。
+	// Chapter 仅在 includes 指定时填充
 	Chapter *ChapterInfo
 
 	UserID string
-	// User 仅在 includes 指定时填充。
+	// User 仅在 includes 指定时填充
 	User *UserInfo
 
 	AssignedRawProviderAt *time.Time

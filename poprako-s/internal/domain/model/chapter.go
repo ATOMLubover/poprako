@@ -12,8 +12,13 @@ type ChapterInfo struct {
 	ID string
 
 	ComicID string
-	// Comic 仅在 includes 指定时填充。
+	// Comic 仅在 includes 指定时填充
 	Comic *ComicInfo
+
+	// 是否顶置，通常一个 chapter 被刚创建出来时
+	// 会自动变成该 comic 中的顶置章节
+	// 这是为了能够快速查询到对应章节的数据
+	IsPinned bool
 
 	Index    int
 	Subtitle string
@@ -24,7 +29,7 @@ type ChapterInfo struct {
 	ProofreadUnitCount  int
 
 	CreatorID string
-	// Creator 仅在 includes 指定时填充。
+	// Creator 仅在 includes 指定时填充
 	Creator *UserInfo
 
 	CreatedAt time.Time
@@ -64,4 +69,23 @@ func (c *ChapterInfo) TransiteWorkflow(t WorkflowTransition) error {
 // 实现 EventSource 接口
 func (c *ChapterInfo) Events() []event.Event {
 	return c.events
+}
+
+type ChapterCreation struct {
+	// ID 由 domain service 生成，外部不提供
+	ID string
+
+	// ComicID 是必须的，因为一个章节必须属于一个漫画
+	ComicID string
+	// Index 是必须的，因为章节在漫画中有一个明确的位置
+	// 这是在事务中锁住 ComicID 所属漫画的所有章节 COUNT 得到的
+	Index int
+	// Subtitle 是可选的，因为有些章节可能没有副标题
+	// 默认为 "Ch.{Index}"，但用户也可以提供一个更具描述性的副标题
+	Subtitle *string
+	// CreatorID 是必须的，因为我们需要知道是谁创建了这个章节
+	CreatorID string
+	// IsPinned 是可选的，因为默认情况下新创建的章节会被 **自动** 顶置
+	// 但用户也可以选择不顶置
+	IsPinned *bool
 }

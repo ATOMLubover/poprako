@@ -13,10 +13,10 @@ type UserRepo interface {
 	// 根据用户 ID 获取用户信息
 	GetByID(id string) (*model.UserInfo, error)
 
-	// 注册用户
-	Reg(reg *model.UserReg) (*model.UserInfo, error)
+	// Create 创建用户
+	Create(c *model.UserCreation) (*model.UserInfo, error)
 	// 更新用户信息
-	Update(update *model.UserUpdate) error
+	Update(u *model.UserUpdate) error
 	// 删除用户信息（硬删除）
 	Delete(id string) error
 

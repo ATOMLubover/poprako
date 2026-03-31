@@ -162,3 +162,18 @@ func (s *workflowState) transite(t WorkflowTransition) error {
 
 	return nil
 }
+
+// 将各个进度的状态编码为一个 uint64，方便存储和查询
+func (s *workflowState) Mask() uint64 {
+	var mask uint64 = 0
+
+	// 每个进度占用 2 位，状态值为 0、1、2 分别对应 00、01、10
+	mask |= uint64(s.UploadStatus.Status) << uint64(WorkflowUpload)
+	mask |= uint64(s.TranslateStatus.Status) << uint64(WorkflowTranslate)
+	mask |= uint64(s.ProofreadStatus.Status) << uint64(WorkflowProofread)
+	mask |= uint64(s.TypesettStatus.Status) << uint64(WorkflowTypesett)
+	mask |= uint64(s.ReviewStatus.Status) << uint64(WorkflowReview)
+	mask |= uint64(s.PublishStatus.Status) << uint64(WorkflowPublish)
+
+	return mask
+}

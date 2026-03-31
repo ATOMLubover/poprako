@@ -1,7 +1,7 @@
 package event
 
-// 工作流发生变化时产生的事件类型。
-// 我们通常只记录工作流完成的事件，因为它们是最重要的里程碑事件。
+// 工作流发生变化时产生的事件类型
+// 我们通常只记录工作流完成的事件，因为它们是最重要的里程碑事件
 const (
 	EventTypeWorkflowUploadCompleted    EventType = "WorkflowUploadCompleted"
 	EventTypeWorkflowTranslateCompleted EventType = "WorkflowTranslateCompleted"
@@ -11,122 +11,122 @@ const (
 	EventTypeWorkflowPublishCompleted   EventType = "WorkflowPublishCompleted"
 )
 
-// WorkflowUploadCompletedEvent 代表章节上传流程完成事件。
+// WorkflowUploadCompletedEvent 代表章节上传流程完成事件
 type WorkflowUploadCompletedEvent struct {
 	ChapterID string
 }
 
-// EventType 返回事件的标识符。
+// EventType 返回事件的标识符
 func (e *WorkflowUploadCompletedEvent) EventType() EventType {
 	return EventTypeWorkflowUploadCompleted
 }
 
-// PubType 返回事件的发布类型。
+// PubType 返回事件的发布类型
 func (e *WorkflowUploadCompletedEvent) PubType() PubType {
 	return PubTypeAsync
 }
 
-// Payload 返回事件载荷。
+// Payload 返回事件载荷
 func (e *WorkflowUploadCompletedEvent) Payload() any {
 	return e
 }
 
-// WorkflowTranslateCompletedEvent 代表章节翻译流程完成事件。
+// WorkflowTranslateCompletedEvent 代表章节翻译流程完成事件
 type WorkflowTranslateCompletedEvent struct {
 	ChapterID string
 }
 
-// EventType 返回事件的标识符。
+// EventType 返回事件的标识符
 func (e *WorkflowTranslateCompletedEvent) EventType() EventType {
 	return EventTypeWorkflowTranslateCompleted
 }
 
-// PubType 返回事件的发布类型。
+// PubType 返回事件的发布类型
 func (e *WorkflowTranslateCompletedEvent) PubType() PubType {
 	return PubTypeAsync
 }
 
-// Payload 返回事件载荷。
+// Payload 返回事件载荷
 func (e *WorkflowTranslateCompletedEvent) Payload() any {
 	return e
 }
 
-// WorkflowProofreadCompletedEvent 代表章节校对流程完成事件。
+// WorkflowProofreadCompletedEvent 代表章节校对流程完成事件
 type WorkflowProofreadCompletedEvent struct {
 	ChapterID string
 }
 
-// EventType 返回事件的标识符。
+// EventType 返回事件的标识符
 func (e *WorkflowProofreadCompletedEvent) EventType() EventType {
 	return EventTypeWorkflowProofreadCompleted
 }
 
-// PubType 返回事件的发布类型。
+// PubType 返回事件的发布类型
 func (e *WorkflowProofreadCompletedEvent) PubType() PubType {
 	return PubTypeAsync
 }
 
-// Payload 返回事件载荷。
+// Payload 返回事件载荷
 func (e *WorkflowProofreadCompletedEvent) Payload() any {
 	return e
 }
 
-// WorkflowTypesettCompletedEvent 代表章节嵌字流程完成事件。
+// WorkflowTypesettCompletedEvent 代表章节嵌字流程完成事件
 type WorkflowTypesettCompletedEvent struct {
 	ChapterID string
 }
 
-// EventType 返回事件的标识符。
+// EventType 返回事件的标识符
 func (e *WorkflowTypesettCompletedEvent) EventType() EventType {
 	return EventTypeWorkflowTypesettCompleted
 }
 
-// PubType 返回事件的发布类型。
+// PubType 返回事件的发布类型
 func (e *WorkflowTypesettCompletedEvent) PubType() PubType {
 	return PubTypeAsync
 }
 
-// Payload 返回事件载荷。
+// Payload 返回事件载荷
 func (e *WorkflowTypesettCompletedEvent) Payload() any {
 	return e
 }
 
-// WorkflowReviewCompletedEvent 代表章节监修流程完成事件。
+// WorkflowReviewCompletedEvent 代表章节监修流程完成事件
 type WorkflowReviewCompletedEvent struct {
 	ChapterID string
 }
 
-// EventType 返回事件的标识符。
+// EventType 返回事件的标识符
 func (e *WorkflowReviewCompletedEvent) EventType() EventType {
 	return EventTypeWorkflowReviewCompleted
 }
 
-// PubType 返回事件的发布类型。
+// PubType 返回事件的发布类型
 func (e *WorkflowReviewCompletedEvent) PubType() PubType {
 	return PubTypeAsync
 }
 
-// Payload 返回事件载荷。
+// Payload 返回事件载荷
 func (e *WorkflowReviewCompletedEvent) Payload() any {
 	return e
 }
 
-// WorkflowPublishCompletedEvent 代表章节发布流程完成事件。
+// WorkflowPublishCompletedEvent 代表章节发布流程完成事件
 type WorkflowPublishCompletedEvent struct {
 	ChapterID string
 }
 
-// EventType 返回事件的标识符。
+// EventType 返回事件的标识符
 func (e *WorkflowPublishCompletedEvent) EventType() EventType {
 	return EventTypeWorkflowPublishCompleted
 }
 
-// PubType 返回事件的发布类型。
+// PubType 返回事件的发布类型
 func (e *WorkflowPublishCompletedEvent) PubType() PubType {
 	return PubTypeAsync
 }
 
-// Payload 返回事件载荷。
+// Payload 返回事件载荷
 func (e *WorkflowPublishCompletedEvent) Payload() any {
 	return e
 }
