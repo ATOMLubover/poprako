@@ -1,6 +1,8 @@
 package service
 
 import (
+	"strings"
+
 	"poprako-s/internal/domain/model"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -8,23 +10,31 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// UserService 是用户服务的接口，定义了用户相关的业务逻辑
-// 所有无法归纳到 **单个聚合根** 的业务逻辑都应该放在这里
-// 理论上它应该是无状态的
-type UserService interface{}
+// UserService 定义用户领域相关的业务能力
+type UserService interface {
+	// ParseToken 解析 JWT token 字符串，返回用户声明信息
+	ParseToken(tokenStr string, secretKey []byte) (*model.UserClaims, error)
+	// HashPwd 将明文密码哈希后返回
+	HashPwd(pwd string) (string, error)
+	// NewCreation 根据业务参数创建 UserCreation 领域模型（ID 由 service 内部生成）
+	NewCreation(name, qq, pwdHash string) *model.UserCreation
+	// GenAvatarOSSKey 根据用户 ID 生成头像的 OSS Key
+	GenAvatarOSSKey(userID string) string
+}
 
 // userServiceImpl 是 UserService 的具体实现
-// 为了方便起见，依然需要注入一个 logger 来记录日志，这个 logger 携带上下文信息
 type userServiceImpl struct {
 	lgr zap.Logger
 }
 
+// NewUserService 返回 UserService 的默认实现
 func NewUserService(l zap.Logger) UserService {
 	return &userServiceImpl{
 		lgr: l,
 	}
 }
 
+// ParseToken 解析 JWT token 字符串，校验签名算法并返回用户声明
 func (s *userServiceImpl) ParseToken(
 	tokenStr string,
 	secretKey []byte,
@@ -51,6 +61,7 @@ func (s *userServiceImpl) ParseToken(
 	return claims, nil
 }
 
+// HashPwd 使用 bcrypt 对明文密码进行哈希
 func (s *userServiceImpl) HashPwd(pwd string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	if err != nil {
@@ -58,4 +69,19 @@ func (s *userServiceImpl) HashPwd(pwd string) (string, error) {
 	}
 
 	return string(hash), nil
+}
+
+// NewCreation 构造一个带有 service 生成 ID 的 UserCreation
+func (s *userServiceImpl) NewCreation(name, qq, pwdHash string) *model.UserCreation {
+	return &model.UserCreation{
+		ID:      GenID("user"),
+		Name:    name,
+		QQ:      qq,
+		PwdHash: pwdHash,
+	}
+}
+
+// GenAvatarOSSKey 以固定前缀拼接用户 ID 作为头像的 OSS Key
+func (s *userServiceImpl) GenAvatarOSSKey(userID string) string {
+	return strings.Join([]string{"user-avatar", userID}, "_")
 }

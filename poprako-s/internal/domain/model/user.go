@@ -105,3 +105,12 @@ type UserUpdate struct {
 	Name string
 	QQ   string
 }
+
+// UserQueryOpt 指定用户查询的可选筛选条件
+// 所有字段均为可空，nil 表示不参与筛选
+type UserQueryOpt struct {
+	// ID 按用户 ID 筛选
+	ID *string
+	// QQ 按 QQ 号筛选
+	QQ *string
+}
