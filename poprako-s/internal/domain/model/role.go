@@ -1,7 +1,9 @@
 package model
 
+// Role 表示单个成员角色的标识，使用位标志表示具体角色
 type Role uint32
 
+// RoleMask 表示多个 Role 的位掩码，用于高效地编码/解码角色集合
 type RoleMask uint32
 
 // 语义化的成员分工角色，兼容掩码
@@ -15,6 +17,7 @@ const (
 	RoleAdmin
 )
 
+// MaskRoles 将角色切片编码为对应的 RoleMask
 func MaskRoles(roles []Role) RoleMask {
 	mask := RoleMask(0)
 
@@ -25,6 +28,7 @@ func MaskRoles(roles []Role) RoleMask {
 	return mask
 }
 
+// UnmaskRoles 从 RoleMask 解码得到角色切片
 func UnmaskRoles(mask RoleMask) []Role {
 	roles := make([]Role, 0, 6)
 

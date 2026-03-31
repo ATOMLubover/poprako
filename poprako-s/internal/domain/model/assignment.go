@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// AssignmentInfo 表示某个用户被分配到章节中的任务分配信息
 type AssignmentInfo struct {
 	ID string
 
@@ -25,6 +26,7 @@ type AssignmentInfo struct {
 	UpdatedAt time.Time
 }
 
+// HasAnyRole 检查当前分配信息是否包含任意给定的角色
 func (a *AssignmentInfo) HasAnyRole(r ...Role) bool {
 	for _, role := range r {
 		switch role {

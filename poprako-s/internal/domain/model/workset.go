@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// WorksetInfo 表示作品集（Workset）的元信息
 type WorksetInfo struct {
 	ID string
 

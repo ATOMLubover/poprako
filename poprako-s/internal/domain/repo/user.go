@@ -20,7 +20,7 @@ type UserRepo interface {
 	// 删除用户信息（硬删除）
 	Delete(id string) error
 
-	// RefreshLastLogin 更新用户的最后登录时间
+	// 更新用户的最后登录时间
 	RefreshLastLogin(qq string, t time.Time) error
 
 	// 预填充用户头像信息（因为采用的是图片上传不走主服务器的逻辑

@@ -2,6 +2,7 @@ package service
 
 import "poprako-s/internal/domain/model"
 
+// RoleService 提供与角色掩码相关的转换功能
 type RoleService interface {
 	// MaskRoles 接受一个角色列表，返回对应的掩码
 	MaskRoles(roles []model.Role) model.RoleMask
@@ -11,6 +12,7 @@ type RoleService interface {
 
 type roleServiceImpl struct{}
 
+// NewRoleService 返回 RoleService 的默认实现
 func NewRoleService() RoleService {
 	return &roleServiceImpl{}
 }

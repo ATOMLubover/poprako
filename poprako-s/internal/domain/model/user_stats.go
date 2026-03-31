@@ -1,5 +1,6 @@
 package model
 
+// UserStats 聚合用户的统计数据，例如任务计数
 type UserStats struct {
 	UserID string
 

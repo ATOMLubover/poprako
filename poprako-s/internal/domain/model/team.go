@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// TeamInfo 表示团队（如汉化组）的元信息
 type TeamInfo struct {
 	ID string
 

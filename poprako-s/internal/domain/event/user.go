@@ -1,5 +1,6 @@
 package event
 
+// UserLoginEvent 表示用户通过 QQ 登录的事件
 type UserLoginEvent struct {
 	UserQQ string
 }

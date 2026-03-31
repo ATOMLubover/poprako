@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// ComicInfo 包含作品集/漫画的元信息，用于聚合其章节和统计数据
 type ComicInfo struct {
 	ID string
 

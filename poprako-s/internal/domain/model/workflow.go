@@ -2,6 +2,7 @@ package model
 
 import "time"
 
+// Workflow 表示工作流阶段的位移常量集合，用于在掩码中编码各阶段状态
 type Workflow uint32
 
 // 之所以使用 2 * iota 步进，是因为需要在生成掩码时
@@ -16,6 +17,7 @@ const (
 	WorkflowPublish
 )
 
+// WorkflowPhase 表示单个阶段的状态（待处理/进行中/已完成）
 type WorkflowPhase uint8
 
 const (
@@ -24,34 +26,40 @@ const (
 	WorkflowCompleted
 )
 
+// UploadStatus 表示上传阶段的状态和完成时间
 type UploadStatus struct {
 	Status      WorkflowPhase
 	CompletedAt *time.Time
 }
 
+// TranslateStatus 表示翻译阶段的状态和时间点
 type TranslateStatus struct {
 	Status      WorkflowPhase
 	StartedAt   *time.Time
 	CompletedAt *time.Time
 }
 
+// ProofreadStatus 表示校对阶段的状态和时间点
 type ProofreadStatus struct {
 	Status      WorkflowPhase
 	StartedAt   *time.Time
 	CompletedAt *time.Time
 }
 
+// TypesettStatus 表示嵌字阶段的状态和时间点
 type TypesettStatus struct {
 	Status      WorkflowPhase
 	StartedAt   *time.Time
 	CompletedAt *time.Time
 }
 
+// ReviewStatus 表示监修阶段的状态
 type ReviewStatus struct {
 	Status      WorkflowPhase
 	CompletedAt *time.Time
 }
 
+// PublishStatus 表示发布阶段的状态
 type PublishStatus struct {
 	Status      WorkflowPhase
 	CompletedAt *time.Time
