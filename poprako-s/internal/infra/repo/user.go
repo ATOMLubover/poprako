@@ -22,8 +22,8 @@ func NewUserRepo(
 }
 
 // 用于在事务上下文中获取已开启事务的 gdb
-func NewUserRepoFromCtx(ctx context.Context) (iface.UserRepo, error) {
-	gdb, err := ctx.Value(TxnKey).(*gorm.DB)
+func NewUserRepoFromTxnCx(cx context.Context) (iface.UserRepo, error) {
+	gdb, err := cx.Value(txnKey).(*gorm.DB)
 	if !err {
 		return nil, errors.New("NewUserRepoFromCtx: 无法从上下文中获取事务数据库连接")
 	}

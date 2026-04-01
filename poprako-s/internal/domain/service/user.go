@@ -1,12 +1,12 @@
 package service
 
 import (
+	"errors"
 	"strings"
 
 	"poprako-s/internal/domain/model"
 
 	"github.com/golang-jwt/jwt/v5"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,21 +17,37 @@ type UserService interface {
 	// HashPwd 将明文密码哈希后返回
 	HashPwd(pwd string) (string, error)
 	// NewCreation 根据业务参数创建 UserCreation 领域模型（ID 由 service 内部生成）
-	NewCreation(name, qq, pwdHash string) *model.UserCreation
+	// 仅超级管理员才可以创建用户
+	NewCreation(currUser *model.UserInfo, name, qq, pwdHash string) (*model.UserCreation, error)
 	// GenAvatarOSSKey 根据用户 ID 生成头像的 OSS Key
 	GenAvatarOSSKey(userID string) string
 }
 
 // userServiceImpl 是 UserService 的具体实现
-type userServiceImpl struct {
-	lgr zap.Logger
-}
+type userServiceImpl struct{}
 
 // NewUserService 返回 UserService 的默认实现
-func NewUserService(l zap.Logger) UserService {
-	return &userServiceImpl{
-		lgr: l,
+func NewUserService() UserService {
+	return &userServiceImpl{}
+}
+
+// NewUser 创建一个 UserCreation
+func (s *userServiceImpl) NewCreation(
+	currUser *model.UserInfo,
+	name, qq, pwdHash string,
+) (*model.UserCreation, error) {
+	// 仅有 super admin 才可以创建用户
+	if !currUser.IsSuperAdmin {
+		return nil, errors.New("只有超级管理员才能创建用户")
 	}
+
+	id := GenID("user")
+
+	return &model.UserCreation{
+		ID:   id,
+		Name: name,
+		QQ:   qq,
+	}, nil
 }
 
 // ParseToken 解析 JWT token 字符串，校验签名算法并返回用户声明
@@ -69,16 +85,6 @@ func (s *userServiceImpl) HashPwd(pwd string) (string, error) {
 	}
 
 	return string(hash), nil
-}
-
-// NewCreation 构造一个带有 service 生成 ID 的 UserCreation
-func (s *userServiceImpl) NewCreation(name, qq, pwdHash string) *model.UserCreation {
-	return &model.UserCreation{
-		ID:      GenID("user"),
-		Name:    name,
-		QQ:      qq,
-		PwdHash: pwdHash,
-	}
 }
 
 // GenAvatarOSSKey 以固定前缀拼接用户 ID 作为头像的 OSS Key

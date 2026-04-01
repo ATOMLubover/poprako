@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 // Workflow 表示工作流阶段的位移常量集合，用于在掩码中编码各阶段状态
 type Workflow uint32
 
@@ -25,45 +23,6 @@ const (
 	WorkflowOngoing
 	WorkflowCompleted
 )
-
-// UploadStatus 表示上传阶段的状态和完成时间
-type UploadStatus struct {
-	Status      WorkflowPhase
-	CompletedAt *time.Time
-}
-
-// TranslateStatus 表示翻译阶段的状态和时间点
-type TranslateStatus struct {
-	Status      WorkflowPhase
-	StartedAt   *time.Time
-	CompletedAt *time.Time
-}
-
-// ProofreadStatus 表示校对阶段的状态和时间点
-type ProofreadStatus struct {
-	Status      WorkflowPhase
-	StartedAt   *time.Time
-	CompletedAt *time.Time
-}
-
-// TypesettStatus 表示嵌字阶段的状态和时间点
-type TypesettStatus struct {
-	Status      WorkflowPhase
-	StartedAt   *time.Time
-	CompletedAt *time.Time
-}
-
-// ReviewStatus 表示监修阶段的状态
-type ReviewStatus struct {
-	Status      WorkflowPhase
-	CompletedAt *time.Time
-}
-
-// PublishStatus 表示发布阶段的状态
-type PublishStatus struct {
-	Status      WorkflowPhase
-	CompletedAt *time.Time
-}
 
 // WorkflowTransition 描述了一个章节工作流改变事件
 // 它以扁平的方式定义了可能的工作流事件类型，例如上传完成、翻译开始等

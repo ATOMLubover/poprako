@@ -14,10 +14,11 @@ type ComicInfo struct {
 	Workset *WorksetInfo
 
 	// 在作品集内部的序号
-	Index        int
-	Title        string
-	Author       string
-	Description  string
+	Index       int
+	Title       string
+	Author      string
+	Description string
+
 	ChapterCount int
 
 	CreatorID string
@@ -31,8 +32,8 @@ type ComicInfo struct {
 }
 
 // ComposeComicTitle 根据序号、作者和标题组合生成展示用的漫画标题
-func (i *ComicInfo) ComposeComicTitle() string {
-	return fmt.Sprintf("【%d】[%s] %s", i.Index, i.Author, i.Title)
+func (c *ComicInfo) ComposeComicTitle() string {
+	return fmt.Sprintf("【%d】[%s] %s", c.Index, c.Author, c.Title)
 }
 
 // ComicCreation 是创建漫画时的载荷
@@ -66,8 +67,24 @@ type ComicUpdate struct {
 type ComicQueryOpt struct {
 	// ID 按漫画 ID 筛选
 	ID *string
+
 	// WorksetID 按所属作品集 ID 筛选
-	WorksetID *string
-	// CreatorID 按创建者 ID 筛选
-	CreatorID *string
+	// 这是必选的，因为漫画必须属于一个作品集
+	WorksetID string
+	// FuzzyTitle 按标题模糊匹配筛选
+	// 需要注意的是，其匹配的是 composed title，即包含序号和作者的标题
+	FuzzyTitle *string
+
+	// 进度筛选，根据 pinned 字段值筛选
+	UploadStatus    *WorkflowPhase
+	TranslateStatus *WorkflowPhase
+	ProofreadStatus *WorkflowPhase
+	TypesetStatus   *WorkflowPhase
+	ReviewStatus    *WorkflowPhase
+	PublishStatus   *WorkflowPhase
+
+	// Includes 指定查询时要包含的反向单射数据
+	Includes []ComicInclude
+
+	Pagination
 }
