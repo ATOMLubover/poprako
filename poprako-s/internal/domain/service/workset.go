@@ -12,33 +12,46 @@ type WorksetService interface {
 	// NewCreation 根据业务参数创建 WorksetCreation 领域模型（ID 由 service 内部生成）
 	// index 通常由调用方在事务中通过 Count 获取
 	// 仅团队管理员可以创建作品集
-	NewCreation(currUserID, teamID string, index int, name, description string) (*model.WorksetCreation, error)
+	NewCreation(
+		mr repo.MemberRepo,
+		currUserID string,
+		teamID string,
+		index int,
+		name string,
+		description string,
+	) (*model.WorksetCreation, error)
 }
 
-type worksetServiceImpl struct {
-	memberRepo repo.MemberRepo
-}
+// worksetServiceImpl 是 WorksetService 的具体实现 无内禀状态
+type worksetServiceImpl struct{}
 
 // NewWorksetService 返回 WorksetService 的默认实现
-func NewWorksetService(memberRepo repo.MemberRepo) WorksetService {
-	return &worksetServiceImpl{memberRepo: memberRepo}
+func NewWorksetService() WorksetService {
+	// 返回无状态实现
+	return &worksetServiceImpl{}
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 WorksetCreation
 // 仅团队管理员可以创建作品集
 func (s *worksetServiceImpl) NewCreation(
-	currUserID, teamID string,
+	mr repo.MemberRepo,
+	currUserID string,
+	teamID string,
 	index int,
-	name, description string,
+	name string,
+	description string,
 ) (*model.WorksetCreation, error) {
-	member, err := s.memberRepo.Get(model.MemberQueryOpt{
+	// 查询当前用户在团队中的成员记录 用于鉴权
+	member, err := mr.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &teamID,
 	})
 	if err != nil || !member.HasAnyRole(model.RoleAdmin) {
+		// 返回权限错误
 		return nil, errors.New("仅团队管理员可以创建作品集")
 	}
 
+	// 返回创建载荷
 	return &model.WorksetCreation{
 		ID:          GenID("workset"),
 		TeamID:      teamID,

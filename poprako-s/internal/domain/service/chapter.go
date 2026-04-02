@@ -10,9 +10,14 @@ import (
 type ChapterService interface {
 	// TransiteWorkflow 接受一个工作流转换事件，根据事件类型和当前状态执行相应的状态转换
 	// 它负责权限检验，只有当用户 u 有权执行事件 t 时才会执行状态转换，否则返回错误
-	TransiteWorkflow(t model.WorkflowTransition, c *model.ChapterInfo, a *model.AssignmentInfo) error
+	TransiteWorkflow(
+		t model.WorkflowTransition,
+		c *model.ChapterInfo,
+		a *model.AssignmentInfo,
+	) error
 }
 
+// chapterServiceImpl 是 ChapterService 的具体实现 无内禀状态
 type chapterServiceImpl struct{}
 
 // NewChapterService 返回 ChapterService 的默认实现
@@ -27,8 +32,8 @@ func (s *chapterServiceImpl) TransiteWorkflow(
 	c *model.ChapterInfo,
 	a *model.AssignmentInfo,
 ) error {
+	// 监修可以执行任何转换
 	if a.HasAnyRole(model.RoleReviewer) {
-		// 监修可以执行任何转换
 		return c.TransiteWorkflow(t)
 	}
 

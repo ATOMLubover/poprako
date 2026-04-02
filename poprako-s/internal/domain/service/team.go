@@ -11,11 +11,18 @@ import (
 type TeamService interface {
 	// NewCreation 根据业务参数创建 TeamCreation 领域模型（ID 由 service 内部生成）
 	// 仅超级管理员可以创建团队
-	NewCreation(currUser *model.UserInfo, name, description string) (*model.TeamCreation, error)
+	NewCreation(
+		currUser *model.UserInfo,
+		name string,
+		description string,
+	) (*model.TeamCreation, error)
 	// GenAvatarOSSKey 根据团队 ID 生成头像的 OSS Key
-	GenAvatarOSSKey(teamID string) string
+	GenAvatarOSSKey(
+		teamID string,
+	) string
 }
 
+// teamServiceImpl 是 TeamService 的具体实现 无内禀状态
 type teamServiceImpl struct{}
 
 // NewTeamService 返回 TeamService 的默认实现
@@ -25,11 +32,17 @@ func NewTeamService() TeamService {
 
 // NewCreation 构造一个带有 service 生成 ID 的 TeamCreation
 // 仅超级管理员可以创建团队
-func (s *teamServiceImpl) NewCreation(currUser *model.UserInfo, name, description string) (*model.TeamCreation, error) {
+func (s *teamServiceImpl) NewCreation(
+	currUser *model.UserInfo,
+	name string,
+	description string,
+) (*model.TeamCreation, error) {
+	// 校验超级管理员权限
 	if !currUser.IsSuperAdmin {
 		return nil, errors.New("仅超级管理员可以创建团队")
 	}
 
+	// 返回创建载荷
 	return &model.TeamCreation{
 		ID:          GenID("team"),
 		Name:        name,
@@ -38,6 +51,9 @@ func (s *teamServiceImpl) NewCreation(currUser *model.UserInfo, name, descriptio
 }
 
 // GenAvatarOSSKey 以固定前缀拼接团队 ID 作为头像的 OSS Key
-func (s *teamServiceImpl) GenAvatarOSSKey(teamID string) string {
+func (s *teamServiceImpl) GenAvatarOSSKey(
+	teamID string,
+) string {
+	// 返回拼接结果
 	return strings.Join([]string{"team-avatar", teamID}, "_")
 }

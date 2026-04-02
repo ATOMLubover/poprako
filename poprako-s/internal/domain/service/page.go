@@ -12,39 +12,50 @@ import (
 type PageService interface {
 	// NewCreation 根据业务参数创建 PageCreation 领域模型（ID 由 service 内部生成）
 	// 仅章节的监修或图源可以创建页面
-	NewCreation(currUserID, chapterID string, index int, ossKey, creatorID string) (*model.PageCreation, error)
+	NewCreation(
+		ar repo.AssignmentRepo,
+		currUserID string,
+		chapterID string,
+		index int,
+		ossKey string,
+		creatorID string,
+	) (*model.PageCreation, error)
 	// GenOSSKey 根据页面序号生成 OSS Key
-	GenOSSKey(index int) string
+	GenOSSKey(
+		index int,
+	) string
 }
 
-type pageServiceImpl struct {
-	assignmentRepo repo.AssignmentRepo
-}
+// pageServiceImpl 是 PageService 的具体实现 无内禀状态
+type pageServiceImpl struct{}
 
 // NewPageService 返回 PageService 的默认实现
-func NewPageService(
-	assignmentRepo repo.AssignmentRepo,
-) PageService {
-	return &pageServiceImpl{
-		assignmentRepo: assignmentRepo,
-	}
+func NewPageService() PageService {
+	// 返回无状态实现
+	return &pageServiceImpl{}
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 PageCreation
 // 仅章节的监修或图源可以创建页面
 func (s *pageServiceImpl) NewCreation(
-	currUserID, chapterID string,
+	ar repo.AssignmentRepo,
+	currUserID string,
+	chapterID string,
 	index int,
-	ossKey, creatorID string,
+	ossKey string,
+	creatorID string,
 ) (*model.PageCreation, error) {
-	currAssignment, err := s.assignmentRepo.Get(model.AssignmentQueryOpt{
+	// 查询当前用户在章节中的分配 用于鉴权
+	currAssignment, err := ar.Get(model.AssignmentQueryOpt{
 		ChapterID: &chapterID,
 		UserID:    &currUserID,
 	})
 	if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer, model.RoleRawProvider) {
+		// 返回权限错误
 		return nil, errors.New("仅章节监修或图源可以创建页面")
 	}
 
+	// 返回创建载荷
 	return &model.PageCreation{
 		ID:        GenID("page"),
 		ChapterID: chapterID,
@@ -55,6 +66,9 @@ func (s *pageServiceImpl) NewCreation(
 }
 
 // GenOSSKey 以固定前缀拼接页面序号作为 OSS Key
-func (s *pageServiceImpl) GenOSSKey(index int) string {
+func (s *pageServiceImpl) GenOSSKey(
+	index int,
+) string {
+	// 返回拼接结果
 	return "page_" + strconv.Itoa(index)
 }

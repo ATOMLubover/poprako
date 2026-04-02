@@ -10,7 +10,9 @@ import (
 )
 
 // GenID 提供一个不会返回错误的 ID string
-func GenID(prefix string) string {
+func GenID(
+	prefix string,
+) string {
 	u, err := uuid.NewV7()
 	if err != nil {
 		// 回退到简单 rand 生成
