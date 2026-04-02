@@ -15,8 +15,9 @@ type ChapterRepo interface {
 
 	// Create 持久化一个新的章节
 	Create(c *model.ChapterCreation) (*model.ChapterInfo, error)
+	// Delete 删除章节（硬删除）
+	Remove(id string) error
+
 	// UpdateStats 仅更新章节的统计字段（unit 数量等）
 	UpdateStats(stats *model.ChapterStats) error
-	// Delete 删除章节（硬删除）
-	Delete(id string) error
 }

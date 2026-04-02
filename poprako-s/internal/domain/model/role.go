@@ -4,6 +4,7 @@ package model
 type Role uint32
 
 // RoleMask 表示多个 Role 的位掩码，用于高效地编码/解码角色集合
+// **仅用于向外序列化，在 domain 内禁止使用 RoleMask 进行业务逻辑处理！！**
 type RoleMask uint32
 
 // 语义化的成员分工角色，兼容掩码

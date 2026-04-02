@@ -37,4 +37,6 @@ func FunctionName() ReturnType {
 
 ## Instructions
 
-None.
+注意：禁止出现任何的句号（。或.）
+
+任何已经 **分组** 好的字段，不允许额外添加空格让他们分开。

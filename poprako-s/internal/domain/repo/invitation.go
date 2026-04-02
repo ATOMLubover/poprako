@@ -4,10 +4,8 @@ import "poprako-s/internal/domain/model"
 
 // InvitationRepo 是邀请仓库的接口
 type InvitationRepo interface {
-	// GetByID 根据邀请 ID 获取邀请信息；若不存在返回 error
-	GetByID(id string) (*model.InvitationInfo, error)
-	// Get 根据筛选条件获取单条邀请信息；若不存在返回 error
-	Get(opt model.InvitationQueryOpt) (*model.InvitationInfo, error)
+	// GetByInviteeQQ 根据被邀请求者 QQ 获取邀请信息；若不存在返回 error
+	GetByInviteeQQ(id string) (*model.InvitationInfo, error)
 	// List 根据筛选条件返回邀请信息列表
 	List(opt model.InvitationQueryOpt) ([]model.InvitationInfo, error)
 

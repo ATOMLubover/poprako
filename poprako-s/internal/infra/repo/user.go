@@ -1,4 +1,4 @@
-package repo
+package repo_infra
 
 import (
 	"context"
@@ -22,10 +22,10 @@ func NewUserRepo(
 }
 
 // 用于在事务上下文中获取已开启事务的 gdb
-func NewUserRepoFromTxnCx(cx context.Context) (iface.UserRepo, error) {
+func NewUserRepoFromCx(cx context.Context) (iface.UserRepo, error) {
 	gdb, err := cx.Value(txnKey).(*gorm.DB)
 	if !err {
-		return nil, errors.New("NewUserRepoFromCtx: 无法从上下文中获取事务数据库连接")
+		return nil, errors.New("[NewUserRepoFromCx]: 无法从上下文中获取事务数据库连接")
 	}
 
 	return &userRepoImpl{

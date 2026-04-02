@@ -29,6 +29,7 @@ type InvitationInfo struct {
 }
 
 // InvitedRoleMask 根据邀请中记录的角色信息计算 RoleMask
+// 在非 app 层不应该使用这个方法！！
 func (ii *InvitationInfo) InvitedRoleMask() RoleMask {
 	mask := RoleMask(0)
 
@@ -55,6 +56,35 @@ func (ii *InvitationInfo) InvitedRoleMask() RoleMask {
 	}
 
 	return mask
+}
+
+// InvitedRoles 返回邀请中记录的角色列表
+func (ii *InvitationInfo) InvitedRoles() []Role {
+	roles := make([]Role, 0)
+
+	if ii.ToBeRawProvider {
+		roles = append(roles, RoleRawProvider)
+	}
+	if ii.ToBeTranslator {
+		roles = append(roles, RoleTranslator)
+	}
+	if ii.ToBeProofreader {
+		roles = append(roles, RoleProofreader)
+	}
+	if ii.ToBeTypesetter {
+		roles = append(roles, RoleTypesetter)
+	}
+	if ii.ToBeReviewer {
+		roles = append(roles, RoleReviewer)
+	}
+	if ii.ToBePublisher {
+		roles = append(roles, RolePublisher)
+	}
+	if ii.ToBeAdmin {
+		roles = append(roles, RoleAdmin)
+	}
+
+	return roles
 }
 
 // InvitationCreation 是创建邀请时的载荷
@@ -93,14 +123,10 @@ type InvitationUpdate struct {
 // InvitationQueryOpt 指定邀请查询的可选筛选条件
 // 所有字段均为可空，nil 表示不参与筛选
 type InvitationQueryOpt struct {
-	// ID 按邀请 ID 筛选
-	ID *string
 	// TeamID 按目标团队 ID 筛选
 	TeamID *string
-	// InviteeQQ 按被邀请者 QQ 筛选
-	InviteeQQ *string
 	// InvitationCode 按邀请码筛选
 	InvitationCode *string
 	// Pending 按是否有效筛选
-	Pending *bool
+	Pending bool
 }

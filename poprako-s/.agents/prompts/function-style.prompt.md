@@ -24,7 +24,7 @@ prompt: |
   - 如命名有歧义，列出 1-2 个备选命名并默认采用第一项。
 
   示例调用：
-  请按风格实现：func GetUser(ctx context.Context, id string) (*User, error) — 根据 id 从 repo 获取用户并返回
+  请按风格实现：func GetUser(cx context.Context, id string) (*User, error) — 根据 id 从 repo 获取用户并返回
 notes: |
   - 若你希望此 prompt 成为个人级（user-scoped），我可以把它复制到个人 prompts 目录；否则保留为仓库级（workspace）。
 ---

@@ -1,4 +1,4 @@
-package repo
+package repo_infra
 
 import (
 	"context"
@@ -20,9 +20,9 @@ func NewTxnMgr(gdb *gorm.DB) iface.TxnMgr {
 
 const txnKey = "txn"
 
-func (m *txnMgrImpl) RunInTxn(fn func(ctx context.Context) error) error {
+func (m *txnMgrImpl) RunInTxn(fn func(cx context.Context) error) error {
 	return m.gdb.Transaction(func(tx *gorm.DB) error {
-		ctx := context.WithValue(context.Background(), txnKey, tx)
-		return fn(ctx)
+		cx := context.WithValue(context.Background(), txnKey, tx)
+		return fn(cx)
 	})
 }

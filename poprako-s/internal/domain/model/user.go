@@ -60,8 +60,7 @@ type UserCreds struct {
 	QQ      string
 	PwdHash string
 
-	// 可能触发的领域事件
-	events []event.Event
+	event.EventBase
 }
 
 // 校验密码是否正确，如果正确则发布 UserLoginEvent 领域事件，且返回 nil
@@ -75,15 +74,11 @@ func (c *UserCreds) Authenticate(pwd string) error {
 	}
 
 	// 验证通过，发布 UserLoginEvent 领域事件
-	c.events = append(c.events, &event.UserLoginEvent{
+	c.PushEvent(&event.UserLoginEvent{
 		UserQQ: c.QQ,
 	})
 
 	return nil
-}
-
-func (c *UserCreds) Events() []event.Event {
-	return c.events
 }
 
 // UserReg 是用户注册信息的 view
@@ -94,6 +89,8 @@ type UserCreation struct {
 	Name    string
 	QQ      string
 	PwdHash string
+
+	event.EventBase
 }
 
 // UserUpdate 是用户更新信息的 view，是 PUT 语义的载荷

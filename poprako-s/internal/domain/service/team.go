@@ -36,6 +36,7 @@ func (s *teamServiceImpl) NewCreation(currUser *model.UserInfo, name, descriptio
 		Description: description,
 	}, nil
 }
+
 // GenAvatarOSSKey 以固定前缀拼接团队 ID 作为头像的 OSS Key
 func (s *teamServiceImpl) GenAvatarOSSKey(teamID string) string {
 	return strings.Join([]string{"team-avatar", teamID}, "_")

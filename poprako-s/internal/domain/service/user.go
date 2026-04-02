@@ -1,9 +1,9 @@
 package service
 
 import (
-	"errors"
 	"strings"
 
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -18,7 +18,7 @@ type UserService interface {
 	HashPwd(pwd string) (string, error)
 	// NewCreation 根据业务参数创建 UserCreation 领域模型（ID 由 service 内部生成）
 	// 仅超级管理员才可以创建用户
-	NewCreation(currUser *model.UserInfo, name, qq, pwdHash string) (*model.UserCreation, error)
+	NewCreation(name, pwd string, i *model.InvitationInfo) (*model.UserCreation, error)
 	// GenAvatarOSSKey 根据用户 ID 生成头像的 OSS Key
 	GenAvatarOSSKey(userID string) string
 }
@@ -33,21 +33,29 @@ func NewUserService() UserService {
 
 // NewUser 创建一个 UserCreation
 func (s *userServiceImpl) NewCreation(
-	currUser *model.UserInfo,
-	name, qq, pwdHash string,
+	name, pwd string,
+	i *model.InvitationInfo,
 ) (*model.UserCreation, error) {
-	// 仅有 super admin 才可以创建用户
-	if !currUser.IsSuperAdmin {
-		return nil, errors.New("只有超级管理员才能创建用户")
-	}
-
 	id := GenID("user")
 
-	return &model.UserCreation{
-		ID:   id,
-		Name: name,
-		QQ:   qq,
-	}, nil
+	pwdHash, err := s.HashPwd(pwd)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &model.UserCreation{
+		ID:      id,
+		Name:    name,
+		QQ:      i.InviteeQQ,
+		PwdHash: pwdHash,
+	}
+
+	c.PushEvent(&event.UserCreatedEvent{
+		InvitorID:     i.InvitorID,
+		CreatedUserID: id,
+	})
+
+	return c, nil
 }
 
 // ParseToken 解析 JWT token 字符串，校验签名算法并返回用户声明

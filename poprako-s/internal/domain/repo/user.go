@@ -12,6 +12,8 @@ type UserRepo interface {
 	GetCredsByQQ(qq string) (*model.UserCreds, error)
 	// GetByID 根据用户 ID 获取用户信息；若不存在返回 error
 	GetByID(id string) (*model.UserInfo, error)
+	// GetByQQ 根据 QQ 号获取用户信息；若不存在返回 error
+	GetByQQ(qq string) (*model.UserInfo, error)
 	// List 根据筛选条件返回用户信息列表
 	List(opt model.UserQueryOpt) ([]model.UserInfo, error)
 
@@ -19,8 +21,8 @@ type UserRepo interface {
 	Create(c *model.UserCreation) (*model.UserInfo, error)
 	// Update 更新用户信息（PUT 语义）
 	Update(u *model.UserUpdate) error
-	// Delete 删除用户信息（硬删除）
-	Delete(id string) error
+	// Remove 删除用户信息（软删除）
+	Remove(id string) error
 
 	// RefreshLastLogin 更新用户的最后登录时间
 	RefreshLastLogin(qq string, t time.Time) error
@@ -30,4 +32,9 @@ type UserRepo interface {
 	PreFillAvatarOSSKey(id string, avatarOSSKey string) error
 	// ConfirmAvatarUploaded 确认用户头像已上传
 	ConfirmAvatarUploaded(id string) error
+
+	// 获取或创建用户统计信息（注意，可能总是需要一个 UPDATE ON CONFLICT 的操作）
+	GetOrCreateStats(userID string) (*model.UserStats, error)
+	// 更新用户统计信息
+	PatchStats(stats *model.UserStats) error
 }

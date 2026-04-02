@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	event_infra "poprako-s/internal/infra/event"
+	"poprako-s/internal/infra/event"
 )
 
 func main() {

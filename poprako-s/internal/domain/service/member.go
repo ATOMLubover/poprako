@@ -13,10 +13,13 @@ type MemberService interface {
 	// NewCreation 根据用户 ID、团队 ID 和角色列表创建 MemberCreation 领域模型
 	// 仅超级管理员可以直接创建成员
 	NewCreation(currUser *model.UserInfo, userID, teamID string, roles ...model.Role) (*model.MemberCreation, error)
+	// NewCreationFromInvitation 根据邀请信息创建 MemberCreation 领域模型
+	// 这与超级管理员直接创建成员不同，邀请成员的角色由邀请信息决定，且只能由被邀请用户自己完成
+	NewCreationFromInvitation(currUser *model.UserInfo, i *model.InvitationInfo) (*model.MemberCreation, error)
 	// NewUpdate 根据当前成员信息和目标角色掩码生成 MemberUpdate
 	// 已有角色保留原时间戳，新增角色使用当前时间，移除的角色清空时间戳
 	// 仅团队管理员可以更新成员角色
-	NewUpdate(currUserID string, id string, current *model.MemberInfo, targetRoles model.RoleMask) (*model.MemberUpdate, error)
+	NewUpdate(currUserID string, curr *model.MemberInfo, targetRoles ...model.Role) (*model.MemberUpdate, error)
 }
 
 type memberServiceImpl struct {
@@ -25,7 +28,9 @@ type memberServiceImpl struct {
 
 // NewMemberService 返回 MemberService 的默认实现
 func NewMemberService(memberRepo repo.MemberRepo) MemberService {
-	return &memberServiceImpl{memberRepo: memberRepo}
+	return &memberServiceImpl{
+		memberRepo: memberRepo,
+	}
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 MemberCreation
