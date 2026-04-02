@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"poprako-s/internal/infra/event"
+	event_infra "poprako-s/internal/infra/event"
 )
 
 func main() {
@@ -11,4 +11,6 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("初始化事件总线失败: %v", err))
 	}
+
+	_ = eventBus
 }

@@ -3,7 +3,9 @@ package repo_infra
 import (
 	"context"
 	"errors"
+	"time"
 
+	"poprako-s/internal/domain/model"
 	iface "poprako-s/internal/domain/repo"
 
 	"gorm.io/gorm"
@@ -31,4 +33,52 @@ func NewUserRepoFromCx(cx context.Context) (iface.UserRepo, error) {
 	return &userRepoImpl{
 		gdb: gdb,
 	}, nil
+}
+
+func (r *userRepoImpl) GetCredsByQQ(qq string) (*model.UserCreds, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *userRepoImpl) GetByID(id string) (*model.UserInfo, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *userRepoImpl) GetByQQ(qq string) (*model.UserInfo, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *userRepoImpl) List(opt model.UserQueryOpt) ([]model.UserInfo, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *userRepoImpl) Create(c *model.UserCreation) (*model.UserInfo, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *userRepoImpl) Update(u *model.UserUpdate) error {
+	return errors.New("not implemented")
+}
+
+func (r *userRepoImpl) Remove(id string) error {
+	return errors.New("not implemented")
+}
+
+func (r *userRepoImpl) RefreshLastLogin(qq string, t time.Time) error {
+	return errors.New("not implemented")
+}
+
+func (r *userRepoImpl) PreFillAvatarOSSKey(id string, avatarOSSKey string) error {
+	return errors.New("not implemented")
+}
+
+func (r *userRepoImpl) ConfirmAvatarUploaded(id string) error {
+	return errors.New("not implemented")
+}
+
+func (r *userRepoImpl) GetOrCreateStats(userID string) (*model.UserStats, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *userRepoImpl) PatchStats(stats *model.UserStats) error {
+	return errors.New("not implemented")
 }
