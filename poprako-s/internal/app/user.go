@@ -11,7 +11,6 @@ import (
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/service"
-	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -241,21 +240,27 @@ func (a *userAppImpl) Reg(
 	// 在事务中完成邀请码校验、用户创建和成员创建
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
 		// 从事务上下文中构造事务版用户仓库
-		userRepo, err := repo_infra.NewUserRepoFromCx(cx)
+		userRepoTxn, err := a.userRepo.FromTxnCx(cx)
 		if err != nil {
 			// 直接返回底层错误，由外层统一终止流程
 			return err
 		}
 
 		// 从事务上下文中构造事务版邀请仓库
-		invRepo, err := repo_infra.NewInvitationRepoFromCx(cx)
+		invRepoTxn, err := a.invRepo.FromTxnCx(cx)
+		if err != nil {
+			// 直接返回底层错误，由外层统一终止流程
+			return err
+		}
+
+		memberRepoTxn, err := a.memberRepo.FromTxnCx(cx)
 		if err != nil {
 			// 直接返回底层错误，由外层统一终止流程
 			return err
 		}
 
 		// 根据 QQ 查找对应的邀请码信息
-		inv, err := invRepo.GetByInviteeQQ(args.QQ)
+		inv, err := invRepoTxn.GetByInviteeQQ(args.QQ)
 		if err != nil {
 			// 记录邀请码无效
 			lgr.Warn(
@@ -296,7 +301,7 @@ func (a *userAppImpl) Reg(
 		}
 
 		// 持久化用户信息
-		userInfo, err := userRepo.Create(userCreation)
+		userInfo, err := userRepoTxn.Create(userCreation)
 		if err != nil {
 			// 记录创建用户失败
 			lgr.Error(
@@ -324,7 +329,7 @@ func (a *userAppImpl) Reg(
 		}
 
 		// 持久化成员关系
-		if _, err := a.memberRepo.Create(memberCreation); err != nil {
+		if _, err := memberRepoTxn.Create(memberCreation); err != nil {
 			// 记录创建成员记录失败
 			lgr.Error(
 				"注册失败：创建成员记录失败",

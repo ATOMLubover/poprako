@@ -466,13 +466,23 @@ func (a *memberAppImpl) JoinTeam(
 
 	// 在事务中创建成员并使邀请失效
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		memberRepoTxn, err := a.memberRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		invRepoTxn, err := a.invRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
 		// 持久化成员信息
-		if _, err := a.memberRepo.Create(creation); err != nil {
+		if _, err := memberRepoTxn.Create(creation); err != nil {
 			return err
 		}
 
 		// 使邀请失效
-		if err := a.invRepo.Invalidate(inv.ID); err != nil {
+		if err := invRepoTxn.Invalidate(inv.ID); err != nil {
 			return err
 		}
 

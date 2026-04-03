@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // ChapterRepo 定义章节数据持久化操作的抽象接口
 type ChapterRepo interface {
@@ -15,9 +19,14 @@ type ChapterRepo interface {
 
 	// Create 持久化一个新的章节
 	Create(c *model.ChapterCreation) (*model.ChapterInfo, error)
+	// Update 更新章节信息（PUT 语义）
+	Update(u *model.ChapterUpdate) error
 	// Delete 删除章节（硬删除）
 	Remove(id string) error
 
 	// UpdateStats 仅更新章节的统计字段（unit 数量等）
 	UpdateStats(stats *model.ChapterStats) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 ChapterRepo 实例
+	FromTxnCx(cx context.Context) (ChapterRepo, error)
 }

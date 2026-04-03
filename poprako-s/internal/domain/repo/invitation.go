@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // InvitationRepo 是邀请仓库的接口
 type InvitationRepo interface {
@@ -17,4 +21,7 @@ type InvitationRepo interface {
 	Invalidate(id string) error
 	// Delete 删除邀请（硬删除）
 	Delete(id string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 InvitationRepo 实例
+	FromTxnCx(cx context.Context) (InvitationRepo, error)
 }

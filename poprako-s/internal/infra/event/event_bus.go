@@ -4,7 +4,6 @@ import (
 	"errors"
 	"sync/atomic"
 
-	"poprako-s/internal/domain/event"
 	iface "poprako-s/internal/domain/event"
 
 	"github.com/panjf2000/ants"
@@ -104,9 +103,9 @@ func (b *eventBusImpl) Pub(ev []iface.Event) error {
 
 	for _, e := range ev {
 		switch e.PubType() {
-		case event.PubTypeSync:
+		case iface.PubTypeSync:
 			syn = append(syn, e)
-		case event.PubTypeAsync:
+		case iface.PubTypeAsync:
 			asyn = append(asyn, e)
 		}
 	}
@@ -121,7 +120,9 @@ func (b *eventBusImpl) Pub(ev []iface.Event) error {
 	}
 
 	// 复用 PubAsync 逻辑
-	b.PubAsync(asyn)
+	if err := b.PubAsync(asyn); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -141,7 +142,7 @@ func (b *eventBusImpl) PubAsync(ev []iface.Event) error {
 	return nil
 }
 
-func (b *eventBusImpl) Sub(ty iface.EventType, h iface.EventHandler) error {
+func (b *eventBusImpl) Sub(h iface.EventHandler) error {
 	// 先获取当前的分发映射
 	m := (*b.tbl).Load()
 	if m == nil {
@@ -157,6 +158,7 @@ func (b *eventBusImpl) Sub(ty iface.EventType, h iface.EventHandler) error {
 	}
 
 	// 将新的处理器添加到对应事件类型的处理器列表中
+	ty := h.EventType()
 	newMap[ty] = append(newMap[ty], h)
 
 	// 使用原子操作更新分发映射，确保线程安全
@@ -165,7 +167,7 @@ func (b *eventBusImpl) Sub(ty iface.EventType, h iface.EventHandler) error {
 	return nil
 }
 
-func (b *eventBusImpl) SubUnsafe(ty iface.EventType, h iface.EventHandler) error {
+func (b *eventBusImpl) SubUnsafe(h iface.EventHandler) error {
 	// 直接修改当前的分发映射，不进行复制，适用于单线程环境或已知没有并发访问的情况
 	m := (*b.tbl).Load()
 	if m == nil {
@@ -173,6 +175,7 @@ func (b *eventBusImpl) SubUnsafe(ty iface.EventType, h iface.EventHandler) error
 	}
 
 	// 直接修改当前的分发映射，适用于单线程环境或已知没有并发访问的情况
+	ty := h.EventType()
 	(*m)[ty] = append((*m)[ty], h)
 
 	return nil
@@ -180,7 +183,7 @@ func (b *eventBusImpl) SubUnsafe(ty iface.EventType, h iface.EventHandler) error
 
 // FIXME: unsub 的 handler == h 是否足够？是否需要更严格的比较方式？
 
-func (b *eventBusImpl) Unsub(ty iface.EventType, h iface.EventHandler) error {
+func (b *eventBusImpl) Unsub(h iface.EventHandler) error {
 	// 先获取当前的分发映射
 	m := (*b.tbl).Load()
 	if m == nil {
@@ -196,6 +199,8 @@ func (b *eventBusImpl) Unsub(ty iface.EventType, h iface.EventHandler) error {
 	}
 
 	// 从对应事件类型的处理器列表中移除指定的处理器
+	ty := h.EventType()
+
 	handlers := newMap[ty]
 	for i, handler := range handlers {
 		if handler == h {
@@ -211,7 +216,7 @@ func (b *eventBusImpl) Unsub(ty iface.EventType, h iface.EventHandler) error {
 	return nil
 }
 
-func (b *eventBusImpl) UnsubUnsafe(ty iface.EventType, h iface.EventHandler) error {
+func (b *eventBusImpl) UnsubUnsafe(h iface.EventHandler) error {
 	// 直接修改当前的分发映射，不进行复制，适用于单线程环境或已知没有并发访问的情况
 	m := (*b.tbl).Load()
 	if m == nil {
@@ -219,6 +224,8 @@ func (b *eventBusImpl) UnsubUnsafe(ty iface.EventType, h iface.EventHandler) err
 	}
 
 	// 直接修改当前的分发映射，适用于单线程环境或已知没有并发访问的情况
+	ty := h.EventType()
+
 	handlers := (*m)[ty]
 
 	for i, handler := range handlers {
@@ -231,3 +238,4 @@ func (b *eventBusImpl) UnsubUnsafe(ty iface.EventType, h iface.EventHandler) err
 
 	return nil
 }
+

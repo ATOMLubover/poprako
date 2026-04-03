@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // UnitRepo 是翻译单元仓库的接口
 type UnitRepo interface {
@@ -13,4 +17,7 @@ type UnitRepo interface {
 	PatchBatch(patches []*model.UnitPatch) error
 	// DeleteBatch 批量删除翻译单元；若某行不存在不报错
 	DeleteBatch(unitIDs []string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 UnitRepo 实例
+	FromTxnCx(cx context.Context) (UnitRepo, error)
 }

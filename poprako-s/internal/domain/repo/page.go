@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // PageRepo 是页面仓库的接口
 type PageRepo interface {
@@ -21,4 +25,7 @@ type PageRepo interface {
 	Delete(id string) error
 	// DeleteBatch 批量删除页面
 	DeleteBatch(ids []string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 PageRepo 实例
+	FromTxnCx(cx context.Context) (PageRepo, error)
 }

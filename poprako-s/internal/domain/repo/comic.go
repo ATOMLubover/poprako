@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // ComicRepo 是漫画仓库的接口
 type ComicRepo interface {
@@ -15,6 +19,11 @@ type ComicRepo interface {
 	Create(c *model.ComicCreation) (*model.ComicInfo, error)
 	// Update 更新漫画信息（PUT 语义）
 	Update(u *model.ComicUpdate) error
+	// UpdateChapterCount 按 delta 更新漫画下的章节数量
+	UpdateChapterCount(id string, delta int) error
 	// Delete 删除漫画（硬删除）
 	Delete(id string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 ComicRepo 实例
+	FromTxnCx(cx context.Context) (ComicRepo, error)
 }

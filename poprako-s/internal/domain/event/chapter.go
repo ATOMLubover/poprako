@@ -1,5 +1,7 @@
 package event
 
+import "context"
+
 // 工作流发生变化时产生的事件类型
 // 我们通常只记录工作流完成的事件，因为它们是最重要的里程碑事件
 const (
@@ -9,7 +11,66 @@ const (
 	EventTypeWorkflowTypesettCompleted  EventType = "WorkflowTypesettCompleted"
 	EventTypeWorkflowReviewCompleted    EventType = "WorkflowReviewCompleted"
 	EventTypeWorkflowPublishCompleted   EventType = "WorkflowPublishCompleted"
+	EventTypeChapterCreated             EventType = "ChapterCreated"
+	EventTypeChapterRemoved             EventType = "ChapterRemoved"
+	EventTypeChapterPublished           EventType = "ChapterPublished"
 )
+
+// ChapterCreatedEvent 代表章节创建后的同步统计事件
+type ChapterCreatedEvent struct {
+	ComicID string
+	Cx      context.Context
+}
+
+func (e *ChapterCreatedEvent) EventType() EventType {
+	return EventTypeChapterCreated
+}
+
+func (e *ChapterCreatedEvent) PubType() PubType {
+	return PubTypeSync
+}
+
+func (e *ChapterCreatedEvent) Payload() any {
+	return e
+}
+
+// ChapterRemovedEvent 代表章节删除后的同步统计事件
+type ChapterRemovedEvent struct {
+	ComicID         string
+	WasPublished    bool
+	AssignedUserIDs []string
+	Cx              context.Context
+}
+
+func (e *ChapterRemovedEvent) EventType() EventType {
+	return EventTypeChapterRemoved
+}
+
+func (e *ChapterRemovedEvent) PubType() PubType {
+	return PubTypeSync
+}
+
+func (e *ChapterRemovedEvent) Payload() any {
+	return e
+}
+
+// ChapterPublishedEvent 代表章节发布完成后的同步统计事件
+type ChapterPublishedEvent struct {
+	ChapterID string
+	Cx        context.Context
+}
+
+func (e *ChapterPublishedEvent) EventType() EventType {
+	return EventTypeChapterPublished
+}
+
+func (e *ChapterPublishedEvent) PubType() PubType {
+	return PubTypeSync
+}
+
+func (e *ChapterPublishedEvent) Payload() any {
+	return e
+}
 
 // WorkflowUploadCompletedEvent 代表章节上传流程完成事件
 type WorkflowUploadCompletedEvent struct {

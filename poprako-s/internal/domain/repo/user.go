@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"time"
 
 	"poprako-s/internal/domain/model"
@@ -35,6 +36,10 @@ type UserRepo interface {
 
 	// 获取或创建用户统计信息（注意，可能总是需要一个 UPDATE ON CONFLICT 的操作）
 	GetOrCreateStats(userID string) (*model.UserStats, error)
-	// 更新用户统计信息
-	PatchStats(stats *model.UserStats) error
+	// 按 delta 更新用户统计信息
+	PatchStats(stats *model.UserStatsPatch) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 UserRepo 实例
+	// 如果上下文没有事务信息，则返回错误
+	FromTxnCx(cx context.Context) (UserRepo, error)
 }

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
+	eventhandler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
@@ -54,22 +56,38 @@ type assignmentAppImpl struct {
 	assignmentSvc service.AssignmentService
 
 	assignmentRepo repo.AssignmentRepo
+	chapterRepo    repo.ChapterRepo
+	userRepo       repo.UserRepo
+	txnMgr         repo.TxnMgr
+	eventBus       event.EventBus
 	ossClient      oss.Client
 }
 
 func NewAssignmentApp(
 	assignmentSvc service.AssignmentService,
 	assignmentRepo repo.AssignmentRepo,
+	chapterRepo repo.ChapterRepo,
+	userRepo repo.UserRepo,
+	txnMgr repo.TxnMgr,
+	eventBus event.EventBus,
 	ossClient oss.Client,
 ) AssignmentApp {
 	// 校验构造函数依赖
 	if assignmentSvc == nil ||
 		assignmentRepo == nil ||
+		chapterRepo == nil ||
+		userRepo == nil ||
+		txnMgr == nil ||
+		eventBus == nil ||
 		ossClient == nil {
 		zap.L().Panic(
 			"NewAssignmentApp: 依赖项不能为空",
 			zap.Bool("assignmentSvc_nil", assignmentSvc == nil),
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
+			zap.Bool("chapterRepo_nil", chapterRepo == nil),
+			zap.Bool("userRepo_nil", userRepo == nil),
+			zap.Bool("txnMgr_nil", txnMgr == nil),
+			zap.Bool("eventBus_nil", eventBus == nil),
 			zap.Bool("ossClient_nil", ossClient == nil),
 		)
 	}
@@ -78,6 +96,10 @@ func NewAssignmentApp(
 	return &assignmentAppImpl{
 		assignmentSvc:  assignmentSvc,
 		assignmentRepo: assignmentRepo,
+		chapterRepo:    chapterRepo,
+		userRepo:       userRepo,
+		txnMgr:         txnMgr,
+		eventBus:       eventBus,
 		ossClient:      ossClient,
 	}
 }
@@ -177,41 +199,56 @@ func (a *assignmentAppImpl) Create(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过领域服务构造创建载荷（含权限校验）
-	creation, err := a.assignmentSvc.NewCreation(
-		a.assignmentRepo,
-		currUserID,
-		args.ChapterID,
-		args.UserID,
-		args.Roles,
-	)
-	if err != nil {
-		// 记录权限校验失败
-		lgr.Warn(
-			"创建分配失败：权限不足",
-			zap.String("curr_user_id", currUserID),
-			zap.Error(err),
+	var createdID string
+
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		userRepoTxn, err := a.userRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		creation, err := a.assignmentSvc.NewCreation(
+			assignmentRepoTxn,
+			currUserID,
+			args.ChapterID,
+			args.UserID,
+			args.Roles,
 		)
+		if err != nil {
+			return err
+		}
 
-		// 返回领域服务返回的错误
-		return nil, err
-	}
+		assignInfo, err := assignmentRepoTxn.Create(creation)
+		if err != nil {
+			return err
+		}
 
-	// 持久化分配记录
-	assignInfo, err := a.assignmentRepo.Create(creation)
-	if err != nil {
-		// 记录创建失败
+		createdID = assignInfo.ID
+		eventCx := eventhandler.WithUserRepoTxn(cx, userRepoTxn)
+
+		return a.eventBus.Pub([]event.Event{&event.AssignmentCreatedEvent{
+			UserID:    args.UserID,
+			ChapterID: args.ChapterID,
+			Cx:        eventCx,
+		}})
+	}); err != nil {
 		lgr.Error(
-			"创建分配失败：持久化失败",
+			"创建分配失败",
+			zap.String("curr_user_id", currUserID),
+			zap.String("chapter_id", args.ChapterID),
+			zap.String("user_id", args.UserID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return nil, errors.New("创建分配失败")
 	}
 
-	// 返回创建结果
-	return &val.CreateAssignmentRes{ID: assignInfo.ID}, nil
+	return &val.CreateAssignmentRes{ID: createdID}, nil
 }
 
 func (a *assignmentAppImpl) Update(
@@ -281,50 +318,65 @@ func (a *assignmentAppImpl) Remove(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 查询目标分配信息以获取所属章节
-	targetAssignment, err := a.assignmentRepo.GetByID(assignmentID)
-	if err != nil {
-		// 记录查询失败
-		lgr.Error(
-			"删除分配失败：获取目标分配信息失败",
-			zap.String("assignment_id", assignmentID),
-			zap.Error(err),
-		)
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
 
-		// 返回客户端可展示的错误
-		return errors.New("无法获取分配信息")
-	}
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
 
-	// 鉴权：检查当前用户是否为该章节的监修
-	currAssignment, err := a.assignmentRepo.Get(model.AssignmentQueryOpt{
-		ChapterID: &targetAssignment.ChapterID,
-		UserID:    &currUserID,
-	})
-	if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
-		// 记录权限校验失败
-		lgr.Warn(
-			"删除分配失败：权限不足",
-			zap.String("curr_user_id", currUserID),
-		)
+		userRepoTxn, err := a.userRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
 
-		// 返回客户端可展示的错误
-		return errors.New("权限不足")
-	}
+		targetAssignment, err := assignmentRepoTxn.GetByID(assignmentID)
+		if err != nil {
+			return err
+		}
 
-	// 执行删除
-	if err := a.assignmentRepo.Delete(assignmentID); err != nil {
-		// 记录删除失败
+		currAssignment, err := assignmentRepoTxn.Get(model.AssignmentQueryOpt{
+			ChapterID: &targetAssignment.ChapterID,
+			UserID:    &currUserID,
+		})
+		if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
+			return errors.New("权限不足")
+		}
+
+		targetChapter, err := chapterRepoTxn.GetByID(targetAssignment.ChapterID)
+		if err != nil {
+			return err
+		}
+
+		if err := assignmentRepoTxn.Delete(assignmentID); err != nil {
+			return err
+		}
+
+		eventCx := eventhandler.WithUserRepoTxn(cx, userRepoTxn)
+
+		return a.eventBus.Pub([]event.Event{&event.AssignmentRemovedEvent{
+			UserID:       targetAssignment.UserID,
+			WasPublished: targetChapter.PublishedAt != nil,
+			Cx:           eventCx,
+		}})
+	}); err != nil {
 		lgr.Error(
 			"删除分配失败",
 			zap.String("assignment_id", assignmentID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
+		if err.Error() == "权限不足" {
+			return err
+		}
+
 		return errors.New("删除分配失败")
 	}
 
-	// 返回删除成功
 	return nil
 }
 

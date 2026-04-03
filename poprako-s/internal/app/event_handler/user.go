@@ -12,6 +12,10 @@ type UserLoginHandler struct {
 	userRepo repo.UserRepo
 }
 
+func (h *UserLoginHandler) EventType() event.EventType {
+	return event.EventTypeUserLogin
+}
+
 func (h *UserLoginHandler) Handle(ev event.Event) error {
 	payload, ok := ev.(*event.UserLoginEvent)
 	if !ok {

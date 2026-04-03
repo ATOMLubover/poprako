@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // AssignmentRepo 是分配记录仓库的接口
 type AssignmentRepo interface {
@@ -19,4 +23,7 @@ type AssignmentRepo interface {
 	Update(u *model.AssignmentUpdate) error
 	// Delete 删除分配记录（硬删除）
 	Delete(id string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 AssignmentRepo 实例
+	FromTxnCx(cx context.Context) (AssignmentRepo, error)
 }

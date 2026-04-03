@@ -33,6 +33,10 @@ func NewInvitationRepoFromCx(cx context.Context) (iface.InvitationRepo, error) {
 	}, nil
 }
 
+func (r *invitationRepoImpl) FromTxnCx(cx context.Context) (iface.InvitationRepo, error) {
+	return NewInvitationRepoFromCx(cx)
+}
+
 func (r *invitationRepoImpl) GetByInviteeQQ(id string) (*model.InvitationInfo, error) {
 	return nil, errors.New("not implemented")
 }

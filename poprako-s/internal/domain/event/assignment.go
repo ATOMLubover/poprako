@@ -1,0 +1,46 @@
+package event
+
+import "context"
+
+const (
+	EventTypeAssignmentCreated EventType = "AssignmentCreated"
+	EventTypeAssignmentRemoved EventType = "AssignmentRemoved"
+)
+
+// AssignmentCreatedEvent 代表创建 assignment 后的同步统计事件
+type AssignmentCreatedEvent struct {
+	UserID    string
+	ChapterID string
+	Cx        context.Context
+}
+
+func (e *AssignmentCreatedEvent) EventType() EventType {
+	return EventTypeAssignmentCreated
+}
+
+func (e *AssignmentCreatedEvent) PubType() PubType {
+	return PubTypeSync
+}
+
+func (e *AssignmentCreatedEvent) Payload() any {
+	return e
+}
+
+// AssignmentRemovedEvent 代表删除 assignment 后的同步统计事件
+type AssignmentRemovedEvent struct {
+	UserID       string
+	WasPublished bool
+	Cx           context.Context
+}
+
+func (e *AssignmentRemovedEvent) EventType() EventType {
+	return EventTypeAssignmentRemoved
+}
+
+func (e *AssignmentRemovedEvent) PubType() PubType {
+	return PubTypeSync
+}
+
+func (e *AssignmentRemovedEvent) Payload() any {
+	return e
+}

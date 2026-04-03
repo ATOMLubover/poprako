@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // TeamRepo 是团队仓库的接口
 type TeamRepo interface {
@@ -20,4 +24,7 @@ type TeamRepo interface {
 	PreFillAvatarOSSKey(id string, avatarOSSKey string) error
 	// ConfirmAvatarUploaded 确认团队头像已上传
 	ConfirmAvatarUploaded(id string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 TeamRepo 实例
+	FromTxnCx(cx context.Context) (TeamRepo, error)
 }

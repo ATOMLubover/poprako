@@ -35,6 +35,10 @@ func NewUserRepoFromCx(cx context.Context) (iface.UserRepo, error) {
 	}, nil
 }
 
+func (r *userRepoImpl) FromTxnCx(cx context.Context) (iface.UserRepo, error) {
+	return NewUserRepoFromCx(cx)
+}
+
 func (r *userRepoImpl) GetCredsByQQ(qq string) (*model.UserCreds, error) {
 	return nil, errors.New("not implemented")
 }
@@ -79,6 +83,6 @@ func (r *userRepoImpl) GetOrCreateStats(userID string) (*model.UserStats, error)
 	return nil, errors.New("not implemented")
 }
 
-func (r *userRepoImpl) PatchStats(stats *model.UserStats) error {
+func (r *userRepoImpl) PatchStats(stats *model.UserStatsPatch) error {
 	return errors.New("not implemented")
 }

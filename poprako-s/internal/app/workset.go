@@ -150,8 +150,18 @@ func (a *worksetAppImpl) Create(
 	var createdID string
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		worksetRepoTxn, err := a.worksetRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		memberRepoTxn, err := a.memberRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
 		// 统计当前团队下的作品集数量以确定 index
-		count, err := a.worksetRepo.Count(model.WorksetQueryOpt{
+		count, err := worksetRepoTxn.Count(model.WorksetQueryOpt{
 			TeamID: &args.TeamID,
 		})
 		if err != nil {
@@ -160,7 +170,7 @@ func (a *worksetAppImpl) Create(
 
 		// 通过领域服务构造创建载荷（含权限校验）
 		creation, err := a.worksetSvc.NewCreation(
-			a.memberRepo,
+			memberRepoTxn,
 			currUserID,
 			args.TeamID,
 			int(count),
@@ -172,7 +182,7 @@ func (a *worksetAppImpl) Create(
 		}
 
 		// 持久化作品集
-		wsInfo, err := a.worksetRepo.Create(creation)
+		wsInfo, err := worksetRepoTxn.Create(creation)
 		if err != nil {
 			return err
 		}

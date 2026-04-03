@@ -12,13 +12,13 @@ type EventBus interface {
 	// 而且它不保证所有的事件都原子地入队成功，如果事件总线过载，可能会返回错误，导致部分事件无法处理
 	PubAsync(ev []Event) error
 	// Sub 订阅事件处理器，使用线程安全的方式修改分发映射，适用于多线程环境
-	Sub(ty EventType, h EventHandler) error
+	Sub(h EventHandler) error
 	// SubUnsafe 订阅事件处理器，直接修改当前的分发映射，不进行复制，适用于单线程环境或已知没有并发访问的情况
-	SubUnsafe(ty EventType, h EventHandler) error
+	SubUnsafe(h EventHandler) error
 	// Unsub 取消订阅事件处理器，使用线程安全的方式修改分发映射，适用于多线程环境
-	Unsub(ty EventType, h EventHandler) error
+	Unsub(h EventHandler) error
 	// UnsubUnsafe 取消订阅事件处理器，直接修改当前的分发映射，不进行复制，适用于单线程环境或已知没有并发访问的情况
-	UnsubUnsafe(ty EventType, h EventHandler) error
+	UnsubUnsafe(h EventHandler) error
 
 	Close()
 }

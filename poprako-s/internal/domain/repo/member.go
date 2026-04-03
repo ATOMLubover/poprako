@@ -1,6 +1,10 @@
 package repo
 
-import "poprako-s/internal/domain/model"
+import (
+	"context"
+
+	"poprako-s/internal/domain/model"
+)
 
 // MemberRepo 是成员仓库的接口
 type MemberRepo interface {
@@ -19,4 +23,7 @@ type MemberRepo interface {
 	Update(u *model.MemberUpdate) error
 	// Delete 删除成员（硬删除）
 	Delete(id string) error
+
+	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 MemberRepo 实例
+	FromTxnCx(cx context.Context) (MemberRepo, error)
 }

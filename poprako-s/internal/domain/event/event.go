@@ -18,8 +18,3 @@ type EventSource interface {
 	Events() []Event
 }
 
-// EventHandler 是一个接口，表示一个事件处理器
-// EventDispatcher 会根据 EventType 将事件分发给对应的 EventHandler 来处理
-type EventHandler interface {
-	Handle(ev Event) error
-}

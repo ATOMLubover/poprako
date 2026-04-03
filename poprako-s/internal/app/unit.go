@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
+	eventhandler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/service"
@@ -30,49 +32,59 @@ type UnitApp interface {
 }
 
 type unitAppImpl struct {
-	unitSvc service.UnitService
+	unitSvc  service.UnitService
+	eventBus event.EventBus
 
 	userRepo       repo.UserRepo
 	pageRepo       repo.PageRepo
 	chapterRepo    repo.ChapterRepo
 	assignmentRepo repo.AssignmentRepo
 	unitRepo       repo.UnitRepo
+	txnMgr         repo.TxnMgr
 }
 
 func NewUnitApp(
 	unitSvc service.UnitService,
+	eventBus event.EventBus,
 	userRepo repo.UserRepo,
 	pageRepo repo.PageRepo,
 	chapterRepo repo.ChapterRepo,
 	assignmentRepo repo.AssignmentRepo,
 	unitRepo repo.UnitRepo,
+	txnMgr repo.TxnMgr,
 ) UnitApp {
 	// 校验构造函数依赖
 	if unitSvc == nil ||
+		eventBus == nil ||
 		userRepo == nil ||
 		pageRepo == nil ||
 		chapterRepo == nil ||
 		assignmentRepo == nil ||
-		unitRepo == nil {
+		unitRepo == nil ||
+		txnMgr == nil {
 		zap.L().Panic(
 			"NewUnitApp: 依赖项不能为空",
 			zap.Bool("unitSvc_nil", unitSvc == nil),
+			zap.Bool("eventBus_nil", eventBus == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
 			zap.Bool("unitRepo_nil", unitRepo == nil),
+			zap.Bool("txnMgr_nil", txnMgr == nil),
 		)
 	}
 
 	// 返回真实业务实现
 	return &unitAppImpl{
 		unitSvc:        unitSvc,
+		eventBus:       eventBus,
 		userRepo:       userRepo,
 		pageRepo:       pageRepo,
 		chapterRepo:    chapterRepo,
 		assignmentRepo: assignmentRepo,
 		unitRepo:       unitRepo,
+		txnMgr:         txnMgr,
 	}
 }
 
@@ -240,254 +252,200 @@ func (a *unitAppImpl) Save(
 		return errors.New("页面不存在")
 	}
 
-	// 计算受影响的现有翻译单元，用于统计 delta
-	affectedUnitIDMap := make(map[string]struct{})
-
-	for _, patchUnit := range patchUnits {
-		affectedUnitIDMap[patchUnit.ID] = struct{}{}
-	}
-
-	for _, unitID := range args.UnitDiff.Delete {
-		affectedUnitIDMap[unitID] = struct{}{}
-	}
-
-	// 获取当前页面所有翻译单元用于计算 delta
-	existingUnits, err := a.unitRepo.List(model.UnitQueryOpt{
-		PageID: args.PageID,
-	})
-	if err != nil {
-		// 记录查询失败
-		lgr.Error(
-			"保存翻译单元失败：获取现有翻译单元失败",
-			zap.String("page_id", args.PageID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("保存翻译单元失败")
-	}
-
-	// 构建 ID 映射用于快速查找
-	existingUnitByID := make(map[string]model.UnitInfo, len(existingUnits))
-
-	for _, unit := range existingUnits {
-		existingUnitByID[unit.ID] = unit
-	}
-
-	// 计算统计 delta
-	totalUnitCountDelta := 0
-	translatedUnitCountDelta := 0
-	proofreadUnitCountDelta := 0
-
-	// 新增操作增加计数
-	for _, insertUnit := range insertUnits {
-		totalUnitCountDelta++
-
-		if insertUnit.TranslatedText != nil {
-			translatedUnitCountDelta++
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		// 从事务上下文中构造事务版 Repo
+		unitRepoTxn, err := a.unitRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
 		}
 
-		if insertUnit.IsProofread {
-			proofreadUnitCountDelta++
-		}
-	}
+		// 仅提取需要对比前后状态的受影响单元
+		affectedUnitIDMap := make(map[string]struct{}, len(patchUnits)+len(args.UnitDiff.Delete))
 
-	// 修改操作计算翻译和校对状态变化
-	for _, patchUnit := range patchUnits {
-		existingUnit, ok := existingUnitByID[patchUnit.ID]
-		if !ok {
-			continue
+		for _, patchUnit := range patchUnits {
+			affectedUnitIDMap[patchUnit.ID] = struct{}{}
 		}
 
-		// 检查翻译状态变化
-		translatedBefore := existingUnit.TranslatedText != nil
-
-		if patchUnit.TranslatedText != nil {
-			existingUnit.TranslatedText = *patchUnit.TranslatedText
+		for _, unitID := range args.UnitDiff.Delete {
+			affectedUnitIDMap[unitID] = struct{}{}
 		}
 
-		translatedAfter := existingUnit.TranslatedText != nil
-
-		if !translatedBefore && translatedAfter {
-			translatedUnitCountDelta++
-		}
-
-		if translatedBefore && !translatedAfter {
-			translatedUnitCountDelta--
-		}
-
-		// 检查校对状态变化
-		proofreadBefore := existingUnit.IsProofread
-
-		if patchUnit.IsProofread != nil {
-			existingUnit.IsProofread = *patchUnit.IsProofread
-		}
-
-		proofreadAfter := existingUnit.IsProofread
-
-		if !proofreadBefore && proofreadAfter {
-			proofreadUnitCountDelta++
-		}
-
-		if proofreadBefore && !proofreadAfter {
-			proofreadUnitCountDelta--
-		}
-	}
-
-	// 删除操作减少计数
-	for _, unitID := range args.UnitDiff.Delete {
-		existingUnit, ok := existingUnitByID[unitID]
-		if !ok {
-			continue
-		}
-
-		totalUnitCountDelta--
-
-		if existingUnit.TranslatedText != nil {
-			translatedUnitCountDelta--
-		}
-
-		if existingUnit.IsProofread {
-			proofreadUnitCountDelta--
-		}
-	}
-
-	// 执行批量操作
-	if len(insertUnits) > 0 {
-		insertPtrs := make([]*model.UnitCreation, len(insertUnits))
-
-		for i := range insertUnits {
-			insertPtrs[i] = &insertUnits[i]
-		}
-
-		if err := a.unitRepo.CreateBatch(insertPtrs); err != nil {
-			// 记录创建失败
+		existingUnits, err := unitRepoTxn.List(model.UnitQueryOpt{PageID: args.PageID})
+		if err != nil {
 			lgr.Error(
-				"保存翻译单元失败：批量创建失败",
+				"保存翻译单元失败：获取现有翻译单元失败",
 				zap.String("page_id", args.PageID),
 				zap.Error(err),
 			)
 
-			// 返回客户端可展示的错误
 			return errors.New("保存翻译单元失败")
 		}
-	}
 
-	if len(patchUnits) > 0 {
-		patchPtrs := make([]*model.UnitPatch, len(patchUnits))
+		existingUnitByID := make(map[string]model.UnitInfo, len(affectedUnitIDMap))
 
-		for i := range patchUnits {
-			patchPtrs[i] = &patchUnits[i]
+		for _, unit := range existingUnits {
+			if _, ok := affectedUnitIDMap[unit.ID]; ok {
+				existingUnitByID[unit.ID] = unit
+			}
 		}
 
-		if err := a.unitRepo.PatchBatch(patchPtrs); err != nil {
-			// 记录修改失败
+		totalUnitCountDelta := 0
+		translatedUnitCountDelta := 0
+		proofreadUnitCountDelta := 0
+
+		for _, insertUnit := range insertUnits {
+			totalUnitCountDelta++
+
+			if insertUnit.TranslatedText != nil {
+				translatedUnitCountDelta++
+			}
+
+			if insertUnit.IsProofread {
+				proofreadUnitCountDelta++
+			}
+		}
+
+		for _, patchUnit := range patchUnits {
+			existingUnit, ok := existingUnitByID[patchUnit.ID]
+			if !ok {
+				continue
+			}
+
+			translatedBefore := existingUnit.TranslatedText != nil
+			if patchUnit.TranslatedText != nil {
+				existingUnit.TranslatedText = *patchUnit.TranslatedText
+			}
+			translatedAfter := existingUnit.TranslatedText != nil
+
+			if !translatedBefore && translatedAfter {
+				translatedUnitCountDelta++
+			}
+			if translatedBefore && !translatedAfter {
+				translatedUnitCountDelta--
+			}
+
+			proofreadBefore := existingUnit.IsProofread
+			if patchUnit.IsProofread != nil {
+				existingUnit.IsProofread = *patchUnit.IsProofread
+			}
+			proofreadAfter := existingUnit.IsProofread
+
+			if !proofreadBefore && proofreadAfter {
+				proofreadUnitCountDelta++
+			}
+			if proofreadBefore && !proofreadAfter {
+				proofreadUnitCountDelta--
+			}
+		}
+
+		for _, unitID := range args.UnitDiff.Delete {
+			existingUnit, ok := existingUnitByID[unitID]
+			if !ok {
+				continue
+			}
+
+			totalUnitCountDelta--
+
+			if existingUnit.TranslatedText != nil {
+				translatedUnitCountDelta--
+			}
+
+			if existingUnit.IsProofread {
+				proofreadUnitCountDelta--
+			}
+		}
+
+		if len(insertUnits) > 0 {
+			insertPtrs := make([]*model.UnitCreation, len(insertUnits))
+
+			for i := range insertUnits {
+				insertPtrs[i] = &insertUnits[i]
+			}
+
+			if err := unitRepoTxn.CreateBatch(insertPtrs); err != nil {
+				lgr.Error(
+					"保存翻译单元失败：批量创建失败",
+					zap.String("page_id", args.PageID),
+					zap.Error(err),
+				)
+
+				return errors.New("保存翻译单元失败")
+			}
+		}
+
+		if len(patchUnits) > 0 {
+			patchPtrs := make([]*model.UnitPatch, len(patchUnits))
+
+			for i := range patchUnits {
+				patchPtrs[i] = &patchUnits[i]
+			}
+
+			if err := unitRepoTxn.PatchBatch(patchPtrs); err != nil {
+				lgr.Error(
+					"保存翻译单元失败：批量修改失败",
+					zap.String("page_id", args.PageID),
+					zap.Error(err),
+				)
+
+				return errors.New("保存翻译单元失败")
+			}
+		}
+
+		if len(args.UnitDiff.Delete) > 0 {
+			if err := unitRepoTxn.DeleteBatch(args.UnitDiff.Delete); err != nil {
+				lgr.Error(
+					"保存翻译单元失败：批量删除失败",
+					zap.String("page_id", args.PageID),
+					zap.Error(err),
+				)
+
+				return errors.New("保存翻译单元失败")
+			}
+		}
+
+		pageRepoTxn, err := a.pageRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		eventCx := eventhandler.WithChapterRepoTxn(
+			eventhandler.WithPageRepoTxn(cx, pageRepoTxn),
+			chapterRepoTxn,
+		)
+
+		// 发布同步事件，由 UnitSaveHandler 负责更新 Page 和 Chapter 统计字段
+		// 将事务上下文 cx 随事件传递，Handler 内通过 FromCx 创建绑定事务的 repo
+		if err := a.eventBus.Pub([]event.Event{&event.UnitSaveEvent{
+			PageID:    args.PageID,
+			ChapterID: pageInfo.ChapterID,
+
+			InsertCount: len(insertUnits),
+			PatchCount:  len(patchUnits),
+			DeleteCount: len(args.UnitDiff.Delete),
+
+			TotalDelta:      totalUnitCountDelta,
+			TranslatedDelta: translatedUnitCountDelta,
+			ProofreadDelta:  proofreadUnitCountDelta,
+
+			Cx: eventCx,
+		}}); err != nil {
 			lgr.Error(
-				"保存翻译单元失败：批量修改失败",
+				"保存翻译单元失败：发布事件失败",
 				zap.String("page_id", args.PageID),
 				zap.Error(err),
 			)
 
-			// 返回客户端可展示的错误
 			return errors.New("保存翻译单元失败")
 		}
-	}
 
-	if len(args.UnitDiff.Delete) > 0 {
-		if err := a.unitRepo.DeleteBatch(args.UnitDiff.Delete); err != nil {
-			// 记录删除失败
-			lgr.Error(
-				"保存翻译单元失败：批量删除失败",
-				zap.String("page_id", args.PageID),
-				zap.Error(err),
-			)
-
-			// 返回客户端可展示的错误
-			return errors.New("保存翻译单元失败")
-		}
-	}
-
-	// 获取当前页面统计数据并应用 delta
-	pageStats, err := a.pageRepo.GetStatsByID(args.PageID)
-	if err != nil {
-		// 记录获取统计失败
-		lgr.Error(
-			"保存翻译单元失败：获取页面统计数据失败",
-			zap.String("page_id", args.PageID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("保存翻译单元失败")
-	}
-
-	// 应用 delta 到页面统计
-	updatedPageStats := &model.PageStats{
-		PageID:              args.PageID,
-		TotalUnitCount:      pageStats.TotalUnitCount + totalUnitCountDelta,
-		TranslatedUnitCount: pageStats.TranslatedUnitCount + translatedUnitCountDelta,
-		ProofreadUnitCount:  pageStats.ProofreadUnitCount + proofreadUnitCountDelta,
-	}
-
-	// 校验统计值不为负
-	if updatedPageStats.TotalUnitCount < 0 ||
-		updatedPageStats.TranslatedUnitCount < 0 ||
-		updatedPageStats.ProofreadUnitCount < 0 {
-		// 记录异常
-		lgr.Error(
-			"保存翻译单元失败：页面统计值出现负数",
-			zap.Any("page_stats", updatedPageStats),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("保存翻译单元失败")
-	}
-
-	// 更新页面统计
-	if err := a.pageRepo.UpdateStats(updatedPageStats); err != nil {
-		// 记录更新失败
-		lgr.Error(
-			"保存翻译单元失败：更新页面统计失败",
-			zap.String("page_id", args.PageID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("保存翻译单元失败")
-	}
-
-	// 获取章节信息以获取当前统计数据
-	chapterInfo, err := a.chapterRepo.GetByID(pageInfo.ChapterID)
-	if err != nil {
-		// 记录查询失败
-		lgr.Error(
-			"保存翻译单元失败：获取章节信息失败",
-			zap.String("chapter_id", pageInfo.ChapterID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("保存翻译单元失败")
-	}
-
-	// 更新章节统计
-	chapterStats := &model.ChapterStats{
-		ChapterID:           pageInfo.ChapterID,
-		TotalUnitCount:      chapterInfo.TotalUnitCount + totalUnitCountDelta,
-		TranslatedUnitCount: chapterInfo.TranslatedUnitCount + translatedUnitCountDelta,
-		ProofreadUnitCount:  chapterInfo.ProofreadUnitCount + proofreadUnitCountDelta,
-	}
-
-	if err := a.chapterRepo.UpdateStats(chapterStats); err != nil {
-		// 记录更新失败
-		lgr.Error(
-			"保存翻译单元失败：更新章节统计失败",
-			zap.String("chapter_id", pageInfo.ChapterID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("保存翻译单元失败")
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	// 返回保存成功

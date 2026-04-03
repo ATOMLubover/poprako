@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	eventhandler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -52,6 +53,7 @@ type chapterAppImpl struct {
 	comicRepo      repo.ComicRepo
 	chapterRepo    repo.ChapterRepo
 	assignmentRepo repo.AssignmentRepo
+	userRepo       repo.UserRepo
 	pageRepo       repo.PageRepo
 	txnMgr         repo.TxnMgr
 	eventBus       event.EventBus
@@ -65,6 +67,7 @@ func NewChapterApp(
 	comicRepo repo.ComicRepo,
 	chapterRepo repo.ChapterRepo,
 	assignmentRepo repo.AssignmentRepo,
+	userRepo repo.UserRepo,
 	pageRepo repo.PageRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
@@ -77,6 +80,7 @@ func NewChapterApp(
 		comicRepo == nil ||
 		chapterRepo == nil ||
 		assignmentRepo == nil ||
+		userRepo == nil ||
 		pageRepo == nil ||
 		txnMgr == nil ||
 		eventBus == nil ||
@@ -89,6 +93,7 @@ func NewChapterApp(
 			zap.Bool("comicRepo_nil", comicRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
+			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
@@ -104,6 +109,7 @@ func NewChapterApp(
 		comicRepo:      comicRepo,
 		chapterRepo:    chapterRepo,
 		assignmentRepo: assignmentRepo,
+		userRepo:       userRepo,
 		pageRepo:       pageRepo,
 		txnMgr:         txnMgr,
 		eventBus:       eventBus,
@@ -246,8 +252,18 @@ func (a *chapterAppImpl) Create(
 	var createdID string
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		comicRepoTxn, err := a.comicRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
 		// 统计当前漫画下的章节数量以确定 index
-		count, err := a.chapterRepo.Count(model.ChapterQueryOpt{
+		count, err := chapterRepoTxn.Count(model.ChapterQueryOpt{
 			ComicID: &args.ComicID,
 		})
 		if err != nil {
@@ -264,14 +280,18 @@ func (a *chapterAppImpl) Create(
 		}
 
 		// 持久化章节
-		chInfo, err := a.chapterRepo.Create(creation)
+		chInfo, err := chapterRepoTxn.Create(creation)
 		if err != nil {
 			return err
 		}
 
 		createdID = chInfo.ID
+		eventCx := eventhandler.WithComicRepoTxn(cx, comicRepoTxn)
 
-		return nil
+		return a.eventBus.Pub([]event.Event{&event.ChapterCreatedEvent{
+			ComicID: args.ComicID,
+			Cx:      eventCx,
+		}})
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -311,56 +331,38 @@ func (a *chapterAppImpl) Update(
 		return errors.New("无法获取章节信息")
 	}
 
-	// 若需要执行工作流转换
+	var currAssignment *model.AssignmentInfo
+
 	if args.WorkflowTransition != nil {
-		// 鉴权：检查当前用户在章节中是否有对应角色权限
-		currAssignment, err := a.assignmentRepo.Get(model.AssignmentQueryOpt{
+		currAssignment, err = a.assignmentRepo.Get(model.AssignmentQueryOpt{
 			ChapterID: &args.ChapterID,
 			UserID:    &currUserID,
 		})
 		if err != nil {
-			// 记录权限校验失败
 			lgr.Warn(
 				"更新章节失败：当前用户无章节分配",
 				zap.String("curr_user_id", currUserID),
 				zap.String("chapter_id", args.ChapterID),
 			)
 
-			// 返回客户端可展示的错误
 			return errors.New("权限不足")
 		}
 
-		// 通过领域服务执行工作流转换（含权限校验和状态变更）
 		if err := a.chapterSvc.TransiteWorkflow(
 			*args.WorkflowTransition,
 			targetChapter,
 			currAssignment,
 		); err != nil {
-			// 记录工作流转换失败
 			lgr.Warn(
 				"更新章节失败：工作流转换失败",
 				zap.String("chapter_id", args.ChapterID),
 				zap.Error(err),
 			)
 
-			// 返回领域服务返回的错误
 			return err
-		}
-
-		// 发布领域事件
-		if events := targetChapter.Events(); len(events) > 0 {
-			if err := a.eventBus.PubAsync(events); err != nil {
-				// 记录事件发布失败（非阻塞）
-				lgr.Error(
-					"章节工作流事件发布失败",
-					zap.String("chapter_id", args.ChapterID),
-					zap.Error(err),
-				)
-			}
 		}
 	}
 
-	// 构造章节更新载荷
 	update := &model.ChapterUpdate{
 		ID:             args.ChapterID,
 		Subtitle:       args.Subtitle,
@@ -376,24 +378,67 @@ func (a *chapterAppImpl) Update(
 		PublishedAt:    targetChapter.PublishedAt,
 	}
 
-	// 持久化更新
-	if err := a.chapterRepo.UpdateStats(&model.ChapterStats{
-		ChapterID:           args.ChapterID,
-		TotalUnitCount:      targetChapter.TotalUnitCount,
-		TranslatedUnitCount: targetChapter.TranslatedUnitCount,
-		ProofreadUnitCount:  targetChapter.ProofreadUnitCount,
-	}); err != nil {
-		// 记录更新统计失败（非致命）
-		lgr.Warn(
-			"更新章节统计失败",
-			zap.String("chapter_id", args.ChapterID),
-			zap.Error(err),
-		)
+	if args.WorkflowTransition != nil && *args.WorkflowTransition == model.WorkflowPublishComplete {
+		if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+			chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+			if err != nil {
+				return err
+			}
+
+			assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(cx)
+			if err != nil {
+				return err
+			}
+
+			userRepoTxn, err := a.userRepo.FromTxnCx(cx)
+			if err != nil {
+				return err
+			}
+
+			if err := chapterRepoTxn.Update(update); err != nil {
+				return err
+			}
+
+			eventCx := eventhandler.WithUserRepoTxn(
+				eventhandler.WithAssignmentRepoTxn(cx, assignmentRepoTxn),
+				userRepoTxn,
+			)
+
+			return a.eventBus.Pub([]event.Event{&event.ChapterPublishedEvent{
+				ChapterID: args.ChapterID,
+				Cx:        eventCx,
+			}})
+		}); err != nil {
+			lgr.Error(
+				"更新章节失败",
+				zap.String("chapter_id", args.ChapterID),
+				zap.Error(err),
+			)
+
+			return errors.New("更新章节失败")
+		}
+	} else {
+		if err := a.chapterRepo.Update(update); err != nil {
+			lgr.Error(
+				"更新章节失败",
+				zap.String("chapter_id", args.ChapterID),
+				zap.Error(err),
+			)
+
+			return errors.New("更新章节失败")
+		}
 	}
 
-	_ = update
+	if events := targetChapter.Events(); len(events) > 0 {
+		if err := a.eventBus.PubAsync(events); err != nil {
+			lgr.Error(
+				"章节工作流事件发布失败",
+				zap.String("chapter_id", args.ChapterID),
+				zap.Error(err),
+			)
+		}
+	}
 
-	// 返回更新成功
 	return nil
 }
 
@@ -463,16 +508,61 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("权限不足")
 	}
 
-	// 执行删除
-	if err := a.chapterRepo.Remove(chapterID); err != nil {
-		// 记录删除失败
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		comicRepoTxn, err := a.comicRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		userRepoTxn, err := a.userRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		assignments, err := assignmentRepoTxn.List(model.AssignmentQueryOpt{
+			ChapterID: &chapterID,
+		})
+		if err != nil {
+			return err
+		}
+
+		assignedUserIDs := make([]string, 0, len(assignments))
+		for _, assignment := range assignments {
+			assignedUserIDs = append(assignedUserIDs, assignment.UserID)
+		}
+
+		if err := chapterRepoTxn.Remove(chapterID); err != nil {
+			return err
+		}
+
+		eventCx := eventhandler.WithUserRepoTxn(
+			eventhandler.WithComicRepoTxn(cx, comicRepoTxn),
+			userRepoTxn,
+		)
+
+		return a.eventBus.Pub([]event.Event{&event.ChapterRemovedEvent{
+			ComicID:         targetChapter.ComicID,
+			WasPublished:    targetChapter.PublishedAt != nil,
+			AssignedUserIDs: assignedUserIDs,
+			Cx:              eventCx,
+		}})
+	}); err != nil {
 		lgr.Error(
 			"删除章节失败",
 			zap.String("chapter_id", chapterID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return errors.New("删除章节失败")
 	}
 

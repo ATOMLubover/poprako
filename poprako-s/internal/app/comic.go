@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
+	eventhandler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
@@ -50,6 +52,7 @@ type comicAppImpl struct {
 	worksetRepo repo.WorksetRepo
 	comicRepo   repo.ComicRepo
 	txnMgr      repo.TxnMgr
+	eventBus    event.EventBus
 	ossClient   oss.Client
 }
 
@@ -59,6 +62,7 @@ func NewComicApp(
 	worksetRepo repo.WorksetRepo,
 	comicRepo repo.ComicRepo,
 	txnMgr repo.TxnMgr,
+	eventBus event.EventBus,
 	ossClient oss.Client,
 ) ComicApp {
 	// 校验构造函数依赖
@@ -67,6 +71,7 @@ func NewComicApp(
 		worksetRepo == nil ||
 		comicRepo == nil ||
 		txnMgr == nil ||
+		eventBus == nil ||
 		ossClient == nil {
 		zap.L().Panic(
 			"NewComicApp: 依赖项不能为空",
@@ -75,6 +80,7 @@ func NewComicApp(
 			zap.Bool("worksetRepo_nil", worksetRepo == nil),
 			zap.Bool("comicRepo_nil", comicRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
+			zap.Bool("eventBus_nil", eventBus == nil),
 			zap.Bool("ossClient_nil", ossClient == nil),
 		)
 	}
@@ -86,6 +92,7 @@ func NewComicApp(
 		worksetRepo: worksetRepo,
 		comicRepo:   comicRepo,
 		txnMgr:      txnMgr,
+		eventBus:    eventBus,
 		ossClient:   ossClient,
 	}
 }
@@ -181,8 +188,23 @@ func (a *comicAppImpl) Create(
 	var createdID string
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		comicRepoTxn, err := a.comicRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		memberRepoTxn, err := a.memberRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		worksetRepoTxn, err := a.worksetRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
 		// 统计当前作品集下的漫画数量以确定 index
-		count, err := a.comicRepo.Count(model.ComicQueryOpt{
+		count, err := comicRepoTxn.Count(model.ComicQueryOpt{
 			WorksetID: args.WorksetID,
 		})
 		if err != nil {
@@ -191,8 +213,8 @@ func (a *comicAppImpl) Create(
 
 		// 通过领域服务构造创建载荷（含权限校验）
 		creation, err := a.comicSvc.NewCreation(
-			a.memberRepo,
-			a.worksetRepo,
+			memberRepoTxn,
+			worksetRepoTxn,
 			currUserID,
 			args.WorksetID,
 			int(count),
@@ -206,14 +228,18 @@ func (a *comicAppImpl) Create(
 		}
 
 		// 持久化漫画
-		comicInfo, err := a.comicRepo.Create(creation)
+		comicInfo, err := comicRepoTxn.Create(creation)
 		if err != nil {
 			return err
 		}
 
 		createdID = comicInfo.ID
+		eventCx := eventhandler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
-		return nil
+		return a.eventBus.Pub([]event.Event{&event.ComicCreatedEvent{
+			WorksetID: args.WorksetID,
+			Cx:        eventCx,
+		}})
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -360,20 +386,37 @@ func (a *comicAppImpl) Remove(
 		return errors.New("权限不足")
 	}
 
-	// 执行删除
-	if err := a.comicRepo.Delete(comicID); err != nil {
-		// 记录删除失败
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		comicRepoTxn, err := a.comicRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		worksetRepoTxn, err := a.worksetRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		if err := comicRepoTxn.Delete(comicID); err != nil {
+			return err
+		}
+
+		eventCx := eventhandler.WithWorksetRepoTxn(cx, worksetRepoTxn)
+
+		return a.eventBus.Pub([]event.Event{&event.ComicRemovedEvent{
+			WorksetID: targetComic.WorksetID,
+			Cx:        eventCx,
+		}})
+	}); err != nil {
 		lgr.Error(
 			"删除漫画失败",
 			zap.String("comic_id", comicID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return errors.New("删除漫画失败")
 	}
 
-	// 返回删除成功
 	return nil
 }
 
