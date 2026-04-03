@@ -3,9 +3,11 @@ package repo_infra
 import (
 	"context"
 	"errors"
+	"time"
 
 	"poprako-s/internal/domain/model"
 	iface "poprako-s/internal/domain/repo"
+	entity "poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
 )
@@ -32,33 +34,116 @@ func (r *pageRepoImpl) FromTxnCx(cx context.Context) (iface.PageRepo, error) {
 }
 
 func (r *pageRepoImpl) GetByID(id string) (*model.PageInfo, error) {
-	return nil, errors.New("not implemented")
+	var row entity.PageInfoRow
+	err := r.gdb.Table(entity.PageTable).Where("id = ?", id).First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	info := entity.ToPageInfo(row)
+	return &info, nil
 }
 
 func (r *pageRepoImpl) List(opt model.PageQueryOpt) ([]model.PageInfo, error) {
-	return nil, errors.New("not implemented")
+	db := r.gdb.Table(entity.PageTable)
+
+	if opt.ID != nil {
+		db = db.Where("id = ?", *opt.ID)
+	}
+	if opt.ChapterID != nil {
+		db = db.Where("chapter_id = ?", *opt.ChapterID)
+	}
+
+	var rows []entity.PageInfoRow
+	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	items := make([]model.PageInfo, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, entity.ToPageInfo(row))
+	}
+
+	return items, nil
 }
 
 func (r *pageRepoImpl) GetStatsByID(pageID string) (*model.PageStats, error) {
-	return nil, errors.New("not implemented")
+	var row entity.PageInfoRow
+	err := r.gdb.Table(entity.PageTable).
+		Select("id", "total_unit_count", "translated_unit_count", "proofread_unit_count").
+		Where("id = ?", pageID).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.PageStats{
+		PageID:              row.ID,
+		TotalUnitCount:      row.TotalUnitCount,
+		TranslatedUnitCount: row.TranslatedUnitCount,
+		ProofreadUnitCount:  row.ProofreadUnitCount,
+	}, nil
 }
 
 func (r *pageRepoImpl) CreateBatch(pages []*model.PageCreation) error {
-	return errors.New("not implemented")
+	if len(pages) == 0 {
+		return nil
+	}
+
+	now := time.Now()
+	rows := make([]map[string]any, 0, len(pages))
+	for _, page := range pages {
+		rows = append(rows, map[string]any{
+			"id":                    page.ID,
+			"chapter_id":            page.ChapterID,
+			"index":                 page.Index,
+			"oss_key":               page.OSSKey,
+			"uploaded":              false,
+			"creator_id":            page.CreatorID,
+			"total_unit_count":      0,
+			"translated_unit_count": 0,
+			"proofread_unit_count":  0,
+			"created_at":            now,
+			"updated_at":            now,
+		})
+	}
+
+	return r.gdb.Table(entity.PageTable).Create(rows).Error
 }
 
 func (r *pageRepoImpl) Update(u *model.PageUpdate) error {
-	return errors.New("not implemented")
+	return r.gdb.Table(entity.PageTable).
+		Where("id = ?", u.ID).
+		Updates(map[string]any{
+			"index":                 u.Index,
+			"oss_key":               u.OSSKey,
+			"uploaded":              u.IsUploaded,
+			"total_unit_count":      u.TotalUnitCount,
+			"translated_unit_count": u.TranslatedUnitCount,
+			"proofread_unit_count":  u.ProofreadUnitCount,
+			"updated_at":            time.Now(),
+		}).Error
 }
 
 func (r *pageRepoImpl) UpdateStats(stats *model.PageStats) error {
-	return errors.New("not implemented")
+	return r.gdb.Table(entity.PageTable).
+		Where("id = ?", stats.PageID).
+		Updates(map[string]any{
+			"total_unit_count":      stats.TotalUnitCount,
+			"translated_unit_count": stats.TranslatedUnitCount,
+			"proofread_unit_count":  stats.ProofreadUnitCount,
+			"updated_at":            time.Now(),
+		}).Error
 }
 
 func (r *pageRepoImpl) Delete(id string) error {
-	return errors.New("not implemented")
+	return r.gdb.Table(entity.PageTable).Where("id = ?", id).Delete(nil).Error
 }
 
 func (r *pageRepoImpl) DeleteBatch(ids []string) error {
-	return errors.New("not implemented")
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return r.gdb.Table(entity.PageTable).Where("id IN ?", ids).Delete(nil).Error
 }

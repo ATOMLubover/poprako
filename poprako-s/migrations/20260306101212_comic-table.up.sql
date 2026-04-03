@@ -10,6 +10,17 @@ CREATE TABLE "comic_table" (
     "description"        TEXT,
 
     "chapter_count"      INTEGER     NOT NULL DEFAULT 0,
+    
+    "has_pinned_chapter"         BOOLEAN     NOT NULL DEFAULT FALSE,
+    "pinned_uploaded_at"         TIMESTAMPTZ,
+    "pinned_transalating_at"     TIMESTAMPTZ,
+    "pinned_translated_at"       TIMESTAMPTZ,
+    "pinned_proofreading_at"     TIMESTAMPTZ,
+    "pinned_proofread_at"        TIMESTAMPTZ,
+    "pinned_typesetting_at"      TIMESTAMPTZ,
+    "pinned_typeset_at"          TIMESTAMPTZ,
+    "pinned_reviewed_at"         TIMESTAMPTZ,
+    "pinned_published_at"        TIMESTAMPTZ,
 
     "creator_id"         TEXT        NOT NULL REFERENCES "user_table" ("id") ON DELETE RESTRICT,
     "last_active_at"     TIMESTAMPTZ NOT NULL DEFAULT NOW(),

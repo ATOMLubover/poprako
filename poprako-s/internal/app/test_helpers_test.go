@@ -9,7 +9,7 @@ import (
 	"poprako-s/internal/domain/model"
 	repoiface "poprako-s/internal/domain/repo"
 	mock_event "poprako-s/internal/infra/event/mock"
-	mock_oss "poprako-s/internal/infra/oss/mock"
+	mock_oss "poprako-s/internal/infra/ext/oss/mock"
 	mock_repo "poprako-s/internal/infra/repo/mock"
 )
 
@@ -332,12 +332,12 @@ func (r *erroringMemberRepo) FromTxnCx(cx context.Context) (repoiface.MemberRepo
 
 type erroringPageRepo struct {
 	repoiface.PageRepo
-	getByIDErr    error
-	listErr       error
+	getByIDErr     error
+	listErr        error
 	createBatchErr error
-	updateErr     error
-	deleteErr     error
-	fromTxnErr    error
+	updateErr      error
+	deleteErr      error
+	fromTxnErr     error
 }
 
 func (r *erroringPageRepo) GetByID(id string) (*model.PageInfo, error) {

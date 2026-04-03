@@ -2,6 +2,7 @@ CREATE TABLE "chapter_table" (
     "id"                    TEXT        PRIMARY KEY,
 
     "comic_id"              TEXT        NOT NULL REFERENCES "comic_table" ("id") ON DELETE CASCADE,
+    "pinned"             BOOLEAN     NOT NULL DEFAULT FALSE,
 
     "index"                 INTEGER     NOT NULL DEFAULT 0,
     "subtitle"              TEXT        NOT NULL,
