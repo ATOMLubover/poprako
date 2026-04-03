@@ -410,23 +410,20 @@ func assembleAssignmentInfo(
 
 // logAssignmentAppImpl 是 AssignmentApp 的日志包装实现
 type logAssignmentAppImpl struct {
-	lgr *zap.Logger
 	app AssignmentApp
 }
 
 func NewLogAssignmentApp(
-	lgr *zap.Logger,
 	app AssignmentApp,
 ) AssignmentApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogAssignmentApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logAssignmentAppImpl{lgr: lgr, app: app}
+	return &logAssignmentAppImpl{app: app}
 }
 
 func (a *logAssignmentAppImpl) ListByChapter(
@@ -434,7 +431,7 @@ func (a *logAssignmentAppImpl) ListByChapter(
 	currUserID string,
 	args *val.ListChapterAssignmentArgs,
 ) ([]*val.AssignmentInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("AssignmentApp 不可用")
 	}
 
@@ -442,7 +439,7 @@ func (a *logAssignmentAppImpl) ListByChapter(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "ListByChapter"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "ListByChapter"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -456,7 +453,7 @@ func (a *logAssignmentAppImpl) ListMy(
 	currUserID string,
 	args *val.ListMyAssignmentArgs,
 ) ([]*val.AssignmentInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("AssignmentApp 不可用")
 	}
 
@@ -464,7 +461,7 @@ func (a *logAssignmentAppImpl) ListMy(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "ListMy"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "ListMy"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -478,7 +475,7 @@ func (a *logAssignmentAppImpl) Create(
 	currUserID string,
 	args *val.CreateAssignmentArgs,
 ) (*val.CreateAssignmentRes, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("AssignmentApp 不可用")
 	}
 
@@ -486,7 +483,7 @@ func (a *logAssignmentAppImpl) Create(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -500,7 +497,7 @@ func (a *logAssignmentAppImpl) Update(
 	currUserID string,
 	args *val.UpdateAssignmentArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("AssignmentApp 不可用")
 	}
 
@@ -508,7 +505,7 @@ func (a *logAssignmentAppImpl) Update(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("assignment_id", args.ID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("assignment_id", args.ID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -522,7 +519,7 @@ func (a *logAssignmentAppImpl) Remove(
 	currUserID string,
 	assignmentID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("AssignmentApp 不可用")
 	}
 
@@ -530,7 +527,7 @@ func (a *logAssignmentAppImpl) Remove(
 		return errors.New("分配 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("assignment_id", assignmentID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("assignment_id", assignmentID))
 
 	cx = injectLgr(cx, lgr)
 

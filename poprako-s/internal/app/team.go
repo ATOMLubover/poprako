@@ -542,25 +542,22 @@ func assembleTeamInfo(
 
 // logTeamAppImpl 是 TeamApp 的日志包装实现
 type logTeamAppImpl struct {
-	lgr *zap.Logger
 	app TeamApp
 }
 
 func NewLogTeamApp(
-	lgr *zap.Logger,
 	app TeamApp,
 ) TeamApp {
 	// 校验构造函数依赖
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogTeamApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
 	// 返回日志包装实现
-	return &logTeamAppImpl{lgr: lgr, app: app}
+	return &logTeamAppImpl{app: app}
 }
 
 func (a *logTeamAppImpl) Create(
@@ -569,7 +566,7 @@ func (a *logTeamAppImpl) Create(
 	args *val.CreateTeamArgs,
 ) (*val.CreateTeamRes, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("TeamApp 不可用")
 	}
 
@@ -579,7 +576,7 @@ func (a *logTeamAppImpl) Create(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "Create"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -600,12 +597,12 @@ func (a *logTeamAppImpl) List(
 	args *val.ListTeamArgs,
 ) ([]*val.TeamInfo, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("TeamApp 不可用")
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "List"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -626,12 +623,12 @@ func (a *logTeamAppImpl) ListMy(
 	args *val.ListMyTeamArgs,
 ) ([]*val.TeamInfo, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("TeamApp 不可用")
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "ListMy"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -652,7 +649,7 @@ func (a *logTeamAppImpl) Update(
 	args *val.UpdateTeamArgs,
 ) error {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("TeamApp 不可用")
 	}
 
@@ -662,7 +659,7 @@ func (a *logTeamAppImpl) Update(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "Update"),
 		zap.String("curr_user_id", currUserID),
 		zap.String("team_id", args.ID),
@@ -684,7 +681,7 @@ func (a *logTeamAppImpl) Remove(
 	teamID string,
 ) error {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("TeamApp 不可用")
 	}
 
@@ -694,7 +691,7 @@ func (a *logTeamAppImpl) Remove(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "Remove"),
 		zap.String("curr_user_id", currUserID),
 		zap.String("team_id", teamID),
@@ -716,7 +713,7 @@ func (a *logTeamAppImpl) ReserveAvatar(
 	teamID string,
 ) (*val.ReserveTeamAvatarRes, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("TeamApp 不可用")
 	}
 
@@ -726,7 +723,7 @@ func (a *logTeamAppImpl) ReserveAvatar(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "ReserveAvatar"),
 		zap.String("curr_user_id", currUserID),
 		zap.String("team_id", teamID),
@@ -748,7 +745,7 @@ func (a *logTeamAppImpl) ConfirmAvatarUploaded(
 	teamID string,
 ) error {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("TeamApp 不可用")
 	}
 
@@ -758,7 +755,7 @@ func (a *logTeamAppImpl) ConfirmAvatarUploaded(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "ConfirmAvatarUploaded"),
 		zap.String("curr_user_id", currUserID),
 		zap.String("team_id", teamID),

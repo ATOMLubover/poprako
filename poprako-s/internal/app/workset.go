@@ -342,23 +342,20 @@ func assembleWorksetInfo(info *model.WorksetInfo) *val.WorksetInfo {
 
 // logWorksetAppImpl 是 WorksetApp 的日志包装实现
 type logWorksetAppImpl struct {
-	lgr *zap.Logger
 	app WorksetApp
 }
 
 func NewLogWorksetApp(
-	lgr *zap.Logger,
 	app WorksetApp,
 ) WorksetApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogWorksetApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logWorksetAppImpl{lgr: lgr, app: app}
+	return &logWorksetAppImpl{app: app}
 }
 
 func (a *logWorksetAppImpl) List(
@@ -366,7 +363,7 @@ func (a *logWorksetAppImpl) List(
 	currUserID string,
 	args *val.ListWorksetArgs,
 ) ([]*val.WorksetInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("WorksetApp 不可用")
 	}
 
@@ -374,7 +371,7 @@ func (a *logWorksetAppImpl) List(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("team_id", args.TeamID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("team_id", args.TeamID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -388,7 +385,7 @@ func (a *logWorksetAppImpl) Create(
 	currUserID string,
 	args *val.CreateWorksetArgs,
 ) (*val.CreateWorksetRes, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("WorksetApp 不可用")
 	}
 
@@ -396,7 +393,7 @@ func (a *logWorksetAppImpl) Create(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -410,7 +407,7 @@ func (a *logWorksetAppImpl) Update(
 	currUserID string,
 	args *val.UpdateWorksetArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("WorksetApp 不可用")
 	}
 
@@ -418,7 +415,7 @@ func (a *logWorksetAppImpl) Update(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("workset_id", args.ID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("workset_id", args.ID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -432,7 +429,7 @@ func (a *logWorksetAppImpl) Remove(
 	currUserID string,
 	worksetID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("WorksetApp 不可用")
 	}
 
@@ -440,7 +437,7 @@ func (a *logWorksetAppImpl) Remove(
 		return errors.New("作品集 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("workset_id", worksetID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("workset_id", worksetID))
 
 	cx = injectLgr(cx, lgr)
 

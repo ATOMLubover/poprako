@@ -473,23 +473,20 @@ func assembleUnitInfo(info *model.UnitInfo) *val.UnitInfo {
 
 // logUnitAppImpl 是 UnitApp 的日志包装实现
 type logUnitAppImpl struct {
-	lgr *zap.Logger
 	app UnitApp
 }
 
 func NewLogUnitApp(
-	lgr *zap.Logger,
 	app UnitApp,
 ) UnitApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogUnitApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logUnitAppImpl{lgr: lgr, app: app}
+	return &logUnitAppImpl{app: app}
 }
 
 func (a *logUnitAppImpl) List(
@@ -497,7 +494,7 @@ func (a *logUnitAppImpl) List(
 	currUserID string,
 	pageID string,
 ) ([]*val.UnitInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("UnitApp 不可用")
 	}
 
@@ -505,7 +502,7 @@ func (a *logUnitAppImpl) List(
 		return nil, errors.New("页面 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("page_id", pageID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("page_id", pageID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -519,7 +516,7 @@ func (a *logUnitAppImpl) Save(
 	currUserID string,
 	args *val.SavePageUnitArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("UnitApp 不可用")
 	}
 
@@ -527,7 +524,7 @@ func (a *logUnitAppImpl) Save(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Save"), zap.String("curr_user_id", currUserID), zap.String("page_id", args.PageID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Save"), zap.String("curr_user_id", currUserID), zap.String("page_id", args.PageID))
 
 	cx = injectLgr(cx, lgr)
 

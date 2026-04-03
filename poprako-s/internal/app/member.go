@@ -538,25 +538,22 @@ func assembleMemberInfo(
 
 // logMemberAppImpl 是 MemberApp 的日志包装实现
 type logMemberAppImpl struct {
-	lgr *zap.Logger
 	app MemberApp
 }
 
 func NewLogMemberApp(
-	lgr *zap.Logger,
 	app MemberApp,
 ) MemberApp {
 	// 校验构造函数依赖
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogMemberApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
 	// 返回日志包装实现
-	return &logMemberAppImpl{lgr: lgr, app: app}
+	return &logMemberAppImpl{app: app}
 }
 
 func (a *logMemberAppImpl) Create(
@@ -564,7 +561,7 @@ func (a *logMemberAppImpl) Create(
 	currUserID string,
 	args *val.CreateMemberArgs,
 ) (*val.CreateMemberRes, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("MemberApp 不可用")
 	}
 
@@ -572,7 +569,7 @@ func (a *logMemberAppImpl) Create(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -586,7 +583,7 @@ func (a *logMemberAppImpl) ListByTeam(
 	currUserID string,
 	args *val.ListTeamMemberArgs,
 ) ([]*val.MemberInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("MemberApp 不可用")
 	}
 
@@ -594,7 +591,7 @@ func (a *logMemberAppImpl) ListByTeam(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "ListByTeam"), zap.String("curr_user_id", currUserID), zap.String("team_id", args.TeamID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "ListByTeam"), zap.String("curr_user_id", currUserID), zap.String("team_id", args.TeamID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -608,11 +605,11 @@ func (a *logMemberAppImpl) ListMy(
 	currUserID string,
 	args *val.ListMyMemberArgs,
 ) ([]*val.MemberInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("MemberApp 不可用")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "ListMy"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "ListMy"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -626,7 +623,7 @@ func (a *logMemberAppImpl) UpdateRole(
 	currUserID string,
 	args *val.UpdateMemberRoleArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("MemberApp 不可用")
 	}
 
@@ -634,7 +631,7 @@ func (a *logMemberAppImpl) UpdateRole(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "UpdateRole"), zap.String("curr_user_id", currUserID), zap.String("member_id", args.ID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "UpdateRole"), zap.String("curr_user_id", currUserID), zap.String("member_id", args.ID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -648,7 +645,7 @@ func (a *logMemberAppImpl) Remove(
 	currUserID string,
 	memberID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("MemberApp 不可用")
 	}
 
@@ -656,7 +653,7 @@ func (a *logMemberAppImpl) Remove(
 		return errors.New("成员 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("member_id", memberID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("member_id", memberID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -670,7 +667,7 @@ func (a *logMemberAppImpl) JoinTeam(
 	currUserID string,
 	args *val.JoinTeamArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("MemberApp 不可用")
 	}
 
@@ -678,7 +675,7 @@ func (a *logMemberAppImpl) JoinTeam(
 		return errors.New("邀请码不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "JoinTeam"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "JoinTeam"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 

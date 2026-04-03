@@ -392,23 +392,20 @@ func assemblePageInfo(
 
 // logPageAppImpl 是 PageApp 的日志包装实现
 type logPageAppImpl struct {
-	lgr *zap.Logger
 	app PageApp
 }
 
 func NewLogPageApp(
-	lgr *zap.Logger,
 	app PageApp,
 ) PageApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogPageApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logPageAppImpl{lgr: lgr, app: app}
+	return &logPageAppImpl{app: app}
 }
 
 func (a *logPageAppImpl) Reserve(
@@ -416,7 +413,7 @@ func (a *logPageAppImpl) Reserve(
 	currUserID string,
 	args *val.ReserveChapterPagesArgs,
 ) (*val.ReserveChapterPagesRes, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("PageApp 不可用")
 	}
 
@@ -424,7 +421,7 @@ func (a *logPageAppImpl) Reserve(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Reserve"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Reserve"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -438,7 +435,7 @@ func (a *logPageAppImpl) List(
 	currUserID string,
 	args *val.ListChapterPageArgs,
 ) ([]*val.PageInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("PageApp 不可用")
 	}
 
@@ -446,7 +443,7 @@ func (a *logPageAppImpl) List(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -460,7 +457,7 @@ func (a *logPageAppImpl) Update(
 	currUserID string,
 	args *val.UpdatePageArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("PageApp 不可用")
 	}
 
@@ -468,7 +465,7 @@ func (a *logPageAppImpl) Update(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("page_id", args.ID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("page_id", args.ID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -482,7 +479,7 @@ func (a *logPageAppImpl) Remove(
 	currUserID string,
 	pageID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("PageApp 不可用")
 	}
 
@@ -490,7 +487,7 @@ func (a *logPageAppImpl) Remove(
 		return errors.New("页面 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("page_id", pageID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("page_id", pageID))
 
 	cx = injectLgr(cx, lgr)
 

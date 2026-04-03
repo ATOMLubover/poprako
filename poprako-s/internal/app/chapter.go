@@ -684,23 +684,20 @@ func assembleChapterInfo(
 
 // logChapterAppImpl 是 ChapterApp 的日志包装实现
 type logChapterAppImpl struct {
-	lgr *zap.Logger
 	app ChapterApp
 }
 
 func NewLogChapterApp(
-	lgr *zap.Logger,
 	app ChapterApp,
 ) ChapterApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogChapterApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logChapterAppImpl{lgr: lgr, app: app}
+	return &logChapterAppImpl{app: app}
 }
 
 func (a *logChapterAppImpl) List(
@@ -708,7 +705,7 @@ func (a *logChapterAppImpl) List(
 	currUserID string,
 	args *val.ListChapterArgs,
 ) ([]*val.ChapterInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("ChapterApp 不可用")
 	}
 
@@ -716,7 +713,7 @@ func (a *logChapterAppImpl) List(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("comic_id", args.ComicID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("comic_id", args.ComicID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -730,7 +727,7 @@ func (a *logChapterAppImpl) Create(
 	currUserID string,
 	args *val.CreateChapterArgs,
 ) (*val.CreateChapterRes, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("ChapterApp 不可用")
 	}
 
@@ -738,7 +735,7 @@ func (a *logChapterAppImpl) Create(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -752,7 +749,7 @@ func (a *logChapterAppImpl) Update(
 	currUserID string,
 	args *val.UpdateChapterArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("ChapterApp 不可用")
 	}
 
@@ -760,7 +757,7 @@ func (a *logChapterAppImpl) Update(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", args.ChapterID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -774,7 +771,7 @@ func (a *logChapterAppImpl) Remove(
 	currUserID string,
 	chapterID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("ChapterApp 不可用")
 	}
 
@@ -782,7 +779,7 @@ func (a *logChapterAppImpl) Remove(
 		return errors.New("章节 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", chapterID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("chapter_id", chapterID))
 
 	cx = injectLgr(cx, lgr)
 

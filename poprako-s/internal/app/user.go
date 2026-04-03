@@ -16,6 +16,12 @@ import (
 )
 
 type UserApp interface {
+	// ParseToken 解析访问令牌并返回用户 ID
+	ParseToken(
+		cx context.Context,
+		tokenStr string,
+	) (string, error)
+
 	// Login 处理用户登录逻辑，验证用户凭证并返回登录结果
 	Login(
 		cx context.Context,
@@ -137,6 +143,29 @@ func NewUserApp(
 		ossClient:  ossClient,
 		authCfg:    authCfg,
 	}
+}
+
+func (a *userAppImpl) ParseToken(
+	cx context.Context,
+	tokenStr string,
+) (string, error) {
+	lgr := retrieveLgr(cx)
+
+	if tokenStr == "" {
+		return "", errors.New("访问令牌不能为空")
+	}
+
+	claims, err := a.userSvc.ParseToken(tokenStr, []byte(a.authCfg.SecretKey))
+	if err != nil {
+		lgr.Warn("解析访问令牌失败", zap.Error(err))
+		return "", errors.New("无效的访问令牌")
+	}
+
+	if claims == nil || claims.UserID == "" {
+		return "", errors.New("访问令牌不包含用户信息")
+	}
+
+	return claims.UserID, nil
 }
 
 func (a *userAppImpl) Login(
@@ -621,29 +650,23 @@ func assembleUserStatsInfo(stats *model.UserStats) *val.UserStatsInfo {
 
 // logUserAppImpl 是 UserApp 的日志包装实现
 type logUserAppImpl struct {
-	// lgr 是基础日志记录器
-	lgr *zap.Logger
-
 	// app 是被包装的真实 UserApp 实现
 	app UserApp
 }
 
 func NewLogUserApp(
-	lgr *zap.Logger,
 	app UserApp,
 ) UserApp {
 	// 校验构造函数依赖，避免运行期空指针
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogUserApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
 	// 返回日志包装实现
 	return &logUserAppImpl{
-		lgr: lgr,
 		app: app,
 	}
 }
@@ -653,7 +676,7 @@ func (a *logUserAppImpl) Login(
 	args *val.LoginUserArgs,
 ) (*val.LoginUserRes, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return nil, errors.New("UserApp 不可用")
 	}
@@ -665,7 +688,7 @@ func (a *logUserAppImpl) Login(
 	}
 
 	// 为当前调用构造带方法名的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "Login"),
 	)
 
@@ -679,12 +702,31 @@ func (a *logUserAppImpl) Login(
 	return a.app.Login(cx, args)
 }
 
+func (a *logUserAppImpl) ParseToken(
+	cx context.Context,
+	tokenStr string,
+) (string, error) {
+	if a == nil || a.app == nil {
+		return "", errors.New("UserApp 不可用")
+	}
+
+	if tokenStr == "" {
+		return "", errors.New("访问令牌不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "ParseToken"))
+	cx = injectLgr(cx, lgr)
+	lgr.Info("[logUserAppImpl.ParseToken] CALL")
+
+	return a.app.ParseToken(cx, tokenStr)
+}
+
 func (a *logUserAppImpl) Reg(
 	cx context.Context,
 	args *val.RegUserArgs,
 ) (*val.RegUserRes, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return nil, errors.New("UserApp 不可用")
 	}
@@ -696,7 +738,7 @@ func (a *logUserAppImpl) Reg(
 	}
 
 	// 为当前调用构造带方法名的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "Reg"),
 	)
 
@@ -715,7 +757,7 @@ func (a *logUserAppImpl) GetInfo(
 	userID string,
 ) (*val.UserInfo, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return nil, errors.New("UserApp 不可用")
 	}
@@ -727,7 +769,7 @@ func (a *logUserAppImpl) GetInfo(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "GetInfo"),
 		zap.String("user_id", userID),
 	)
@@ -747,7 +789,7 @@ func (a *logUserAppImpl) GetMyInfo(
 	currUserID string,
 ) (*val.UserInfo, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return nil, errors.New("UserApp 不可用")
 	}
@@ -759,7 +801,7 @@ func (a *logUserAppImpl) GetMyInfo(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "GetMyInfo"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -780,7 +822,7 @@ func (a *logUserAppImpl) UpdateMyInfo(
 	args *val.UpdateUserArgs,
 ) error {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return errors.New("UserApp 不可用")
 	}
@@ -798,7 +840,7 @@ func (a *logUserAppImpl) UpdateMyInfo(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "UpdateMyInfo"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -818,7 +860,7 @@ func (a *logUserAppImpl) GetMyStats(
 	currUserID string,
 ) (*val.UserStatsInfo, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return nil, errors.New("UserApp 不可用")
 	}
@@ -830,7 +872,7 @@ func (a *logUserAppImpl) GetMyStats(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "GetMyStats"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -850,7 +892,7 @@ func (a *logUserAppImpl) ReserveMyAvatar(
 	currUserID string,
 ) (*val.ReserveUserAvatarRes, error) {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return nil, errors.New("UserApp 不可用")
 	}
@@ -862,7 +904,7 @@ func (a *logUserAppImpl) ReserveMyAvatar(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "ReserveMyAvatar"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -882,7 +924,7 @@ func (a *logUserAppImpl) ConfirmMyAvatarUploaded(
 	currUserID string,
 ) error {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return errors.New("UserApp 不可用")
 	}
@@ -894,7 +936,7 @@ func (a *logUserAppImpl) ConfirmMyAvatarUploaded(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "ConfirmMyAvatarUploaded"),
 		zap.String("curr_user_id", currUserID),
 	)
@@ -915,7 +957,7 @@ func (a *logUserAppImpl) Remove(
 	targetUserID string,
 ) error {
 	// 校验包装器实例本身是否合法
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		// 返回客户端可展示的错误
 		return errors.New("UserApp 不可用")
 	}
@@ -933,7 +975,7 @@ func (a *logUserAppImpl) Remove(
 	}
 
 	// 为当前调用构造带上下文的日志记录器
-	lgr := a.lgr.With(
+	lgr := retrieveLgr(cx).With(
 		zap.String("method", "Remove"),
 		zap.String("curr_user_id", currUserID),
 		zap.String("target_user_id", targetUserID),

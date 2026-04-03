@@ -455,23 +455,20 @@ func assembleComicInfo(
 
 // logComicAppImpl 是 ComicApp 的日志包装实现
 type logComicAppImpl struct {
-	lgr *zap.Logger
 	app ComicApp
 }
 
 func NewLogComicApp(
-	lgr *zap.Logger,
 	app ComicApp,
 ) ComicApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogComicApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logComicAppImpl{lgr: lgr, app: app}
+	return &logComicAppImpl{app: app}
 }
 
 func (a *logComicAppImpl) List(
@@ -479,7 +476,7 @@ func (a *logComicAppImpl) List(
 	currUserID string,
 	args *val.ListComicArgs,
 ) ([]*val.ComicInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("ComicApp 不可用")
 	}
 
@@ -487,7 +484,7 @@ func (a *logComicAppImpl) List(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("workset_id", args.WorksetID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("workset_id", args.WorksetID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -501,7 +498,7 @@ func (a *logComicAppImpl) Create(
 	currUserID string,
 	args *val.CreateComicArgs,
 ) (*val.CreateComicRes, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("ComicApp 不可用")
 	}
 
@@ -509,7 +506,7 @@ func (a *logComicAppImpl) Create(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -523,7 +520,7 @@ func (a *logComicAppImpl) Update(
 	currUserID string,
 	args *val.UpdateComicArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("ComicApp 不可用")
 	}
 
@@ -531,7 +528,7 @@ func (a *logComicAppImpl) Update(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("comic_id", args.ID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("comic_id", args.ID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -545,7 +542,7 @@ func (a *logComicAppImpl) Remove(
 	currUserID string,
 	comicID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("ComicApp 不可用")
 	}
 
@@ -553,7 +550,7 @@ func (a *logComicAppImpl) Remove(
 		return errors.New("漫画 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("comic_id", comicID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("comic_id", comicID))
 
 	cx = injectLgr(cx, lgr)
 

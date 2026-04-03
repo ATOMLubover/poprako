@@ -326,23 +326,20 @@ func assembleInvitationInfo(info *model.InvitationInfo) *val.InvitationInfo {
 
 // logInvitationAppImpl 是 InvitationApp 的日志包装实现
 type logInvitationAppImpl struct {
-	lgr *zap.Logger
 	app InvitationApp
 }
 
 func NewLogInvitationApp(
-	lgr *zap.Logger,
 	app InvitationApp,
 ) InvitationApp {
-	if lgr == nil || app == nil {
+	if app == nil {
 		zap.L().Panic(
 			"NewLogInvitationApp: 依赖项不能为空",
-			zap.Bool("lgr_nil", lgr == nil),
 			zap.Bool("app_nil", app == nil),
 		)
 	}
 
-	return &logInvitationAppImpl{lgr: lgr, app: app}
+	return &logInvitationAppImpl{app: app}
 }
 
 func (a *logInvitationAppImpl) List(
@@ -350,7 +347,7 @@ func (a *logInvitationAppImpl) List(
 	currUserID string,
 	args *val.ListTeamInvitationArgs,
 ) ([]*val.InvitationInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("InvitationApp 不可用")
 	}
 
@@ -358,7 +355,7 @@ func (a *logInvitationAppImpl) List(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("team_id", args.TeamID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "List"), zap.String("curr_user_id", currUserID), zap.String("team_id", args.TeamID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -372,7 +369,7 @@ func (a *logInvitationAppImpl) Create(
 	currUserID string,
 	args *val.CreateInvitationArgs,
 ) (*val.InvitationInfo, error) {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return nil, errors.New("InvitationApp 不可用")
 	}
 
@@ -380,7 +377,7 @@ func (a *logInvitationAppImpl) Create(
 		return nil, errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Create"), zap.String("curr_user_id", currUserID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -394,7 +391,7 @@ func (a *logInvitationAppImpl) Update(
 	currUserID string,
 	args *val.UpdateInvitationArgs,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("InvitationApp 不可用")
 	}
 
@@ -402,7 +399,7 @@ func (a *logInvitationAppImpl) Update(
 		return errors.New("参数不合法")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("invitation_id", args.ID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("invitation_id", args.ID))
 
 	cx = injectLgr(cx, lgr)
 
@@ -416,7 +413,7 @@ func (a *logInvitationAppImpl) Remove(
 	currUserID string,
 	invitationID string,
 ) error {
-	if a == nil || a.app == nil || a.lgr == nil {
+	if a == nil || a.app == nil {
 		return errors.New("InvitationApp 不可用")
 	}
 
@@ -424,7 +421,7 @@ func (a *logInvitationAppImpl) Remove(
 		return errors.New("邀请 ID 不能为空")
 	}
 
-	lgr := a.lgr.With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("invitation_id", invitationID))
+	lgr := retrieveLgr(cx).With(zap.String("method", "Remove"), zap.String("curr_user_id", currUserID), zap.String("invitation_id", invitationID))
 
 	cx = injectLgr(cx, lgr)
 
