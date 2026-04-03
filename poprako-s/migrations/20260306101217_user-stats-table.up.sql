@@ -11,5 +11,7 @@ CREATE TABLE "user_stats_table" (
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX "idx_user_stats_table_user_id" ON "user_stats_table" ("user_id");
+-- One-to-one with user_table; UNIQUE enforces and optimises GetOrCreateStats
+CREATE UNIQUE INDEX "uidx_user_stats_user_id"
+    ON "user_stats_table" ("user_id");
 

@@ -21,6 +21,10 @@ CREATE TABLE "invitation_table" (
     "updated_at"           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX "idx_invitation_target_team_created_at_desc"
-    ON "invitation_table" ("team_id", "created_at" DESC)
-    WHERE "pending" IS FALSE;
+-- GetByInviteeQQ(): primary lookup path
+CREATE INDEX "idx_invitation_invitee_qq"
+    ON "invitation_table" ("invitee_qq", "created_at" DESC);
+
+-- List(team_id, pending): team admin views pending/resolved invitations
+CREATE INDEX "idx_invitation_team_pending"
+    ON "invitation_table" ("team_id", "pending", "created_at" DESC);

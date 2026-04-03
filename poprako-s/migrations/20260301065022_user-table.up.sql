@@ -17,21 +17,20 @@ CREATE TABLE "user_table" (
     "deleted_at"         TIMESTAMPTZ
 );
 
-CREATE INDEX "idx_user_name_trgm"
-    ON "user_table"
-    USING GIN ("name" gin_trgm_ops)
-    WHERE "deleted_at" IS NULL;
-
+-- GetCredsByQQ / GetByQQ / List(qq)
 CREATE INDEX "idx_user_qq"
     ON "user_table" ("qq")
     WHERE "deleted_at" IS NULL;
 
+-- List(): ORDER BY created_at DESC
 CREATE INDEX "idx_user_created_at_desc"
     ON "user_table" ("created_at" DESC)
     WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "idx_user_updated_at_desc"
-    ON "user_table" ("updated_at" DESC)
+-- Team-scoped user name search (JOIN member_table + GIN trgm)
+CREATE INDEX "idx_user_name_trgm"
+    ON "user_table"
+    USING GIN ("name" gin_trgm_ops)
     WHERE "deleted_at" IS NULL;
 
 -- 预插入一个超级管理员账号，密码为 123456

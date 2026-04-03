@@ -30,47 +30,53 @@ CREATE TABLE "comic_table" (
     "deleted_at"         TIMESTAMPTZ
 );
 
+-- Unique position per workset (soft-delete aware)
 CREATE UNIQUE INDEX "uidx_comic_workset_id_index"
     ON "comic_table" ("workset_id", "index")
     WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "idx_comic_workset_id_created_at_desc"
-    ON "comic_table" ("workset_id", "created_at" DESC)
+-- List() base scan: workset_id filter + ORDER BY index ASC
+CREATE INDEX "idx_comic_workset_id_index"
+    ON "comic_table" ("workset_id", "index" ASC)
     WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "idx_comic_creator_id"
-    ON "comic_table" ("creator_id")
-    WHERE "deleted_at" IS NULL;
-
-CREATE INDEX "idx_comic_last_active_at_desc"
+-- List() ORDER BY last_active_at DESC
+CREATE INDEX "idx_comic_workset_last_active"
     ON "comic_table" ("workset_id", "last_active_at" DESC)
     WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "idx_comic_latest_uploaded_at"
-    ON "comic_table" ("workset_id", "latest_uploaded_at")
-    WHERE "deleted_at" IS NULL;
-
-CREATE INDEX "idx_comic_latest_transalating_translated_at"
-    ON "comic_table" ("workset_id", "latest_transalating_at", "latest_translated_at")
-    WHERE "deleted_at" IS NULL;
-
-CREATE INDEX "idx_comic_latest_proofreading_proofread_at"
-    ON "comic_table" ("workset_id", "latest_proofreading_at", "latest_proofread_at")
-    WHERE "deleted_at" IS NULL;
-
-CREATE INDEX "idx_comic_latest_typesetting_typeset_at"
-    ON "comic_table" ("workset_id", "latest_typesetting_at", "latest_typeset_at")
-    WHERE "deleted_at" IS NULL;
-
-CREATE INDEX "idx_comic_latest_reviewed_at"
-    ON "comic_table" ("workset_id", "latest_reviewed_at")
-    WHERE "deleted_at" IS NULL;
-
-CREATE INDEX "idx_comic_latest_published_at"
-    ON "comic_table" ("workset_id", "latest_published_at")
-    WHERE "deleted_at" IS NULL;
-
+-- List(fuzzy_title): GIN trigram for ILIKE search on composed_title
 CREATE INDEX "idx_comic_composed_title_trgm"
     ON "comic_table"
-    USING gin (composed_title gin_trgm_ops)
+    USING GIN ("composed_title" gin_trgm_ops)
+    WHERE "deleted_at" IS NULL;
+
+-- Upload: has_pinned_chapter=FALSE OR pinned_uploaded_at IS NULL
+CREATE INDEX "idx_comic_pinned_upload"
+    ON "comic_table" ("workset_id", "has_pinned_chapter", "pinned_uploaded_at")
+    WHERE "deleted_at" IS NULL;
+
+-- Translate: pinned_transalating_at IS NOT NULL [AND pinned_translated_at IS NULL]
+CREATE INDEX "idx_comic_pinned_translate"
+    ON "comic_table" ("workset_id", "pinned_transalating_at", "pinned_translated_at")
+    WHERE "deleted_at" IS NULL;
+
+-- Proofread: pinned_proofreading_at IS NOT NULL [AND pinned_proofread_at IS NULL]
+CREATE INDEX "idx_comic_pinned_proofread"
+    ON "comic_table" ("workset_id", "pinned_proofreading_at", "pinned_proofread_at")
+    WHERE "deleted_at" IS NULL;
+
+-- Typeset: pinned_typesetting_at IS NOT NULL [AND pinned_typeset_at IS NULL]
+CREATE INDEX "idx_comic_pinned_typeset"
+    ON "comic_table" ("workset_id", "pinned_typesetting_at", "pinned_typeset_at")
+    WHERE "deleted_at" IS NULL;
+
+-- Review: pinned_reviewed_at IS NOT NULL
+CREATE INDEX "idx_comic_pinned_review"
+    ON "comic_table" ("workset_id", "pinned_reviewed_at")
+    WHERE "deleted_at" IS NULL;
+
+-- Publish: pinned_published_at IS NOT NULL
+CREATE INDEX "idx_comic_pinned_publish"
+    ON "comic_table" ("workset_id", "pinned_published_at")
     WHERE "deleted_at" IS NULL;

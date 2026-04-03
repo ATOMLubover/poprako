@@ -29,10 +29,12 @@ CREATE TABLE "chapter_table" (
     "deleted_at"            TIMESTAMPTZ
 );
 
+-- Unique chapter position per comic; covers List() ORDER BY index DESC
 CREATE UNIQUE INDEX "uidx_chapter_comic_id_index"
     ON "chapter_table" ("comic_id", "index" DESC)
     WHERE "deleted_at" IS NULL;
 
-CREATE INDEX "idx_chapter_comic_id"
-    ON "chapter_table" ("comic_id")
+-- FindPinnedByComicID(): comic_id + pinned=TRUE + deleted_at IS NULL
+CREATE INDEX "idx_chapter_comic_id_pinned"
+    ON "chapter_table" ("comic_id", "pinned")
     WHERE "deleted_at" IS NULL;

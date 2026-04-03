@@ -25,5 +25,6 @@ CREATE TABLE "unit_table" (
     UNIQUE ("page_id", "index")
 );
 
-CREATE INDEX "unit_table_page_id_index"
-    ON "unit_table" ("page_id");
+-- List(page_id) ORDER BY index ASC; covers both filter and sort
+CREATE INDEX "idx_unit_page_id_index"
+    ON "unit_table" ("page_id", "index" ASC);

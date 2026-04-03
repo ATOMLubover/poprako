@@ -12,8 +12,6 @@ CREATE TABLE "workset_table" (
     "updated_at"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX "idx_workset_team_id"
-    ON "workset_table" ("team_id");
-
+-- List(team_id) ORDER BY index ASC; unique position per team
 CREATE UNIQUE INDEX "uidx_workset_team_id_index"
     ON "workset_table" ("team_id", "index");

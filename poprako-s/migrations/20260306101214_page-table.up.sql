@@ -20,5 +20,6 @@ CREATE TABLE "page_table" (
     UNIQUE ("chapter_id", "index")
 );
 
-CREATE INDEX "idx_page_chapter_id"
-    ON "page_table" ("chapter_id");
+-- List(chapter_id) ORDER BY index ASC; covers both filter and sort
+CREATE INDEX "idx_page_chapter_id_index"
+    ON "page_table" ("chapter_id", "index" ASC);

@@ -18,10 +18,12 @@ CREATE TABLE "member_table" (
     "deleted_at"             TIMESTAMPTZ
 );
 
-CREATE INDEX "idx_member_user_id"
-    ON "member_table" ("user_id")
+-- Get/Exist(user_id, team_id): point lookup + prevents duplicate membership
+CREATE UNIQUE INDEX "uidx_member_user_team"
+    ON "member_table" ("user_id", "team_id")
     WHERE "deleted_at" IS NULL;
 
+-- List(team_id): first leg of team-scoped user name search
 CREATE INDEX "idx_member_team_id"
     ON "member_table" ("team_id")
     WHERE "deleted_at" IS NULL;

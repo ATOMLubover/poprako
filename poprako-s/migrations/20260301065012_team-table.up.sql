@@ -11,6 +11,7 @@ CREATE TABLE "team_table" (
     "deleted_at"         TIMESTAMPTZ
 );
 
-CREATE UNIQUE INDEX "idx_team_name"
+-- Unique team name constraint + List() lookup
+CREATE UNIQUE INDEX "uidx_team_name"
     ON "team_table" ("name")
     WHERE "deleted_at" IS NULL;
