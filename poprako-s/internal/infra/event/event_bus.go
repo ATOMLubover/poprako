@@ -239,4 +239,3 @@ func (b *eventBusImpl) UnsubUnsafe(h iface.EventHandler) error {
 
 	return nil
 }
-

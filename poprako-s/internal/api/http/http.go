@@ -1,8 +1,12 @@
 package http
 
 import (
+	_ "poprako-s/docs"
+	"poprako-s/internal/cfg"
 	"poprako-s/internal/state"
 
+	"github.com/iris-contrib/swagger/swaggerFiles"
+	"github.com/iris-contrib/swagger/v12"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
@@ -10,16 +14,16 @@ import (
 
 // Serve 启动 HTTP 服务器，阻塞直到服务器停止
 func Serve(appState *state.AppState) error {
-	app := initialize(appState)
+	app := initApp(appState)
 
-	if err := app.Listen(appState.Cfg.ServerAddress); err != nil {
+	if err := app.Listen(appState.Cfg.HTTPAddr); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func initialize(appState *state.AppState) *iris.Application {
+func initApp(appState *state.AppState) *iris.Application {
 	app := iris.Default()
 
 	// 启用 request ID 和 panic 恢复中间件
@@ -28,6 +32,9 @@ func initialize(appState *state.AppState) *iris.Application {
 	app.Use(LogMiddleware(appState))
 	// 启用 panic 恢复中间件
 	app.Use(recover.New())
+
+	// 初始化 Swagger（非生产环境）
+	initSwagger(app, appState.Cfg)
 
 	// 设置路由
 	apiParty := app.Party("/api/v1")
@@ -140,4 +147,17 @@ func initialize(appState *state.AppState) *iris.Application {
 	}
 
 	return app
+}
+
+func initSwagger(app *iris.Application, appCfg *cfg.AppCfg) {
+	if appCfg.IsProduction() {
+		return
+	}
+
+	app.Get(
+		"/swagger/{any:path}",
+		swagger.WrapHandler(swaggerFiles.Handler, func(c *swagger.Config) {
+			c.URL = "/swagger/doc.json"
+		}),
+	)
 }

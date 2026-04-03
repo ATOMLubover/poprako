@@ -17,4 +17,3 @@ type Event interface {
 type EventSource interface {
 	Events() []Event
 }
-

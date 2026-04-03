@@ -1,3 +1,12 @@
+// Package main
+// @title PopRaKo-S API
+// @version 0.0.1
+// @description PopRaKo-S 后端 API 文档
+// @BasePath /api/v1
+//
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 package main
 
 import (
@@ -12,41 +21,43 @@ import (
 	event_infra "poprako-s/internal/infra/event"
 	oss_infra "poprako-s/internal/infra/ext/oss"
 	repo_infra "poprako-s/internal/infra/repo"
+	"poprako-s/internal/lgr"
 	app_state "poprako-s/internal/state"
 
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
 func main() {
-	// 初始化全局 logger
-	logger, _ := zap.NewDevelopment()
-	zap.ReplaceGlobals(logger)
-	defer logger.Sync()
-
-	// 加载应用配置
-	appCfg, err := cfg.Load()
-	if err != nil {
-		panic(fmt.Sprintf("加载配置失败: %v", err))
+	if err := godotenv.Load(); err != nil {
+		panic("加载 .env 环境变量失败")
 	}
 
+	appCfg, err := cfg.Load()
+	if err != nil {
+		panic("加载应用配置失败: " + err.Error())
+	}
+
+	lgr.Init(appCfg)
+
 	// 初始化数据库连接
-	db, err := repo_infra.NewGDB(appCfg.DB.DSN)
+	gdb, err := repo_infra.NewGDB(appCfg.DB.DSN)
 	if err != nil {
 		panic(fmt.Sprintf("初始化数据库失败: %v", err))
 	}
 
 	// 初始化基础设施层：仓储
-	userRepo := repo_infra.NewUserRepo(db)
-	teamRepo := repo_infra.NewTeamRepo(db)
-	memberRepo := repo_infra.NewMemberRepo(db)
-	invRepo := repo_infra.NewInvitationRepo(db)
-	worksetRepo := repo_infra.NewWorksetRepo(db)
-	comicRepo := repo_infra.NewComicRepo(db)
-	chapterRepo := repo_infra.NewChapterRepo(db)
-	pageRepo := repo_infra.NewPageRepo(db)
-	assignmentRepo := repo_infra.NewAssignmentRepo(db)
-	unitRepo := repo_infra.NewUnitRepo(db)
-	txnMgr := repo_infra.NewTxnMgr(db)
+	userRepo := repo_infra.NewUserRepo(gdb)
+	teamRepo := repo_infra.NewTeamRepo(gdb)
+	memberRepo := repo_infra.NewMemberRepo(gdb)
+	invRepo := repo_infra.NewInvitationRepo(gdb)
+	worksetRepo := repo_infra.NewWorksetRepo(gdb)
+	comicRepo := repo_infra.NewComicRepo(gdb)
+	chapterRepo := repo_infra.NewChapterRepo(gdb)
+	pageRepo := repo_infra.NewPageRepo(gdb)
+	assignmentRepo := repo_infra.NewAssignmentRepo(gdb)
+	unitRepo := repo_infra.NewUnitRepo(gdb)
+	txnMgr := repo_infra.NewTxnMgr(gdb)
 
 	// 初始化 OSS 客户端（当前为占位实现）
 	ossClient := oss_infra.NewNoopClient()
@@ -148,8 +159,12 @@ func main() {
 		assignmentApp, unitApp,
 	)
 
+	zap.L().Info("应用状态初始化完成，HTTP 服务器启动")
+
 	// 启动 HTTP 服务器（阻塞）
 	if err := api_http.Serve(state); err != nil {
 		panic(fmt.Sprintf("服务器停止: %v", err))
 	}
+
+	zap.L().Info("HTTP 服务器已正常退出")
 }

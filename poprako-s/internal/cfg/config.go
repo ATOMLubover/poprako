@@ -1,38 +1,36 @@
 package cfg
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/spf13/viper"
 )
 
 // AppCfg 是整个应用的根配置
 type AppCfg struct {
-	Environment   string `json:"-"`
-	ServerAddress string `json:"server_address"`
+	Env      string `mapstructure:"-"`
+	HTTPAddr string `mapstructure:"http_address"`
 
-	Auth AuthCfg `json:"auth"`
-	DB   DBCfg   `json:"db"`
-}
-
-// DBCfg 是数据库的连接配置
-type DBCfg struct {
-	DSN string `json:"-"`
+	Auth AuthCfg `mapstructure:"auth"`
+	DB   DBCfg   `mapstructure:"db"`
 }
 
 // Load 从 app_config.json 和环境变量中加载应用配置
 func Load() (*AppCfg, error) {
-	f, err := os.Open("app_config.json")
-	if err != nil {
-		return nil, fmt.Errorf("打开配置文件失败: %w", err)
+	v := viper.New()
+
+	v.AddConfigPath(".")
+	v.SetConfigName("app_config")
+	v.SetConfigType("json")
+
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("读取配置文件失败: %w", err)
 	}
 
-	defer f.Close()
-
 	var cfg AppCfg
-
-	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
+	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
@@ -40,7 +38,7 @@ func Load() (*AppCfg, error) {
 	if env == "" {
 		env = "development"
 	}
-	cfg.Environment = env
+	cfg.Env = env
 
 	jwtKey := os.Getenv("JWT_SECRET_KEY")
 	if jwtKey == "" {
@@ -48,9 +46,9 @@ func Load() (*AppCfg, error) {
 	}
 	cfg.Auth.SecretKey = jwtKey
 
-	dsn := os.Getenv("DATABASE_DSN")
+	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		return nil, errors.New("环境变量 DATABASE_DSN 未设置")
+		return nil, errors.New("环境变量 DATABASE_URL 未设置")
 	}
 	cfg.DB.DSN = dsn
 
@@ -58,9 +56,9 @@ func Load() (*AppCfg, error) {
 }
 
 func (c *AppCfg) IsProduction() bool {
-	return c.Environment == "production"
+	return c.Env == "production"
 }
 
 func (c *AppCfg) IsDevelopment() bool {
-	return c.Environment == "development"
+	return c.Env == "development"
 }
