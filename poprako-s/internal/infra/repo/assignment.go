@@ -34,7 +34,9 @@ func (r *assignmentRepoImpl) FromTxnCx(cx context.Context) (iface.AssignmentRepo
 }
 
 func (r *assignmentRepoImpl) GetByID(id string) (*model.AssignmentInfo, error) {
+
 	var row entity.AssignmentInfoRow
+
 	err := r.gdb.Table(entity.AssignmentTable).Where("id = ?", id).First(&row).Error
 	if err != nil {
 		return nil, err
@@ -67,6 +69,7 @@ func (r *assignmentRepoImpl) List(opt model.AssignmentQueryOpt) ([]model.Assignm
 	}
 
 	var rows []entity.AssignmentInfoRow
+
 	if err := db.Order("created_at ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -90,6 +93,7 @@ func (r *assignmentRepoImpl) Exist(opt model.AssignmentQueryOpt) (bool, error) {
 	}
 
 	var n int64
+
 	err := db.Count(&n).Error
 	return n > 0, err
 }

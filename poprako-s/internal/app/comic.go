@@ -185,6 +185,7 @@ func (a *comicAppImpl) Create(
 	lgr := retrieveLgr(cx)
 
 	// 在事务中创建漫画（需要 count 获取 index）
+
 	var createdID string
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {

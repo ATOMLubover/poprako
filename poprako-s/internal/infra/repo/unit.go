@@ -40,6 +40,7 @@ func (r *unitRepoImpl) List(opt model.UnitQueryOpt) ([]model.UnitInfo, error) {
 	}
 
 	var rows []entity.UnitInfoRow
+
 	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}

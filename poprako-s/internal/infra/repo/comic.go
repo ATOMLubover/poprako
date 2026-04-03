@@ -36,7 +36,9 @@ func (r *comicRepoImpl) FromTxnCx(cx context.Context) (iface.ComicRepo, error) {
 }
 
 func (r *comicRepoImpl) GetByID(id string) (*model.ComicInfo, error) {
+
 	var row entity.ComicInfoRow
+
 	err := r.gdb.Table(entity.ComicTable).
 		Where("id = ? AND deleted_at IS NULL", id).
 		First(&row).Error
@@ -74,6 +76,7 @@ func (r *comicRepoImpl) List(opt model.ComicQueryOpt) ([]model.ComicInfo, error)
 	}
 
 	var rows []entity.ComicInfoRow
+
 	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -108,6 +111,7 @@ func (r *comicRepoImpl) Count(opt model.ComicQueryOpt) (int64, error) {
 	db = applyComicWorkflowFilter(db, opt.PublishStatus, "pinned_published_at", "")
 
 	var n int64
+
 	err := db.Count(&n).Error
 	return n, err
 }
@@ -138,7 +142,9 @@ func (r *comicRepoImpl) Create(c *model.ComicCreation) (*model.ComicInfo, error)
 }
 
 func (r *comicRepoImpl) Update(u *model.ComicUpdate) error {
+
 	var row entity.ComicInfoRow
+
 	err := r.gdb.Table(entity.ComicTable).
 		Select("id", "index").
 		Where("id = ? AND deleted_at IS NULL", u.ID).

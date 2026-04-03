@@ -32,6 +32,7 @@ func ListWorksets(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.ListWorksetArgs
+
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
@@ -74,6 +75,7 @@ func CreateWorkset(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.CreateWorksetArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
@@ -124,6 +126,7 @@ func UpdateWorkset(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.UpdateWorksetArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return

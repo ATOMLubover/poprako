@@ -34,7 +34,9 @@ func withMockRepo(cx context.Context, key mockRepoCtxKey, value any) context.Con
 }
 
 func getMockRepoFromCx[T any](cx context.Context, key mockRepoCtxKey, label string) (T, error) {
+
 	var zero T
+
 	if cx == nil {
 		return zero, fmt.Errorf("mock: %s repo missing from context", label)
 	}

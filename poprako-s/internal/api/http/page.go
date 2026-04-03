@@ -32,6 +32,7 @@ func ListChapterPages(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.ListChapterPageArgs
+
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
@@ -74,6 +75,7 @@ func ReserveChapterPages(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.ReserveChapterPagesArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
@@ -124,6 +126,7 @@ func UpdatePage(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.UpdatePageArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return

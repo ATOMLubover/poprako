@@ -27,9 +27,11 @@ func Load() (*AppCfg, error) {
 	if err != nil {
 		return nil, fmt.Errorf("打开配置文件失败: %w", err)
 	}
+
 	defer f.Close()
 
 	var cfg AppCfg
+
 	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("解析配置文件失败: %w", err)
 	}

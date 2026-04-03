@@ -40,7 +40,9 @@ func (r *invitationRepoImpl) FromTxnCx(cx context.Context) (iface.InvitationRepo
 }
 
 func (r *invitationRepoImpl) GetByInviteeQQ(id string) (*model.InvitationInfo, error) {
+
 	var row entity.InvitationInfoRow
+
 	err := r.gdb.Table(entity.InvitationTable).
 		Where("invitee_qq = ?", id).
 		Order("created_at DESC").
@@ -65,6 +67,7 @@ func (r *invitationRepoImpl) List(opt model.InvitationQueryOpt) ([]model.Invitat
 	db = db.Where("pending = ?", opt.Pending)
 
 	var rows []entity.InvitationInfoRow
+
 	if err := db.Order("created_at DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -102,6 +105,7 @@ func (r *invitationRepoImpl) Create(c *model.InvitationCreation) (*model.Invitat
 	}
 
 	var created entity.InvitationInfoRow
+
 	err := r.gdb.Table(entity.InvitationTable).Where("id = ?", c.ID).First(&created).Error
 	if err != nil {
 		return nil, err

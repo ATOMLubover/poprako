@@ -42,7 +42,9 @@ func (r *userRepoImpl) FromTxnCx(cx context.Context) (iface.UserRepo, error) {
 }
 
 func (r *userRepoImpl) GetCredsByQQ(qq string) (*model.UserCreds, error) {
+
 	var row entity.UserCredsRow
+
 	err := r.gdb.Table(entity.UserTable).
 		Select("qq", "password_hash").
 		Where("qq = ? AND deleted_at IS NULL", qq).
@@ -56,7 +58,9 @@ func (r *userRepoImpl) GetCredsByQQ(qq string) (*model.UserCreds, error) {
 }
 
 func (r *userRepoImpl) GetByID(id string) (*model.UserInfo, error) {
+
 	var row entity.UserInfoRow
+
 	err := r.gdb.Table(entity.UserTable).
 		Where("id = ? AND deleted_at IS NULL", id).
 		First(&row).Error
@@ -69,7 +73,9 @@ func (r *userRepoImpl) GetByID(id string) (*model.UserInfo, error) {
 }
 
 func (r *userRepoImpl) GetByQQ(qq string) (*model.UserInfo, error) {
+
 	var row entity.UserInfoRow
+
 	err := r.gdb.Table(entity.UserTable).
 		Where("qq = ? AND deleted_at IS NULL", qq).
 		First(&row).Error
@@ -92,6 +98,7 @@ func (r *userRepoImpl) List(opt model.UserQueryOpt) ([]model.UserInfo, error) {
 	}
 
 	var rows []entity.UserInfoRow
+
 	if err := db.Order("created_at DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -175,7 +182,9 @@ func (r *userRepoImpl) ConfirmAvatarUploaded(id string) error {
 }
 
 func (r *userRepoImpl) GetOrCreateStats(userID string) (*model.UserStats, error) {
+
 	var row entity.UserStatsRow
+
 	err := r.gdb.Table(entity.UserStatsTable).
 		Where("user_id = ?", userID).
 		First(&row).Error

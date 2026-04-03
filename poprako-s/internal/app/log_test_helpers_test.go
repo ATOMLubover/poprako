@@ -339,7 +339,9 @@ func (s *worksetAppStub) Remove(context.Context, string, string) error {
 
 func assertPanics(t *testing.T, fn func()) {
 	t.Helper()
+
 	defer func() {
+
 		if recover() == nil {
 			t.Fatal("expected panic")
 		}

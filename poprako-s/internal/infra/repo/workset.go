@@ -34,7 +34,9 @@ func (r *worksetRepoImpl) FromTxnCx(cx context.Context) (iface.WorksetRepo, erro
 }
 
 func (r *worksetRepoImpl) GetByID(id string) (*model.WorksetInfo, error) {
+
 	var row entity.WorksetInfoRow
+
 	err := r.gdb.Table(entity.WorksetTable).Where("id = ?", id).First(&row).Error
 	if err != nil {
 		return nil, err
@@ -55,6 +57,7 @@ func (r *worksetRepoImpl) List(opt model.WorksetQueryOpt) ([]model.WorksetInfo, 
 	}
 
 	var rows []entity.WorksetInfoRow
+
 	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -78,6 +81,7 @@ func (r *worksetRepoImpl) Count(opt model.WorksetQueryOpt) (int64, error) {
 	}
 
 	var n int64
+
 	err := db.Count(&n).Error
 	return n, err
 }

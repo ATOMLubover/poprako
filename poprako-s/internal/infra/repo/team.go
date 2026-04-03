@@ -34,7 +34,9 @@ func (r *teamRepoImpl) FromTxnCx(cx context.Context) (iface.TeamRepo, error) {
 }
 
 func (r *teamRepoImpl) GetByID(id string) (*model.TeamInfo, error) {
+
 	var row entity.TeamInfoRow
+
 	err := r.gdb.Table(entity.TeamTable).
 		Where("id = ? AND deleted_at IS NULL", id).
 		First(&row).Error
@@ -53,6 +55,7 @@ func (r *teamRepoImpl) List(opt model.TeamQueryOpt) ([]model.TeamInfo, error) {
 	}
 
 	var rows []entity.TeamInfoRow
+
 	if err := db.Order("created_at DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}

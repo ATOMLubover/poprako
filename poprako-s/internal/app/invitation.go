@@ -262,6 +262,7 @@ func (a *invitationAppImpl) Remove(
 	}
 
 	// 查找目标邀请
+
 	var targetInv *model.InvitationInfo
 
 	for i, inv := range invitations {

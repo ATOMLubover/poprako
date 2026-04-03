@@ -32,6 +32,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.ListChapterAssignmentArgs
+
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
@@ -75,6 +76,7 @@ func ListMyAssignments(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.ListMyAssignmentArgs
+
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
@@ -117,6 +119,7 @@ func CreateChapterAssignment(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.CreateAssignmentArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
@@ -167,6 +170,7 @@ func UpdateAssignment(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.UpdateAssignmentArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return

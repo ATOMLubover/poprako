@@ -34,7 +34,9 @@ func (r *pageRepoImpl) FromTxnCx(cx context.Context) (iface.PageRepo, error) {
 }
 
 func (r *pageRepoImpl) GetByID(id string) (*model.PageInfo, error) {
+
 	var row entity.PageInfoRow
+
 	err := r.gdb.Table(entity.PageTable).Where("id = ?", id).First(&row).Error
 	if err != nil {
 		return nil, err
@@ -55,6 +57,7 @@ func (r *pageRepoImpl) List(opt model.PageQueryOpt) ([]model.PageInfo, error) {
 	}
 
 	var rows []entity.PageInfoRow
+
 	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -68,7 +71,9 @@ func (r *pageRepoImpl) List(opt model.PageQueryOpt) ([]model.PageInfo, error) {
 }
 
 func (r *pageRepoImpl) GetStatsByID(pageID string) (*model.PageStats, error) {
+
 	var row entity.PageInfoRow
+
 	err := r.gdb.Table(entity.PageTable).
 		Select("id", "total_unit_count", "translated_unit_count", "proofread_unit_count").
 		Where("id = ?", pageID).

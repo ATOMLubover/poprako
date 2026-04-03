@@ -31,6 +31,7 @@ func ListComics(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.ListComicArgs
+
 		if err := ctx.ReadQuery(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
 			return
@@ -73,6 +74,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.CreateComicArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
@@ -123,6 +125,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.UpdateComicArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return

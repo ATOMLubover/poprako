@@ -34,7 +34,9 @@ func (r *memberRepoImpl) FromTxnCx(cx context.Context) (iface.MemberRepo, error)
 }
 
 func (r *memberRepoImpl) GetByID(id string) (*model.MemberInfo, error) {
+
 	var row entity.MemberInfoRow
+
 	err := r.gdb.Table(entity.MemberTable).
 		Where("id = ? AND deleted_at IS NULL", id).
 		First(&row).Error
@@ -72,6 +74,7 @@ func (r *memberRepoImpl) List(opt model.MemberQueryOpt) ([]model.MemberInfo, err
 	}
 
 	var rows []entity.MemberInfoRow
+
 	if err := db.Order("created_at ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -98,6 +101,7 @@ func (r *memberRepoImpl) Exist(opt model.MemberQueryOpt) (bool, error) {
 	}
 
 	var n int64
+
 	err := db.Count(&n).Error
 	return n > 0, err
 }

@@ -35,7 +35,9 @@ func (r *chapterRepoImpl) FromTxnCx(cx context.Context) (iface.ChapterRepo, erro
 }
 
 func (r *chapterRepoImpl) GetByID(id string) (*model.ChapterInfo, error) {
+
 	var row entity.ChapterInfoRow
+
 	err := r.gdb.Table(entity.ChapterTable).
 		Where("id = ? AND deleted_at IS NULL", id).
 		First(&row).Error
@@ -48,7 +50,9 @@ func (r *chapterRepoImpl) GetByID(id string) (*model.ChapterInfo, error) {
 }
 
 func (r *chapterRepoImpl) FindPinnedByComicID(comicID string) (*model.ChapterInfo, error) {
+
 	var row entity.ChapterInfoRow
+
 	err := r.gdb.Table(entity.ChapterTable).
 		Where("comic_id = ? AND pinned = TRUE AND deleted_at IS NULL", comicID).
 		Order("index DESC").
@@ -75,6 +79,7 @@ func (r *chapterRepoImpl) List(opt model.ChapterQueryOpt) ([]model.ChapterInfo, 
 	}
 
 	var rows []entity.ChapterInfoRow
+
 	if err := db.Order("index DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -101,6 +106,7 @@ func (r *chapterRepoImpl) Count(opt model.ChapterQueryOpt) (int64, error) {
 	}
 
 	var n int64
+
 	err := db.Count(&n).Error
 	return n, err
 }
@@ -166,7 +172,9 @@ func (r *chapterRepoImpl) Update(u *model.ChapterUpdate) error {
 
 		if u.IsPinned != nil {
 			if *u.IsPinned {
+
 				var current entity.ChapterInfoRow
+
 				err := tx.Table(entity.ChapterTable).
 					Select("id", "comic_id").
 					Where("id = ? AND deleted_at IS NULL", u.ID).

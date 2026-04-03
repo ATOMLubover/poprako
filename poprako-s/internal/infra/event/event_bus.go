@@ -53,6 +53,7 @@ func asyncWorker(
 	asyncEventCh <-chan iface.Event,
 	workerDone <-chan struct{},
 ) {
+
 	defer pool.Release()
 
 	for {

@@ -264,6 +264,7 @@ func (a *userAppImpl) Reg(
 	lgr := retrieveLgr(cx)
 
 	// 在事务外声明创建结果，便于事务提交后继续生成 token
+
 	var createdUser *model.UserInfo
 
 	// 在事务中完成邀请码校验、用户创建和成员创建

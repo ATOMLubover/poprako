@@ -155,6 +155,7 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.UpdateTeamArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return

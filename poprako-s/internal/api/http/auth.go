@@ -23,7 +23,9 @@ func Login(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
+
 		var args val.LoginUserArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
@@ -55,7 +57,9 @@ func Register(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
+
 		var args val.RegUserArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return

@@ -71,6 +71,7 @@ func SavePageUnits(appState *state.AppState) iris.Handler {
 		}
 
 		var args val.SavePageUnitArgs
+
 		if err := ctx.ReadJSON(&args); err != nil {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
