@@ -26,7 +26,7 @@ func ListWorksets(appState *state.AppState) iris.Handler {
 	worksetApp := appState.WorksetApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -40,7 +40,7 @@ func ListWorksets(appState *state.AppState) iris.Handler {
 
 		result, err := worksetApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -69,7 +69,7 @@ func CreateWorkset(appState *state.AppState) iris.Handler {
 	worksetApp := appState.WorksetApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -83,7 +83,7 @@ func CreateWorkset(appState *state.AppState) iris.Handler {
 
 		result, err := worksetApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -114,7 +114,7 @@ func UpdateWorkset(appState *state.AppState) iris.Handler {
 	worksetApp := appState.WorksetApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -139,7 +139,7 @@ func UpdateWorkset(appState *state.AppState) iris.Handler {
 
 		if err := worksetApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -166,7 +166,7 @@ func DeleteWorkset(appState *state.AppState) iris.Handler {
 	worksetApp := appState.WorksetApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -179,7 +179,7 @@ func DeleteWorkset(appState *state.AppState) iris.Handler {
 
 		if err := worksetApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			worksetID,
 		); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

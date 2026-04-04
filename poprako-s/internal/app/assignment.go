@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -229,7 +229,7 @@ func (a *assignmentAppImpl) Create(
 		}
 
 		createdID = assignInfo.ID
-		eventCx := eventhandler.WithUserRepoTxn(cx, userRepoTxn)
+		eventCx := event_handler.WithUserRepoTxn(cx, userRepoTxn)
 
 		return a.eventBus.Pub([]event.Event{&event.AssignmentCreatedEvent{
 			UserID:    args.UserID,
@@ -356,7 +356,7 @@ func (a *assignmentAppImpl) Remove(
 			return err
 		}
 
-		eventCx := eventhandler.WithUserRepoTxn(cx, userRepoTxn)
+		eventCx := event_handler.WithUserRepoTxn(cx, userRepoTxn)
 
 		return a.eventBus.Pub([]event.Event{&event.AssignmentRemovedEvent{
 			UserID:       targetAssignment.UserID,

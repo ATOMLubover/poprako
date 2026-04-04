@@ -173,18 +173,18 @@ func (r *chapterRepoImpl) Update(u *model.ChapterUpdate) error {
 		if u.IsPinned != nil {
 			if *u.IsPinned {
 
-				var current entity.ChapterInfoRow
+				var curr entity.ChapterInfoRow
 
 				err := tx.Table(entity.ChapterTable).
 					Select("id", "comic_id").
 					Where("id = ? AND deleted_at IS NULL", u.ID).
-					First(&current).Error
+					First(&curr).Error
 				if err != nil {
 					return err
 				}
 
 				if err := tx.Table(entity.ChapterTable).
-					Where("comic_id = ? AND id <> ? AND deleted_at IS NULL AND pinned = TRUE", current.ComicID, u.ID).
+					Where("comic_id = ? AND id <> ? AND deleted_at IS NULL AND pinned = TRUE", curr.ComicID, u.ID).
 					Updates(map[string]any{"pinned": false, "updated_at": time.Now()}).Error; err != nil {
 					return err
 				}

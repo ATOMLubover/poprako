@@ -175,6 +175,8 @@ type ChapterCreation struct {
 	// IsPinned 是可选的，因为默认情况下新创建的章节会被 **自动** 顶置
 	// 但用户也可以选择不顶置
 	IsPinned *bool
+
+	event.EventBase
 }
 
 // ChapterStats 聚合一个章节的统计数据

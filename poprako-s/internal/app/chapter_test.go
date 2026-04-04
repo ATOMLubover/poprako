@@ -43,9 +43,10 @@ func TestChapterAppCreateUsesMockTxnRepos(t *testing.T) {
 	comicRepo := mock_repo.NewMockComicRepo()
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
 	chapterRepo := mock_repo.NewMockChapterRepo()
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	userRepo := mock_repo.NewMockUserRepo()
 	eventBus := newMockEventBus()
-	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, comic: comicRepo}))
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, comic: comicRepo, assignment: assignmentRepo}))
 
 	app := NewChapterApp(service.NewChapterService(), memberRepo, worksetRepo, comicRepo, chapterRepo, mock_repo.NewMockAssignmentRepo(), userRepo, mock_repo.NewMockPageRepo(), txnMgr, eventBus, newMockOSSClient())
 
@@ -61,6 +62,10 @@ func TestChapterAppCreateUsesMockTxnRepos(t *testing.T) {
 	createdEvent, ok := pubCalls[0][0].(*event.ChapterCreatedEvent)
 	if !ok || createdEvent.ComicID != "comic-1" {
 		t.Fatalf("unexpected event: %#v", pubCalls)
+	}
+	assignedEvent, ok := pubCalls[0][1].(*event.ChapterCreatorAssignedEvent)
+	if !ok || assignedEvent.ChapterID != res.ID || assignedEvent.CreatorID != "user-1" {
+		t.Fatalf("unexpected creator assigned event: %#v", pubCalls)
 	}
 }
 

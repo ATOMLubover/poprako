@@ -59,8 +59,8 @@ func main() {
 	unitRepo := repo_infra.NewUnitRepo(gdb)
 	txnMgr := repo_infra.NewTxnMgr(gdb)
 
-	// 初始化 OSS 客户端（当前为占位实现）
-	ossClient := oss_infra.NewNoopClient()
+	// 初始化 OSS 客户端（按 OSS_PLATFORM 选择实现）
+	ossClient := oss_infra.NewClient()
 
 	// 初始化事件总线
 	eventBus, err := event_infra.NewEventBus()
@@ -77,6 +77,7 @@ func main() {
 		event_handler.NewComicCreateHandler(),
 		event_handler.NewComicRemoveHandler(),
 		event_handler.NewChapterCreateHandler(),
+		event_handler.NewChapterCreatorAssignedHandler(),
 		event_handler.NewChapterRemoveHandler(),
 		event_handler.NewChapterPublishedHandler(),
 	}

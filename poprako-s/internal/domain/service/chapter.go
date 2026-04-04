@@ -1,13 +1,25 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 
 	"poprako-s/internal/domain/model"
+	"poprako-s/internal/domain/repo"
 )
 
 // ChapterService 定义章节领域相关的业务能力，例如触发工作流转换
 type ChapterService interface {
+	// NewCreation 根据业务参数构造 ChapterCreation 载荷
+	// index 由 service 内部通过 cr 统计当前 comic 下章节数量确定
+	// ID 由 service 内部生成
+	NewCreation(
+		cr repo.ChapterRepo,
+		comicID string,
+		subtitle *string,
+		creatorID string,
+	) (*model.ChapterCreation, error)
+
 	// TransiteWorkflow 接受一个工作流转换事件，根据事件类型和当前状态执行相应的状态转换
 	// 它负责权限检验，只有当用户 u 有权执行事件 t 时才会执行状态转换，否则返回错误
 	TransiteWorkflow(
@@ -23,6 +35,33 @@ type chapterServiceImpl struct{}
 // NewChapterService 返回 ChapterService 的默认实现
 func NewChapterService() ChapterService {
 	return &chapterServiceImpl{}
+}
+
+// NewCreation 根据业务参数构造 ChapterCreation 载荷
+// index 由 service 内部统计当前 comic 下章节数量确定
+func (s *chapterServiceImpl) NewCreation(
+	cr repo.ChapterRepo,
+	comicID string,
+	subtitle *string,
+	creatorID string,
+) (*model.ChapterCreation, error) {
+	// 统计当前漫画下的章节数量以确定 index
+	count, err := cr.Count(model.ChapterQueryOpt{
+		ComicID: &comicID,
+	})
+	if err != nil {
+		// 返回统计失败错误
+		return nil, errors.New("无法统计章节数量")
+	}
+
+	// 返回创建载荷
+	return &model.ChapterCreation{
+		ID:        GenID("chapter"),
+		ComicID:   comicID,
+		Index:     int(count),
+		Subtitle:  subtitle,
+		CreatorID: creatorID,
+	}, nil
 }
 
 // TransiteWorkflow 接受一个工作流转换事件，根据事件类型和当前状态执行相应的状态转换

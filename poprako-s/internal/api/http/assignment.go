@@ -26,7 +26,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -40,7 +40,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 
 		result, err := assignmentApp.ListByChapter(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -70,7 +70,7 @@ func ListMyAssignments(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -84,7 +84,7 @@ func ListMyAssignments(appState *state.AppState) iris.Handler {
 
 		result, err := assignmentApp.ListMy(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -113,7 +113,7 @@ func CreateChapterAssignment(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -127,7 +127,7 @@ func CreateChapterAssignment(appState *state.AppState) iris.Handler {
 
 		result, err := assignmentApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -158,7 +158,7 @@ func UpdateAssignment(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -179,7 +179,7 @@ func UpdateAssignment(appState *state.AppState) iris.Handler {
 
 		if err := assignmentApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -206,7 +206,7 @@ func RemoveAssignment(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -219,7 +219,7 @@ func RemoveAssignment(appState *state.AppState) iris.Handler {
 
 		if err := assignmentApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			assignmentID,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())

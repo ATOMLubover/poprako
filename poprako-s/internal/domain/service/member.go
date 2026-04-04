@@ -10,7 +10,7 @@ import (
 
 // MemberService 定义成员领域相关的业务能力
 type MemberService interface {
-	// NewCreation 根据当前用户、目标用户 ID、团队 ID 和角色列表创建 MemberCreation 领域模型
+	// NewCreation 根据当前用户、目标用户 ID、汉化组 ID 和角色列表创建 MemberCreation 领域模型
 	// 仅超级管理员可以直接创建成员
 	NewCreation(
 		currUser *model.UserInfo,
@@ -28,7 +28,7 @@ type MemberService interface {
 
 	// NewUpdate 根据当前操作用户权限和目标角色掩码生成 MemberUpdate
 	// 已有角色保留原时间戳，新增角色使用当前时间，移除的角色清空时间戳
-	// 仅团队管理员可以更新成员角色
+	// 仅汉化组管理员可以更新成员角色
 	NewUpdate(
 		mr repo.MemberRepo,
 		currUserID string,
@@ -127,7 +127,7 @@ func (s *memberServiceImpl) NewUpdate(
 	})
 	if err != nil || !currMem.HasAnyRole(model.RoleAdmin) {
 		// 返回权限不足错误
-		return nil, errors.New("仅团队管理员可以更新成员角色")
+		return nil, errors.New("仅汉化组管理员可以更新成员角色")
 	}
 
 	// 记录当前时间，用于新增角色的时间戳

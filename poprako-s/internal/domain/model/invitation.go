@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-// InvitationInfo 表示一条团队邀请记录
+// InvitationInfo 表示一条汉化组邀请记录
 type InvitationInfo struct {
 	ID string
 
@@ -123,7 +123,7 @@ type InvitationUpdate struct {
 // InvitationQueryOpt 指定邀请查询的可选筛选条件
 // 所有字段均为可空，nil 表示不参与筛选
 type InvitationQueryOpt struct {
-	// TeamID 按目标团队 ID 筛选
+	// TeamID 按目标汉化组 ID 筛选
 	TeamID *string
 	// InvitationCode 按邀请码筛选
 	InvitationCode *string

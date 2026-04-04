@@ -26,7 +26,7 @@ func ListComicChapters(appState *state.AppState) iris.Handler {
 	chapterApp := appState.ChapterApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -40,7 +40,7 @@ func ListComicChapters(appState *state.AppState) iris.Handler {
 
 		result, err := chapterApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -69,7 +69,7 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 	chapterApp := appState.ChapterApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -83,7 +83,7 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 
 		result, err := chapterApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -98,7 +98,7 @@ func CreateComicChapter(appState *state.AppState) iris.Handler {
 
 // UpdateChapter godoc
 // @Summary 	更新章节
-// @Description 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改
+// @Description 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改；除了 reviewer 以外，其他任何角色都只能修改自己对应的 workflow 的状态
 //
 // @Tags 		chapter
 // @Security 	ApiKeyAuth
@@ -114,7 +114,7 @@ func UpdateChapter(appState *state.AppState) iris.Handler {
 	chapterApp := appState.ChapterApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -131,11 +131,12 @@ func UpdateChapter(appState *state.AppState) iris.Handler {
 			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
 			return
 		}
+
 		args.ChapterID = chapterID
 
 		if err := chapterApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -162,7 +163,7 @@ func DeleteComicChapter(appState *state.AppState) iris.Handler {
 	chapterApp := appState.ChapterApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -175,7 +176,7 @@ func DeleteComicChapter(appState *state.AppState) iris.Handler {
 
 		if err := chapterApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			chapterID,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())

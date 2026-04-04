@@ -8,6 +8,23 @@ import (
 )
 
 type UnitService interface {
+	// NewCreation 将分散字段组装为 UnitCreation（model.UnitInfo），注入 PageID
+	NewCreation(
+		id string,
+		pageID string,
+		index int,
+		xCoord int,
+		yCoord int,
+		isBubble bool,
+		translatedText *string,
+		translatorID *string,
+		translatorComment *string,
+		isProofread bool,
+		proofreadText *string,
+		proofreaderID *string,
+		proofreaderComment *string,
+	) model.UnitCreation
+
 	// NewDiff 根据业务参数创建 UnitDiff 领域模型
 	// 只有 currUser 是当前 page 的 chapter 的翻译、校对时才能创建 UnitDiff，否则返回错误
 	// 另外和校对相关的字段，也只能由校对创建或修改，翻译无权操作
@@ -28,6 +45,40 @@ type unitServiceImpl struct{}
 func NewUnitService() UnitService {
 	// 返回无状态实现
 	return &unitServiceImpl{}
+}
+
+// NewCreation 将分散字段组装为 UnitCreation（model.UnitInfo），注入 PageID
+func (s *unitServiceImpl) NewCreation(
+	id string,
+	pageID string,
+	index int,
+	xCoord int,
+	yCoord int,
+	isBubble bool,
+	translatedText *string,
+	translatorID *string,
+	translatorComment *string,
+	isProofread bool,
+	proofreadText *string,
+	proofreaderID *string,
+	proofreaderComment *string,
+) model.UnitCreation {
+	// 返回组装后的创建载荷
+	return model.UnitCreation{
+		ID:                 id,
+		PageID:             pageID,
+		Index:              index,
+		XCoord:             xCoord,
+		YCoord:             yCoord,
+		IsBubble:           isBubble,
+		TranslatedText:     translatedText,
+		TranslatorID:       translatorID,
+		TranslatorComment:  translatorComment,
+		IsProofread:        isProofread,
+		ProofreadText:      proofreadText,
+		ProofreaderID:      proofreaderID,
+		ProofreaderComment: proofreaderComment,
+	}
 }
 
 func (s *unitServiceImpl) NewDiff(

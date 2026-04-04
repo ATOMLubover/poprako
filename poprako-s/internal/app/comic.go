@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -105,7 +105,7 @@ func (a *comicAppImpl) List(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过作品集获取所属团队 ID 用于鉴权
+	// 通过作品集获取所属汉化组 ID 用于鉴权
 	targetWorkset, err := a.worksetRepo.GetByID(args.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -119,7 +119,7 @@ func (a *comicAppImpl) List(
 		return nil, errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户是否为该团队成员
+	// 鉴权：检查当前用户是否为该汉化组成员
 	_, err = a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -235,7 +235,7 @@ func (a *comicAppImpl) Create(
 		}
 
 		createdID = comicInfo.ID
-		eventCx := eventhandler.WithWorksetRepoTxn(cx, worksetRepoTxn)
+		eventCx := event_handler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
 		return a.eventBus.Pub([]event.Event{&event.ComicCreatedEvent{
 			WorksetID: args.WorksetID,
@@ -280,7 +280,7 @@ func (a *comicAppImpl) Update(
 		return errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID 用于鉴权
+	// 通过作品集获取所属汉化组 ID 用于鉴权
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -294,7 +294,7 @@ func (a *comicAppImpl) Update(
 		return errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在漫画所属团队中是否为管理员
+	// 鉴权：检查当前用户在漫画所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -357,7 +357,7 @@ func (a *comicAppImpl) Remove(
 		return errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID 用于鉴权
+	// 通过作品集获取所属汉化组 ID 用于鉴权
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -371,7 +371,7 @@ func (a *comicAppImpl) Remove(
 		return errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在漫画所属团队中是否为管理员
+	// 鉴权：检查当前用户在漫画所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -402,7 +402,7 @@ func (a *comicAppImpl) Remove(
 			return err
 		}
 
-		eventCx := eventhandler.WithWorksetRepoTxn(cx, worksetRepoTxn)
+		eventCx := event_handler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
 		return a.eventBus.Pub([]event.Event{&event.ComicRemovedEvent{
 			WorksetID: targetComic.WorksetID,

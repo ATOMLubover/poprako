@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
@@ -176,25 +176,25 @@ func (a *unitAppImpl) Save(
 		return errors.New("无法获取用户信息")
 	}
 
-	// 将 val 层类型转换为 model 层类型
+	// 通过领域服务将 val 层类型转换为 model 层类型
 	insertUnits := make([]model.UnitCreation, len(args.UnitDiff.Insert))
 
-	for i, creation := range args.UnitDiff.Insert {
-		insertUnits[i] = model.UnitCreation{
-			ID:                 creation.ID,
-			PageID:             args.PageID,
-			Index:              creation.Index,
-			XCoord:             creation.XCoord,
-			YCoord:             creation.YCoord,
-			IsBubble:           creation.IsBubble,
-			TranslatedText:     creation.TranslatedText,
-			TranslatorID:       creation.TranslatorID,
-			TranslatorComment:  creation.TranslatorComment,
-			IsProofread:        creation.IsProofread,
-			ProofreadText:      creation.ProofreadText,
-			ProofreaderID:      creation.ProofreaderID,
-			ProofreaderComment: creation.ProofreaderComment,
-		}
+	for i, c := range args.UnitDiff.Insert {
+		insertUnits[i] = a.unitSvc.NewCreation(
+			c.ID,
+			args.PageID,
+			c.Index,
+			c.XCoord,
+			c.YCoord,
+			c.IsBubble,
+			c.TranslatedText,
+			c.TranslatorID,
+			c.TranslatorComment,
+			c.IsProofread,
+			c.ProofreadText,
+			c.ProofreaderID,
+			c.ProofreaderComment,
+		)
 	}
 
 	patchUnits := make([]model.UnitPatch, len(args.UnitDiff.Patch))
@@ -413,8 +413,8 @@ func (a *unitAppImpl) Save(
 			return err
 		}
 
-		eventCx := eventhandler.WithChapterRepoTxn(
-			eventhandler.WithPageRepoTxn(cx, pageRepoTxn),
+		eventCx := event_handler.WithChapterRepoTxn(
+			event_handler.WithPageRepoTxn(cx, pageRepoTxn),
 			chapterRepoTxn,
 		)
 

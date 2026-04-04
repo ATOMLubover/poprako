@@ -26,7 +26,7 @@ func ListChapterPages(appState *state.AppState) iris.Handler {
 	pageApp := appState.PageApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -40,7 +40,7 @@ func ListChapterPages(appState *state.AppState) iris.Handler {
 
 		result, err := pageApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -69,7 +69,7 @@ func ReserveChapterPages(appState *state.AppState) iris.Handler {
 	pageApp := appState.PageApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -83,7 +83,7 @@ func ReserveChapterPages(appState *state.AppState) iris.Handler {
 
 		result, err := pageApp.Reserve(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -114,7 +114,7 @@ func UpdatePage(appState *state.AppState) iris.Handler {
 	pageApp := appState.PageApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -139,7 +139,7 @@ func UpdatePage(appState *state.AppState) iris.Handler {
 
 		if err := pageApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -166,7 +166,7 @@ func DeletePage(appState *state.AppState) iris.Handler {
 	pageApp := appState.PageApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -179,7 +179,7 @@ func DeletePage(appState *state.AppState) iris.Handler {
 
 		if err := pageApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			pageID,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())

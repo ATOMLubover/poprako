@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-// MemberInfo 表示用户在某个团队中的成员信息，包含角色分配时间
+// MemberInfo 表示用户在某个汉化组中的成员信息，包含角色分配时间
 type MemberInfo struct {
 	ID string
 
@@ -131,6 +131,6 @@ type MemberQueryOpt struct {
 	ID *string
 	// UserID 按用户 ID 筛选
 	UserID *string
-	// TeamID 按团队 ID 筛选
+	// TeamID 按汉化组 ID 筛选
 	TeamID *string
 }

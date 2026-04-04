@@ -54,12 +54,12 @@ func GetMyUser(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
 
-		result, err := userApp.GetMyInfo(buildReqCx(ctx), currentUserID)
+		result, err := userApp.GetMyInfo(buildReqCx(ctx), currUserID)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -84,12 +84,12 @@ func GetMyUserStats(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
 
-		result, err := userApp.GetMyStats(buildReqCx(ctx), currentUserID)
+		result, err := userApp.GetMyStats(buildReqCx(ctx), currUserID)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -114,12 +114,12 @@ func ReserveMyAvatar(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
 
-		result, err := userApp.ReserveMyAvatar(buildReqCx(ctx), currentUserID)
+		result, err := userApp.ReserveMyAvatar(buildReqCx(ctx), currUserID)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
@@ -144,12 +144,12 @@ func ConfirmMyAvatarUploaded(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
 
-		if err := userApp.ConfirmMyAvatarUploaded(buildReqCx(ctx), currentUserID); err != nil {
+		if err := userApp.ConfirmMyAvatarUploaded(buildReqCx(ctx), currUserID); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
 		}
@@ -175,7 +175,7 @@ func UpdateMyUser(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -187,7 +187,7 @@ func UpdateMyUser(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := userApp.UpdateMyInfo(buildReqCx(ctx), currentUserID, &args); err != nil {
+		if err := userApp.UpdateMyInfo(buildReqCx(ctx), currUserID, &args); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
 		}
@@ -212,7 +212,7 @@ func RemoveUser(appState *state.AppState) iris.Handler {
 	userApp := appState.UserApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -223,7 +223,7 @@ func RemoveUser(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := userApp.Remove(buildReqCx(ctx), currentUserID, targetUserID); err != nil {
+		if err := userApp.Remove(buildReqCx(ctx), currUserID, targetUserID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

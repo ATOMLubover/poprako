@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -125,7 +125,7 @@ func (a *chapterAppImpl) List(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过漫画获取所属作品集，再获取所属团队 ID 用于鉴权
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
 	targetComic, err := a.comicRepo.GetByID(args.ComicID)
 	if err != nil {
 		// 记录查询失败
@@ -139,7 +139,7 @@ func (a *chapterAppImpl) List(
 		return nil, errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID
+	// 通过作品集获取所属汉化组 ID
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -153,7 +153,7 @@ func (a *chapterAppImpl) List(
 		return nil, errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户是否为该团队成员
+	// 鉴权：检查当前用户是否为该汉化组成员
 	_, err = a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -204,7 +204,7 @@ func (a *chapterAppImpl) Create(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过漫画获取所属作品集，再获取所属团队 ID 用于鉴权
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
 	targetComic, err := a.comicRepo.GetByID(args.ComicID)
 	if err != nil {
 		// 记录查询失败
@@ -218,7 +218,7 @@ func (a *chapterAppImpl) Create(
 		return nil, errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID
+	// 通过作品集获取所属汉化组 ID
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -232,7 +232,7 @@ func (a *chapterAppImpl) Create(
 		return nil, errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在漫画所属团队中是否为管理员
+	// 鉴权：检查当前用户在漫画所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -249,7 +249,6 @@ func (a *chapterAppImpl) Create(
 	}
 
 	// 在事务中创建章节（需要 count 获取 index）
-
 	var createdID string
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
@@ -263,21 +262,15 @@ func (a *chapterAppImpl) Create(
 			return err
 		}
 
-		// 统计当前漫画下的章节数量以确定 index
-		count, err := chapterRepoTxn.Count(model.ChapterQueryOpt{
-			ComicID: &args.ComicID,
-		})
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(cx)
 		if err != nil {
 			return err
 		}
 
-		// 构造章节创建载荷
-		creation := &model.ChapterCreation{
-			ID:        service.GenID("chapter"),
-			ComicID:   args.ComicID,
-			Index:     int(count),
-			Subtitle:  args.Subtitle,
-			CreatorID: currUserID,
+		// 统计当前漫画下的章节数量以确定 index，并由领域服务构造创建载荷
+		creation, err := a.chapterSvc.NewCreation(chapterRepoTxn, args.ComicID, args.Subtitle, currUserID)
+		if err != nil {
+			return err
 		}
 
 		// 持久化章节
@@ -287,12 +280,22 @@ func (a *chapterAppImpl) Create(
 		}
 
 		createdID = chInfo.ID
-		eventCx := eventhandler.WithComicRepoTxn(cx, comicRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.ChapterCreatedEvent{
-			ComicID: args.ComicID,
-			Cx:      eventCx,
-		}})
+		eventCx := event_handler.WithComicRepoTxn(cx, comicRepoTxn)
+
+		eventCx = event_handler.WithAssignmentRepoTxn(eventCx, assignmentRepoTxn)
+
+		return a.eventBus.Pub([]event.Event{
+			&event.ChapterCreatedEvent{
+				ComicID: args.ComicID,
+				Cx:      eventCx,
+			},
+			&event.ChapterCreatorAssignedEvent{
+				ChapterID: createdID,
+				CreatorID: currUserID,
+				Cx:        eventCx,
+			},
+		})
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -400,8 +403,8 @@ func (a *chapterAppImpl) Update(
 				return err
 			}
 
-			eventCx := eventhandler.WithUserRepoTxn(
-				eventhandler.WithAssignmentRepoTxn(cx, assignmentRepoTxn),
+			eventCx := event_handler.WithUserRepoTxn(
+				event_handler.WithAssignmentRepoTxn(cx, assignmentRepoTxn),
 				userRepoTxn,
 			)
 
@@ -465,7 +468,7 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("无法获取章节信息")
 	}
 
-	// 通过漫画获取所属作品集，再获取所属团队 ID 用于鉴权
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
 	targetComic, err := a.comicRepo.GetByID(targetChapter.ComicID)
 	if err != nil {
 		// 记录查询失败
@@ -479,7 +482,7 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID
+	// 通过作品集获取所属汉化组 ID
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -493,7 +496,7 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在章节所属团队中是否为管理员
+	// 鉴权：检查当前用户在章节所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -546,8 +549,8 @@ func (a *chapterAppImpl) Remove(
 			return err
 		}
 
-		eventCx := eventhandler.WithUserRepoTxn(
-			eventhandler.WithComicRepoTxn(cx, comicRepoTxn),
+		eventCx := event_handler.WithUserRepoTxn(
+			event_handler.WithComicRepoTxn(cx, comicRepoTxn),
 			userRepoTxn,
 		)
 

@@ -190,13 +190,13 @@ func (r *UserRepo) GetOrCreateStats(userID string) (*model.UserStats, error) {
 
 func (r *UserRepo) PatchStats(stats *model.UserStatsPatch) error {
 	r.ensure()
-	current, ok := r.Stats[stats.UserID]
+	curr, ok := r.Stats[stats.UserID]
 	if !ok {
-		current = model.UserStats{UserID: stats.UserID}
+		curr = model.UserStats{UserID: stats.UserID}
 	}
-	current.TotalAssignmentCount += stats.TotalAssignmentCountDelta
-	current.ActiveAssignmentCount += stats.ActiveAssignmentCountDelta
-	current.FinishedAssignmentCount += stats.FinishedAssignmentCountDelta
-	r.Stats[stats.UserID] = current
+	curr.TotalAssignmentCount += stats.TotalAssignmentCountDelta
+	curr.ActiveAssignmentCount += stats.ActiveAssignmentCountDelta
+	curr.FinishedAssignmentCount += stats.FinishedAssignmentCountDelta
+	r.Stats[stats.UserID] = curr
 	return nil
 }

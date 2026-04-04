@@ -21,7 +21,7 @@ type MemberApp interface {
 		args *val.CreateMemberArgs,
 	) (*val.CreateMemberRes, error)
 
-	// ListByTeam 获取指定团队的成员列表
+	// ListByTeam 获取指定汉化组的成员列表
 	ListByTeam(
 		cx context.Context,
 		currUserID string,
@@ -49,7 +49,7 @@ type MemberApp interface {
 		memberID string,
 	) error
 
-	// JoinTeam 通过邀请码加入团队
+	// JoinTeam 通过邀请码加入汉化组
 	JoinTeam(
 		cx context.Context,
 		currUserID string,
@@ -127,7 +127,7 @@ func (a *memberAppImpl) Create(
 		return nil, errors.New("创建成员失败：无法获取用户信息")
 	}
 
-	// 检查目标用户是否已是该团队成员
+	// 检查目标用户是否已是该汉化组成员
 	isExisting, err := a.memberRepo.Exist(model.MemberQueryOpt{
 		UserID: &args.UserID,
 		TeamID: &args.TeamID,
@@ -145,7 +145,7 @@ func (a *memberAppImpl) Create(
 
 	// 若已存在，返回重复错误
 	if isExisting {
-		return nil, errors.New("该用户已经加入该团队")
+		return nil, errors.New("该用户已经加入该汉化组")
 	}
 
 	// 通过领域服务构造成员创建载荷（含权限校验）
@@ -192,7 +192,7 @@ func (a *memberAppImpl) ListByTeam(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 鉴权：检查当前用户是否为该团队成员
+	// 鉴权：检查当前用户是否为该汉化组成员
 	_, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &args.TeamID,
@@ -200,7 +200,7 @@ func (a *memberAppImpl) ListByTeam(
 	if err != nil {
 		// 记录权限校验失败
 		lgr.Warn(
-			"获取团队成员列表失败：权限不足",
+			"获取汉化组成员列表失败：权限不足",
 			zap.String("curr_user_id", currUserID),
 			zap.String("team_id", args.TeamID),
 		)
@@ -209,20 +209,20 @@ func (a *memberAppImpl) ListByTeam(
 		return nil, errors.New("权限不足")
 	}
 
-	// 查询团队成员列表
+	// 查询汉化组成员列表
 	members, err := a.memberRepo.List(model.MemberQueryOpt{
 		TeamID: &args.TeamID,
 	})
 	if err != nil {
 		// 记录查询失败
 		lgr.Error(
-			"获取团队成员列表失败",
+			"获取汉化组成员列表失败",
 			zap.String("team_id", args.TeamID),
 			zap.Error(err),
 		)
 
 		// 返回客户端可展示的错误
-		return nil, errors.New("获取团队成员列表失败")
+		return nil, errors.New("获取汉化组成员列表失败")
 	}
 
 	// 组装为 app 层值对象列表
@@ -354,7 +354,7 @@ func (a *memberAppImpl) Remove(
 		return errors.New("删除成员失败：无法获取成员信息")
 	}
 
-	// 鉴权：检查当前用户在目标团队中是否为管理员
+	// 鉴权：检查当前用户在目标汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetMember.TeamID,
@@ -401,13 +401,13 @@ func (a *memberAppImpl) JoinTeam(
 	if err != nil {
 		// 记录查询失败
 		lgr.Error(
-			"加入团队失败：无法获取用户信息",
+			"加入汉化组失败：无法获取用户信息",
 			zap.String("curr_user_id", currUserID),
 			zap.Error(err),
 		)
 
 		// 返回客户端可展示的错误
-		return errors.New("加入团队失败：无法获取用户信息")
+		return errors.New("加入汉化组失败：无法获取用户信息")
 	}
 
 	// 根据 QQ 查找待消耗的邀请
@@ -415,7 +415,7 @@ func (a *memberAppImpl) JoinTeam(
 	if err != nil {
 		// 记录查询失败
 		lgr.Warn(
-			"加入团队失败：无效的邀请码",
+			"加入汉化组失败：无效的邀请码",
 			zap.String("qq", currUser.QQ),
 			zap.Error(err),
 		)
@@ -430,7 +430,7 @@ func (a *memberAppImpl) JoinTeam(
 		return errors.New("邀请码无效或已被使用")
 	}
 
-	// 检查用户是否已经是该团队成员
+	// 检查用户是否已经是该汉化组成员
 	isExisting, err := a.memberRepo.Exist(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &inv.TeamID,
@@ -438,17 +438,17 @@ func (a *memberAppImpl) JoinTeam(
 	if err != nil {
 		// 记录查询失败
 		lgr.Error(
-			"加入团队失败：检查成员信息失败",
+			"加入汉化组失败：检查成员信息失败",
 			zap.Error(err),
 		)
 
 		// 返回客户端可展示的错误
-		return errors.New("加入团队失败")
+		return errors.New("加入汉化组失败")
 	}
 
 	// 若已是成员，返回错误
 	if isExisting {
-		return errors.New("您已经是该团队的成员")
+		return errors.New("您已经是该汉化组的成员")
 	}
 
 	// 通过领域服务构造成员创建载荷
@@ -456,12 +456,12 @@ func (a *memberAppImpl) JoinTeam(
 	if err != nil {
 		// 记录构造失败
 		lgr.Error(
-			"加入团队失败：构造成员载荷失败",
+			"加入汉化组失败：构造成员载荷失败",
 			zap.Error(err),
 		)
 
 		// 返回客户端可展示的错误
-		return errors.New("加入团队失败")
+		return errors.New("加入汉化组失败")
 	}
 
 	// 在事务中创建成员并使邀请失效
@@ -491,12 +491,12 @@ func (a *memberAppImpl) JoinTeam(
 	}); err != nil {
 		// 记录事务执行失败
 		lgr.Error(
-			"加入团队失败：事务执行失败",
+			"加入汉化组失败：事务执行失败",
 			zap.Error(err),
 		)
 
 		// 返回客户端可展示的错误
-		return errors.New("加入团队失败")
+		return errors.New("加入汉化组失败")
 	}
 
 	// 返回加入成功
@@ -525,7 +525,7 @@ func assembleMemberInfo(
 		result.User = userInfo
 	}
 
-	// 如果包含了团队信息，则组装团队子对象
+	// 如果包含了汉化组信息，则组装汉化组子对象
 	if info.Team != nil {
 		teamInfo, _ := assembleTeamInfo(info.Team, ossClient)
 

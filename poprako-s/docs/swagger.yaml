@@ -38,7 +38,14 @@ definitions:
         description: ID 是分配记录的唯一标识
         type: string
       roles:
-        description: Roles 是该分配包含的角色掩码
+        description: |-
+          Roles 是该分配包含的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
         type: integer
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -163,7 +170,14 @@ definitions:
         description: ChapterID 是目标章节 ID
         type: string
       roles:
-        description: Roles 是分配的角色掩码
+        description: |-
+          Roles 是分配的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
         type: integer
       user_id:
         description: UserID 是被分配的用户 ID
@@ -227,10 +241,18 @@ definitions:
         description: InviteeQQ 是被邀请者的 QQ 号
         type: string
       roles:
-        description: Roles 是邀请中指定的角色掩码
+        description: |-
+          Roles 是邀请中指定的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
     required:
     - invitee_qq
@@ -240,10 +262,18 @@ definitions:
   val.CreateMemberArgs:
     properties:
       roles:
-        description: Roles 是分配的角色掩码
+        description: |-
+          Roles 是分配的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
       user_id:
         description: UserID 是要创建成员的用户 ID
@@ -262,10 +292,10 @@ definitions:
   val.CreateTeamArgs:
     properties:
       description:
-        description: Description 是团队描述
+        description: Description 是汉化组描述
         type: string
       name:
-        description: Name 是团队名称
+        description: Name 是汉化组名称
         type: string
     required:
     - name
@@ -273,7 +303,7 @@ definitions:
   val.CreateTeamRes:
     properties:
       id:
-        description: ID 是新创建团队的标识
+        description: ID 是新创建汉化组的标识
         type: string
     type: object
   val.CreateWorksetArgs:
@@ -285,7 +315,7 @@ definitions:
         description: Name 是作品集名称
         type: string
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
     required:
     - name
@@ -318,10 +348,18 @@ definitions:
         description: Pending 表示邀请是否仍有效
         type: boolean
       roles:
-        description: Roles 是邀请中指定的角色掩码
+        description: |-
+          Roles 是邀请中指定的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
     type: object
   val.JoinTeamArgs:
@@ -362,14 +400,22 @@ definitions:
         description: ID 是成员记录的唯一标识
         type: string
       roles:
-        description: Roles 是该成员所拥有的角色掩码
+        description: |-
+          Roles 是该成员所拥有的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team:
         allOf:
         - $ref: '#/definitions/val.TeamInfo'
-        description: Team 是可选的团队信息（仅在 includes 时填充）
+        description: Team 是可选的汉化组信息（仅在 includes 时填充）
       team_id:
-        description: TeamID 是该成员所属的团队 ID
+        description: TeamID 是该成员所属的汉化组 ID
         type: string
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -512,22 +558,22 @@ definitions:
   val.TeamInfo:
     properties:
       avatar_url:
-        description: AvatarURL 是团队头像的可访问地址
+        description: AvatarURL 是汉化组头像的可访问地址
         type: string
       created_at:
         description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
       description:
-        description: Description 是团队的描述
+        description: Description 是汉化组的描述
         type: string
       id:
-        description: ID 是团队的唯一标识
+        description: ID 是汉化组的唯一标识
         type: string
       is_avatar_uploaded:
-        description: IsAvatarUploaded 表示团队是否已上传头像
+        description: IsAvatarUploaded 表示汉化组是否已上传头像
         type: boolean
       name:
-        description: Name 是团队的名称
+        description: Name 是汉化组的名称
         type: string
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -681,7 +727,14 @@ definitions:
         description: ID 是要更新的分配记录标识
         type: string
       roles:
-        description: Roles 是更新后的角色掩码（PUT 语义全量替换）
+        description: |-
+          Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
         type: integer
     required:
     - id
@@ -730,10 +783,18 @@ definitions:
         description: ID 是要更新的邀请记录 ID
         type: string
       roles:
-        description: Roles 是更新后的角色掩码
+        description: |-
+          Roles 是更新后的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID，用于鉴权
+        description: TeamID 是目标汉化组 ID，用于鉴权
         type: string
     required:
     - id
@@ -746,7 +807,15 @@ definitions:
         description: ID 是目标成员记录 ID
         type: string
       roles:
-        description: Roles 是目标角色掩码（PUT 语义全量替换）
+        description: |-
+          Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
     required:
     - id
@@ -766,13 +835,13 @@ definitions:
   val.UpdateTeamArgs:
     properties:
       description:
-        description: Description 是更新后的团队描述
+        description: Description 是更新后的汉化组描述
         type: string
       id:
-        description: ID 是要更新的团队标识
+        description: ID 是要更新的汉化组标识
         type: string
       name:
-        description: Name 是更新后的团队名称
+        description: Name 是更新后的汉化组名称
         type: string
     required:
     - id
@@ -863,7 +932,7 @@ definitions:
         description: ID 是作品集的唯一标识
         type: string
       index:
-        description: Index 是作品集在团队内的序号
+        description: Index 是作品集在汉化组内的序号
         type: integer
       name:
         description: Name 是作品集名称
@@ -871,9 +940,9 @@ definitions:
       team:
         allOf:
         - $ref: '#/definitions/val.TeamInfo'
-        description: Team 是可选的团队信息（仅在 includes 时填充）
+        description: Team 是可选的汉化组信息（仅在 includes 时填充）
       team_id:
-        description: TeamID 是所属团队 ID
+        description: TeamID 是所属汉化组 ID
         type: string
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -881,9 +950,9 @@ definitions:
     type: object
 info:
   contact: {}
-  description: Poprako-S 后端 API 文档
-  title: Poprako-S API
-  version: 0.1.0
+  description: PopRaKo-S 后端 API 文档
+  title: PopRaKo-S API
+  version: 0.0.1
 paths:
   /assignments:
     get:
@@ -1157,7 +1226,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改
+      description: 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改；除了 reviewer 以外，其他任何角色都只能修改自己对应的
+        workflow 的状态
       parameters:
       - description: 章节 ID
         in: path
@@ -1852,7 +1922,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段
+      description: 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段，注意只有当前用户在当前章节有
+        translator 或者 proofreader 分配时才允许执行此操作
       parameters:
       - description: unit diff 参数
         in: body

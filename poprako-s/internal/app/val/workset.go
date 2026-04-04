@@ -5,9 +5,9 @@ type WorksetInfo struct {
 	// ID 是作品集的唯一标识
 	ID string `json:"id"`
 
-	// TeamID 是所属团队 ID
+	// TeamID 是所属汉化组 ID
 	TeamID string `json:"team_id"`
-	// Index 是作品集在团队内的序号
+	// Index 是作品集在汉化组内的序号
 	Index int `json:"index"`
 
 	// Name 是作品集名称
@@ -17,7 +17,7 @@ type WorksetInfo struct {
 	// ComicCount 是作品集中漫画数量
 	ComicCount int `json:"comic_count"`
 
-	// Team 是可选的团队信息（仅在 includes 时填充）
+	// Team 是可选的汉化组信息（仅在 includes 时填充）
 	Team *TeamInfo `json:"team,omitempty"`
 
 	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
@@ -28,7 +28,7 @@ type WorksetInfo struct {
 
 // ListWorksetArgs 表示列出作品集列表请求的参数
 type ListWorksetArgs struct {
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" validate:"required"`
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
@@ -36,7 +36,7 @@ type ListWorksetArgs struct {
 
 // CreateWorksetArgs 表示创建作品集请求的参数
 type CreateWorksetArgs struct {
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" validate:"required"`
 	// Name 是作品集名称
 	Name string `json:"name" validate:"required"`

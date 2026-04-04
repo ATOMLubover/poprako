@@ -24,7 +24,7 @@ func CreateMember(appState *state.AppState) iris.Handler {
 	memberApp := appState.MemberApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -38,7 +38,7 @@ func CreateMember(appState *state.AppState) iris.Handler {
 
 		result, err := memberApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -69,7 +69,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 	memberApp := appState.MemberApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -83,7 +83,7 @@ func ListMembers(appState *state.AppState) iris.Handler {
 
 		result, err := memberApp.ListByTeam(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -113,7 +113,7 @@ func ListMyMembers(appState *state.AppState) iris.Handler {
 	memberApp := appState.MemberApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -125,7 +125,7 @@ func ListMyMembers(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := memberApp.ListMy(buildReqCx(ctx), currentUserID, &args)
+		result, err := memberApp.ListMy(buildReqCx(ctx), currUserID, &args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -153,7 +153,7 @@ func UpdateMemberRole(appState *state.AppState) iris.Handler {
 	memberApp := appState.MemberApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -178,7 +178,7 @@ func UpdateMemberRole(appState *state.AppState) iris.Handler {
 
 		if err := memberApp.UpdateRole(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -206,7 +206,7 @@ func JoinTeam(appState *state.AppState) iris.Handler {
 	memberApp := appState.MemberApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -220,7 +220,7 @@ func JoinTeam(appState *state.AppState) iris.Handler {
 
 		if err := memberApp.JoinTeam(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -247,7 +247,7 @@ func RemoveMember(appState *state.AppState) iris.Handler {
 	memberApp := appState.MemberApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -260,7 +260,7 @@ func RemoveMember(appState *state.AppState) iris.Handler {
 
 		if err := memberApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			memberID,
 		); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

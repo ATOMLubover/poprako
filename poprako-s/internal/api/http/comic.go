@@ -25,7 +25,7 @@ func ListComics(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -39,7 +39,7 @@ func ListComics(appState *state.AppState) iris.Handler {
 
 		result, err := comicApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -68,7 +68,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -82,7 +82,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 
 		result, err := comicApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -113,7 +113,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -138,7 +138,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 
 		if err := comicApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -165,7 +165,7 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -178,7 +178,7 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 
 		if err := comicApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			comicID,
 		); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

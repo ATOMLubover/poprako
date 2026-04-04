@@ -13,7 +13,7 @@ import (
 )
 
 type InvitationApp interface {
-	// List 获取指定团队的邀请列表
+	// List 获取指定汉化组的邀请列表
 	List(
 		cx context.Context,
 		currUserID string,
@@ -82,7 +82,7 @@ func (a *invitationAppImpl) List(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 鉴权：检查当前用户是否为该团队成员
+	// 鉴权：检查当前用户是否为该汉化组成员
 	_, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &args.TeamID,
@@ -179,7 +179,7 @@ func (a *invitationAppImpl) Update(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 鉴权：检查当前用户在目标团队中是否为管理员
+	// 鉴权：检查当前用户在目标汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &args.TeamID,
@@ -247,7 +247,7 @@ func (a *invitationAppImpl) Remove(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 查询邀请信息以获取所属团队 ID
+	// 查询邀请信息以获取所属汉化组 ID
 	invitations, err := a.invRepo.List(model.InvitationQueryOpt{})
 	if err != nil {
 		// 记录查询失败
@@ -278,7 +278,7 @@ func (a *invitationAppImpl) Remove(
 		return errors.New("邀请不存在")
 	}
 
-	// 鉴权：检查当前用户在邀请所属团队中是否为管理员
+	// 鉴权：检查当前用户在邀请所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetInv.TeamID,

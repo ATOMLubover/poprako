@@ -11,7 +11,7 @@ import (
 type ComicService interface {
 	// NewCreation 根据业务参数创建 ComicCreation 领域模型（ID 由 service 内部生成）
 	// index 通常由调用方在事务中通过 Count 获取
-	// 仅团队管理员可以创建漫画
+	// 仅汉化组管理员可以创建漫画
 	NewCreation(
 		mr repo.MemberRepo,
 		wr repo.WorksetRepo,
@@ -35,7 +35,7 @@ func NewComicService() ComicService {
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 ComicCreation
-// 仅团队管理员可以创建漫画，通过 workset 解析所属团队
+// 仅汉化组管理员可以创建漫画，通过 workset 解析所属汉化组
 func (s *comicServiceImpl) NewCreation(
 	mr repo.MemberRepo,
 	wr repo.WorksetRepo,
@@ -47,21 +47,21 @@ func (s *comicServiceImpl) NewCreation(
 	description string,
 	creatorID string,
 ) (*model.ComicCreation, error) {
-	// 查询作品集 解析所属团队
+	// 查询作品集 解析所属汉化组
 	workset, err := wr.GetByID(worksetID)
 	if err != nil {
 		// 返回查询失败错误
 		return nil, errors.New("无法获取漫画所属作品集 创建失败")
 	}
 
-	// 查询当前用户在团队中的成员记录 用于鉴权
+	// 查询当前用户在汉化组中的成员记录 用于鉴权
 	member, err := mr.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &workset.TeamID,
 	})
 	if err != nil || !member.HasAnyRole(model.RoleAdmin) {
 		// 返回权限错误
-		return nil, errors.New("仅团队管理员可以创建漫画")
+		return nil, errors.New("仅汉化组管理员可以创建漫画")
 	}
 
 	// 返回创建载荷

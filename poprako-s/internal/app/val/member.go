@@ -9,15 +9,22 @@ type MemberInfo struct {
 
 	// UserID 是该成员对应的用户 ID
 	UserID string `json:"user_id"`
-	// TeamID 是该成员所属的团队 ID
+	// TeamID 是该成员所属的汉化组 ID
 	TeamID string `json:"team_id"`
 
-	// Roles 是该成员所拥有的角色掩码
+	// Roles 是该成员所拥有的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
+	//   bit 6 (64) = Admin（管理员）
 	Roles model.RoleMask `json:"roles"`
 
 	// User 是可选的用户信息（仅在 includes 时填充）
 	User *UserInfo `json:"user,omitempty"`
-	// Team 是可选的团队信息（仅在 includes 时填充）
+	// Team 是可选的汉化组信息（仅在 includes 时填充）
 	Team *TeamInfo `json:"team,omitempty"`
 
 	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
@@ -30,9 +37,16 @@ type MemberInfo struct {
 type CreateMemberArgs struct {
 	// UserID 是要创建成员的用户 ID
 	UserID string `json:"user_id" validate:"required"`
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" validate:"required"`
-	// Roles 是分配的角色掩码
+	// Roles 是分配的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
+	//   bit 6 (64) = Admin（管理员）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 
@@ -42,9 +56,9 @@ type CreateMemberRes struct {
 	ID string `json:"id"`
 }
 
-// ListTeamMemberArgs 表示列出指定团队成员请求的参数
+// ListTeamMemberArgs 表示列出指定汉化组成员请求的参数
 type ListTeamMemberArgs struct {
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" validate:"required"`
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
@@ -60,11 +74,18 @@ type ListMyMemberArgs struct {
 type UpdateMemberRoleArgs struct {
 	// ID 是目标成员记录 ID
 	ID string `json:"id" validate:"required"`
-	// Roles 是目标角色掩码（PUT 语义全量替换）
+	// Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
+	//   bit 6 (64) = Admin（管理员）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 
-// JoinTeamArgs 表示用户通过邀请码加入团队请求的参数
+// JoinTeamArgs 表示用户通过邀请码加入汉化组请求的参数
 type JoinTeamArgs struct {
 	// InvitationCode 是邀请码
 	InvitationCode string `json:"invitation_code" validate:"required"`

@@ -10,7 +10,7 @@ import (
 // InvitationService 定义邀请领域相关的业务能力
 type InvitationService interface {
 	// NewCreation 根据业务参数创建 InvitationCreation 领域模型（ID 和邀请码由 service 内部生成）
-	// 仅团队管理员可以创建邀请
+	// 仅汉化组管理员可以创建邀请
 	NewCreation(
 		mr repo.MemberRepo,
 		invitorID string,
@@ -32,7 +32,7 @@ func NewInvitationService() InvitationService {
 }
 
 // NewCreation 构造一个带有 service 生成 ID 和邀请码的 InvitationCreation
-// 仅团队管理员可以创建邀请
+// 仅汉化组管理员可以创建邀请
 func (s *invitationServiceImpl) NewCreation(
 	mr repo.MemberRepo,
 	invitorID string,
@@ -40,14 +40,14 @@ func (s *invitationServiceImpl) NewCreation(
 	inviteeQQ string,
 	roles ...model.Role,
 ) (*model.InvitationCreation, error) {
-	// 查询邀请发起人在团队中的成员记录
+	// 查询邀请发起人在汉化组中的成员记录
 	member, err := mr.Get(model.MemberQueryOpt{
 		UserID: &invitorID,
 		TeamID: &targetTeamID,
 	})
 	if err != nil || !member.HasAnyRole(model.RoleAdmin) {
 		// 返回权限错误
-		return nil, errors.New("仅团队管理员可以创建邀请")
+		return nil, errors.New("仅汉化组管理员可以创建邀请")
 	}
 
 	// 构造邀请创建载荷

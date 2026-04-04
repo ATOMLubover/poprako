@@ -11,23 +11,30 @@ type InvitationInfo struct {
 	InvitorID string `json:"invitor_id"`
 	// InviteeQQ 是被邀请者的 QQ 号
 	InviteeQQ string `json:"invitee_qq"`
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id"`
 	// InvitationCode 是邀请码
 	InvitationCode string `json:"invitation_code"`
 
 	// Pending 表示邀请是否仍有效
 	Pending bool `json:"pending"`
-	// Roles 是邀请中指定的角色掩码
+	// Roles 是邀请中指定的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
+	//   bit 6 (64) = Admin（管理员）
 	Roles model.RoleMask `json:"roles"`
 
 	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
 	CreatedAt int64 `json:"created_at"`
 }
 
-// ListTeamInvitationArgs 表示列出指定团队邀请请求的参数
+// ListTeamInvitationArgs 表示列出指定汉化组邀请请求的参数
 type ListTeamInvitationArgs struct {
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" validate:"required"`
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
@@ -35,11 +42,18 @@ type ListTeamInvitationArgs struct {
 
 // CreateInvitationArgs 表示创建邀请请求的参数
 type CreateInvitationArgs struct {
-	// TeamID 是目标团队 ID
+	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" validate:"required"`
 	// InviteeQQ 是被邀请者的 QQ 号
 	InviteeQQ string `json:"invitee_qq" validate:"required"`
-	// Roles 是邀请中指定的角色掩码
+	// Roles 是邀请中指定的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
+	//   bit 6 (64) = Admin（管理员）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 
@@ -47,8 +61,15 @@ type CreateInvitationArgs struct {
 type UpdateInvitationArgs struct {
 	// ID 是要更新的邀请记录 ID
 	ID string `json:"id" validate:"required"`
-	// TeamID 是目标团队 ID，用于鉴权
+	// TeamID 是目标汉化组 ID，用于鉴权
 	TeamID string `json:"team_id" validate:"required"`
-	// Roles 是更新后的角色掩码
+	// Roles 是更新后的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
+	//   bit 6 (64) = Admin（管理员）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }

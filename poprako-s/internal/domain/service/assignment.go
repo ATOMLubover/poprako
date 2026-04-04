@@ -20,6 +20,12 @@ type AssignmentService interface {
 		userID string,
 		roles model.RoleMask,
 	) (*model.AssignmentCreation, error)
+	// NewInitialReviewerCreation 为章节创建者生成初始监修分配载荷
+	// 无需鉴权，仅用于章节刚创建时的引导性分配
+	NewInitialReviewerCreation(
+		chapterID string,
+		creatorID string,
+	) *model.AssignmentCreation
 	// NewUpdate 根据当前分配信息和目标角色掩码生成 AssignmentUpdate
 	// 已有角色保留原时间戳，新增角色使用当前时间，移除的角色清空时间戳
 	// 仅章节的监修可以更新分配
@@ -27,7 +33,7 @@ type AssignmentService interface {
 		ar repo.AssignmentRepo,
 		currUserID string,
 		id string,
-		current *model.AssignmentInfo,
+		curr *model.AssignmentInfo,
 		targetRoles model.RoleMask,
 	) (*model.AssignmentUpdate, error)
 }
@@ -39,6 +45,30 @@ type assignmentServiceImpl struct{}
 func NewAssignmentService() AssignmentService {
 	// 返回无状态实现
 	return &assignmentServiceImpl{}
+}
+
+// NewInitialReviewerCreation 为章节创建者生成初始监修分配载荷
+// 无需鉴权，仅用于章节刚创建时的引导性分配
+func (s *assignmentServiceImpl) NewInitialReviewerCreation(
+	chapterID string,
+	creatorID string,
+) *model.AssignmentCreation {
+	// 记录当前时间作为监修分配时间
+	now := time.Now()
+
+	// 返回仅含监修角色的创建载荷
+	return &model.AssignmentCreation{
+		ID:                    GenID("assignment"),
+		ChapterID:             chapterID,
+		UserID:                creatorID,
+		AssignedRawProviderAt: nil,
+		AssignedTranslatorAt:  nil,
+		AssignedProofreaderAt: nil,
+		AssignedTypesetterAt:  nil,
+		AssignedRedrawerAt:    nil,
+		AssignedReviewerAt:    &now,
+		AssignedPublisherAt:   nil,
+	}
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 AssignmentCreation
@@ -95,12 +125,12 @@ func (s *assignmentServiceImpl) NewUpdate(
 	ar repo.AssignmentRepo,
 	currUserID string,
 	id string,
-	current *model.AssignmentInfo,
+	curr *model.AssignmentInfo,
 	targetRoles model.RoleMask,
 ) (*model.AssignmentUpdate, error) {
 	// 查询当前用户在章节中的分配 用于鉴权
 	currAssignment, err := ar.Get(model.AssignmentQueryOpt{
-		ChapterID: &current.ChapterID,
+		ChapterID: &curr.ChapterID,
 		UserID:    &currUserID,
 	})
 	if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
@@ -112,13 +142,13 @@ func (s *assignmentServiceImpl) NewUpdate(
 	now := time.Now()
 
 	// 解析目标角色对应时间戳
-	resolve := func(currentAt *time.Time, role model.Role) *time.Time {
+	resolve := func(currAt *time.Time, role model.Role) *time.Time {
 		if targetRoles&model.RoleMask(role) == 0 {
 			return nil
 		}
 
-		if currentAt != nil {
-			t := *currentAt
+		if currAt != nil {
+			t := *currAt
 			return &t
 		}
 
@@ -130,12 +160,12 @@ func (s *assignmentServiceImpl) NewUpdate(
 	// 返回更新载荷
 	return &model.AssignmentUpdate{
 		ID:                    id,
-		AssignedRawProviderAt: resolve(current.AssignedRawProviderAt, model.RoleRawProvider),
-		AssignedTranslatorAt:  resolve(current.AssignedTranslatorAt, model.RoleTranslator),
-		AssignedProofreaderAt: resolve(current.AssignedProofreaderAt, model.RoleProofreader),
-		AssignedTypesetterAt:  resolve(current.AssignedTypesetterAt, model.RoleTypesetter),
-		AssignedRedrawerAt:    current.AssignedRedrawerAt,
-		AssignedReviewerAt:    resolve(current.AssignedReviewerAt, model.RoleReviewer),
-		AssignedPublisherAt:   resolve(current.AssignedPublisherAt, model.RolePublisher),
+		AssignedRawProviderAt: resolve(curr.AssignedRawProviderAt, model.RoleRawProvider),
+		AssignedTranslatorAt:  resolve(curr.AssignedTranslatorAt, model.RoleTranslator),
+		AssignedProofreaderAt: resolve(curr.AssignedProofreaderAt, model.RoleProofreader),
+		AssignedTypesetterAt:  resolve(curr.AssignedTypesetterAt, model.RoleTypesetter),
+		AssignedRedrawerAt:    curr.AssignedRedrawerAt,
+		AssignedReviewerAt:    resolve(curr.AssignedReviewerAt, model.RoleReviewer),
+		AssignedPublisherAt:   resolve(curr.AssignedPublisherAt, model.RolePublisher),
 	}, nil
 }
