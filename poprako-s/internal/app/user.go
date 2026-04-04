@@ -371,6 +371,19 @@ func (a *userAppImpl) Reg(
 			return errors.New("注册失败：加入汉化组失败")
 		}
 
+		// 将对应的 invitation 标记为已使用
+		if err := invRepoTxn.Invalidate(inv.ID); err != nil {
+			// 记录标记邀请码失败
+			lgr.Error(
+				"注册失败：标记邀请码失败",
+				zap.String("qq", args.QQ),
+				zap.Error(err),
+			)
+
+			// 返回通用错误提示
+			return errors.New("注册失败：内部错误")
+		}
+
 		// 保存已创建的用户信息供事务外继续使用
 		createdUser = userInfo
 

@@ -33,7 +33,8 @@ type ComicInfo struct {
 
 // ComposeComicTitle 根据序号、作者和标题组合生成展示用的漫画标题
 func (c *ComicInfo) ComposeComicTitle() string {
-	return fmt.Sprintf("【%d】[%s] %s", c.Index, c.Author, c.Title)
+	// 为了更加人类可读，在序号上采用 index + 1 的方式展示
+	return fmt.Sprintf("【%d】[%s] %s", c.Index+1, c.Author, c.Title)
 }
 
 // ComicCreation 是创建漫画时的载荷
