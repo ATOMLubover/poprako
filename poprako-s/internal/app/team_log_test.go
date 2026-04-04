@@ -17,7 +17,7 @@ func TestLogTeamAppForwardsAllMethods(t *testing.T) {
 	_, _ = app.ListMy(background(), "user-1", &val.ListMyTeamArgs{})
 	_ = app.Update(background(), "user-1", &val.UpdateTeamArgs{ID: "team-1", Name: "Team"})
 	_ = app.Remove(background(), "user-1", "team-1")
-	_, _ = app.ReserveAvatar(background(), "user-1", "team-1")
+	_, _ = app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{TeamID: "team-1", FileName: "avatar.png"})
 	_ = app.ConfirmAvatarUploaded(background(), "user-1", "team-1")
 	if !stub.createCalled || !stub.listCalled || !stub.listMyCalled || !stub.updateCalled || !stub.removeCalled || !stub.reserveCalled || !stub.confirmCalled {
 		t.Fatalf("expected all team wrapper calls to forward: %#v", stub)
@@ -35,7 +35,7 @@ func TestLogTeamAppRejectsInvalidArgs(t *testing.T) {
 	if err := app.Remove(background(), "user-1", ""); err == nil {
 		t.Fatal("expected remove validation error")
 	}
-	if _, err := app.ReserveAvatar(background(), "user-1", ""); err == nil {
+	if _, err := app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{}); err == nil {
 		t.Fatal("expected reserve avatar validation error")
 	}
 	if err := app.ConfirmAvatarUploaded(background(), "user-1", ""); err == nil {

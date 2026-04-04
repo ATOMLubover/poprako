@@ -134,3 +134,32 @@ func (r *ComicRepo) Delete(id string) error {
 	delete(r.Infos, id)
 	return nil
 }
+
+func (r *ComicRepo) PreFillCoverOSSKey(id string, coverOSSKey string) error {
+	r.ensure()
+	info, ok := r.Infos[id]
+	if !ok {
+		return errNotFound
+	}
+
+	info.CoverOSSKey = coverOSSKey
+	info.IsCoverUploaded = false
+	info.UpdatedAt = time.Now()
+	r.Infos[id] = info
+
+	return nil
+}
+
+func (r *ComicRepo) ConfirmCoverUploaded(id string) error {
+	r.ensure()
+	info, ok := r.Infos[id]
+	if !ok {
+		return errNotFound
+	}
+
+	info.IsCoverUploaded = true
+	info.UpdatedAt = time.Now()
+	r.Infos[id] = info
+
+	return nil
+}

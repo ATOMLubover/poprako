@@ -109,6 +109,8 @@ func initApp(appState *state.AppState) *iris.Application {
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))
+		comicParty.Post("/{comic_id}/cover", ReserveComicCover(appState))
+		comicParty.Post("/{comic_id}/cover/confirm", ConfirmComicCoverUploaded(appState))
 	}
 
 	// 章节相关路由

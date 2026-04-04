@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -19,6 +19,7 @@ WORKDIR /app
 
 COPY --from=builder /app/poprako-s          ./poprako-s
 COPY --from=builder /app/docs/              ./docs/
+
 # Use the docker-specific config (listens on 0.0.0.0)
 COPY docker/poprako-s-main/app_config.json  ./app_config.json
 

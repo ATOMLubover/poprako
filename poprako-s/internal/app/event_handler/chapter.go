@@ -152,7 +152,7 @@ func (h *ChapterCreatorAssignedHandler) Handle(ev event.Event) error {
 	// 由领域服务构造初始监修分配载荷
 	svc := service.NewAssignmentService()
 
-	creation := svc.NewInitialReviewerCreation(e.ChapterID, e.CreatorID)
+	creation := svc.NewInitReviewerCreation(e.ChapterID, e.CreatorID)
 
 	// 持久化初始监修分配记录
 	_, err = assignmentRepo.Create(creation)

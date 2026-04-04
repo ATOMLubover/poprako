@@ -19,7 +19,7 @@ func TestLogUserAppForwardsAllMethods(t *testing.T) {
 	_, _ = app.GetMyInfo(background(), "user-1")
 	_ = app.UpdateMyInfo(background(), "user-1", &val.UpdateUserArgs{Name: "Name", QQ: "100001"})
 	_, _ = app.GetMyStats(background(), "user-1")
-	_, _ = app.ReserveMyAvatar(background(), "user-1")
+	_, _ = app.ReserveMyAvatar(background(), "user-1", &val.ReserveUserAvatarArgs{FileName: "avatar.png"})
 	_ = app.ConfirmMyAvatarUploaded(background(), "user-1")
 	_ = app.Remove(background(), "user-1", "user-2")
 	if !stub.parseTokenCalled || !stub.loginCalled || !stub.regCalled || !stub.getCalled || !stub.getMyCalled || !stub.updateCalled || !stub.statsCalled || !stub.reserveCalled || !stub.confirmCalled || !stub.removeCalled {
@@ -47,7 +47,7 @@ func TestLogUserAppRejectsInvalidArgs(t *testing.T) {
 	if _, err := app.GetMyStats(background(), ""); err == nil {
 		t.Fatal("expected stats validation error")
 	}
-	if _, err := app.ReserveMyAvatar(background(), ""); err == nil {
+	if _, err := app.ReserveMyAvatar(background(), "user-1", &val.ReserveUserAvatarArgs{}); err == nil {
 		t.Fatal("expected reserve avatar validation error")
 	}
 	if err := app.ConfirmMyAvatarUploaded(background(), ""); err == nil {

@@ -105,7 +105,9 @@ func GetMyUserStats(appState *state.AppState) iris.Handler {
 //
 // @Tags 		user
 // @Security 	ApiKeyAuth
+// @Accept 		json
 // @Produce 	json
+// @Param 		body body val.ReserveUserAvatarArgs true "预留用户头像参数"
 //
 // @Success 	200 {object} val.ReserveUserAvatarRes
 //
@@ -119,7 +121,14 @@ func ReserveMyAvatar(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := userApp.ReserveMyAvatar(buildReqCx(ctx), currUserID)
+		var args val.ReserveUserAvatarArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		result, err := userApp.ReserveMyAvatar(buildReqCx(ctx), currUserID, &args)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return

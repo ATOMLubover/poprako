@@ -45,6 +45,15 @@ type UpdateTeamArgs struct {
 	Description string `json:"description"`
 }
 
+// ReserveTeamAvatarArgs 表示预留汉化组头像上传接口的请求参数
+type ReserveTeamAvatarArgs struct {
+	// TeamID 是要上传头像的汉化组标识
+	TeamID string `json:"team_id" validate:"required"`
+	// FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名
+	// 需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
+	FileName string `json:"file_name" validate:"required"`
+}
+
 // ReserveTeamAvatarRes 表示预留汉化组头像上传接口的响应数据
 type ReserveTeamAvatarRes struct {
 	// PutURL 是用于上传头像的预签名 URL

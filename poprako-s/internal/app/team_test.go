@@ -26,14 +26,14 @@ func TestTeamAppReserveAvatar(t *testing.T) {
 
 	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), &mock_repo.UserRepo{}, teamRepo, memberRepo, ossClient)
 
-	got, err := app.ReserveAvatar(background(), "user-1", "team-1")
+	got, err := app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{TeamID: "team-1", FileName: "avatar.png"})
 	requireNoErr(t, err)
 
-	if got.PutURL != "https://upload.example/team-avatar_team-1" {
+	if got.PutURL != "https://upload.example/team-avatar_team-1.png" {
 		t.Fatalf("unexpected put url: %#v", got)
 	}
 	team := teamRepo.Infos["team-1"]
-	if team.AvatarOSSKey != "team-avatar_team-1" {
+	if team.AvatarOSSKey != "team-avatar_team-1.png" {
 		t.Fatalf("unexpected avatar key: %#v", team)
 	}
 }
@@ -47,8 +47,8 @@ func TestTeamAppAdminFlows(t *testing.T) {
 	teamRepo := mock_repo.NewMockTeamRepo()
 	teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1", Name: "Existing", AvatarOSSKey: "team-avatar_team-1", IsAvatarUploaded: true, CreatedAt: now, UpdatedAt: now}
 	ossClient := newMockOSSClient()
-	ossClient.SetGetURLs(map[string]string{"team-avatar_team-1": "https://cdn.example/team-1"})
-	ossClient.SetPutURLs(map[string]string{"team-avatar_team-1": "https://upload.example/team-1"})
+	ossClient.SetGetURLs(map[string]string{"team-avatar_team-1": "https://cdn.example/team-1", "team-avatar_team-1.png": "https://cdn.example/team-1"})
+	ossClient.SetPutURLs(map[string]string{"team-avatar_team-1.png": "https://upload.example/team-1"})
 
 	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, ossClient)
 
@@ -83,7 +83,7 @@ func TestTeamAppAdminFlows(t *testing.T) {
 		t.Fatalf("unexpected team update: %#v", teamRepo.Infos["team-1"])
 	}
 
-	reserveRes, err := app.ReserveAvatar(background(), "user-1", "team-1")
+	reserveRes, err := app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{TeamID: "team-1", FileName: "avatar.png"})
 	requireNoErr(t, err)
 	if reserveRes.PutURL != "https://upload.example/team-1" {
 		t.Fatalf("unexpected reserve avatar result: %#v", reserveRes)
@@ -146,7 +146,7 @@ func TestTeamAppAdditionalErrorPaths(t *testing.T) {
 		ossClient := newMockOSSClient()
 		ossClient.SetPutErr(errors.New("boom"))
 		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), teamRepo, memberRepo, ossClient)
-		if _, err := app.ReserveAvatar(background(), "user-1", "team-1"); err == nil {
+		if _, err := app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{TeamID: "team-1", FileName: "avatar.png"}); err == nil {
 			t.Fatal("expected reserve avatar failure")
 		}
 	})

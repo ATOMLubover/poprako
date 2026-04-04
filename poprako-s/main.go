@@ -30,7 +30,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		panic("加载 .env 环境变量失败")
+		zap.L().Warn("加载 .env 文件失败，可能是因为文件不存在")
 	}
 
 	appCfg, err := cfg.Load()

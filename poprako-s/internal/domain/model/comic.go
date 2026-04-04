@@ -21,6 +21,11 @@ type ComicInfo struct {
 
 	ChapterCount int
 
+	// CoverOSSKey 是封面图片在 OSS 中的对象键
+	CoverOSSKey string
+	// IsCoverUploaded 表示封面是否已上传
+	IsCoverUploaded bool
+
 	CreatorID string
 	// Creator 仅在 includes 指定时填充
 	Creator *UserInfo

@@ -68,10 +68,12 @@ func (s *chapterAppStub) Remove(context.Context, string, string) error {
 }
 
 type comicAppStub struct {
-	listCalled   bool
-	createCalled bool
-	updateCalled bool
-	removeCalled bool
+	listCalled        bool
+	createCalled      bool
+	updateCalled      bool
+	removeCalled      bool
+	reserveCoverCalled bool
+	confirmCoverCalled bool
 }
 
 func (s *comicAppStub) List(context.Context, string, *val.ListComicArgs) ([]*val.ComicInfo, error) {
@@ -91,6 +93,16 @@ func (s *comicAppStub) Update(context.Context, string, *val.UpdateComicArgs) err
 
 func (s *comicAppStub) Remove(context.Context, string, string) error {
 	s.removeCalled = true
+	return nil
+}
+
+func (s *comicAppStub) ReserveCover(_ context.Context, _ string, _ *val.ReserveComicCoverArgs) (*val.ReserveComicCoverRes, error) {
+	s.reserveCoverCalled = true
+	return &val.ReserveComicCoverRes{PutURL: "put-url"}, nil
+}
+
+func (s *comicAppStub) ConfirmCoverUploaded(context.Context, string, string) error {
+	s.confirmCoverCalled = true
 	return nil
 }
 
@@ -222,7 +234,7 @@ func (s *teamAppStub) Remove(context.Context, string, string) error {
 	return nil
 }
 
-func (s *teamAppStub) ReserveAvatar(context.Context, string, string) (*val.ReserveTeamAvatarRes, error) {
+func (s *teamAppStub) ReserveAvatar(_ context.Context, _ string, _ *val.ReserveTeamAvatarArgs) (*val.ReserveTeamAvatarRes, error) {
 	s.reserveCalled = true
 	return &val.ReserveTeamAvatarRes{PutURL: "put-url"}, nil
 }
@@ -295,7 +307,7 @@ func (s *userAppStub) GetMyStats(context.Context, string) (*val.UserStatsInfo, e
 	return &val.UserStatsInfo{UserID: "user-1"}, nil
 }
 
-func (s *userAppStub) ReserveMyAvatar(context.Context, string) (*val.ReserveUserAvatarRes, error) {
+func (s *userAppStub) ReserveMyAvatar(_ context.Context, _ string, _ *val.ReserveUserAvatarArgs) (*val.ReserveUserAvatarRes, error) {
 	s.reserveCalled = true
 	return &val.ReserveUserAvatarRes{PutURL: "put-url"}, nil
 }

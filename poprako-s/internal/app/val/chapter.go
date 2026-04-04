@@ -9,6 +9,8 @@ type ChapterInfo struct {
 
 	// ComicID 是所属漫画 ID
 	ComicID string `json:"comic_id"`
+	// TODO
+	Comic *ComicInfo `json:"comic,omitempty"`
 	// IsPinned 表示章节是否被顶置
 	IsPinned bool `json:"is_pinned"`
 

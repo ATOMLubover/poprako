@@ -73,6 +73,13 @@ type UpdateUserArgs struct {
 	QQ string `json:"qq"`
 }
 
+// ReserveUserAvatarArgs 表示预留头像上传接口的请求参数
+type ReserveUserAvatarArgs struct {
+	// FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名
+	// 需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
+	FileName string `json:"file_name" validate:"required"`
+}
+
 // ReserveUserAvatarRes 表示预留头像上传接口的响应数据
 type ReserveUserAvatarRes struct {
 	// PutURL 是用于上传头像的预签名 URL，客户端可以直接使用该 URL 上传头像文件

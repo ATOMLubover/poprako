@@ -20,9 +20,9 @@ type AssignmentService interface {
 		userID string,
 		roles model.RoleMask,
 	) (*model.AssignmentCreation, error)
-	// NewInitialReviewerCreation 为章节创建者生成初始监修分配载荷
+	// NewInitReviewerCreation 为章节创建者生成初始监修分配载荷
 	// 无需鉴权，仅用于章节刚创建时的引导性分配
-	NewInitialReviewerCreation(
+	NewInitReviewerCreation(
 		chapterID string,
 		creatorID string,
 	) *model.AssignmentCreation
@@ -47,9 +47,9 @@ func NewAssignmentService() AssignmentService {
 	return &assignmentServiceImpl{}
 }
 
-// NewInitialReviewerCreation 为章节创建者生成初始监修分配载荷
+// NewInitReviewerCreation 为章节创建者生成初始监修分配载荷
 // 无需鉴权，仅用于章节刚创建时的引导性分配
-func (s *assignmentServiceImpl) NewInitialReviewerCreation(
+func (s *assignmentServiceImpl) NewInitReviewerCreation(
 	chapterID string,
 	creatorID string,
 ) *model.AssignmentCreation {
@@ -89,6 +89,8 @@ func (s *assignmentServiceImpl) NewCreation(
 		// 返回权限错误
 		return nil, errors.New("仅章节监修可以创建分配")
 	}
+
+	// TODO: 应该检查被分配用户是否有资质担任目标角色
 
 	// 记录当前时间 作为新分配角色时间戳
 	now := time.Now()

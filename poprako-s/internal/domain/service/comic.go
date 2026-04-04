@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strings"
 
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
@@ -23,6 +24,11 @@ type ComicService interface {
 		description string,
 		creatorID string,
 	) (*model.ComicCreation, error)
+
+	// GenCoverOSSKey 根据漫画 ID 生成封面的 OSS Key
+	GenCoverOSSKey(
+		comicID string,
+	) string
 }
 
 // comicServiceImpl 是 ComicService 的具体实现 无内禀状态
@@ -74,4 +80,12 @@ func (s *comicServiceImpl) NewCreation(
 		Description: description,
 		CreatorID:   creatorID,
 	}, nil
+}
+
+// GenCoverOSSKey 以固定前缀拼接漫画 ID 作为封面的 OSS Key
+func (s *comicServiceImpl) GenCoverOSSKey(
+	comicID string,
+) string {
+	// 返回拼接结果
+	return strings.Join([]string{"comic-cover", comicID}, "_")
 }
