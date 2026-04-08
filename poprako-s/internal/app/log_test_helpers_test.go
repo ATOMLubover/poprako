@@ -68,10 +68,10 @@ func (s *chapterAppStub) Remove(context.Context, string, string) error {
 }
 
 type comicAppStub struct {
-	listCalled        bool
-	createCalled      bool
-	updateCalled      bool
-	removeCalled      bool
+	listCalled         bool
+	createCalled       bool
+	updateCalled       bool
+	removeCalled       bool
 	reserveCoverCalled bool
 	confirmCoverCalled bool
 }

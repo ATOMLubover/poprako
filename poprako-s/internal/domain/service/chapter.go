@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 )
@@ -19,6 +20,12 @@ type ChapterService interface {
 		subtitle *string,
 		creatorID string,
 	) (*model.ChapterCreation, error)
+
+	// NewRemovalEvent 根据被删除章节的信息构造 ChapterRemovedEvent
+	NewRemovalEvent(
+		chapter *model.ChapterInfo,
+		assignedUserIDs []string,
+	) *event.ChapterRemovedEvent
 
 	// TransiteWorkflow 接受一个工作流转换事件，根据事件类型和当前状态执行相应的状态转换
 	// 它负责权限检验，只有当用户 u 有权执行事件 t 时才会执行状态转换，否则返回错误
@@ -55,13 +62,25 @@ func (s *chapterServiceImpl) NewCreation(
 	}
 
 	// 返回创建载荷
-	return &model.ChapterCreation{
+	c := &model.ChapterCreation{
 		ID:        GenID("chapter"),
 		ComicID:   comicID,
 		Index:     int(count),
 		Subtitle:  subtitle,
 		CreatorID: creatorID,
-	}, nil
+	}
+
+	// 章节创建时同时进行初始监修分配，此二事均需在同一事务内完成
+	c.PushEvent(&event.ChapterCreatedEvent{
+		ComicID: comicID,
+	})
+
+	c.PushEvent(&event.ChapterCreatorAssignedEvent{
+		ChapterID: c.ID,
+		CreatorID: creatorID,
+	})
+
+	return c, nil
 }
 
 // TransiteWorkflow 接受一个工作流转换事件，根据事件类型和当前状态执行相应的状态转换
@@ -115,5 +134,18 @@ func (s *chapterServiceImpl) TransiteWorkflow(
 
 	default:
 		return fmt.Errorf("未知的工作流转换：%s", t)
+	}
+}
+
+// NewRemovalEvent 根据被删除章节的信息构造 ChapterRemovedEvent
+func (s *chapterServiceImpl) NewRemovalEvent(
+	chapter *model.ChapterInfo,
+	assignedUserIDs []string,
+) *event.ChapterRemovedEvent {
+	// 返回组装好的删除事件
+	return &event.ChapterRemovedEvent{
+		ComicID:         chapter.ComicID,
+		WasPublished:    chapter.PublishedAt != nil,
+		AssignedUserIDs: assignedUserIDs,
 	}
 }

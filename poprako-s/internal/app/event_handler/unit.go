@@ -1,6 +1,7 @@
 package event_handler
 
 import (
+	"context"
 	"errors"
 
 	"poprako-s/internal/domain/event"
@@ -17,19 +18,19 @@ func (h *UnitSaveHandler) EventType() event.EventType {
 	return event.EventTypeUnitSave
 }
 
-func (h *UnitSaveHandler) Handle(ev event.Event) error {
+func (h *UnitSaveHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.UnitSaveEvent)
 	if !ok {
 		return errors.New("[UnitSaveHandler] 事件载荷类型不是 UnitSaveEvent")
 	}
 
 	// 从事务上下文中创建绑定事务的 repo
-	pageRepo, err := pageRepoFromCx(e.Cx)
+	pageRepo, err := pageRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[UnitSaveHandler] 无法创建事务版 PageRepo")
 	}
 
-	chapterRepo, err := chapterRepoFromCx(e.Cx)
+	chapterRepo, err := chapterRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[UnitSaveHandler] 无法创建事务版 ChapterRepo")
 	}

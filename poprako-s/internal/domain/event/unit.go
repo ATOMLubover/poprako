@@ -1,7 +1,5 @@
 package event
 
-import "context"
-
 const (
 	EventTypeUnitSave EventType = "UnitSaveEvent"
 )
@@ -15,14 +13,10 @@ type UnitSaveEvent struct {
 	PatchCount  int
 	DeleteCount int
 
-	// 统计变化量，由 Save 在事务内计算完成后随事件传递给 Handler
+	// 统计变化量，由 domain service 在事务内计算完成后封装进事件
 	TotalDelta      int
 	TranslatedDelta int
 	ProofreadDelta  int
-
-	// 包含事务的上下文，可以使用 FromCx 方法来创建
-	// 带事务的 repo
-	Cx context.Context
 }
 
 func (e *UnitSaveEvent) EventType() EventType {

@@ -88,7 +88,7 @@ type userAppImpl struct {
 	memberSvc service.MemberService
 
 	userRepo   repo.UserRepo
-	invRepo    repo.InvitationRepo
+	invRepo    repo.MemberInvitationRepo
 	memberRepo repo.MemberRepo
 	txnMgr     repo.TxnMgr
 
@@ -102,7 +102,7 @@ func NewUserApp(
 	userSvc service.UserService,
 	memberSvc service.MemberService,
 	userRepo repo.UserRepo,
-	invRepo repo.InvitationRepo,
+	invRepo repo.MemberInvitationRepo,
 	memberRepo repo.MemberRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
@@ -205,7 +205,7 @@ func (a *userAppImpl) Login(
 	}
 
 	// 发布登录成功后产生的领域事件
-	if err := a.eventBus.Pub(creds.Events()); err != nil {
+	if err := a.eventBus.Pub(cx, creds.PullEvents()); err != nil {
 		// 记录领域事件处理失败
 		lgr.Error(
 			"登录失败：处理领域事件失败",
@@ -320,7 +320,7 @@ func (a *userAppImpl) Reg(
 		}
 
 		// 发布用户创建时产生的领域事件
-		if err := a.eventBus.Pub(userCreation.Events()); err != nil {
+		if err := a.eventBus.Pub(cx, userCreation.PullEvents()); err != nil {
 			// 记录领域事件处理失败
 			lgr.Error(
 				"注册失败：处理领域事件失败",

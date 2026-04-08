@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 	"time"
+
+	"poprako-s/internal/domain/event"
 )
 
 // ComicInfo 包含作品集/漫画的元信息，用于聚合其章节和统计数据
@@ -57,6 +59,8 @@ type ComicCreation struct {
 	Description string
 	// CreatorID 是必须的，记录创建者
 	CreatorID string
+
+	event.EventBase
 }
 
 // ComicUpdate 是漫画更新信息的 view，是 PUT 语义的载荷

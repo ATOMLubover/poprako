@@ -1,7 +1,5 @@
 package event
 
-import "context"
-
 // 工作流发生变化时产生的事件类型
 // 我们通常只记录工作流完成的事件，因为它们是最重要的里程碑事件
 const (
@@ -20,7 +18,6 @@ const (
 // ChapterCreatedEvent 代表章节创建后的同步统计事件
 type ChapterCreatedEvent struct {
 	ComicID string
-	Cx      context.Context
 }
 
 func (e *ChapterCreatedEvent) EventType() EventType {
@@ -39,7 +36,6 @@ func (e *ChapterCreatedEvent) Payload() any {
 type ChapterCreatorAssignedEvent struct {
 	ChapterID string
 	CreatorID string
-	Cx        context.Context
 }
 
 func (e *ChapterCreatorAssignedEvent) EventType() EventType {
@@ -59,7 +55,6 @@ type ChapterRemovedEvent struct {
 	ComicID         string
 	WasPublished    bool
 	AssignedUserIDs []string
-	Cx              context.Context
 }
 
 func (e *ChapterRemovedEvent) EventType() EventType {
@@ -77,7 +72,6 @@ func (e *ChapterRemovedEvent) Payload() any {
 // ChapterPublishedEvent 代表章节发布完成后的同步统计事件
 type ChapterPublishedEvent struct {
 	ChapterID string
-	Cx        context.Context
 }
 
 func (e *ChapterPublishedEvent) EventType() EventType {

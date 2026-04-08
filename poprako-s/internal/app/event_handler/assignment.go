@@ -1,6 +1,7 @@
 package event_handler
 
 import (
+	"context"
 	"errors"
 
 	"poprako-s/internal/domain/event"
@@ -17,13 +18,13 @@ func (h *AssignmentCreateHandler) EventType() event.EventType {
 	return event.EventTypeAssignmentCreated
 }
 
-func (h *AssignmentCreateHandler) Handle(ev event.Event) error {
+func (h *AssignmentCreateHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.AssignmentCreatedEvent)
 	if !ok {
 		return errors.New("[AssignmentCreateHandler] 事件载荷类型不是 AssignmentCreatedEvent")
 	}
 
-	userRepo, err := userRepoFromCx(e.Cx)
+	userRepo, err := userRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[AssignmentCreateHandler] 无法创建事务版 UserRepo")
 	}
@@ -46,7 +47,7 @@ func (h *AssignmentRemoveHandler) EventType() event.EventType {
 	return event.EventTypeAssignmentRemoved
 }
 
-func (h *AssignmentRemoveHandler) Handle(ev event.Event) error {
+func (h *AssignmentRemoveHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.AssignmentRemovedEvent)
 	if !ok {
 		return errors.New("[AssignmentRemoveHandler] 事件载荷类型不是 AssignmentRemovedEvent")
@@ -56,7 +57,7 @@ func (h *AssignmentRemoveHandler) Handle(ev event.Event) error {
 		return nil
 	}
 
-	userRepo, err := userRepoFromCx(e.Cx)
+	userRepo, err := userRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[AssignmentRemoveHandler] 无法创建事务版 UserRepo")
 	}

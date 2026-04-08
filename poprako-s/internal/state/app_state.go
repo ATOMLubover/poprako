@@ -12,7 +12,7 @@ type AppState struct {
 	UserApp       app.UserApp
 	TeamApp       app.TeamApp
 	MemberApp     app.MemberApp
-	InvitationApp app.InvitationApp
+	InvitationApp app.MemberInvitationApp
 	WorksetApp    app.WorksetApp
 	ComicApp      app.ComicApp
 	ChapterApp    app.ChapterApp
@@ -27,7 +27,7 @@ func NewAppState(
 	userApp app.UserApp,
 	teamApp app.TeamApp,
 	memberApp app.MemberApp,
-	invitationApp app.InvitationApp,
+	invitationApp app.MemberInvitationApp,
 	worksetApp app.WorksetApp,
 	comicApp app.ComicApp,
 	chapterApp app.ChapterApp,

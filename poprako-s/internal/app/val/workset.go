@@ -7,6 +7,9 @@ type WorksetInfo struct {
 
 	// TeamID 是所属汉化组 ID
 	TeamID string `json:"team_id"`
+	// Team 是可选的汉化组信息（仅在 includes 时填充）
+	Team *TeamInfo `json:"team,omitempty"`
+
 	// Index 是作品集在汉化组内的序号
 	Index int `json:"index"`
 
@@ -16,9 +19,6 @@ type WorksetInfo struct {
 	Description string `json:"description"`
 	// ComicCount 是作品集中漫画数量
 	ComicCount int `json:"comic_count"`
-
-	// Team 是可选的汉化组信息（仅在 includes 时填充）
-	Team *TeamInfo `json:"team,omitempty"`
 
 	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
 	CreatedAt int64 `json:"created_at"`

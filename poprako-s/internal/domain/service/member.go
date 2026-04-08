@@ -23,7 +23,7 @@ type MemberService interface {
 	// 角色由邀请信息决定，不需要超级管理员权限
 	NewCreationFromInvitation(
 		currUser *model.UserInfo,
-		i *model.InvitationInfo,
+		i *model.MemberInvitationInfo,
 	) (*model.MemberCreation, error)
 
 	// NewUpdate 根据当前操作用户权限和目标角色掩码生成 MemberUpdate
@@ -93,7 +93,7 @@ func (s *memberServiceImpl) NewCreation(
 // NewCreationFromInvitation 根据邀请信息构造 MemberCreation，角色由邀请决定
 func (s *memberServiceImpl) NewCreationFromInvitation(
 	currUser *model.UserInfo,
-	i *model.InvitationInfo,
+	i *model.MemberInvitationInfo,
 ) (*model.MemberCreation, error) {
 	// 构造成员创建载荷，直接映射邀请中指定的角色
 	c := &model.MemberCreation{

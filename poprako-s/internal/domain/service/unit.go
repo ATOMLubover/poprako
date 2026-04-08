@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 )
@@ -37,6 +38,18 @@ type UnitService interface {
 		patch []model.UnitPatch,
 		delete []string,
 	) (*model.UnitDiff, error)
+
+	// NewSaveEvent 根据页面保存操作的结果构造 UnitSaveEvent
+	NewSaveEvent(
+		pageID string,
+		chapterID string,
+		insertCount int,
+		patchCount int,
+		deleteCount int,
+		totalDelta int,
+		translatedDelta int,
+		proofreadDelta int,
+	) *event.UnitSaveEvent
 }
 
 // unitServiceImpl 是 UnitService 的具体实现 无内禀状态
@@ -188,4 +201,30 @@ func touchesProofreadFieldsInPatch(
 
 	// 未触碰时返回 false
 	return false
+}
+
+// NewSaveEvent 根据页面保存操作的结果构造 UnitSaveEvent
+func (s *unitServiceImpl) NewSaveEvent(
+	pageID string,
+	chapterID string,
+	insertCount int,
+	patchCount int,
+	deleteCount int,
+	totalDelta int,
+	translatedDelta int,
+	proofreadDelta int,
+) *event.UnitSaveEvent {
+	// 返回组装好的保存事件
+	return &event.UnitSaveEvent{
+		PageID:    pageID,
+		ChapterID: chapterID,
+
+		InsertCount: insertCount,
+		PatchCount:  patchCount,
+		DeleteCount: deleteCount,
+
+		TotalDelta:      totalDelta,
+		TranslatedDelta: translatedDelta,
+		ProofreadDelta:  proofreadDelta,
+	}
 }

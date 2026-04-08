@@ -60,6 +60,10 @@ definitions:
     type: object
   val.ChapterInfo:
     properties:
+      comic:
+        allOf:
+        - $ref: '#/definitions/val.ComicInfo'
+        description: TODO
       comic_id:
         description: ComicID 是所属漫画 ID
         type: string
@@ -128,6 +132,9 @@ definitions:
       chapter_count:
         description: ChapterCount 是漫画下章节数量
         type: integer
+      cover_url:
+        description: CoverURL 是漫画封面的可访问地址
+        type: string
       created_at:
         description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
@@ -147,6 +154,9 @@ definitions:
       index:
         description: Index 是漫画在作品集内的序号
         type: integer
+      is_cover_uploaded:
+        description: IsCoverUploaded 表示封面是否已经上传
+        type: boolean
       last_active_at:
         description: LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳
         type: integer
@@ -530,11 +540,55 @@ definitions:
           $ref: '#/definitions/val.PageCreationResult'
         type: array
     type: object
+  val.ReserveComicCoverArgs:
+    properties:
+      comic_id:
+        description: ComicID 是要上传封面的漫画标识
+        type: string
+      file_name:
+        description: |-
+          FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名
+          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "cover.jpg"
+        type: string
+    required:
+    - comic_id
+    - file_name
+    type: object
+  val.ReserveComicCoverRes:
+    properties:
+      put_url:
+        description: PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件
+        type: string
+    type: object
+  val.ReserveTeamAvatarArgs:
+    properties:
+      file_name:
+        description: |-
+          FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名
+          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
+        type: string
+      team_id:
+        description: TeamID 是要上传头像的汉化组标识
+        type: string
+    required:
+    - file_name
+    - team_id
+    type: object
   val.ReserveTeamAvatarRes:
     properties:
       put_url:
         description: PutURL 是用于上传头像的预签名 URL
         type: string
+    type: object
+  val.ReserveUserAvatarArgs:
+    properties:
+      file_name:
+        description: |-
+          FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名
+          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
+        type: string
+    required:
+    - file_name
     type: object
   val.ReserveUserAvatarRes:
     properties:
@@ -1351,6 +1405,54 @@ paths:
       summary: 更新漫画
       tags:
       - comic
+  /comics/{comic_id}/cover:
+    post:
+      consumes:
+      - application/json
+      description: 为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: 预留漫画封面参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ReserveComicCoverArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.ReserveComicCoverRes'
+      security:
+      - ApiKeyAuth: []
+      summary: 预留漫画封面上传
+      tags:
+      - comic
+  /comics/{comic_id}/cover/confirm:
+    post:
+      description: 在客户端上传封面后，确认漫画封面上传状态
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 确认漫画封面已上传
+      tags:
+      - comic
   /invitations:
     get:
       description: 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
@@ -1830,6 +1932,8 @@ paths:
       - team
   /teams/{team_id}/avatar:
     post:
+      consumes:
+      - application/json
       description: 为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key
       parameters:
       - description: 汉化组 ID
@@ -1837,6 +1941,12 @@ paths:
         name: team_id
         required: true
         type: string
+      - description: 预留汉化组头像参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ReserveTeamAvatarArgs'
       produces:
       - application/json
       responses:
@@ -2018,7 +2128,16 @@ paths:
       - user
   /users/mine/avatar:
     post:
+      consumes:
+      - application/json
       description: 为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key
+      parameters:
+      - description: 预留用户头像参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ReserveUserAvatarArgs'
       produces:
       - application/json
       responses:

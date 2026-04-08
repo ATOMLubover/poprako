@@ -9,32 +9,32 @@ import (
 )
 
 type InvitationRepo struct {
-	Infos map[string]model.InvitationInfo
+	Infos map[string]model.MemberInvitationInfo
 }
 
 func NewMockInvitationRepo() *InvitationRepo {
-	return &InvitationRepo{Infos: make(map[string]model.InvitationInfo)}
+	return &InvitationRepo{Infos: make(map[string]model.MemberInvitationInfo)}
 }
 
 func WithMockInvitationRepo(cx context.Context, repo *InvitationRepo) context.Context {
 	return withMockRepo(cx, invitationRepoCtxKey, repo)
 }
 
-func NewMockInvitationRepoFromCx(cx context.Context) (iface.InvitationRepo, error) {
+func NewMockInvitationRepoFromCx(cx context.Context) (iface.MemberInvitationRepo, error) {
 	return getMockRepoFromCx[*InvitationRepo](cx, invitationRepoCtxKey, "invitation")
 }
 
-func (r *InvitationRepo) FromTxnCx(cx context.Context) (iface.InvitationRepo, error) {
+func (r *InvitationRepo) FromTxnCx(cx context.Context) (iface.MemberInvitationRepo, error) {
 	return NewMockInvitationRepoFromCx(cx)
 }
 
 func (r *InvitationRepo) ensure() {
 	if r.Infos == nil {
-		r.Infos = make(map[string]model.InvitationInfo)
+		r.Infos = make(map[string]model.MemberInvitationInfo)
 	}
 }
 
-func (r *InvitationRepo) GetByInviteeQQ(qq string) (*model.InvitationInfo, error) {
+func (r *InvitationRepo) GetByInviteeQQ(qq string) (*model.MemberInvitationInfo, error) {
 	r.ensure()
 	for _, key := range sortedKeys(r.Infos) {
 		info := r.Infos[key]
@@ -46,9 +46,9 @@ func (r *InvitationRepo) GetByInviteeQQ(qq string) (*model.InvitationInfo, error
 	return nil, errNotFound
 }
 
-func (r *InvitationRepo) List(opt model.InvitationQueryOpt) ([]model.InvitationInfo, error) {
+func (r *InvitationRepo) List(opt model.MemberInvitationQueryOpt) ([]model.MemberInvitationInfo, error) {
 	r.ensure()
-	items := make([]model.InvitationInfo, 0)
+	items := make([]model.MemberInvitationInfo, 0)
 	for _, key := range sortedKeys(r.Infos) {
 		info := r.Infos[key]
 		if opt.TeamID != nil && info.TeamID != *opt.TeamID {
@@ -65,9 +65,9 @@ func (r *InvitationRepo) List(opt model.InvitationQueryOpt) ([]model.InvitationI
 	return items, nil
 }
 
-func (r *InvitationRepo) Create(c *model.InvitationCreation) (*model.InvitationInfo, error) {
+func (r *InvitationRepo) Create(c *model.MemberInvitationCreation) (*model.MemberInvitationInfo, error) {
 	r.ensure()
-	info := model.InvitationInfo{
+	info := model.MemberInvitationInfo{
 		ID:              c.ID,
 		InvitorID:       c.InvitorID,
 		InviteeQQ:       c.InviteeQQ,
@@ -88,7 +88,7 @@ func (r *InvitationRepo) Create(c *model.InvitationCreation) (*model.InvitationI
 	return &copy, nil
 }
 
-func (r *InvitationRepo) Update(u *model.InvitationUpdate) error {
+func (r *InvitationRepo) Update(u *model.MemberInvitationUpdate) error {
 	r.ensure()
 	info, ok := r.Infos[u.ID]
 	if !ok {

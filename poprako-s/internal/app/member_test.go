@@ -93,7 +93,7 @@ func TestMemberAppJoinTeamUsesMockTxnRepos(t *testing.T) {
 	userRepo.Infos["user-1"] = *normalUser()
 	memberRepo := mock_repo.NewMockMemberRepo()
 	invRepo := mock_repo.NewMockInvitationRepo()
-	invRepo.Infos["inv-1"] = model.InvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true, ToBeTranslator: true}
+	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true, ToBeTranslator: true}
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{member: memberRepo, invitation: invRepo}))
 
 	app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, invRepo, txnMgr, newMockOSSClient())
@@ -113,7 +113,7 @@ func TestMemberAppJoinTeamRejectsBadCode(t *testing.T) {
 	userRepo := mock_repo.NewMockUserRepo()
 	userRepo.Infos["user-1"] = *normalUser()
 	invRepo := mock_repo.NewMockInvitationRepo()
-	invRepo.Infos["inv-1"] = model.InvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true}
+	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true}
 
 	app := NewMemberApp(service.NewMemberService(), userRepo, mock_repo.NewMockMemberRepo(), invRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 	if err := app.JoinTeam(background(), "user-1", &val.JoinTeamArgs{InvitationCode: "000000"}); err == nil {
@@ -177,7 +177,7 @@ func TestMemberAppErrorPaths(t *testing.T) {
 		memberRepo := mock_repo.NewMockMemberRepo()
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-1", TeamID: "team-1"}
 		invRepo := mock_repo.NewMockInvitationRepo()
-		invRepo.Infos["inv-1"] = model.InvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true}
+		invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true}
 		app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, invRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.JoinTeam(background(), "user-1", &val.JoinTeamArgs{InvitationCode: "654321"}); err == nil {
 			t.Fatal("expected existing member error")

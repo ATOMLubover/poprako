@@ -12,38 +12,37 @@ import (
 	"gorm.io/gorm"
 )
 
-type invitationRepoImpl struct {
+type memberInvitationRepoImpl struct {
 	gdb *gorm.DB
 }
 
-func NewInvitationRepo(
+func NewMemberInvitationRepo(
 	gdb *gorm.DB,
-) iface.InvitationRepo {
-	return &invitationRepoImpl{
+) iface.MemberInvitationRepo {
+	return &memberInvitationRepoImpl{
 		gdb: gdb,
 	}
 }
 
-func NewInvitationRepoFromCx(cx context.Context) (iface.InvitationRepo, error) {
+func NewMemberInvitationRepoFromCx(cx context.Context) (iface.MemberInvitationRepo, error) {
 	gdb, err := cx.Value(txnKey).(*gorm.DB)
 	if !err {
 		return nil, errors.New("[NewInvitationRepoFromCx]: 无法从上下文中获取事务数据库连接")
 	}
 
-	return &invitationRepoImpl{
+	return &memberInvitationRepoImpl{
 		gdb: gdb,
 	}, nil
 }
 
-func (r *invitationRepoImpl) FromTxnCx(cx context.Context) (iface.InvitationRepo, error) {
-	return NewInvitationRepoFromCx(cx)
+func (r *memberInvitationRepoImpl) FromTxnCx(cx context.Context) (iface.MemberInvitationRepo, error) {
+	return NewMemberInvitationRepoFromCx(cx)
 }
 
-func (r *invitationRepoImpl) GetByInviteeQQ(id string) (*model.InvitationInfo, error) {
+func (r *memberInvitationRepoImpl) GetByInviteeQQ(id string) (*model.MemberInvitationInfo, error) {
+	var row entity.MemberInvitationInfoRow
 
-	var row entity.InvitationInfoRow
-
-	err := r.gdb.Table(entity.InvitationTable).
+	err := r.gdb.Table(entity.MemberInvitationTable).
 		Where("invitee_qq = ?", id).
 		Order("created_at DESC").
 		First(&row).Error
@@ -51,12 +50,12 @@ func (r *invitationRepoImpl) GetByInviteeQQ(id string) (*model.InvitationInfo, e
 		return nil, err
 	}
 
-	info := entity.ToInvitationInfo(row)
+	info := entity.ToMemberInvitationInfo(row)
 	return &info, nil
 }
 
-func (r *invitationRepoImpl) List(opt model.InvitationQueryOpt) ([]model.InvitationInfo, error) {
-	db := r.gdb.Table(entity.InvitationTable)
+func (r *memberInvitationRepoImpl) List(opt model.MemberInvitationQueryOpt) ([]model.MemberInvitationInfo, error) {
+	db := r.gdb.Table(entity.MemberInvitationTable)
 
 	if opt.TeamID != nil {
 		db = db.Where("team_id = ?", *opt.TeamID)
@@ -66,21 +65,21 @@ func (r *invitationRepoImpl) List(opt model.InvitationQueryOpt) ([]model.Invitat
 	}
 	db = db.Where("pending = ?", opt.Pending)
 
-	var rows []entity.InvitationInfoRow
+	var rows []entity.MemberInvitationInfoRow
 
 	if err := db.Order("created_at DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
-	items := make([]model.InvitationInfo, 0, len(rows))
+	items := make([]model.MemberInvitationInfo, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, entity.ToInvitationInfo(row))
+		items = append(items, entity.ToMemberInvitationInfo(row))
 	}
 
 	return items, nil
 }
 
-func (r *invitationRepoImpl) Create(c *model.InvitationCreation) (*model.InvitationInfo, error) {
+func (r *memberInvitationRepoImpl) Create(c *model.MemberInvitationCreation) (*model.MemberInvitationInfo, error) {
 	now := time.Now()
 	row := map[string]any{
 		"id":                 c.ID,
@@ -100,23 +99,23 @@ func (r *invitationRepoImpl) Create(c *model.InvitationCreation) (*model.Invitat
 		"updated_at":         now,
 	}
 
-	if err := r.gdb.Table(entity.InvitationTable).Create(row).Error; err != nil {
+	if err := r.gdb.Table(entity.MemberInvitationTable).Create(row).Error; err != nil {
 		return nil, err
 	}
 
-	var created entity.InvitationInfoRow
+	var created entity.MemberInvitationInfoRow
 
-	err := r.gdb.Table(entity.InvitationTable).Where("id = ?", c.ID).First(&created).Error
+	err := r.gdb.Table(entity.MemberInvitationTable).Where("id = ?", c.ID).First(&created).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToInvitationInfo(created)
+	info := entity.ToMemberInvitationInfo(created)
 	return &info, nil
 }
 
-func (r *invitationRepoImpl) Update(u *model.InvitationUpdate) error {
-	return r.gdb.Table(entity.InvitationTable).
+func (r *memberInvitationRepoImpl) Update(u *model.MemberInvitationUpdate) error {
+	return r.gdb.Table(entity.MemberInvitationTable).
 		Where("id = ?", u.ID).
 		Updates(map[string]any{
 			"to_be_raw_provider": u.ToBeRawProvider,
@@ -130,8 +129,8 @@ func (r *invitationRepoImpl) Update(u *model.InvitationUpdate) error {
 		}).Error
 }
 
-func (r *invitationRepoImpl) Invalidate(id string) error {
-	return r.gdb.Table(entity.InvitationTable).
+func (r *memberInvitationRepoImpl) Invalidate(id string) error {
+	return r.gdb.Table(entity.MemberInvitationTable).
 		Where("id = ?", id).
 		Updates(map[string]any{
 			"pending":    false,
@@ -139,6 +138,6 @@ func (r *invitationRepoImpl) Invalidate(id string) error {
 		}).Error
 }
 
-func (r *invitationRepoImpl) Delete(id string) error {
-	return r.gdb.Table(entity.InvitationTable).Where("id = ?", id).Delete(nil).Error
+func (r *memberInvitationRepoImpl) Delete(id string) error {
+	return r.gdb.Table(entity.MemberInvitationTable).Where("id = ?", id).Delete(nil).Error
 }

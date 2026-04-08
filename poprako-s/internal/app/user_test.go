@@ -55,7 +55,7 @@ func TestUserAppLoginSuccess(t *testing.T) {
 func TestUserAppRegUsesMockTxnRepos(t *testing.T) {
 	userRepo := mock_repo.NewMockUserRepo()
 	invRepo := mock_repo.NewMockInvitationRepo()
-	invRepo.Infos["inv-1"] = model.InvitationInfo{ID: "inv-1", InvitorID: "admin-1", TeamID: "team-1", InviteeQQ: "100001", Pending: true}
+	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", InvitorID: "admin-1", TeamID: "team-1", InviteeQQ: "100001", Pending: true}
 	memberRepo := mock_repo.NewMockMemberRepo()
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{user: userRepo, invitation: invRepo, member: memberRepo}))

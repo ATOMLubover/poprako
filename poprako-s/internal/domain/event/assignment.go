@@ -1,7 +1,5 @@
 package event
 
-import "context"
-
 const (
 	EventTypeAssignmentCreated EventType = "AssignmentCreated"
 	EventTypeAssignmentRemoved EventType = "AssignmentRemoved"
@@ -11,7 +9,6 @@ const (
 type AssignmentCreatedEvent struct {
 	UserID    string
 	ChapterID string
-	Cx        context.Context
 }
 
 func (e *AssignmentCreatedEvent) EventType() EventType {
@@ -30,7 +27,6 @@ func (e *AssignmentCreatedEvent) Payload() any {
 type AssignmentRemovedEvent struct {
 	UserID       string
 	WasPublished bool
-	Cx           context.Context
 }
 
 func (e *AssignmentRemovedEvent) EventType() EventType {

@@ -9,6 +9,9 @@ type ComicInfo struct {
 
 	// WorksetID 是所属作品集 ID
 	WorksetID string `json:"workset_id"`
+	// Workset 是可选的作品集信息（仅在 includes 时填充）
+	Workset *WorksetInfo `json:"workset,omitempty"`
+
 	// Index 是漫画在作品集内的序号
 	Index int `json:"index"`
 
@@ -31,8 +34,6 @@ type ComicInfo struct {
 	CreatorID string `json:"creator_id"`
 	// Creator 是可选的创建者信息（仅在 includes 时填充）
 	Creator *UserInfo `json:"creator,omitempty"`
-	// Workset 是可选的作品集信息（仅在 includes 时填充）
-	Workset *WorksetInfo `json:"workset,omitempty"`
 
 	// LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳
 	LastActiveAt int64 `json:"last_active_at"`

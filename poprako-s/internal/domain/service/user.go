@@ -27,7 +27,7 @@ type UserService interface {
 	NewCreation(
 		name string,
 		pwd string,
-		i *model.InvitationInfo,
+		i *model.MemberInvitationInfo,
 	) (*model.UserCreation, error)
 
 	// GenAvatarOSSKey 根据用户 ID 生成头像的 OSS Key
@@ -49,7 +49,7 @@ func NewUserService() UserService {
 func (s *userServiceImpl) NewCreation(
 	name string,
 	pwd string,
-	i *model.InvitationInfo,
+	i *model.MemberInvitationInfo,
 ) (*model.UserCreation, error) {
 	// 生成唯一用户 ID
 	id := GenID("user")

@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type InvitationApp interface {
+type MemberInvitationApp interface {
 	// List 获取指定汉化组的邀请列表
 	List(
 		cx context.Context,
@@ -42,18 +42,18 @@ type InvitationApp interface {
 	) error
 }
 
-type invitationAppImpl struct {
-	invSvc service.InvitationService
+type memberInvitationAppImpl struct {
+	invSvc service.MemberInvitationService
 
-	memberRepo repo.MemberRepo
-	invRepo    repo.InvitationRepo
+	memberRepo    repo.MemberRepo
+	memberInvRepo repo.MemberInvitationRepo
 }
 
 func NewInvitationApp(
-	invSvc service.InvitationService,
+	invSvc service.MemberInvitationService,
 	memberRepo repo.MemberRepo,
-	invRepo repo.InvitationRepo,
-) InvitationApp {
+	invRepo repo.MemberInvitationRepo,
+) MemberInvitationApp {
 	// 校验构造函数依赖
 	if invSvc == nil ||
 		memberRepo == nil ||
@@ -67,14 +67,14 @@ func NewInvitationApp(
 	}
 
 	// 返回真实业务实现
-	return &invitationAppImpl{
-		invSvc:     invSvc,
-		memberRepo: memberRepo,
-		invRepo:    invRepo,
+	return &memberInvitationAppImpl{
+		invSvc:        invSvc,
+		memberRepo:    memberRepo,
+		memberInvRepo: invRepo,
 	}
 }
 
-func (a *invitationAppImpl) List(
+func (a *memberInvitationAppImpl) List(
 	cx context.Context,
 	currUserID string,
 	args *val.ListTeamInvitationArgs,
@@ -83,6 +83,7 @@ func (a *invitationAppImpl) List(
 	lgr := retrieveLgr(cx)
 
 	// 鉴权：检查当前用户是否为该汉化组成员
+	// FIXME: 这里必须是 admin 才可以查看邀请列表
 	_, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &args.TeamID,
@@ -100,7 +101,7 @@ func (a *invitationAppImpl) List(
 	}
 
 	// 查询邀请列表
-	invitations, err := a.invRepo.List(model.InvitationQueryOpt{
+	invitations, err := a.memberInvRepo.List(model.MemberInvitationQueryOpt{
 		TeamID: &args.TeamID,
 	})
 	if err != nil {
@@ -126,7 +127,7 @@ func (a *invitationAppImpl) List(
 	return result, nil
 }
 
-func (a *invitationAppImpl) Create(
+func (a *memberInvitationAppImpl) Create(
 	cx context.Context,
 	currUserID string,
 	args *val.CreateInvitationArgs,
@@ -155,7 +156,7 @@ func (a *invitationAppImpl) Create(
 	}
 
 	// 持久化邀请信息
-	invInfo, err := a.invRepo.Create(creation)
+	invInfo, err := a.memberInvRepo.Create(creation)
 	if err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -171,7 +172,7 @@ func (a *invitationAppImpl) Create(
 	return assembleInvitationInfo(invInfo), nil
 }
 
-func (a *invitationAppImpl) Update(
+func (a *memberInvitationAppImpl) Update(
 	cx context.Context,
 	currUserID string,
 	args *val.UpdateInvitationArgs,
@@ -199,7 +200,7 @@ func (a *invitationAppImpl) Update(
 	// 解码角色并构造更新载荷
 	roles := model.UnmaskRoles(args.Roles)
 
-	update := &model.InvitationUpdate{
+	update := &model.MemberInvitationUpdate{
 		ID: args.ID,
 	}
 
@@ -223,7 +224,7 @@ func (a *invitationAppImpl) Update(
 	}
 
 	// 持久化更新
-	if err := a.invRepo.Update(update); err != nil {
+	if err := a.memberInvRepo.Update(update); err != nil {
 		// 记录更新失败
 		lgr.Error(
 			"更新邀请失败",
@@ -239,7 +240,7 @@ func (a *invitationAppImpl) Update(
 	return nil
 }
 
-func (a *invitationAppImpl) Remove(
+func (a *memberInvitationAppImpl) Remove(
 	cx context.Context,
 	currUserID string,
 	invitationID string,
@@ -248,7 +249,7 @@ func (a *invitationAppImpl) Remove(
 	lgr := retrieveLgr(cx)
 
 	// 查询邀请信息以获取所属汉化组 ID
-	invitations, err := a.invRepo.List(model.InvitationQueryOpt{})
+	invitations, err := a.memberInvRepo.List(model.MemberInvitationQueryOpt{})
 	if err != nil {
 		// 记录查询失败
 		lgr.Error(
@@ -263,7 +264,7 @@ func (a *invitationAppImpl) Remove(
 
 	// 查找目标邀请
 
-	var targetInv *model.InvitationInfo
+	var targetInv *model.MemberInvitationInfo
 
 	for i, inv := range invitations {
 		if inv.ID == invitationID {
@@ -295,7 +296,7 @@ func (a *invitationAppImpl) Remove(
 	}
 
 	// 执行删除
-	if err := a.invRepo.Delete(invitationID); err != nil {
+	if err := a.memberInvRepo.Delete(invitationID); err != nil {
 		// 记录删除失败
 		lgr.Error(
 			"删除邀请失败",
@@ -312,7 +313,7 @@ func (a *invitationAppImpl) Remove(
 }
 
 // assembleInvitationInfo 将领域层邀请信息转换为 app 层值对象
-func assembleInvitationInfo(info *model.InvitationInfo) *val.InvitationInfo {
+func assembleInvitationInfo(info *model.MemberInvitationInfo) *val.InvitationInfo {
 	return &val.InvitationInfo{
 		ID:             info.ID,
 		InvitorID:      info.InvitorID,
@@ -327,12 +328,12 @@ func assembleInvitationInfo(info *model.InvitationInfo) *val.InvitationInfo {
 
 // logInvitationAppImpl 是 InvitationApp 的日志包装实现
 type logInvitationAppImpl struct {
-	app InvitationApp
+	app MemberInvitationApp
 }
 
 func NewLogInvitationApp(
-	app InvitationApp,
-) InvitationApp {
+	app MemberInvitationApp,
+) MemberInvitationApp {
 	if app == nil {
 		zap.L().Panic(
 			"NewLogInvitationApp: 依赖项不能为空",

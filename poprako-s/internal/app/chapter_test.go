@@ -89,15 +89,14 @@ func TestChapterAppPublishUsesMockTxnRepos(t *testing.T) {
 		t.Fatalf("expected published chapter: %#v", updated)
 	}
 	pubCalls := eventBus.PubCalls()
-	pubAsyncCalls := eventBus.PubAsyncCalls()
-	if len(pubCalls) != 1 || len(pubAsyncCalls) != 1 {
-		t.Fatalf("expected sync and async events, got %#v %#v", pubCalls, pubAsyncCalls)
+	if len(pubCalls) != 1 || len(pubCalls[0]) != 2 {
+		t.Fatalf("expected one Pub call with 2 events, got %#v", pubCalls)
 	}
 	if _, ok := pubCalls[0][0].(*event.ChapterPublishedEvent); !ok {
 		t.Fatalf("unexpected sync event: %#v", pubCalls)
 	}
-	if _, ok := pubAsyncCalls[0][0].(*event.WorkflowPublishCompletedEvent); !ok {
-		t.Fatalf("unexpected async event: %#v", pubAsyncCalls)
+	if _, ok := pubCalls[0][1].(*event.WorkflowPublishCompletedEvent); !ok {
+		t.Fatalf("unexpected async event: %#v", pubCalls)
 	}
 }
 

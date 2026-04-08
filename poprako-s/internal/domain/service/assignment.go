@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 )
@@ -26,6 +27,11 @@ type AssignmentService interface {
 		chapterID string,
 		creatorID string,
 	) *model.AssignmentCreation
+	// NewRemovalEvent 根据被删除分配记录的信息构造 AssignmentRemovedEvent
+	NewRemovalEvent(
+		assignment *model.AssignmentInfo,
+		wasPublished bool,
+	) *event.AssignmentRemovedEvent
 	// NewUpdate 根据当前分配信息和目标角色掩码生成 AssignmentUpdate
 	// 已有角色保留原时间戳，新增角色使用当前时间，移除的角色清空时间戳
 	// 仅章节的监修可以更新分配
@@ -71,6 +77,18 @@ func (s *assignmentServiceImpl) NewInitReviewerCreation(
 	}
 }
 
+// NewRemovalEvent 根据被删除分配记录的信息构造 AssignmentRemovedEvent
+func (s *assignmentServiceImpl) NewRemovalEvent(
+	assignment *model.AssignmentInfo,
+	wasPublished bool,
+) *event.AssignmentRemovedEvent {
+	// 返回组装好的删除事件
+	return &event.AssignmentRemovedEvent{
+		UserID:       assignment.UserID,
+		WasPublished: wasPublished,
+	}
+}
+
 // NewCreation 构造一个带有 service 生成 ID 的 AssignmentCreation
 // 仅章节的监修可以创建分配
 func (s *assignmentServiceImpl) NewCreation(
@@ -107,7 +125,7 @@ func (s *assignmentServiceImpl) NewCreation(
 	}
 
 	// 返回创建载荷
-	return &model.AssignmentCreation{
+	c := &model.AssignmentCreation{
 		ID:                    GenID("assignment"),
 		ChapterID:             chapterID,
 		UserID:                userID,
@@ -118,7 +136,15 @@ func (s *assignmentServiceImpl) NewCreation(
 		AssignedRedrawerAt:    nil,
 		AssignedReviewerAt:    toAssign(model.RoleReviewer),
 		AssignedPublisherAt:   toAssign(model.RolePublisher),
-	}, nil
+	}
+
+	// 分配创建时推送同步统计事件
+	c.PushEvent(&event.AssignmentCreatedEvent{
+		UserID:    userID,
+		ChapterID: chapterID,
+	})
+
+	return c, nil
 }
 
 // NewUpdate 根据目标角色掩码和当前分配信息构造 AssignmentUpdate

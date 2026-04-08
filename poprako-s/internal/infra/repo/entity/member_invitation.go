@@ -6,9 +6,9 @@ import (
 	"poprako-s/internal/domain/model"
 )
 
-const InvitationTable = "invitation_table"
+const MemberInvitationTable = "member_invitation_table"
 
-type InvitationInfoRow struct {
+type MemberInvitationInfoRow struct {
 	ID string `gorm:"column:id"`
 
 	InvitorID string `gorm:"column:invitor_id"`
@@ -31,8 +31,8 @@ type InvitationInfoRow struct {
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
-func ToInvitationInfo(row InvitationInfoRow) model.InvitationInfo {
-	return model.InvitationInfo{
+func ToMemberInvitationInfo(row MemberInvitationInfoRow) model.MemberInvitationInfo {
+	return model.MemberInvitationInfo{
 		ID:              row.ID,
 		InvitorID:       row.InvitorID,
 		InviteeQQ:       row.InviteeQQ,

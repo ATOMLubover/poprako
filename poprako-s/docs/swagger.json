@@ -630,6 +630,83 @@
                 }
             }
         },
+        "/comics/{comic_id}/cover": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "预留漫画封面上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "预留漫画封面参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveComicCoverArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveComicCoverRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/comics/{comic_id}/cover/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在客户端上传封面后，确认漫画封面上传状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "确认漫画封面已上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/invitations": {
             "get": {
                 "security": [
@@ -1435,6 +1512,9 @@
                     }
                 ],
                 "description": "为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1449,6 +1529,15 @@
                         "name": "team_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "预留汉化组头像参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveTeamAvatarArgs"
+                        }
                     }
                 ],
                 "responses": {
@@ -1630,6 +1719,9 @@
                     }
                 ],
                 "description": "为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1637,6 +1729,17 @@
                     "user"
                 ],
                 "summary": "预留当前用户头像上传",
+                "parameters": [
+                    {
+                        "description": "预留用户头像参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveUserAvatarArgs"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2002,6 +2105,14 @@
         "val.ChapterInfo": {
             "type": "object",
             "properties": {
+                "comic": {
+                    "description": "TODO",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ComicInfo"
+                        }
+                    ]
+                },
                 "comic_id": {
                     "description": "ComicID 是所属漫画 ID",
                     "type": "string"
@@ -2099,6 +2210,10 @@
                     "description": "ChapterCount 是漫画下章节数量",
                     "type": "integer"
                 },
+                "cover_url": {
+                    "description": "CoverURL 是漫画封面的可访问地址",
+                    "type": "string"
+                },
                 "created_at": {
                     "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
                     "type": "integer"
@@ -2126,6 +2241,10 @@
                 "index": {
                     "description": "Index 是漫画在作品集内的序号",
                     "type": "integer"
+                },
+                "is_cover_uploaded": {
+                    "description": "IsCoverUploaded 表示封面是否已经上传",
+                    "type": "boolean"
                 },
                 "last_active_at": {
                     "description": "LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳",
@@ -2620,11 +2739,66 @@
                 }
             }
         },
+        "val.ReserveComicCoverArgs": {
+            "type": "object",
+            "required": [
+                "comic_id",
+                "file_name"
+            ],
+            "properties": {
+                "comic_id": {
+                    "description": "ComicID 是要上传封面的漫画标识",
+                    "type": "string"
+                },
+                "file_name": {
+                    "description": "FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"cover.jpg\"",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ReserveComicCoverRes": {
+            "type": "object",
+            "properties": {
+                "put_url": {
+                    "description": "PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ReserveTeamAvatarArgs": {
+            "type": "object",
+            "required": [
+                "file_name",
+                "team_id"
+            ],
+            "properties": {
+                "file_name": {
+                    "description": "FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"avatar.png\"",
+                    "type": "string"
+                },
+                "team_id": {
+                    "description": "TeamID 是要上传头像的汉化组标识",
+                    "type": "string"
+                }
+            }
+        },
         "val.ReserveTeamAvatarRes": {
             "type": "object",
             "properties": {
                 "put_url": {
                     "description": "PutURL 是用于上传头像的预签名 URL",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ReserveUserAvatarArgs": {
+            "type": "object",
+            "required": [
+                "file_name"
+            ],
+            "properties": {
+                "file_name": {
+                    "description": "FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"avatar.png\"",
                     "type": "string"
                 }
             }

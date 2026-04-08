@@ -1,6 +1,7 @@
 package event_infra
 
 import (
+	"context"
 	"errors"
 	"sync/atomic"
 
@@ -14,8 +15,13 @@ type handlerTable = *atomic.Pointer[map[iface.EventType][]iface.EventHandler]
 
 type eventBusImpl struct {
 	tbl        handlerTable
-	asyncEvCh  chan iface.Event
+	asyncEvCh  chan eventPack
 	workerDone chan struct{}
+}
+
+type eventPack struct {
+	cx context.Context
+	ev iface.Event
 }
 
 func NewEventBus() (iface.EventBus, error) {
@@ -29,7 +35,7 @@ func NewEventBus() (iface.EventBus, error) {
 	const numWorkers = 64
 
 	// 使用带缓冲的通道来避免阻塞，缓冲大小大于工作池的大小以保证可以短暂积压
-	asyncEvCh := make(chan iface.Event, numWorkers*4)
+	asyncEvCh := make(chan eventPack, numWorkers*4)
 	// 工作池的结束信号通道，使用带缓冲的通道以避免在发送结束信号时阻塞
 	workerDone := make(chan struct{}, 1)
 
@@ -50,14 +56,14 @@ func NewEventBus() (iface.EventBus, error) {
 func asyncWorker(
 	pool *ants.Pool,
 	mapper handlerTable,
-	asyncEventCh <-chan iface.Event,
+	asyncEventCh <-chan eventPack,
 	workerDone <-chan struct{},
 ) {
 	defer pool.Release()
 
 	for {
 		select {
-		case ev := <-asyncEventCh:
+		case p := <-asyncEventCh:
 			{
 				// 收到任务信号，执行相应的任务
 				m := (*mapper).Load()
@@ -65,12 +71,12 @@ func asyncWorker(
 					continue
 				}
 
-				handlers := (*m)[ev.EventType()]
+				handlers := (*m)[p.ev.EventType()]
 				for _, handler := range handlers {
-					if err := handler.Handle(ev); err != nil {
+					if err := handler.Handle(p.cx, p.ev); err != nil {
 						// 出现错误，仅记录日志，不重试，继续处理下一个处理器
 						zap.L().Error("[asyncWorker] 执行任务失败",
-							zap.String("event_type", string(ev.EventType())),
+							zap.String("event_type", string(p.ev.EventType())),
 							zap.Error(err),
 						)
 					}
@@ -91,7 +97,7 @@ func (b *eventBusImpl) Close() {
 	b.workerDone <- struct{}{}
 }
 
-func (b *eventBusImpl) Pub(ev []iface.Event) error {
+func (b *eventBusImpl) Pub(cx context.Context, ev []iface.Event) error {
 	m := (*b.tbl).Load()
 	if m == nil {
 		return errors.New("事件总线未正确初始化")
@@ -113,25 +119,25 @@ func (b *eventBusImpl) Pub(ev []iface.Event) error {
 	for _, e := range syn {
 		handlers := (*m)[e.EventType()]
 		for _, handler := range handlers {
-			if err := handler.Handle(e); err != nil {
+			if err := handler.Handle(cx, e); err != nil {
 				return err
 			}
 		}
 	}
 
 	// 复用 PubAsync 逻辑
-	if err := b.PubAsync(asyn); err != nil {
+	if err := b.PubAsync(cx, asyn); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (b *eventBusImpl) PubAsync(ev []iface.Event) error {
+func (b *eventBusImpl) PubAsync(cx context.Context, ev []iface.Event) error {
 	// 无论事件自己的发布类型是什么，都强制按异步方式入队
 	for _, e := range ev {
 		select {
-		case b.asyncEvCh <- e:
+		case b.asyncEvCh <- eventPack{cx: cx, ev: e}:
 			// enqueued
 		default:
 			// 如果通道已满，返回错误，避免阻塞

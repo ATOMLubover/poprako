@@ -1,4 +1,4 @@
-CREATE TABLE "invitation_table" (
+CREATE TABLE "member_invitation_table" (
     "id"                   TEXT        PRIMARY KEY,
 
     "invitor_id"           TEXT        NOT NULL REFERENCES "user_table" ("id") ON DELETE CASCADE,
@@ -22,9 +22,9 @@ CREATE TABLE "invitation_table" (
 );
 
 -- GetByInviteeQQ(): primary lookup path
-CREATE INDEX "idx_invitation_invitee_qq"
-    ON "invitation_table" ("invitee_qq", "created_at" DESC);
+CREATE INDEX "idx_member_invitation_invitee_qq"
+    ON "member_invitation_table" ("invitee_qq", "created_at" DESC);
 
 -- List(team_id, pending): team admin views pending/resolved invitations
-CREATE INDEX "idx_invitation_team_pending"
-    ON "invitation_table" ("team_id", "pending", "created_at" DESC);
+CREATE INDEX "idx_member_invitation_team_pending"
+    ON "member_invitation_table" ("team_id", "pending", "created_at" DESC);

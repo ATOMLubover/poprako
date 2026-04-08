@@ -491,7 +491,7 @@ func (r *erroringWorksetRepo) FromTxnCx(cx context.Context) (repoiface.WorksetRe
 }
 
 type erroringInvitationRepo struct {
-	repoiface.InvitationRepo
+	repoiface.MemberInvitationRepo
 	getByInviteeQQErr error
 	listErr           error
 	updateErr         error
@@ -500,46 +500,46 @@ type erroringInvitationRepo struct {
 	fromTxnErr        error
 }
 
-func (r *erroringInvitationRepo) GetByInviteeQQ(qq string) (*model.InvitationInfo, error) {
+func (r *erroringInvitationRepo) GetByInviteeQQ(qq string) (*model.MemberInvitationInfo, error) {
 	if r.getByInviteeQQErr != nil {
 		return nil, r.getByInviteeQQErr
 	}
-	return r.InvitationRepo.GetByInviteeQQ(qq)
+	return r.MemberInvitationRepo.GetByInviteeQQ(qq)
 }
 
-func (r *erroringInvitationRepo) List(opt model.InvitationQueryOpt) ([]model.InvitationInfo, error) {
+func (r *erroringInvitationRepo) List(opt model.MemberInvitationQueryOpt) ([]model.MemberInvitationInfo, error) {
 	if r.listErr != nil {
 		return nil, r.listErr
 	}
-	return r.InvitationRepo.List(opt)
+	return r.MemberInvitationRepo.List(opt)
 }
 
-func (r *erroringInvitationRepo) Update(u *model.InvitationUpdate) error {
+func (r *erroringInvitationRepo) Update(u *model.MemberInvitationUpdate) error {
 	if r.updateErr != nil {
 		return r.updateErr
 	}
-	return r.InvitationRepo.Update(u)
+	return r.MemberInvitationRepo.Update(u)
 }
 
 func (r *erroringInvitationRepo) Invalidate(id string) error {
 	if r.invalidateErr != nil {
 		return r.invalidateErr
 	}
-	return r.InvitationRepo.Invalidate(id)
+	return r.MemberInvitationRepo.Invalidate(id)
 }
 
 func (r *erroringInvitationRepo) Delete(id string) error {
 	if r.deleteErr != nil {
 		return r.deleteErr
 	}
-	return r.InvitationRepo.Delete(id)
+	return r.MemberInvitationRepo.Delete(id)
 }
 
-func (r *erroringInvitationRepo) FromTxnCx(cx context.Context) (repoiface.InvitationRepo, error) {
+func (r *erroringInvitationRepo) FromTxnCx(cx context.Context) (repoiface.MemberInvitationRepo, error) {
 	if r.fromTxnErr != nil {
 		return nil, r.fromTxnErr
 	}
-	return r.InvitationRepo.FromTxnCx(cx)
+	return r.MemberInvitationRepo.FromTxnCx(cx)
 }
 
 type erroringTeamRepo struct {

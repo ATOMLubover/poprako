@@ -418,22 +418,18 @@ func (a *unitAppImpl) Save(
 			chapterRepoTxn,
 		)
 
-		// 发布同步事件，由 UnitSaveHandler 负责更新 Page 和 Chapter 统计字段
-		// 将事务上下文 cx 随事件传递，Handler 内通过 FromCx 创建绑定事务的 repo
-		if err := a.eventBus.Pub([]event.Event{&event.UnitSaveEvent{
-			PageID:    args.PageID,
-			ChapterID: pageInfo.ChapterID,
+		saveEvent := a.unitSvc.NewSaveEvent(
+			args.PageID,
+			pageInfo.ChapterID,
+			len(insertUnits),
+			len(patchUnits),
+			len(args.UnitDiff.Delete),
+			totalUnitCountDelta,
+			translatedUnitCountDelta,
+			proofreadUnitCountDelta,
+		)
 
-			InsertCount: len(insertUnits),
-			PatchCount:  len(patchUnits),
-			DeleteCount: len(args.UnitDiff.Delete),
-
-			TotalDelta:      totalUnitCountDelta,
-			TranslatedDelta: translatedUnitCountDelta,
-			ProofreadDelta:  proofreadUnitCountDelta,
-
-			Cx: eventCx,
-		}}); err != nil {
+		if err := a.eventBus.Pub(eventCx, []event.Event{saveEvent}); err != nil {
 			lgr.Error(
 				"保存翻译单元失败：发布事件失败",
 				zap.String("page_id", args.PageID),

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 )
@@ -24,6 +25,12 @@ type ComicService interface {
 		description string,
 		creatorID string,
 	) (*model.ComicCreation, error)
+
+	// NewRemovalEvent 根据被删除漫画信息构造 ComicRemovedEvent
+	NewRemovalEvent(
+		comicID string,
+		worksetID string,
+	) *event.ComicRemovedEvent
 
 	// GenCoverOSSKey 根据漫画 ID 生成封面的 OSS Key
 	GenCoverOSSKey(
@@ -71,7 +78,7 @@ func (s *comicServiceImpl) NewCreation(
 	}
 
 	// 返回创建载荷
-	return &model.ComicCreation{
+	c := &model.ComicCreation{
 		ID:          GenID("comic"),
 		WorksetID:   worksetID,
 		Index:       index,
@@ -79,7 +86,25 @@ func (s *comicServiceImpl) NewCreation(
 		Author:      author,
 		Description: description,
 		CreatorID:   creatorID,
-	}, nil
+	}
+
+	// 漫画创建时推送同步统计事件
+	c.PushEvent(&event.ComicCreatedEvent{
+		WorksetID: worksetID,
+	})
+
+	return c, nil
+}
+
+// NewRemovalEvent 根据被删除漫画信息构造 ComicRemovedEvent
+func (s *comicServiceImpl) NewRemovalEvent(
+	comicID string,
+	worksetID string,
+) *event.ComicRemovedEvent {
+	// 返回组装好的删除事件
+	return &event.ComicRemovedEvent{
+		WorksetID: worksetID,
+	}
 }
 
 // GenCoverOSSKey 以固定前缀拼接漫画 ID 作为封面的 OSS Key

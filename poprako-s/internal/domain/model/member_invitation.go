@@ -2,8 +2,8 @@ package model
 
 import "time"
 
-// InvitationInfo 表示一条汉化组邀请记录
-type InvitationInfo struct {
+// MemberInvitationInfo 表示一条汉化组邀请记录
+type MemberInvitationInfo struct {
 	ID string
 
 	InvitorID string
@@ -30,28 +30,28 @@ type InvitationInfo struct {
 
 // InvitedRoleMask 根据邀请中记录的角色信息计算 RoleMask
 // 在非 app 层不应该使用这个方法！！
-func (ii *InvitationInfo) InvitedRoleMask() RoleMask {
+func (i *MemberInvitationInfo) InvitedRoleMask() RoleMask {
 	mask := RoleMask(0)
 
-	if ii.ToBeRawProvider {
+	if i.ToBeRawProvider {
 		mask |= RoleMask(RoleRawProvider)
 	}
-	if ii.ToBeTranslator {
+	if i.ToBeTranslator {
 		mask |= RoleMask(RoleTranslator)
 	}
-	if ii.ToBeProofreader {
+	if i.ToBeProofreader {
 		mask |= RoleMask(RoleProofreader)
 	}
-	if ii.ToBeTypesetter {
+	if i.ToBeTypesetter {
 		mask |= RoleMask(RoleTypesetter)
 	}
-	if ii.ToBeReviewer {
+	if i.ToBeReviewer {
 		mask |= RoleMask(RoleReviewer)
 	}
-	if ii.ToBePublisher {
+	if i.ToBePublisher {
 		mask |= RoleMask(RolePublisher)
 	}
-	if ii.ToBeAdmin {
+	if i.ToBeAdmin {
 		mask |= RoleMask(RoleAdmin)
 	}
 
@@ -59,36 +59,36 @@ func (ii *InvitationInfo) InvitedRoleMask() RoleMask {
 }
 
 // InvitedRoles 返回邀请中记录的角色列表
-func (ii *InvitationInfo) InvitedRoles() []Role {
+func (i *MemberInvitationInfo) InvitedRoles() []Role {
 	roles := make([]Role, 0)
 
-	if ii.ToBeRawProvider {
+	if i.ToBeRawProvider {
 		roles = append(roles, RoleRawProvider)
 	}
-	if ii.ToBeTranslator {
+	if i.ToBeTranslator {
 		roles = append(roles, RoleTranslator)
 	}
-	if ii.ToBeProofreader {
+	if i.ToBeProofreader {
 		roles = append(roles, RoleProofreader)
 	}
-	if ii.ToBeTypesetter {
+	if i.ToBeTypesetter {
 		roles = append(roles, RoleTypesetter)
 	}
-	if ii.ToBeReviewer {
+	if i.ToBeReviewer {
 		roles = append(roles, RoleReviewer)
 	}
-	if ii.ToBePublisher {
+	if i.ToBePublisher {
 		roles = append(roles, RolePublisher)
 	}
-	if ii.ToBeAdmin {
+	if i.ToBeAdmin {
 		roles = append(roles, RoleAdmin)
 	}
 
 	return roles
 }
 
-// InvitationCreation 是创建邀请时的载荷
-type InvitationCreation struct {
+// MemberInvitationCreation 是创建邀请时的载荷
+type MemberInvitationCreation struct {
 	// ID 由 domain service 生成，外部不提供
 	ID string
 
@@ -107,8 +107,8 @@ type InvitationCreation struct {
 	ToBeAdmin       bool
 }
 
-// InvitationUpdate 是邀请更新载荷，用于修改待分配角色
-type InvitationUpdate struct {
+// MemberInvitationUpdate 是邀请更新载荷，用于修改待分配角色
+type MemberInvitationUpdate struct {
 	ID string
 
 	ToBeRawProvider bool
@@ -120,9 +120,9 @@ type InvitationUpdate struct {
 	ToBeAdmin       bool
 }
 
-// InvitationQueryOpt 指定邀请查询的可选筛选条件
+// MemberInvitationQueryOpt 指定邀请查询的可选筛选条件
 // 所有字段均为可空，nil 表示不参与筛选
-type InvitationQueryOpt struct {
+type MemberInvitationQueryOpt struct {
 	// TeamID 按目标汉化组 ID 筛选
 	TeamID *string
 	// InvitationCode 按邀请码筛选

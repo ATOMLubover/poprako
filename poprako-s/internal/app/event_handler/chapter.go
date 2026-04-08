@@ -1,6 +1,7 @@
 package event_handler
 
 import (
+	"context"
 	"errors"
 
 	"poprako-s/internal/domain/event"
@@ -18,13 +19,13 @@ func (h *ChapterCreateHandler) EventType() event.EventType {
 	return event.EventTypeChapterCreated
 }
 
-func (h *ChapterCreateHandler) Handle(ev event.Event) error {
+func (h *ChapterCreateHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.ChapterCreatedEvent)
 	if !ok {
 		return errors.New("[ChapterCreateHandler] 事件载荷类型不是 ChapterCreatedEvent")
 	}
 
-	comicRepo, err := comicRepoFromCx(e.Cx)
+	comicRepo, err := comicRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[ChapterCreateHandler] 无法创建事务版 ComicRepo")
 	}
@@ -42,13 +43,13 @@ func (h *ChapterRemoveHandler) EventType() event.EventType {
 	return event.EventTypeChapterRemoved
 }
 
-func (h *ChapterRemoveHandler) Handle(ev event.Event) error {
+func (h *ChapterRemoveHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.ChapterRemovedEvent)
 	if !ok {
 		return errors.New("[ChapterRemoveHandler] 事件载荷类型不是 ChapterRemovedEvent")
 	}
 
-	comicRepo, err := comicRepoFromCx(e.Cx)
+	comicRepo, err := comicRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[ChapterRemoveHandler] 无法创建事务版 ComicRepo")
 	}
@@ -61,7 +62,7 @@ func (h *ChapterRemoveHandler) Handle(ev event.Event) error {
 		return nil
 	}
 
-	userRepo, err := userRepoFromCx(e.Cx)
+	userRepo, err := userRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[ChapterRemoveHandler] 无法创建事务版 UserRepo")
 	}
@@ -88,18 +89,18 @@ func (h *ChapterPublishedHandler) EventType() event.EventType {
 	return event.EventTypeChapterPublished
 }
 
-func (h *ChapterPublishedHandler) Handle(ev event.Event) error {
+func (h *ChapterPublishedHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.ChapterPublishedEvent)
 	if !ok {
 		return errors.New("[ChapterPublishedHandler] 事件载荷类型不是 ChapterPublishedEvent")
 	}
 
-	assignmentRepo, err := assignmentRepoFromCx(e.Cx)
+	assignmentRepo, err := assignmentRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[ChapterPublishedHandler] 无法创建事务版 AssignmentRepo")
 	}
 
-	userRepo, err := userRepoFromCx(e.Cx)
+	userRepo, err := userRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[ChapterPublishedHandler] 无法创建事务版 UserRepo")
 	}
@@ -138,13 +139,13 @@ func (h *ChapterCreatorAssignedHandler) EventType() event.EventType {
 }
 
 // Handle 处理章节创建者分配监修事件
-func (h *ChapterCreatorAssignedHandler) Handle(ev event.Event) error {
+func (h *ChapterCreatorAssignedHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.ChapterCreatorAssignedEvent)
 	if !ok {
 		return errors.New("[ChapterCreatorAssignedHandler] 事件载荷类型不是 ChapterCreatorAssignedEvent")
 	}
 
-	assignmentRepo, err := assignmentRepoFromCx(e.Cx)
+	assignmentRepo, err := assignmentRepoFromCx(cx)
 	if err != nil {
 		return errors.New("[ChapterCreatorAssignedHandler] 无法创建事务版 AssignmentRepo")
 	}

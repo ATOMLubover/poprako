@@ -252,10 +252,7 @@ func (a *comicAppImpl) Create(
 		createdID = comicInfo.ID
 		eventCx := event_handler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.ComicCreatedEvent{
-			WorksetID: args.WorksetID,
-			Cx:        eventCx,
-		}})
+		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -419,10 +416,9 @@ func (a *comicAppImpl) Remove(
 
 		eventCx := event_handler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.ComicRemovedEvent{
-			WorksetID: targetComic.WorksetID,
-			Cx:        eventCx,
-		}})
+		removalEvent := a.comicSvc.NewRemovalEvent(comicID, targetComic.WorksetID)
+
+		return a.eventBus.Pub(eventCx, []event.Event{removalEvent})
 	}); err != nil {
 		lgr.Error(
 			"删除漫画失败",

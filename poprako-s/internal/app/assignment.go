@@ -231,11 +231,7 @@ func (a *assignmentAppImpl) Create(
 		createdID = assignInfo.ID
 		eventCx := event_handler.WithUserRepoTxn(cx, userRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.AssignmentCreatedEvent{
-			UserID:    args.UserID,
-			ChapterID: args.ChapterID,
-			Cx:        eventCx,
-		}})
+		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		lgr.Error(
 			"创建分配失败",
@@ -358,11 +354,9 @@ func (a *assignmentAppImpl) Remove(
 
 		eventCx := event_handler.WithUserRepoTxn(cx, userRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.AssignmentRemovedEvent{
-			UserID:       targetAssignment.UserID,
-			WasPublished: targetChapter.PublishedAt != nil,
-			Cx:           eventCx,
-		}})
+		removalEvent := a.assignmentSvc.NewRemovalEvent(targetAssignment, targetChapter.PublishedAt != nil)
+
+		return a.eventBus.Pub(eventCx, []event.Event{removalEvent})
 	}); err != nil {
 		lgr.Error(
 			"删除分配失败",

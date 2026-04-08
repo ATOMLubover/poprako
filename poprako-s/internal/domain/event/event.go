@@ -15,5 +15,5 @@ type Event interface {
 // EventSource 是一个接口，表示一个事件源
 // 通常一个聚合根会实现这个接口，以便在其生命周期内产生事件
 type EventSource interface {
-	Events() []Event
+	PullEvents() []Event
 }

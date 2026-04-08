@@ -62,7 +62,7 @@ type memberAppImpl struct {
 
 	userRepo   repo.UserRepo
 	memberRepo repo.MemberRepo
-	invRepo    repo.InvitationRepo
+	invRepo    repo.MemberInvitationRepo
 	txnMgr     repo.TxnMgr
 
 	ossClient oss.Client
@@ -72,7 +72,7 @@ func NewMemberApp(
 	memberSvc service.MemberService,
 	userRepo repo.UserRepo,
 	memberRepo repo.MemberRepo,
-	invRepo repo.InvitationRepo,
+	invRepo repo.MemberInvitationRepo,
 	txnMgr repo.TxnMgr,
 	ossClient oss.Client,
 ) MemberApp {

@@ -282,20 +282,9 @@ func (a *chapterAppImpl) Create(
 		createdID = chInfo.ID
 
 		eventCx := event_handler.WithComicRepoTxn(cx, comicRepoTxn)
-
 		eventCx = event_handler.WithAssignmentRepoTxn(eventCx, assignmentRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{
-			&event.ChapterCreatedEvent{
-				ComicID: args.ComicID,
-				Cx:      eventCx,
-			},
-			&event.ChapterCreatorAssignedEvent{
-				ChapterID: createdID,
-				CreatorID: currUserID,
-				Cx:        eventCx,
-			},
-		})
+		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -408,10 +397,7 @@ func (a *chapterAppImpl) Update(
 				userRepoTxn,
 			)
 
-			return a.eventBus.Pub([]event.Event{&event.ChapterPublishedEvent{
-				ChapterID: args.ChapterID,
-				Cx:        eventCx,
-			}})
+			return a.eventBus.Pub(eventCx, targetChapter.PullEvents())
 		}); err != nil {
 			lgr.Error(
 				"更新章节失败",
@@ -431,15 +417,15 @@ func (a *chapterAppImpl) Update(
 
 			return errors.New("更新章节失败")
 		}
-	}
 
-	if events := targetChapter.Events(); len(events) > 0 {
-		if err := a.eventBus.PubAsync(events); err != nil {
-			lgr.Error(
-				"章节工作流事件发布失败",
-				zap.String("chapter_id", args.ChapterID),
-				zap.Error(err),
-			)
+		if events := targetChapter.PullEvents(); len(events) > 0 {
+			if err := a.eventBus.Pub(cx, events); err != nil {
+				lgr.Error(
+					"章节工作流事件发布失败",
+					zap.String("chapter_id", args.ChapterID),
+					zap.Error(err),
+				)
+			}
 		}
 	}
 
@@ -554,12 +540,9 @@ func (a *chapterAppImpl) Remove(
 			userRepoTxn,
 		)
 
-		return a.eventBus.Pub([]event.Event{&event.ChapterRemovedEvent{
-			ComicID:         targetChapter.ComicID,
-			WasPublished:    targetChapter.PublishedAt != nil,
-			AssignedUserIDs: assignedUserIDs,
-			Cx:              eventCx,
-		}})
+		removalEvent := a.chapterSvc.NewRemovalEvent(targetChapter, assignedUserIDs)
+
+		return a.eventBus.Pub(eventCx, []event.Event{removalEvent})
 	}); err != nil {
 		lgr.Error(
 			"删除章节失败",
