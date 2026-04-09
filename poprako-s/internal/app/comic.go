@@ -399,6 +399,17 @@ func (a *comicAppImpl) Remove(
 		return errors.New("权限不足")
 	}
 
+	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetComic.CoverOSSKey); err != nil {
+		lgr.Error(
+			"删除漫画失败：删除封面 OSS 资源失败",
+			zap.String("comic_id", comicID),
+			zap.String("cover_oss_key", targetComic.CoverOSSKey),
+			zap.Error(err),
+		)
+
+		return errors.New("删除漫画失败")
+	}
+
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
 		comicRepoTxn, err := a.comicRepo.FromTxnCx(cx)
 		if err != nil {

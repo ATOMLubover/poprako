@@ -604,6 +604,30 @@ func (a *userAppImpl) Remove(
 		return errors.New("无法删除自己")
 	}
 
+	targetUser, err := a.userRepo.GetByID(targetUserID)
+	if err != nil {
+		lgr.Error(
+			"删除用户失败：获取目标用户信息失败",
+			zap.String("curr_user_id", currUserID),
+			zap.String("target_user_id", targetUserID),
+			zap.Error(err),
+		)
+
+		return errors.New("删除用户失败")
+	}
+
+	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetUser.AvatarKey); err != nil {
+		lgr.Error(
+			"删除用户失败：删除头像 OSS 资源失败",
+			zap.String("curr_user_id", currUserID),
+			zap.String("target_user_id", targetUserID),
+			zap.String("avatar_oss_key", targetUser.AvatarKey),
+			zap.Error(err),
+		)
+
+		return errors.New("删除用户失败")
+	}
+
 	// 执行目标用户删除
 	if err := a.userRepo.Remove(targetUserID); err != nil {
 		// 记录删除失败

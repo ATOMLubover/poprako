@@ -124,6 +124,30 @@ func TestUserAppProfileAvatarAndRemoveFlows(t *testing.T) {
 	}
 }
 
+func TestUserAppRemoveFailsWhenAvatarCleanupFails(t *testing.T) {
+	now := time.Now()
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Admin", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
+	userRepo.Infos["user-2"] = model.UserInfo{ID: "user-2", QQ: "100002", Name: "Target", AvatarKey: "avatar-user-2", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
+	ossClient := newMockOSSClient()
+	ossClient.SetDeleteErr(errors.New("boom"))
+
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+
+	err := app.Remove(background(), "user-1", "user-2")
+	if err == nil {
+		t.Fatal("expected remove failure when avatar cleanup fails")
+	}
+
+	if _, ok := userRepo.Infos["user-2"]; !ok {
+		t.Fatalf("expected user to remain, got %#v", userRepo.Infos)
+	}
+
+	if len(ossClient.Deleted()) != 3 {
+		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
+	}
+}
+
 func TestUserAppLoginRejectsWrongPassword(t *testing.T) {
 	userSvc := service.NewUserService()
 	hash, err := userSvc.HashPwd("secret123")

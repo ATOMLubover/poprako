@@ -322,16 +322,15 @@ func (a *pageAppImpl) Remove(
 	}
 
 	// 删除 OSS 资源
-	if targetPage.OSSKey != "" {
-		if err := a.ossClient.Delete(targetPage.OSSKey); err != nil {
-			// 记录删除 OSS 资源失败（继续删除数据库记录）
-			lgr.Warn(
-				"删除页面 OSS 资源失败",
-				zap.String("page_id", pageID),
-				zap.String("oss_key", targetPage.OSSKey),
-				zap.Error(err),
-			)
-		}
+	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetPage.OSSKey); err != nil {
+		lgr.Error(
+			"删除页面失败：删除 OSS 资源失败",
+			zap.String("page_id", pageID),
+			zap.String("oss_key", targetPage.OSSKey),
+			zap.Error(err),
+		)
+
+		return errors.New("删除页面失败")
 	}
 
 	// 执行删除

@@ -100,6 +100,36 @@ func TestTeamAppAdminFlows(t *testing.T) {
 	if _, ok := teamRepo.Infos["team-1"]; ok {
 		t.Fatalf("expected deleted team, got %#v", teamRepo.Infos)
 	}
+	deleted := ossClient.Deleted()
+	if len(deleted) == 0 || deleted[0] == "" {
+		t.Fatalf("expected avatar oss cleanup, got %#v", deleted)
+	}
+}
+
+func TestTeamAppRemoveFailsWhenAvatarCleanupFails(t *testing.T) {
+	now := time.Now()
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Super", IsSuperAdmin: true, LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
+	teamRepo := mock_repo.NewMockTeamRepo()
+	teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1", Name: "Team", AvatarOSSKey: "team-avatar-1", IsAvatarUploaded: true, CreatedAt: now, UpdatedAt: now}
+	memberRepo := mock_repo.NewMockMemberRepo()
+	ossClient := newMockOSSClient()
+	ossClient.SetDeleteErr(errors.New("boom"))
+
+	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, ossClient)
+
+	err := app.Remove(background(), "user-1", "team-1")
+	if err == nil {
+		t.Fatal("expected remove failure when avatar cleanup fails")
+	}
+
+	if _, ok := teamRepo.Infos["team-1"]; !ok {
+		t.Fatalf("expected team to remain, got %#v", teamRepo.Infos)
+	}
+
+	if len(ossClient.Deleted()) != 3 {
+		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
+	}
 }
 
 func TestTeamAppPermissionErrors(t *testing.T) {

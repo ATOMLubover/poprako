@@ -32,6 +32,14 @@ func (f *Client) SetGenerateGetPresignedURLFunc(fn func(objectKey string) (strin
 	f.generateGetPresignedURLFunc = fn
 }
 
+func (f *Client) SetDeleteFunc(fn func(objectKey string) error) {
+	f.deleteFunc = fn
+}
+
+func (f *Client) SetDeleteBatchFunc(fn func(objectKeys []string) error) {
+	f.deleteBatchFunc = fn
+}
+
 func (f *Client) SetPutURLs(urls map[string]string) {
 	f.putURLs = urls
 }

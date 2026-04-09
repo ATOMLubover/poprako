@@ -390,6 +390,28 @@ func (a *teamAppImpl) Remove(
 		return errors.New("权限不足")
 	}
 
+	targetTeam, err := a.teamRepo.GetByID(teamID)
+	if err != nil {
+		lgr.Error(
+			"删除汉化组失败：获取目标汉化组信息失败",
+			zap.String("team_id", teamID),
+			zap.Error(err),
+		)
+
+		return errors.New("删除汉化组失败")
+	}
+
+	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetTeam.AvatarOSSKey); err != nil {
+		lgr.Error(
+			"删除汉化组失败：删除头像 OSS 资源失败",
+			zap.String("team_id", teamID),
+			zap.String("avatar_oss_key", targetTeam.AvatarOSSKey),
+			zap.Error(err),
+		)
+
+		return errors.New("删除汉化组失败")
+	}
+
 	// 执行删除
 	if err := a.teamRepo.Delete(teamID); err != nil {
 		// 记录删除失败
