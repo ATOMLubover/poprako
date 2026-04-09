@@ -27,7 +27,6 @@ func withTxnRepo(cx context.Context, key txnRepoCtxKey, value any) context.Conte
 }
 
 func getTxnRepo[T any](cx context.Context, key txnRepoCtxKey, label string) (T, error) {
-
 	var zero T
 
 	if cx == nil {
