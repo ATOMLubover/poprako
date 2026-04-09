@@ -18,6 +18,10 @@ func (h *UnitSaveHandler) EventType() event.EventType {
 	return event.EventTypeUnitSave
 }
 
+func (h *UnitSaveHandler) PubType() event.PubType {
+	return event.PubTypeAsync
+}
+
 func (h *UnitSaveHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.UnitSaveEvent)
 	if !ok {

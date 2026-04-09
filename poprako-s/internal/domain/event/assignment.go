@@ -15,10 +15,6 @@ func (e *AssignmentCreatedEvent) EventType() EventType {
 	return EventTypeAssignmentCreated
 }
 
-func (e *AssignmentCreatedEvent) PubType() PubType {
-	return PubTypeSync
-}
-
 func (e *AssignmentCreatedEvent) Payload() any {
 	return e
 }
@@ -31,10 +27,6 @@ type AssignmentRemovedEvent struct {
 
 func (e *AssignmentRemovedEvent) EventType() EventType {
 	return EventTypeAssignmentRemoved
-}
-
-func (e *AssignmentRemovedEvent) PubType() PubType {
-	return PubTypeSync
 }
 
 func (e *AssignmentRemovedEvent) Payload() any {

@@ -19,6 +19,10 @@ func (h *ChapterCreateHandler) EventType() event.EventType {
 	return event.EventTypeChapterCreated
 }
 
+func (h *ChapterCreateHandler) PubType() event.PubType {
+	return event.PubTypeAsync
+}
+
 func (h *ChapterCreateHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.ChapterCreatedEvent)
 	if !ok {
@@ -41,6 +45,10 @@ func NewChapterRemoveHandler() event.EventHandler {
 
 func (h *ChapterRemoveHandler) EventType() event.EventType {
 	return event.EventTypeChapterRemoved
+}
+
+func (h *ChapterRemoveHandler) PubType() event.PubType {
+	return event.PubTypeAsync
 }
 
 func (h *ChapterRemoveHandler) Handle(cx context.Context, ev event.Event) error {
@@ -87,6 +95,10 @@ func NewChapterPublishedHandler() event.EventHandler {
 
 func (h *ChapterPublishedHandler) EventType() event.EventType {
 	return event.EventTypeChapterPublished
+}
+
+func (h *ChapterPublishedHandler) PubType() event.PubType {
+	return event.PubTypeAsync
 }
 
 func (h *ChapterPublishedHandler) Handle(cx context.Context, ev event.Event) error {
@@ -136,6 +148,11 @@ func NewChapterCreatorAssignedHandler() event.EventHandler {
 // EventType 返回该处理器订阅的事件类型
 func (h *ChapterCreatorAssignedHandler) EventType() event.EventType {
 	return event.EventTypeChapterCreatorAssigned
+}
+
+// PubType 返回该处理器的发布类型
+func (h *ChapterCreatorAssignedHandler) PubType() event.PubType {
+	return event.PubTypeAsync
 }
 
 // Handle 处理章节创建者分配监修事件

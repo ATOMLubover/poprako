@@ -23,12 +23,6 @@ func (e *UnitSaveEvent) EventType() EventType {
 	return EventTypeUnitSave
 }
 
-func (e *UnitSaveEvent) PubType() PubType {
-	// UnitSaveEvent 必须在事务中被同步处理，否则将会导致
-	// chapter 的统计数据出错
-	return PubTypeSync
-}
-
 func (e *UnitSaveEvent) Payload() any {
 	return e
 }

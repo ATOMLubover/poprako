@@ -18,6 +18,10 @@ func (h *AssignmentCreateHandler) EventType() event.EventType {
 	return event.EventTypeAssignmentCreated
 }
 
+func (h *AssignmentCreateHandler) PubType() event.PubType {
+	return event.PubTypeAsync
+}
+
 func (h *AssignmentCreateHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.AssignmentCreatedEvent)
 	if !ok {
@@ -45,6 +49,10 @@ func NewAssignmentRemoveHandler() event.EventHandler {
 
 func (h *AssignmentRemoveHandler) EventType() event.EventType {
 	return event.EventTypeAssignmentRemoved
+}
+
+func (h *AssignmentRemoveHandler) PubType() event.PubType {
+	return event.PubTypeAsync
 }
 
 func (h *AssignmentRemoveHandler) Handle(cx context.Context, ev event.Event) error {

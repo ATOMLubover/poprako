@@ -20,8 +20,9 @@ type eventBusImpl struct {
 }
 
 type eventPack struct {
-	cx context.Context
-	ev iface.Event
+	cx      context.Context
+	ev      iface.Event
+	handler iface.EventHandler
 }
 
 func NewEventBus() (iface.EventBus, error) {
@@ -44,7 +45,7 @@ func NewEventBus() (iface.EventBus, error) {
 		return nil, err
 	}
 
-	go asyncWorker(pool, handlerTable(tbl), asyncEvCh, workerDone)
+	go asyncWorker(pool, asyncEvCh, workerDone)
 
 	return &eventBusImpl{
 		tbl:        handlerTable(tbl),
@@ -55,7 +56,6 @@ func NewEventBus() (iface.EventBus, error) {
 
 func asyncWorker(
 	pool *ants.Pool,
-	mapper handlerTable,
 	asyncEventCh <-chan eventPack,
 	workerDone <-chan struct{},
 ) {
@@ -66,20 +66,12 @@ func asyncWorker(
 		case p := <-asyncEventCh:
 			{
 				// 收到任务信号，执行相应的任务
-				m := (*mapper).Load()
-				if m == nil {
-					continue
-				}
-
-				handlers := (*m)[p.ev.EventType()]
-				for _, handler := range handlers {
-					if err := handler.Handle(p.cx, p.ev); err != nil {
-						// 出现错误，仅记录日志，不重试，继续处理下一个处理器
-						zap.L().Error("[asyncWorker] 执行任务失败",
-							zap.String("event_type", string(p.ev.EventType())),
-							zap.Error(err),
-						)
-					}
+				if err := p.handler.Handle(p.cx, p.ev); err != nil {
+					// 出现错误，仅记录日志，不重试，继续处理下一个处理器
+					zap.L().Error("[asyncWorker] 执行任务失败",
+						zap.String("event_type", string(p.ev.EventType())),
+						zap.Error(err),
+					)
 				}
 			}
 
@@ -103,45 +95,49 @@ func (b *eventBusImpl) Pub(cx context.Context, ev []iface.Event) error {
 		return errors.New("事件总线未正确初始化")
 	}
 
-	// 先按事件自己的发布类型拆分，同步事件先执行，异步事件后入队
-	syn := make([]iface.Event, 0, 4)
-	asyn := make([]iface.Event, 0, 4)
+	snapshot := *m
 
+	// 按处理器自己的发布类型分发，同步处理器直接执行，异步处理器入队
 	for _, e := range ev {
-		switch e.PubType() {
-		case iface.PubTypeSync:
-			syn = append(syn, e)
-		case iface.PubTypeAsync:
-			asyn = append(asyn, e)
-		}
-	}
-
-	for _, e := range syn {
-		handlers := (*m)[e.EventType()]
+		handlers := snapshot[e.EventType()]
 		for _, handler := range handlers {
-			if err := handler.Handle(cx, e); err != nil {
-				return err
+			switch handler.PubType() {
+			case iface.PubTypeSync:
+				if err := handler.Handle(cx, e); err != nil {
+					return err
+				}
+			case iface.PubTypeAsync:
+				select {
+				case b.asyncEvCh <- eventPack{cx: cx, ev: e, handler: handler}:
+				default:
+					return errors.New("事件总线已过载，无法处理更多事件")
+				}
 			}
 		}
-	}
-
-	// 复用 PubAsync 逻辑
-	if err := b.PubAsync(cx, asyn); err != nil {
-		return err
 	}
 
 	return nil
 }
 
 func (b *eventBusImpl) PubAsync(cx context.Context, ev []iface.Event) error {
-	// 无论事件自己的发布类型是什么，都强制按异步方式入队
+	m := (*b.tbl).Load()
+	if m == nil {
+		return errors.New("事件总线未正确初始化")
+	}
+
+	snapshot := *m
+
+	// 无论处理器自己的发布类型是什么，都强制按异步方式入队
 	for _, e := range ev {
-		select {
-		case b.asyncEvCh <- eventPack{cx: cx, ev: e}:
-			// enqueued
-		default:
-			// 如果通道已满，返回错误，避免阻塞
-			return errors.New("事件总线已过载，无法处理更多事件")
+		handlers := snapshot[e.EventType()]
+		for _, handler := range handlers {
+			select {
+			case b.asyncEvCh <- eventPack{cx: cx, ev: e, handler: handler}:
+				// enqueued
+			default:
+				// 如果通道已满，返回错误，避免阻塞
+				return errors.New("事件总线已过载，无法处理更多事件")
+			}
 		}
 	}
 

@@ -17,6 +17,10 @@ func (h *ComicCreateHandler) EventType() event.EventType {
 	return event.EventTypeComicCreated
 }
 
+func (h *ComicCreateHandler) PubType() event.PubType {
+	return event.PubTypeAsync
+}
+
 func (h *ComicCreateHandler) Handle(cx context.Context, ev event.Event) error {
 	e, ok := ev.(*event.ComicCreatedEvent)
 	if !ok {
@@ -39,6 +43,10 @@ func NewComicRemoveHandler() event.EventHandler {
 
 func (h *ComicRemoveHandler) EventType() event.EventType {
 	return event.EventTypeComicRemoved
+}
+
+func (h *ComicRemoveHandler) PubType() event.PubType {
+	return event.PubTypeAsync
 }
 
 func (h *ComicRemoveHandler) Handle(cx context.Context, ev event.Event) error {

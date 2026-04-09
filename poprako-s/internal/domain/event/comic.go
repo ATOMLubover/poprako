@@ -14,10 +14,6 @@ func (e *ComicCreatedEvent) EventType() EventType {
 	return EventTypeComicCreated
 }
 
-func (e *ComicCreatedEvent) PubType() PubType {
-	return PubTypeSync
-}
-
 func (e *ComicCreatedEvent) Payload() any {
 	return e
 }
@@ -29,10 +25,6 @@ type ComicRemovedEvent struct {
 
 func (e *ComicRemovedEvent) EventType() EventType {
 	return EventTypeComicRemoved
-}
-
-func (e *ComicRemovedEvent) PubType() PubType {
-	return PubTypeSync
 }
 
 func (e *ComicRemovedEvent) Payload() any {

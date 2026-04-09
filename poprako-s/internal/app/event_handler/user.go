@@ -17,6 +17,10 @@ func (h *UserLoginHandler) EventType() event.EventType {
 	return event.EventTypeUserLogin
 }
 
+func (h *UserLoginHandler) PubType() event.PubType {
+	return event.PubTypeAsync
+}
+
 func (h *UserLoginHandler) Handle(_ context.Context, ev event.Event) error {
 	payload, ok := ev.(*event.UserLoginEvent)
 	if !ok {
