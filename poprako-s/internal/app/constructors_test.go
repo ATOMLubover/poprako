@@ -10,10 +10,10 @@ import (
 
 func TestConstructorsRejectNilDependencies(t *testing.T) {
 	assertPanics(t, func() {
-		NewAssignmentApp(nil, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		NewAssignmentApp(nil, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 	})
 	assertPanics(t, func() {
-		NewChapterApp(nil, mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		NewChapterApp(nil, service.NewChapterInvitationService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 	})
 	assertPanics(t, func() {
 		NewComicApp(nil, mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())

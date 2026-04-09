@@ -18,7 +18,7 @@ func TestAssignmentAppListMy(t *testing.T) {
 		"assign-1": {ID: "assign-1", ChapterID: "chapter-1", UserID: "user-1", AssignedReviewerAt: &now},
 	}}
 
-	app := NewAssignmentApp(service.NewAssignmentService(), repo, &mock_repo.ChapterRepo{}, mock_repo.NewMockUserRepo(), &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
+	app := NewAssignmentApp(service.NewAssignmentService(), repo, mock_repo.NewMockChapterInvitationRepo(), &mock_repo.ChapterRepo{}, mock_repo.NewMockUserRepo(), &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
 
 	got, err := app.ListMy(background(), "user-1", &val.ListMyAssignmentArgs{})
 	requireNoErr(t, err)
@@ -67,6 +67,7 @@ func TestAssignmentAppListByChapterIncludesNestedData(t *testing.T) {
 	app := NewAssignmentApp(
 		service.NewAssignmentService(),
 		repo,
+		mock_repo.NewMockChapterInvitationRepo(),
 		mock_repo.NewMockChapterRepo(),
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
@@ -101,6 +102,7 @@ func TestAssignmentAppCreateUsesMockTxnRepos(t *testing.T) {
 	app := NewAssignmentApp(
 		service.NewAssignmentService(),
 		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
 		mock_repo.NewMockChapterRepo(),
 		userRepo,
 		txnMgr,
@@ -148,6 +150,7 @@ func TestAssignmentAppUpdateReplacesRoles(t *testing.T) {
 	app := NewAssignmentApp(
 		service.NewAssignmentService(),
 		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
 		mock_repo.NewMockChapterRepo(),
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
@@ -177,6 +180,7 @@ func TestAssignmentAppRemoveUsesMockTxnRepos(t *testing.T) {
 	app := NewAssignmentApp(
 		service.NewAssignmentService(),
 		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
 		chapterRepo,
 		userRepo,
 		txnMgr,
@@ -204,6 +208,7 @@ func TestAssignmentAppListByChapterForbidden(t *testing.T) {
 	app := NewAssignmentApp(
 		service.NewAssignmentService(),
 		repo,
+		mock_repo.NewMockChapterInvitationRepo(),
 		mock_repo.NewMockChapterRepo(),
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
@@ -221,6 +226,7 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 		app := NewAssignmentApp(
 			service.NewAssignmentService(),
 			mock_repo.NewMockAssignmentRepo(),
+			mock_repo.NewMockChapterInvitationRepo(),
 			mock_repo.NewMockChapterRepo(),
 			mock_repo.NewMockUserRepo(),
 			mock_repo.NewMockTxnMgr(nil),
@@ -237,6 +243,7 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 		app := NewAssignmentApp(
 			service.NewAssignmentService(),
 			mock_repo.NewMockAssignmentRepo(),
+			mock_repo.NewMockChapterInvitationRepo(),
 			mock_repo.NewMockChapterRepo(),
 			mock_repo.NewMockUserRepo(),
 			mock_repo.NewMockTxnMgr(nil),
@@ -255,6 +262,7 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 		app := NewAssignmentApp(
 			service.NewAssignmentService(),
 			assignmentRepo,
+			mock_repo.NewMockChapterInvitationRepo(),
 			mock_repo.NewMockChapterRepo(),
 			mock_repo.NewMockUserRepo(),
 			mock_repo.NewMockTxnMgr(nil),
@@ -274,11 +282,133 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 		chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
 		userRepo := mock_repo.NewMockUserRepo()
 		txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapter: chapterRepo, user: userRepo}))
-		app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterRepo, userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+		app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, mock_repo.NewMockChapterInvitationRepo(), chapterRepo, userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
 
 		err := app.Remove(background(), "user-1", "assignment-target")
 		if err == nil || !errors.Is(err, errors.New("权限不足")) && err.Error() != "权限不足" {
 			t.Fatalf("expected permission error, got %v", err)
 		}
 	})
+}
+
+func TestAssignmentAppJoinInvitorChapterCreatesAssignmentAndInvalidatesInvitation(t *testing.T) {
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
+		ID:              "cinv-1",
+		ChapterID:       "chapter-1",
+		InviterID:       "user-2",
+		InviteeQQ:       "10001",
+		InvitationCode:  "654321",
+		Pending:         true,
+		ToBeTranslator:  true,
+		ToBeReviewer:    true,
+		ToBeRawProvider: true,
+	}
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = *normalUser()
+	eventBus := newMockEventBus()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
+
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), userRepo, txnMgr, eventBus, newMockOSSClient())
+
+	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
+	requireNoErr(t, err)
+
+	if len(assignmentRepo.Infos) != 1 {
+		t.Fatalf("expected one assignment created, got %#v", assignmentRepo.Infos)
+	}
+
+	for _, info := range assignmentRepo.Infos {
+		if info.ChapterID != "chapter-1" || info.UserID != "user-1" {
+			t.Fatalf("unexpected created assignment: %#v", info)
+		}
+		if info.AssignedTranslatorAt == nil || info.AssignedReviewerAt == nil || info.AssignedRawProviderAt == nil {
+			t.Fatalf("expected invited roles assigned: %#v", info)
+		}
+	}
+
+	if chapterInvRepo.Infos["cinv-1"].Pending {
+		t.Fatalf("expected invitation invalidated: %#v", chapterInvRepo.Infos["cinv-1"])
+	}
+
+	pubCalls := eventBus.PubCalls()
+	if len(pubCalls) != 1 || len(pubCalls[0]) != 1 {
+		t.Fatalf("expected one assignment-created event publish, got %#v", pubCalls)
+	}
+
+	createdEvent, ok := pubCalls[0][0].(*event.AssignmentCreatedEvent)
+	if !ok || createdEvent.UserID != "user-1" || createdEvent.ChapterID != "chapter-1" {
+		t.Fatalf("unexpected event: %#v", pubCalls)
+	}
+}
+
+func TestAssignmentAppJoinInvitorChapterMergesExistingAssignment(t *testing.T) {
+	now := time.Now()
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-1"] = model.AssignmentInfo{
+		ID:                   "assignment-1",
+		ChapterID:            "chapter-1",
+		UserID:               "user-1",
+		AssignedTranslatorAt: &now,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
+		ID:             "cinv-1",
+		ChapterID:      "chapter-1",
+		InviteeQQ:      "10001",
+		InvitationCode: "654321",
+		Pending:        true,
+		ToBeReviewer:   true,
+	}
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = *normalUser()
+	eventBus := newMockEventBus()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
+
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), userRepo, txnMgr, eventBus, newMockOSSClient())
+
+	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
+	requireNoErr(t, err)
+
+	updated := assignmentRepo.Infos["assignment-1"]
+	if updated.AssignedTranslatorAt == nil || updated.AssignedReviewerAt == nil {
+		t.Fatalf("expected existing and invited roles both present: %#v", updated)
+	}
+
+	if chapterInvRepo.Infos["cinv-1"].Pending {
+		t.Fatalf("expected invitation invalidated: %#v", chapterInvRepo.Infos["cinv-1"])
+	}
+
+	if len(eventBus.PubCalls()) != 0 {
+		t.Fatalf("expected no create event when assignment already exists, got %#v", eventBus.PubCalls())
+	}
+}
+
+func TestAssignmentAppJoinInvitorChapterRejectsInvalidCode(t *testing.T) {
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
+		ID:             "cinv-1",
+		ChapterID:      "chapter-1",
+		InviteeQQ:      "10001",
+		InvitationCode: "654321",
+		Pending:        true,
+		ToBeReviewer:   true,
+	}
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = *normalUser()
+
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), userRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo})), newMockEventBus(), newMockOSSClient())
+
+	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "000000"})
+	if err == nil {
+		t.Fatal("expected invalid invitation code error")
+	}
+
+	if len(assignmentRepo.Infos) != 0 {
+		t.Fatalf("expected no assignment created, got %#v", assignmentRepo.Infos)
+	}
 }

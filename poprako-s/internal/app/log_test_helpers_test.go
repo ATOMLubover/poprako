@@ -13,6 +13,7 @@ type assignmentAppStub struct {
 	createCalled        bool
 	updateCalled        bool
 	removeCalled        bool
+	joinInvitorChapterCalled bool
 }
 
 func (s *assignmentAppStub) ListByChapter(context.Context, string, *val.ListChapterAssignmentArgs) ([]*val.AssignmentInfo, error) {
@@ -40,11 +41,17 @@ func (s *assignmentAppStub) Remove(context.Context, string, string) error {
 	return nil
 }
 
+func (s *assignmentAppStub) JoinInvitorChapter(context.Context, string, *val.JoinInvitorChapterArgs) error {
+	s.joinInvitorChapterCalled = true
+	return nil
+}
+
 type chapterAppStub struct {
 	listCalled   bool
 	createCalled bool
 	updateCalled bool
 	removeCalled bool
+	inviteCalled bool
 }
 
 func (s *chapterAppStub) List(context.Context, string, *val.ListChapterArgs) ([]*val.ChapterInfo, error) {
@@ -65,6 +72,11 @@ func (s *chapterAppStub) Update(context.Context, string, *val.UpdateChapterArgs)
 func (s *chapterAppStub) Remove(context.Context, string, string) error {
 	s.removeCalled = true
 	return nil
+}
+
+func (s *chapterAppStub) InviteAssignee(context.Context, string, *val.InviteChapterAssigneeArgs) (*val.InviteChapterAssigneeRes, error) {
+	s.inviteCalled = true
+	return &val.InviteChapterAssigneeRes{InvCode: "123456"}, nil
 }
 
 type comicAppStub struct {

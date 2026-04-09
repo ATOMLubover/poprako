@@ -16,7 +16,8 @@ func TestLogChapterAppForwardsAllMethods(t *testing.T) {
 	_, _ = app.Create(background(), "user-1", &val.CreateChapterArgs{ComicID: "comic-1"})
 	_ = app.Update(background(), "user-1", &val.UpdateChapterArgs{ChapterID: "chapter-1"})
 	_ = app.Remove(background(), "user-1", "chapter-1")
-	if !stub.listCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled {
+	_, _ = app.InviteAssignee(background(), "user-1", &val.InviteChapterAssigneeArgs{ChapterID: "chapter-1", InviteeQQ: "10001"})
+	if !stub.listCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.inviteCalled {
 		t.Fatalf("expected all chapter wrapper calls to forward: %#v", stub)
 	}
 }
@@ -34,5 +35,8 @@ func TestLogChapterAppRejectsInvalidArgs(t *testing.T) {
 	}
 	if err := app.Remove(background(), "user-1", ""); err == nil {
 		t.Fatal("expected remove validation error")
+	}
+	if _, err := app.InviteAssignee(background(), "user-1", &val.InviteChapterAssigneeArgs{}); err == nil {
+		t.Fatal("expected invite validation error")
 	}
 }

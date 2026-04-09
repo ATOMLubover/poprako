@@ -57,6 +57,7 @@ func main() {
 	pageRepo := repo_infra.NewPageRepo(gdb)
 	assignmentRepo := repo_infra.NewAssignmentRepo(gdb)
 	unitRepo := repo_infra.NewUnitRepo(gdb)
+	chapterInvRepo := repo_infra.NewChapterInvitationRepo(gdb)
 	txnMgr := repo_infra.NewTxnMgr(gdb)
 
 	// 初始化 OSS 客户端（按 OSS_PLATFORM 选择实现）
@@ -95,6 +96,7 @@ func main() {
 	worksetSvc := service.NewWorksetService()
 	comicSvc := service.NewComicService()
 	chapterSvc := service.NewChapterService()
+	chapterInvSvc := service.NewChapterInvitationService()
 	pageSvc := service.NewPageService()
 	assignmentSvc := service.NewAssignmentService()
 	unitSvc := service.NewUnitService()
@@ -131,9 +133,9 @@ func main() {
 		txnMgr, eventBus, ossClient,
 	)
 	chapterApp := app.NewChapterApp(
-		chapterSvc,
+		chapterSvc, chapterInvSvc,
 		memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
-		userRepo, pageRepo,
+		userRepo, pageRepo, chapterInvRepo,
 		txnMgr, eventBus, ossClient,
 	)
 	pageApp := app.NewPageApp(
@@ -143,7 +145,7 @@ func main() {
 	)
 	assignmentApp := app.NewAssignmentApp(
 		assignmentSvc,
-		assignmentRepo, chapterRepo, userRepo,
+		assignmentRepo, chapterInvRepo, chapterRepo, userRepo,
 		txnMgr, eventBus, ossClient,
 	)
 	unitApp := app.NewUnitApp(

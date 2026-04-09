@@ -147,6 +147,58 @@ func UpdateChapter(appState *state.AppState) iris.Handler {
 	}
 }
 
+// InviteChapterAssignee godoc
+// @Summary 	创建章节协作邀请
+// @Description 在指定章节下创建协作邀请并返回邀请码
+//
+// @Tags 		chapter
+// @Security 	ApiKeyAuth
+// @Accept 		json
+// @Produce 	json
+// @Param 		chapter_id path string true "章节 ID"
+// @Param 		body body val.InviteChapterAssigneeArgs true "邀请参数"
+//
+// @Success 	200 {object} val.InviteChapterAssigneeRes
+//
+// @Router 		/chapters/{chapter_id}/invitations [post]
+func InviteChapterAssignee(appState *state.AppState) iris.Handler {
+	chapterApp := appState.ChapterApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		chapterID := ctx.Params().Get("chapter_id")
+		if chapterID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 chapter_id 路径参数")
+			return
+		}
+
+		var args val.InviteChapterAssigneeArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		args.ChapterID = chapterID
+
+		res, err := chapterApp.InviteAssignee(
+			buildReqCx(ctx),
+			currUserID,
+			&args,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "创建章节邀请成功", res)
+	}
+}
+
 // DeleteComicChapter godoc
 // @Summary 	删除章节
 // @Description 删除指定章节

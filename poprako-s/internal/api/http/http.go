@@ -118,6 +118,7 @@ func initApp(appState *state.AppState) *iris.Application {
 	{
 		chapterParty.Get("/", ListComicChapters(appState))
 		chapterParty.Post("/", CreateComicChapter(appState))
+		chapterParty.Post("/{chapter_id}/invitations", InviteChapterAssignee(appState))
 		chapterParty.Patch("/{chapter_id}", UpdateChapter(appState))
 		chapterParty.Delete("/{chapter_id}", DeleteComicChapter(appState))
 	}
@@ -136,6 +137,7 @@ func initApp(appState *state.AppState) *iris.Application {
 	{
 		assignmentParty.Get("/mine", ListMyAssignments(appState))
 		assignmentParty.Get("/", ListChapterAssignments(appState))
+		assignmentParty.Post("/join", JoinInvitorChapter(appState))
 		assignmentParty.Post("/", CreateChapterAssignment(appState))
 		assignmentParty.Put("/{assignment_id}", UpdateAssignment(appState))
 		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))

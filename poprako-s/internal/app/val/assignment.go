@@ -81,3 +81,9 @@ type UpdateAssignmentArgs struct {
 	//   bit 5 (32) = Publisher（发布）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
+
+// JoinInvitorChapterArgs 表示通过章节邀请加入协作请求的参数
+type JoinInvitorChapterArgs struct {
+	// InvitationCode 是章节邀请代码
+	InvitationCode string `json:"invitation_code" validate:"required"`
+}

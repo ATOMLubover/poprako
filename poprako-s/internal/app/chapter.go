@@ -43,10 +43,18 @@ type ChapterApp interface {
 		currUserID string,
 		chapterID string,
 	) error
+
+	// InviteAssignee 创建章节协作邀请
+	InviteAssignee(
+		cx context.Context,
+		currUserID string,
+		args *val.InviteChapterAssigneeArgs,
+	) (*val.InviteChapterAssigneeRes, error)
 }
 
 type chapterAppImpl struct {
 	chapterSvc service.ChapterService
+	chapterInvSvc service.ChapterInvitationService
 
 	memberRepo     repo.MemberRepo
 	worksetRepo    repo.WorksetRepo
@@ -55,6 +63,7 @@ type chapterAppImpl struct {
 	assignmentRepo repo.AssignmentRepo
 	userRepo       repo.UserRepo
 	pageRepo       repo.PageRepo
+	chapterInvRepo repo.ChapterInvitationRepo
 	txnMgr         repo.TxnMgr
 	eventBus       event.EventBus
 	ossClient      oss.Client
@@ -62,6 +71,7 @@ type chapterAppImpl struct {
 
 func NewChapterApp(
 	chapterSvc service.ChapterService,
+	chapterInvSvc service.ChapterInvitationService,
 	memberRepo repo.MemberRepo,
 	worksetRepo repo.WorksetRepo,
 	comicRepo repo.ComicRepo,
@@ -69,12 +79,14 @@ func NewChapterApp(
 	assignmentRepo repo.AssignmentRepo,
 	userRepo repo.UserRepo,
 	pageRepo repo.PageRepo,
+	chapterInvRepo repo.ChapterInvitationRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
 	ossClient oss.Client,
 ) ChapterApp {
 	// 校验构造函数依赖
 	if chapterSvc == nil ||
+		chapterInvSvc == nil ||
 		memberRepo == nil ||
 		worksetRepo == nil ||
 		comicRepo == nil ||
@@ -82,12 +94,14 @@ func NewChapterApp(
 		assignmentRepo == nil ||
 		userRepo == nil ||
 		pageRepo == nil ||
+		chapterInvRepo == nil ||
 		txnMgr == nil ||
 		eventBus == nil ||
 		ossClient == nil {
 		zap.L().Panic(
 			"NewChapterApp: 依赖项不能为空",
 			zap.Bool("chapterSvc_nil", chapterSvc == nil),
+			zap.Bool("chapterInvSvc_nil", chapterInvSvc == nil),
 			zap.Bool("memberRepo_nil", memberRepo == nil),
 			zap.Bool("worksetRepo_nil", worksetRepo == nil),
 			zap.Bool("comicRepo_nil", comicRepo == nil),
@@ -95,6 +109,7 @@ func NewChapterApp(
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
+			zap.Bool("chapterInvRepo_nil", chapterInvRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
 			zap.Bool("ossClient_nil", ossClient == nil),
@@ -104,6 +119,7 @@ func NewChapterApp(
 	// 返回真实业务实现
 	return &chapterAppImpl{
 		chapterSvc:     chapterSvc,
+		chapterInvSvc:  chapterInvSvc,
 		memberRepo:     memberRepo,
 		worksetRepo:    worksetRepo,
 		comicRepo:      comicRepo,
@@ -111,6 +127,7 @@ func NewChapterApp(
 		assignmentRepo: assignmentRepo,
 		userRepo:       userRepo,
 		pageRepo:       pageRepo,
+		chapterInvRepo: chapterInvRepo,
 		txnMgr:         txnMgr,
 		eventBus:       eventBus,
 		ossClient:      ossClient,
@@ -586,6 +603,98 @@ func (a *chapterAppImpl) Remove(
 	return nil
 }
 
+func (a *chapterAppImpl) InviteAssignee(
+	cx context.Context,
+	currUserID string,
+	args *val.InviteChapterAssigneeArgs,
+) (*val.InviteChapterAssigneeRes, error) {
+	if args == nil || args.ChapterID == "" || args.InviteeQQ == "" {
+		return nil, errors.New("参数不合法")
+	}
+
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	errNoChapter := errors.New("无法获取章节信息")
+	errForbidden := errors.New("权限不足")
+
+	invCode := ""
+
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		chapterInvRepoTxn, err := a.chapterInvRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		targetChapter, err := chapterRepoTxn.GetByID(args.ChapterID)
+		if err != nil {
+			return errNoChapter
+		}
+
+		currAssignment, err := assignmentRepoTxn.Get(model.AssignmentQueryOpt{
+			ChapterID: &targetChapter.ID,
+			UserID:    &currUserID,
+		})
+		if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
+			return errForbidden
+		}
+
+		creation, err := a.chapterInvSvc.NewCreation(
+			currUserID,
+			args.ChapterID,
+			args.InviteeQQ,
+			model.UnmaskRoles(args.Roles)...,
+		)
+		if err != nil {
+			return err
+		}
+
+		created, err := chapterInvRepoTxn.Create(creation)
+		if err != nil {
+			return err
+		}
+
+		invCode = created.InvitationCode
+
+		return nil
+	}); err != nil {
+		switch {
+		case errors.Is(err, errNoChapter), errors.Is(err, errForbidden):
+			if errors.Is(err, errForbidden) {
+				lgr.Warn(
+					"创建章节邀请失败：权限不足",
+					zap.String("curr_user_id", currUserID),
+					zap.String("chapter_id", args.ChapterID),
+				)
+			}
+
+			return nil, err
+		default:
+			lgr.Error(
+				"创建章节邀请失败",
+				zap.String("curr_user_id", currUserID),
+				zap.String("chapter_id", args.ChapterID),
+				zap.String("invitee_qq", args.InviteeQQ),
+				zap.Error(err),
+			)
+
+			return nil, errors.New("创建章节邀请失败")
+		}
+	}
+
+	return &val.InviteChapterAssigneeRes{InvCode: invCode}, nil
+}
+
 // assembleChapterInfo 将领域层章节信息转换为 app 层值对象
 func assembleChapterInfo(
 	info *model.ChapterInfo,
@@ -765,4 +874,31 @@ func (a *logChapterAppImpl) Remove(
 	lgr.Info("[logChapterAppImpl.Remove] CALL")
 
 	return a.app.Remove(cx, currUserID, chapterID)
+}
+
+func (a *logChapterAppImpl) InviteAssignee(
+	cx context.Context,
+	currUserID string,
+	args *val.InviteChapterAssigneeArgs,
+) (*val.InviteChapterAssigneeRes, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ChapterApp 不可用")
+	}
+
+	if args == nil || args.ChapterID == "" || args.InviteeQQ == "" {
+		return nil, errors.New("参数不合法")
+	}
+
+	lgr := retrieveLgr(cx).With(
+		zap.String("method", "InviteAssignee"),
+		zap.String("curr_user_id", currUserID),
+		zap.String("chapter_id", args.ChapterID),
+		zap.String("invitee_qq", args.InviteeQQ),
+	)
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logChapterAppImpl.InviteAssignee] CALL")
+
+	return a.app.InviteAssignee(cx, currUserID, args)
 }

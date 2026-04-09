@@ -15,6 +15,7 @@ type mockRepoCtxKey string
 const (
 	assignmentRepoCtxKey mockRepoCtxKey = "assignment-repo"
 	chapterRepoCtxKey    mockRepoCtxKey = "chapter-repo"
+	chapterInvitationRepoCtxKey mockRepoCtxKey = "chapter-invitation-repo"
 	comicRepoCtxKey      mockRepoCtxKey = "comic-repo"
 	invitationRepoCtxKey mockRepoCtxKey = "invitation-repo"
 	memberRepoCtxKey     mockRepoCtxKey = "member-repo"

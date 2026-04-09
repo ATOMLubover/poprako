@@ -90,6 +90,7 @@ func newMockEventBus() *mock_event.EventBus {
 type mockTxnRepos struct {
 	assignment *mock_repo.AssignmentRepo
 	chapter    *mock_repo.ChapterRepo
+	chapterInvitation *mock_repo.ChapterInvitationRepo
 	comic      *mock_repo.ComicRepo
 	invitation *mock_repo.InvitationRepo
 	member     *mock_repo.MemberRepo
@@ -107,6 +108,9 @@ func newMockTxnContext(repos mockTxnRepos) context.Context {
 	}
 	if repos.chapter != nil {
 		cx = mock_repo.WithMockChapterRepo(cx, repos.chapter)
+	}
+	if repos.chapterInvitation != nil {
+		cx = mock_repo.WithMockChapterInvitationRepo(cx, repos.chapterInvitation)
 	}
 	if repos.comic != nil {
 		cx = mock_repo.WithMockComicRepo(cx, repos.comic)
