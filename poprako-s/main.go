@@ -138,6 +138,12 @@ func main() {
 		userRepo, pageRepo, chapterInvRepo,
 		txnMgr, eventBus, ossClient,
 	)
+
+	chapterExportApp := app.NewLogChapterExportApp(
+		app.NewChapterExportApp(
+			chapterRepo, comicRepo, pageRepo, unitRepo, assignmentRepo, ossClient,
+		),
+	)
 	pageApp := app.NewPageApp(
 		pageSvc,
 		assignmentRepo, chapterRepo, pageRepo,
@@ -158,7 +164,7 @@ func main() {
 	state := app_state.NewAppState(
 		appCfg,
 		userApp, teamApp, memberApp, invitationApp,
-		worksetApp, comicApp, chapterApp, pageApp,
+		worksetApp, comicApp, chapterApp, chapterExportApp, pageApp,
 		assignmentApp, unitApp,
 	)
 

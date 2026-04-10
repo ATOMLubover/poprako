@@ -1,0 +1,439 @@
+// ExportComic exports a comic to LabelPlus format.
+func (cs *comicSvc) ExportComic(comicID string, exportFormat string) (SvcRslt[model.ExportComicReply], SvcErr) {
+	// Validate export format
+	if exportFormat != "prk" && exportFormat != "lp" {
+		zap.L().Warn("Invalid export format", zap.String("comicID", comicID), zap.String("format", exportFormat))
+		return SvcRslt[model.ExportComicReply]{}, INVALID_EXPORT_FORMAT
+	}
+
+	// Ensure export directory exists
+	if err := os.MkdirAll(cs.exportDir, 0o755); err != nil {
+		zap.L().Error("Failed to create export directory", zap.String("dir", cs.exportDir), zap.Error(err))
+		return SvcRslt[model.ExportComicReply]{}, DB_FAILURE
+	}
+
+	// Clean old exports if exceeding limit
+	if err := cs.cleanOldExports(); err != nil {
+		zap.L().Warn("Failed to clean old exports", zap.Error(err))
+		// Continue anyway - this is not critical
+	}
+
+	// Export the comic using the selected format
+	var (
+		filePath string
+		err      error
+	)
+
+	switch exportFormat {
+	case "lp":
+		filePath, err = comicPkg.ExportLabelplusComic(
+			comicID,
+			cs.exportDir,
+			cs.repo,
+			cs.comicPageRepo,
+			cs.comicUnitRepo,
+		)
+	case "prk":
+		filePath, err = comicPkg.ExportPoprakoComic(
+			comicID,
+			cs.exportDir,
+			cs.repo,
+			cs.comicPageRepo,
+			cs.comicUnitRepo,
+		)
+	}
+	if err != nil {
+		if err == repo.REC_NOT_FOUND {
+			return SvcRslt[model.ExportComicReply]{}, NOT_FOUND
+		}
+		zap.L().Error("Failed to export comic", zap.String("comicID", comicID), zap.Error(err))
+		return SvcRslt[model.ExportComicReply]{}, DB_FAILURE
+	}
+
+	// Return relative URI
+	fileName := filepath.Base(filePath)
+	exportURI := cs.ExportBaseURI() + url.PathEscape(fileName)
+
+	return accept(200, model.ExportComicReply{ExportURI: exportURI}), NO_ERROR
+}
+
+package comic
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
+	"poprako-main-server/internal/model/po"
+	"poprako-main-server/internal/repo"
+)
+
+type poprakoProject struct {
+	Author string        `json:"author"`
+	Title  string        `json:"title"`
+	Pages  []poprakoPage `json:"pages"`
+}
+
+type poprakoPage struct {
+	ImageFilename string        `json:"image_filename"`
+	Units         []poprakoUnit `json:"units"`
+}
+
+type poprakoUnit struct {
+	ID             string  `json:"id"`
+	X              float64 `json:"x"`
+	Y              float64 `json:"y"`
+	IndexInPage    uint32  `json:"index_in_page"`
+	IsInbox        bool    `json:"is_inbox"`
+	TranslatedText *string `json:"translated_text,omitempty"`
+	ProovedText    *string `json:"prooved_text,omitempty"`
+	IsProoved      bool    `json:"is_prooved"`
+	Comment        *string `json:"comment,omitempty"`
+	IsLocal        bool    `json:"is_local"`
+}
+
+// ExportPoprakoComic exports a comic to PopRaKo JSON format file.
+// Returns the absolute file path on success.
+func ExportPoprakoComic(
+	comicID string,
+	exportDir string,
+	comicRepo repo.ComicRepo,
+	comicPageRepo repo.ComicPageRepo,
+	comicUnitRepo repo.ComicUnitRepo,
+) (string, error) {
+	comic, err := comicRepo.GetComicByID(nil, comicID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get comic: %w", err)
+	}
+
+	pages, err := comicPageRepo.GetPagesByComicID(nil, comicID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get pages: %w", err)
+	}
+
+	sort.Slice(pages, func(i, j int) bool {
+		return pages[i].Index < pages[j].Index
+	})
+
+	now := time.Now()
+	safeAuthor := truncateRunes(sanitizeFilename(comic.Author), 20)
+	safeTitle := truncateRunes(sanitizeFilename(comic.Title), 60)
+
+	fileName := fmt.Sprintf("【%s】%s-%s.poprako.json", safeAuthor, safeTitle, now.Format("20060102150405"))
+
+	const maxComponentBytes = 255
+	for len([]byte(fileName)) > maxComponentBytes {
+		if len([]rune(safeTitle)) > 1 {
+			safeTitle = shortenByOneRune(safeTitle)
+		} else if len([]rune(safeAuthor)) > 1 {
+			safeAuthor = shortenByOneRune(safeAuthor)
+		} else {
+			break
+		}
+
+		fileName = fmt.Sprintf("【%s】%s-%s.poprako.json", safeAuthor, safeTitle, now.Format("20060102150405"))
+	}
+
+	filePath := filepath.Join(exportDir, fileName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	project := poprakoProject{
+		Author: comic.Author,
+		Title:  comic.Title,
+		Pages:  make([]poprakoPage, 0, len(pages)),
+	}
+
+	for _, page := range pages {
+		units, err := comicUnitRepo.GetUnitsByPageID(nil, page.ID)
+		if err != nil {
+			return "", fmt.Errorf("failed to get units for page %s: %w", page.ID, err)
+		}
+
+		sort.Slice(units, func(i, j int) bool {
+			return units[i].Index < units[j].Index
+		})
+
+		pageDTO := poprakoPage{
+			ImageFilename: imageFilenameFromPage(page),
+			Units:         make([]poprakoUnit, 0, len(units)),
+		}
+
+		for _, unit := range units {
+			index := uint32(0)
+			if unit.Index > 0 {
+				index = uint32(unit.Index)
+			}
+
+			pageDTO.Units = append(pageDTO.Units, poprakoUnit{
+				ID:             unit.ID,
+				X:              unit.XCoordinate,
+				Y:              unit.YCoordinate,
+				IndexInPage:    index,
+				IsInbox:        unit.IsInBox,
+				TranslatedText: normalizeOptionalText(unit.TranslatedText),
+				ProovedText:    normalizeOptionalText(unit.ProvedText),
+				IsProoved:      unit.Proved,
+				Comment:        normalizeOptionalText(stringPtr(formatComment(unit.TranslatorComment, unit.ProofreaderComment))),
+				IsLocal:        false,
+			})
+		}
+
+		project.Pages = append(project.Pages, pageDTO)
+	}
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(project); err != nil {
+		return "", fmt.Errorf("failed to encode poprako json: %w", err)
+	}
+
+	return filePath, nil
+}
+
+// ExportLabelplusComic exports a comic to LabelPlus format file.
+// Returns the absolute file path on success.
+func ExportLabelplusComic(
+	comicID string,
+	exportDir string,
+	comicRepo repo.ComicRepo,
+	comicPageRepo repo.ComicPageRepo,
+	comicUnitRepo repo.ComicUnitRepo,
+) (string, error) {
+	// 1. Get comic basic info
+	comic, err := comicRepo.GetComicByID(nil, comicID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get comic: %w", err)
+	}
+
+	// 2. Fetch all pages and sort by index
+	pages, err := comicPageRepo.GetPagesByComicID(nil, comicID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get pages: %w", err)
+	}
+
+	sort.Slice(pages, func(i, j int) bool {
+		return pages[i].Index < pages[j].Index
+	})
+
+	// 3. Create export file
+	now := time.Now()
+	safeAuthor := truncateRunes(sanitizeFilename(comic.Author), 20)
+	safeTitle := truncateRunes(sanitizeFilename(comic.Title), 60)
+
+	fileName := fmt.Sprintf("【%s】%s-%s.labelplus.txt", safeAuthor, safeTitle, now.Format("20060102150405"))
+
+	// Ensure single filename component stays within filesystem limits (use 255 bytes as safe limit)
+	const maxComponentBytes = 255
+
+	for len([]byte(fileName)) > maxComponentBytes {
+		if len([]rune(safeTitle)) > 1 {
+			safeTitle = shortenByOneRune(safeTitle)
+		} else if len([]rune(safeAuthor)) > 1 {
+			safeAuthor = shortenByOneRune(safeAuthor)
+		} else {
+			break
+		}
+
+		fileName = fmt.Sprintf("【%s】%s-%s.labelplus.txt", safeAuthor, safeTitle, now.Format("20060102150405"))
+	}
+
+	filePath := filepath.Join(exportDir, fileName)
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %w", err)
+	}
+
+	defer file.Close()
+
+	// 4. Write header
+	if err := writeLabelPlusHeader(file); err != nil {
+		return "", fmt.Errorf("failed to write header: %w", err)
+	}
+
+	// 5. Stream write pages and their units
+	for _, page := range pages {
+		if err := writeLabelPlusPage(file, page, comicUnitRepo); err != nil {
+			return "", fmt.Errorf("failed to write page %s: %w", page.ID, err)
+		}
+	}
+
+	return filePath, nil
+}
+
+// writeLabelPlusHeader writes the fixed LabelPlus format header.
+func writeLabelPlusHeader(w io.Writer) error {
+	_, err := fmt.Fprintf(w, "1,0\n-\n框内\n框外\n-\nExported by PopRaKo Web\n\n")
+
+	return err
+}
+
+// writeLabelPlusPage writes a page header and all its units.
+func writeLabelPlusPage(w io.Writer, page po.BasicComicPage, unitRepo repo.ComicUnitRepo) error {
+	// Write page header: \n\n>>>>>>>>[filename]<<<<<<<<\n
+	imgExt := filepath.Ext(page.OSSKey)
+	imgName := fmt.Sprintf("page_%d%s", page.Index, imgExt)
+
+	if _, err := fmt.Fprintf(w, "\n\n>>>>>>>>[%s]<<<<<<<<\n", imgName); err != nil {
+		return err
+	}
+
+	// Fetch and sort units by index
+	units, err := unitRepo.GetUnitsByPageID(nil, page.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get units: %w", err)
+	}
+
+	sort.Slice(units, func(i, j int) bool {
+		return units[i].Index < units[j].Index
+	})
+
+	// Write each unit
+	for i, unit := range units {
+		if err := writeLabelPlusUnit(w, unit, i+1); err != nil {
+			return fmt.Errorf("failed to write unit %d: %w", i+1, err)
+		}
+	}
+
+	return nil
+}
+
+// writeLabelPlusUnit writes a single unit in LabelPlus format.
+func writeLabelPlusUnit(w io.Writer, unit po.BasicComicUnit, n int) error {
+	// Determine group ID: 1=inbox, 2=outbox
+	g := 2
+	if unit.IsInBox {
+		g = 1
+	}
+
+	// Write unit header: ----------------[N]----------------[X,Y,G]
+	if _, err := fmt.Fprintf(w, "----------------[%d]----------------[%.4f,%.4f,%d]\n",
+		n, unit.XCoordinate, unit.YCoordinate, g); err != nil {
+		return err
+	}
+
+	// Write main text (priority: ProvedText > TranslatedText)
+	mainText := selectMainText(unit.ProvedText, unit.TranslatedText)
+	if mainText != "" {
+		if _, err := fmt.Fprintf(w, "%s\n", mainText); err != nil {
+			return err
+		}
+	}
+
+	// Write comment if exists
+	comment := formatComment(unit.TranslatorComment, unit.ProofreaderComment)
+	if comment != "" {
+		if _, err := fmt.Fprintf(w, "\n#[翻校注释]：%s\n", comment); err != nil {
+			return err
+		}
+	}
+
+	// Write unit ending newline
+	if _, err := fmt.Fprintf(w, "\n"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// selectMainText returns the main text with priority: proved > translated.
+func selectMainText(provedText, translatedText *string) string {
+	if provedText != nil && *provedText != "" {
+		return *provedText
+	}
+
+	if translatedText != nil && *translatedText != "" {
+		return *translatedText
+	}
+
+	return ""
+}
+
+// formatComment merges translator and proofreader comments.
+func formatComment(translatorComment, proofreaderComment *string) string {
+	var parts []string
+
+	if translatorComment != nil && *translatorComment != "" {
+		parts = append(parts, "【翻译】"+*translatorComment)
+	}
+	if proofreaderComment != nil && *proofreaderComment != "" {
+		parts = append(parts, "【校对】"+*proofreaderComment)
+	}
+
+	return strings.Join(parts, "\n")
+}
+
+func imageFilenameFromPage(page po.BasicComicPage) string {
+	fileName := filepath.Base(page.OSSKey)
+	if fileName == "" || fileName == "." {
+		imgExt := filepath.Ext(page.OSSKey)
+		if imgExt == "" {
+			imgExt = ".jpg"
+		}
+		return fmt.Sprintf("page_%d%s", page.Index, imgExt)
+	}
+
+	return fileName
+}
+
+func normalizeOptionalText(s *string) *string {
+	if s == nil {
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(*s)
+	if trimmed == "" {
+		return nil
+	}
+
+	value := *s
+	return &value
+}
+
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+
+	return &s
+}
+
+// sanitizeFilename removes invalid characters for filenames.
+func sanitizeFilename(s string) string {
+	invalid := []string{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
+
+	result := s
+	for _, char := range invalid {
+		result = strings.ReplaceAll(result, char, "_")
+	}
+
+	return result
+}
+
+// truncateRunes truncates a string to at most `limit` runes and appends an ellipsis if truncated.
+func truncateRunes(s string, limit int) string {
+	r := []rune(s)
+	if len(r) <= limit {
+		return s
+	}
+
+	return string(r[:limit]) + "…"
+}
+
+// shortenByOneRune removes the last rune from the string (used for iterative byte-limit enforcement).
+func shortenByOneRune(s string) string {
+	r := []rune(s)
+	if len(r) <= 1 {
+		return ""
+	}
+	return string(r[:len(r)-1])
+}

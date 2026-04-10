@@ -119,6 +119,8 @@ func initApp(appState *state.AppState) *iris.Application {
 		chapterParty.Get("/", ListComicChapters(appState))
 		chapterParty.Post("/", CreateComicChapter(appState))
 		chapterParty.Post("/{chapter_id}/invitations", InviteChapterAssignee(appState))
+		chapterParty.Get("/{chapter_id}/export", ExportChapter(appState))
+		chapterParty.Get("/{chapter_id}/export/lp", ExportChapterLp(appState))
 		chapterParty.Patch("/{chapter_id}", UpdateChapter(appState))
 		chapterParty.Delete("/{chapter_id}", DeleteComicChapter(appState))
 	}

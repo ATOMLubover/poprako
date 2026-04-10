@@ -9,16 +9,17 @@ import (
 type AppState struct {
 	Cfg *cfg.AppCfg
 
-	UserApp       app.UserApp
-	TeamApp       app.TeamApp
-	MemberApp     app.MemberApp
-	InvitationApp app.MemberInvitationApp
-	WorksetApp    app.WorksetApp
-	ComicApp      app.ComicApp
-	ChapterApp    app.ChapterApp
-	PageApp       app.PageApp
-	AssignmentApp app.AssignmentApp
-	UnitApp       app.UnitApp
+	UserApp          app.UserApp
+	TeamApp          app.TeamApp
+	MemberApp        app.MemberApp
+	InvitationApp    app.MemberInvitationApp
+	WorksetApp       app.WorksetApp
+	ComicApp         app.ComicApp
+	ChapterApp       app.ChapterApp
+	ChapterExportApp app.ChapterExportApp
+	PageApp          app.PageApp
+	AssignmentApp    app.AssignmentApp
+	UnitApp          app.UnitApp
 }
 
 // NewAppState 创建一个新的 AppState 实例
@@ -31,21 +32,23 @@ func NewAppState(
 	worksetApp app.WorksetApp,
 	comicApp app.ComicApp,
 	chapterApp app.ChapterApp,
+	chapterExportApp app.ChapterExportApp,
 	pageApp app.PageApp,
 	assignmentApp app.AssignmentApp,
 	unitApp app.UnitApp,
 ) *AppState {
 	return &AppState{
-		Cfg:           cfg,
-		UserApp:       userApp,
-		TeamApp:       teamApp,
-		MemberApp:     memberApp,
-		InvitationApp: invitationApp,
-		WorksetApp:    worksetApp,
-		ComicApp:      comicApp,
-		ChapterApp:    chapterApp,
-		PageApp:       pageApp,
-		AssignmentApp: assignmentApp,
-		UnitApp:       unitApp,
+		Cfg:              cfg,
+		UserApp:          userApp,
+		TeamApp:          teamApp,
+		MemberApp:        memberApp,
+		InvitationApp:    invitationApp,
+		WorksetApp:       worksetApp,
+		ComicApp:         comicApp,
+		ChapterApp:       chapterApp,
+		ChapterExportApp: chapterExportApp,
+		PageApp:          pageApp,
+		AssignmentApp:    assignmentApp,
+		UnitApp:          unitApp,
 	}
 }
