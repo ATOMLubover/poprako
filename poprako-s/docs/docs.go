@@ -113,6 +113,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/join": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "使用章节邀请码加入对应章节协作并授予邀请中的分工",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment"
+                ],
+                "summary": "通过章节邀请加入协作",
+                "parameters": [
+                    {
+                        "description": "加入章节协作参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.JoinInvitorChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/assignments/mine": {
             "get": {
                 "security": [
@@ -473,6 +509,166 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "导出指定章节的完整数据，包含页面与翻译单元信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "导出章节数据（JSON 格式）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ChapterExport"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/export/lp": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "导出指定章节的 LabelPlus 格式文本文件，可直接用于 LabelPlus 工具导入",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "导出章节数据（LabelPlus 格式）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/import": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "以 Poprako JSON 或 LabelPlus 文本格式导入章节内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "导入章节数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "导入参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ImportChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ImportChapterRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/invitations": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在指定章节下创建协作邀请并返回邀请码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "创建章节协作邀请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "邀请参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.InviteChapterAssigneeArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.InviteChapterAssigneeRes"
+                        }
                     }
                 }
             }
@@ -2109,6 +2305,38 @@ const docTemplate = `{
                 }
             }
         },
+        "val.ChapterExport": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "description": "ChapterID 表示章节 ID",
+                    "type": "string"
+                },
+                "chapter_index": {
+                    "description": "ChapterIndex 表示章节序号",
+                    "type": "integer"
+                },
+                "chapter_subtitle": {
+                    "description": "ChapterSubtitle 表示章节副标题",
+                    "type": "string"
+                },
+                "comic_id": {
+                    "description": "ComicID 表示漫画 ID",
+                    "type": "string"
+                },
+                "comic_title": {
+                    "description": "ComicTitle 表示漫画标题",
+                    "type": "string"
+                },
+                "pages": {
+                    "description": "Pages 表示章节中的页面列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.PageExport"
+                    }
+                }
+            }
+        },
         "val.ChapterInfo": {
             "type": "object",
             "properties": {
@@ -2478,6 +2706,41 @@ const docTemplate = `{
                 }
             }
         },
+        "val.ImportChapterArgs": {
+            "type": "object",
+            "required": [
+                "chapter_id",
+                "content",
+                "format"
+            ],
+            "properties": {
+                "chapter_id": {
+                    "description": "ChapterID 表示目标章节 ID",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "Content 表示导入文件内容",
+                    "type": "string"
+                },
+                "format": {
+                    "description": "Format 表示导入格式",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ImportChapterRes": {
+            "type": "object",
+            "properties": {
+                "imported_page_count": {
+                    "description": "ImportedPageCount 表示成功处理的页面数量",
+                    "type": "integer"
+                },
+                "imported_unit_count": {
+                    "description": "ImportedUnitCount 表示成功写入的单元数量",
+                    "type": "integer"
+                }
+            }
+        },
         "val.InvitationInfo": {
             "type": "object",
             "properties": {
@@ -2511,6 +2774,49 @@ const docTemplate = `{
                 },
                 "team_id": {
                     "description": "TeamID 是目标汉化组 ID",
+                    "type": "string"
+                }
+            }
+        },
+        "val.InviteChapterAssigneeArgs": {
+            "type": "object",
+            "required": [
+                "chapter_id",
+                "invitee_qq",
+                "role"
+            ],
+            "properties": {
+                "chapter_id": {
+                    "description": "ChapterID 是目标章节 ID",
+                    "type": "string"
+                },
+                "invitee_qq": {
+                    "description": "InviteeQQ 是被邀请者的 QQ 号码\n因为可能有跨组邀请，因此用户只能通过 QQ 指定",
+                    "type": "string"
+                },
+                "role": {
+                    "description": "Roles 是被邀请者的角色",
+                    "type": "integer"
+                }
+            }
+        },
+        "val.InviteChapterAssigneeRes": {
+            "type": "object",
+            "properties": {
+                "invitation_code": {
+                    "description": "InvCode 是邀请代码，供被邀请者使用",
+                    "type": "string"
+                }
+            }
+        },
+        "val.JoinInvitorChapterArgs": {
+            "type": "object",
+            "required": [
+                "invitation_code"
+            ],
+            "properties": {
+                "invitation_code": {
+                    "description": "InvitationCode 是章节邀请代码",
                     "type": "string"
                 }
             }
@@ -2612,6 +2918,34 @@ const docTemplate = `{
                 "put_url": {
                     "description": "PutURL 是用于上传的预签名 URL",
                     "type": "string"
+                }
+            }
+        },
+        "val.PageExport": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "description": "ImageURL 表示页面图片地址",
+                    "type": "string"
+                },
+                "is_uploaded": {
+                    "description": "IsUploaded 表示页面是否已上传",
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "description": "PageID 表示页面 ID",
+                    "type": "string"
+                },
+                "page_index": {
+                    "description": "PageIndex 表示页面序号",
+                    "type": "integer"
+                },
+                "units": {
+                    "description": "Units 表示页面中的翻译单元列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.UnitExport"
+                    }
                 }
             }
         },
@@ -2952,6 +3286,67 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/val.UnitPatch"
                     }
+                }
+            }
+        },
+        "val.UnitExport": {
+            "type": "object",
+            "properties": {
+                "is_bubble": {
+                    "description": "IsBubble 表示该单元是否是气泡框",
+                    "type": "boolean"
+                },
+                "is_proofread": {
+                    "description": "IsProofread 表示该单元是否已经校对",
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "description": "PageID 表示所属页面 ID",
+                    "type": "string"
+                },
+                "page_index": {
+                    "description": "PageIndex 表示所属页面序号",
+                    "type": "integer"
+                },
+                "proofread_text": {
+                    "description": "ProofreadText 表示校对后的文本",
+                    "type": "string"
+                },
+                "proofreader_comment": {
+                    "description": "ProofreaderComment 表示校对者的备注",
+                    "type": "string"
+                },
+                "proofreader_id": {
+                    "description": "ProofreaderID 表示校对者的用户 ID",
+                    "type": "string"
+                },
+                "translated_text": {
+                    "description": "TranslatedText 表示翻译后的文本",
+                    "type": "string"
+                },
+                "translator_comment": {
+                    "description": "TranslatorComment 表示翻译者的备注",
+                    "type": "string"
+                },
+                "translator_id": {
+                    "description": "TranslatorID 表示翻译者的用户 ID",
+                    "type": "string"
+                },
+                "unit_id": {
+                    "description": "UnitID 表示翻译单元 ID",
+                    "type": "string"
+                },
+                "unit_index": {
+                    "description": "UnitIndex 表示翻译单元序号",
+                    "type": "integer"
+                },
+                "x_coord": {
+                    "description": "XCoord 表示翻译单元的 X 坐标",
+                    "type": "integer"
+                },
+                "y_coord": {
+                    "description": "YCoord 表示翻译单元的 Y 坐标",
+                    "type": "integer"
                 }
             }
         },

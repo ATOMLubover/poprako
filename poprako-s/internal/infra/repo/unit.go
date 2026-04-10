@@ -10,6 +10,7 @@ import (
 	entity "poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type unitRepoImpl struct {
@@ -81,6 +82,54 @@ func (r *unitRepoImpl) CreateBatch(units []*model.UnitCreation) error {
 	}
 
 	return r.gdb.Table(entity.UnitTable).Create(rows).Error
+}
+
+func (r *unitRepoImpl) UpsertBatch(units []*model.UnitCreation) error {
+	if len(units) == 0 {
+		return nil
+	}
+
+	now := time.Now()
+
+	rows := make([]map[string]any, 0, len(units))
+	for _, unit := range units {
+		rows = append(rows, map[string]any{
+			"id":                  unit.ID,
+			"page_id":             unit.PageID,
+			"x_coord":             float64(unit.XCoord),
+			"y_coord":             float64(unit.YCoord),
+			"index":               unit.Index,
+			"in_bubble":           unit.IsBubble,
+			"is_proofread":        unit.IsProofread,
+			"translated_text":     unit.TranslatedText,
+			"translator_id":       unit.TranslatorID,
+			"translator_comment":  unit.TranslatorComment,
+			"proofreader_text":    unit.ProofreadText,
+			"proofreader_id":      unit.ProofreaderID,
+			"proofreader_comment": unit.ProofreaderComment,
+			"created_at":          now,
+			"updated_at":          now,
+		})
+	}
+
+	return r.gdb.Table(entity.UnitTable).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"page_id",
+			"x_coord",
+			"y_coord",
+			"index",
+			"in_bubble",
+			"is_proofread",
+			"translated_text",
+			"translator_id",
+			"translator_comment",
+			"proofreader_text",
+			"proofreader_id",
+			"proofreader_comment",
+			"updated_at",
+		}),
+	}).Create(rows).Error
 }
 
 func (r *unitRepoImpl) PatchBatch(patches []*model.UnitPatch) error {

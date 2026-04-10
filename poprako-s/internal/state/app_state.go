@@ -17,6 +17,7 @@ type AppState struct {
 	ComicApp         app.ComicApp
 	ChapterApp       app.ChapterApp
 	ChapterExportApp app.ChapterExportApp
+	ChapterImportApp app.ChapterImportApp
 	PageApp          app.PageApp
 	AssignmentApp    app.AssignmentApp
 	UnitApp          app.UnitApp
@@ -33,6 +34,7 @@ func NewAppState(
 	comicApp app.ComicApp,
 	chapterApp app.ChapterApp,
 	chapterExportApp app.ChapterExportApp,
+	chapterImportApp app.ChapterImportApp,
 	pageApp app.PageApp,
 	assignmentApp app.AssignmentApp,
 	unitApp app.UnitApp,
@@ -47,6 +49,7 @@ func NewAppState(
 		ComicApp:         comicApp,
 		ChapterApp:       chapterApp,
 		ChapterExportApp: chapterExportApp,
+		ChapterImportApp: chapterImportApp,
 		PageApp:          pageApp,
 		AssignmentApp:    assignmentApp,
 		UnitApp:          unitApp,
