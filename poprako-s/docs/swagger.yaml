@@ -1720,6 +1720,27 @@ paths:
       summary: 确认漫画封面已上传
       tags:
       - comic
+  /comics/{comic_id}/pinned-chapter:
+    get:
+      description: 获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.ChapterInfo'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取漫画置顶章节
+      tags:
+      - chapter
   /invitations:
     get:
       description: 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组

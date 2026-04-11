@@ -23,6 +23,14 @@ type ChapterApp interface {
 		args *val.ListChapterArgs,
 	) ([]*val.ChapterInfo, error)
 
+	// GetComicPinned 获取指定漫画的置顶章节信息
+	// 如果没有置顶章节则返回 nil 而非错误
+	GetComicPinned(
+		cx context.Context,
+		currUserID string,
+		comicID string,
+	) (*val.ChapterInfo, error)
+
 	// Create 创建一个新的章节
 	Create(
 		cx context.Context,
@@ -53,7 +61,7 @@ type ChapterApp interface {
 }
 
 type chapterAppImpl struct {
-	chapterSvc service.ChapterService
+	chapterSvc    service.ChapterService
 	chapterInvSvc service.ChapterInvitationService
 
 	memberRepo     repo.MemberRepo
@@ -211,6 +219,81 @@ func (a *chapterAppImpl) List(
 
 	// 返回章节列表
 	return result, nil
+}
+
+func (a *chapterAppImpl) GetComicPinned(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) (*val.ChapterInfo, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
+	targetComic, err := a.comicRepo.GetByID(comicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取置顶章节失败：获取漫画信息失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取漫画信息")
+	}
+
+	// 通过作品集获取所属汉化组 ID
+	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取置顶章节失败：获取作品集信息失败",
+			zap.String("workset_id", targetComic.WorksetID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取作品集信息")
+	}
+
+	// 鉴权：检查当前用户是否为该汉化组成员
+	_, err = a.memberRepo.Get(model.MemberQueryOpt{
+		UserID: &currUserID,
+		TeamID: &targetWorkset.TeamID,
+	})
+	if err != nil {
+		// 记录权限校验失败
+		lgr.Warn(
+			"获取置顶章节失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("权限不足")
+	}
+
+	// 查询置顶章节；若漫画尚无置顶章节则返回 nil 而非错误
+	chapter, err := a.chapterRepo.FindPinnedByComicID(comicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取置顶章节失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("获取置顶章节失败")
+	}
+
+	// 置顶章节不存在时返回 nil
+	if chapter == nil {
+		return nil, nil
+	}
+
+	// 组装为 app 层值对象并返回
+	return assembleChapterInfo(chapter, a.ossClient), nil
 }
 
 func (a *chapterAppImpl) Create(
@@ -786,6 +869,32 @@ func NewLogChapterApp(
 	}
 
 	return &logChapterAppImpl{app: app}
+}
+
+func (a *logChapterAppImpl) GetComicPinned(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) (*val.ChapterInfo, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ChapterApp 不可用")
+	}
+
+	if comicID == "" {
+		return nil, errors.New("漫画 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(
+		zap.String("method", "GetComicPinned"),
+		zap.String("curr_user_id", currUserID),
+		zap.String("comic_id", comicID),
+	)
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logChapterAppImpl.GetComicPinned] CALL")
+
+	return a.app.GetComicPinned(cx, currUserID, comicID)
 }
 
 func (a *logChapterAppImpl) List(

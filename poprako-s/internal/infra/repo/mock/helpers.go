@@ -13,17 +13,17 @@ var errNotFound = errors.New("mock: not found")
 type mockRepoCtxKey string
 
 const (
-	assignmentRepoCtxKey mockRepoCtxKey = "assignment-repo"
-	chapterRepoCtxKey    mockRepoCtxKey = "chapter-repo"
+	assignmentRepoCtxKey        mockRepoCtxKey = "assignment-repo"
+	chapterRepoCtxKey           mockRepoCtxKey = "chapter-repo"
 	chapterInvitationRepoCtxKey mockRepoCtxKey = "chapter-invitation-repo"
-	comicRepoCtxKey      mockRepoCtxKey = "comic-repo"
-	invitationRepoCtxKey mockRepoCtxKey = "invitation-repo"
-	memberRepoCtxKey     mockRepoCtxKey = "member-repo"
-	pageRepoCtxKey       mockRepoCtxKey = "page-repo"
-	teamRepoCtxKey       mockRepoCtxKey = "team-repo"
-	unitRepoCtxKey       mockRepoCtxKey = "unit-repo"
-	userRepoCtxKey       mockRepoCtxKey = "user-repo"
-	worksetRepoCtxKey    mockRepoCtxKey = "workset-repo"
+	comicRepoCtxKey             mockRepoCtxKey = "comic-repo"
+	invitationRepoCtxKey        mockRepoCtxKey = "invitation-repo"
+	memberRepoCtxKey            mockRepoCtxKey = "member-repo"
+	pageRepoCtxKey              mockRepoCtxKey = "page-repo"
+	teamRepoCtxKey              mockRepoCtxKey = "team-repo"
+	unitRepoCtxKey              mockRepoCtxKey = "unit-repo"
+	userRepoCtxKey              mockRepoCtxKey = "user-repo"
+	worksetRepoCtxKey           mockRepoCtxKey = "workset-repo"
 )
 
 func withMockRepo(cx context.Context, key mockRepoCtxKey, value any) context.Context {

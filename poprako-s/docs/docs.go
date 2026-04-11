@@ -910,6 +910,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/comics/{comic_id}/pinned-chapter": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "获取漫画置顶章节",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ChapterInfo"
+                        }
+                    }
+                }
+            }
+        },
         "/invitations": {
             "get": {
                 "security": [

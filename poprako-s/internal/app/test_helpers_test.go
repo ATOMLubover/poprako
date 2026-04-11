@@ -88,17 +88,17 @@ func newMockEventBus() *mock_event.EventBus {
 }
 
 type mockTxnRepos struct {
-	assignment *mock_repo.AssignmentRepo
-	chapter    *mock_repo.ChapterRepo
+	assignment        *mock_repo.AssignmentRepo
+	chapter           *mock_repo.ChapterRepo
 	chapterInvitation *mock_repo.ChapterInvitationRepo
-	comic      *mock_repo.ComicRepo
-	invitation *mock_repo.InvitationRepo
-	member     *mock_repo.MemberRepo
-	page       *mock_repo.PageRepo
-	team       *mock_repo.TeamRepo
-	unit       *mock_repo.UnitRepo
-	user       *mock_repo.UserRepo
-	workset    *mock_repo.WorksetRepo
+	comic             *mock_repo.ComicRepo
+	invitation        *mock_repo.InvitationRepo
+	member            *mock_repo.MemberRepo
+	page              *mock_repo.PageRepo
+	team              *mock_repo.TeamRepo
+	unit              *mock_repo.UnitRepo
+	user              *mock_repo.UserRepo
+	workset           *mock_repo.WorksetRepo
 }
 
 func newMockTxnContext(repos mockTxnRepos) context.Context {

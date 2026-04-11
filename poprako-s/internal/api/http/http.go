@@ -109,6 +109,7 @@ func initApp(appState *state.AppState) *iris.Application {
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))
+		comicParty.Get("/{comic_id}/pinned-chapter", GetComicPinnedChapter(appState))
 		comicParty.Post("/{comic_id}/cover", ReserveComicCover(appState))
 		comicParty.Post("/{comic_id}/cover/confirm", ConfirmComicCoverUploaded(appState))
 	}

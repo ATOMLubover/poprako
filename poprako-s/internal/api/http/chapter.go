@@ -7,6 +7,47 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// GetComicPinnedChapter godoc
+// @Summary 	获取漫画置顶章节
+// @Description 获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null
+//
+// @Tags 		chapter
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		comic_id path string true "漫画 ID"
+//
+// @Success 	200 {object} val.ChapterInfo
+//
+// @Router 		/comics/{comic_id}/pinned-chapter [get]
+func GetComicPinnedChapter(appState *state.AppState) iris.Handler {
+	chapterApp := appState.ChapterApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		comicID := ctx.Params().Get("comic_id")
+		if comicID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 comic_id 路径参数")
+			return
+		}
+
+		result, err := chapterApp.GetComicPinned(
+			buildReqCx(ctx),
+			currUserID,
+			comicID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取置顶章节成功", result)
+	}
+}
+
 // ListComicChapters godoc
 // @Summary 	获取漫画章节列表
 // @Description 获取指定漫画的章节列表，支持分页和 includes 嵌套信息查询

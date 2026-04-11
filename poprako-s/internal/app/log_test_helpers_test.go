@@ -8,11 +8,11 @@ import (
 )
 
 type assignmentAppStub struct {
-	listByChapterCalled bool
-	listMyCalled        bool
-	createCalled        bool
-	updateCalled        bool
-	removeCalled        bool
+	listByChapterCalled      bool
+	listMyCalled             bool
+	createCalled             bool
+	updateCalled             bool
+	removeCalled             bool
 	joinInvitorChapterCalled bool
 }
 
@@ -47,16 +47,22 @@ func (s *assignmentAppStub) JoinInvitorChapter(context.Context, string, *val.Joi
 }
 
 type chapterAppStub struct {
-	listCalled   bool
-	createCalled bool
-	updateCalled bool
-	removeCalled bool
-	inviteCalled bool
+	listCalled           bool
+	getComicPinnedCalled bool
+	createCalled         bool
+	updateCalled         bool
+	removeCalled         bool
+	inviteCalled         bool
 }
 
 func (s *chapterAppStub) List(context.Context, string, *val.ListChapterArgs) ([]*val.ChapterInfo, error) {
 	s.listCalled = true
 	return []*val.ChapterInfo{{ID: "chapter-1"}}, nil
+}
+
+func (s *chapterAppStub) GetComicPinned(context.Context, string, string) (*val.ChapterInfo, error) {
+	s.getComicPinnedCalled = true
+	return &val.ChapterInfo{ID: "chapter-1"}, nil
 }
 
 func (s *chapterAppStub) Create(context.Context, string, *val.CreateChapterArgs) (*val.CreateChapterRes, error) {
