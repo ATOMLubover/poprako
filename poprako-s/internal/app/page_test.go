@@ -19,7 +19,7 @@ func TestPageAppList(t *testing.T) {
 		"page-1": {ID: "page-1", ChapterID: "chapter-1", Index: 0},
 	}}
 
-	app := NewPageApp(service.NewPageService(), assignmentRepo, &mock_repo.ChapterRepo{}, pageRepo, newMockOSSClient())
+	app := NewPageApp(service.NewPageService(), assignmentRepo, &mock_repo.ChapterRepo{}, pageRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 
 	got, err := app.List(background(), "user-1", &val.ListChapterPageArgs{ChapterID: "chapter-1"})
 	requireNoErr(t, err)
@@ -33,17 +33,23 @@ func TestPageAppReserveUpdateAndRemove(t *testing.T) {
 	assignment := rawProviderAssignment()
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	assignmentRepo.Infos[assignment.ID] = *assignment
+	chapterRepo := mock_repo.NewMockChapterRepo()
+	chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1", PageCount: 0}
 	pageRepo := mock_repo.NewMockPageRepo()
 	ossClient := newMockOSSClient()
 	ossClient.SetPutURLs(map[string]string{"page_0": "https://upload.example/page_0", "page_1": "https://upload.example/page_1"})
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, page: pageRepo}))
 
-	app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), pageRepo, ossClient)
+	app := NewPageApp(service.NewPageService(), assignmentRepo, chapterRepo, pageRepo, txnMgr, ossClient)
 
 	reserveRes, err := app.Reserve(background(), "user-1", &val.ReserveChapterPagesArgs{ChapterID: "chapter-1", PageCount: 2, Extension: "png"})
 	requireNoErr(t, err)
 
 	if len(reserveRes.Creations) != 2 || len(pageRepo.Infos) != 2 {
 		t.Fatalf("unexpected reserve result: %#v %#v", reserveRes, pageRepo.Infos)
+	}
+	if chapterRepo.Infos["chapter-1"].PageCount != 2 {
+		t.Fatalf("expected chapter page count to increase, got %#v", chapterRepo.Infos["chapter-1"])
 	}
 
 	pageID := reserveRes.Creations[0].PageID
@@ -58,6 +64,9 @@ func TestPageAppReserveUpdateAndRemove(t *testing.T) {
 	if _, ok := pageRepo.Infos[pageID]; ok {
 		t.Fatalf("expected page deleted, got %#v", pageRepo.Infos)
 	}
+	if chapterRepo.Infos["chapter-1"].PageCount != 1 {
+		t.Fatalf("expected chapter page count to decrease, got %#v", chapterRepo.Infos["chapter-1"])
+	}
 	deleted := ossClient.Deleted()
 	if len(deleted) == 0 || deleted[0] != "page_0" {
 		t.Fatalf("expected oss delete call, got %#v", deleted)
@@ -68,7 +77,7 @@ func TestPageAppListForbidden(t *testing.T) {
 	pageRepo := mock_repo.NewMockPageRepo()
 	pageRepo.Infos["page-1"] = model.PageInfo{ID: "page-1", ChapterID: "chapter-1"}
 
-	app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), pageRepo, newMockOSSClient())
+	app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), pageRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 	if _, err := app.List(background(), "user-1", &val.ListChapterPageArgs{ChapterID: "chapter-1"}); err == nil {
 		t.Fatal("expected forbidden error")
 	}
@@ -80,21 +89,21 @@ func TestPageAppErrorPaths(t *testing.T) {
 		assignmentRepo.Infos["assignment-1"] = *rawProviderAssignment()
 		ossClient := newMockOSSClient()
 		ossClient.SetPutErr(errors.New("boom"))
-		app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), ossClient)
+			app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), ossClient)
 		if _, err := app.Reserve(background(), "user-1", &val.ReserveChapterPagesArgs{ChapterID: "chapter-1", PageCount: 1, Extension: "png"}); err == nil {
 			t.Fatal("expected reserve failure")
 		}
 	})
 
 	t.Run("update rejects missing page", func(t *testing.T) {
-		app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), newMockOSSClient())
+			app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.Update(background(), "user-1", &val.UpdatePageArgs{ID: "missing", IsUploaded: true}); err == nil {
 			t.Fatal("expected missing page error")
 		}
 	})
 
 	t.Run("remove rejects missing page", func(t *testing.T) {
-		app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), newMockOSSClient())
+			app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.Remove(background(), "user-1", "missing"); err == nil {
 			t.Fatal("expected missing page error")
 		}
@@ -105,10 +114,12 @@ func TestPageAppErrorPaths(t *testing.T) {
 		assignmentRepo.Infos["assignment-1"] = *rawProviderAssignment()
 		pageRepo := mock_repo.NewMockPageRepo()
 		pageRepo.Infos["page-1"] = model.PageInfo{ID: "page-1", ChapterID: "chapter-1", OSSKey: "page-oss-1"}
+		chapterRepo := mock_repo.NewMockChapterRepo()
+		chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1", PageCount: 1}
 		ossClient := newMockOSSClient()
 		ossClient.SetDeleteErr(errors.New("boom"))
 
-		app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), pageRepo, ossClient)
+		app := NewPageApp(service.NewPageService(), assignmentRepo, chapterRepo, pageRepo, mock_repo.NewMockTxnMgr(nil), ossClient)
 
 		err := app.Remove(background(), "user-1", "page-1")
 		if err == nil {
@@ -117,6 +128,10 @@ func TestPageAppErrorPaths(t *testing.T) {
 
 		if _, ok := pageRepo.Infos["page-1"]; !ok {
 			t.Fatalf("expected page to remain, got %#v", pageRepo.Infos)
+		}
+
+		if chapterRepo.Infos["chapter-1"].PageCount != 1 {
+			t.Fatalf("expected chapter page count unchanged, got %#v", chapterRepo.Infos["chapter-1"])
 		}
 
 		if len(ossClient.Deleted()) != 3 {

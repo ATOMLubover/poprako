@@ -19,7 +19,7 @@ func (h *UnitSaveHandler) EventType() event.EventType {
 }
 
 func (h *UnitSaveHandler) PubType() event.PubType {
-	return event.PubTypeAsync
+	return event.PubTypeSync
 }
 
 func (h *UnitSaveHandler) Handle(cx context.Context, ev event.Event) error {

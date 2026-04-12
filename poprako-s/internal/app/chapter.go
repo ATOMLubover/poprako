@@ -850,6 +850,11 @@ func assembleChapterInfo(
 		result.Creator = userInfo
 	}
 
+	// 若包含漫画信息则一并组装
+	if info.Comic != nil {
+		result.Comic = assembleComicInfo(info.Comic, ossClient)
+	}
+
 	return result
 }
 

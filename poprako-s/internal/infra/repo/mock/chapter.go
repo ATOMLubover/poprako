@@ -170,3 +170,17 @@ func (r *ChapterRepo) UpdateStats(stats *model.ChapterStats) error {
 
 	return nil
 }
+
+func (r *ChapterRepo) UpdatePageCount(id string, delta int) error {
+	r.ensure()
+	info, ok := r.Infos[id]
+	if !ok {
+		return errNotFound
+	}
+
+	info.PageCount += delta
+	info.UpdatedAt = time.Now()
+	r.Infos[id] = info
+
+	return nil
+}

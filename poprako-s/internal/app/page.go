@@ -49,6 +49,7 @@ type pageAppImpl struct {
 	assignmentRepo repo.AssignmentRepo
 	chapterRepo    repo.ChapterRepo
 	pageRepo       repo.PageRepo
+	txnMgr         repo.TxnMgr
 	ossClient      oss.Client
 }
 
@@ -57,6 +58,7 @@ func NewPageApp(
 	assignmentRepo repo.AssignmentRepo,
 	chapterRepo repo.ChapterRepo,
 	pageRepo repo.PageRepo,
+	txnMgr repo.TxnMgr,
 	ossClient oss.Client,
 ) PageApp {
 	// 校验构造函数依赖
@@ -64,6 +66,7 @@ func NewPageApp(
 		assignmentRepo == nil ||
 		chapterRepo == nil ||
 		pageRepo == nil ||
+		txnMgr == nil ||
 		ossClient == nil {
 		zap.L().Panic(
 			"NewPageApp: 依赖项不能为空",
@@ -71,6 +74,7 @@ func NewPageApp(
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
+			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("ossClient_nil", ossClient == nil),
 		)
 	}
@@ -81,6 +85,7 @@ func NewPageApp(
 		assignmentRepo: assignmentRepo,
 		chapterRepo:    chapterRepo,
 		pageRepo:       pageRepo,
+		txnMgr:         txnMgr,
 		ossClient:      ossClient,
 	}
 }
@@ -146,8 +151,24 @@ func (a *pageAppImpl) Reserve(
 		}
 	}
 
-	// 批量持久化页面
-	if err := a.pageRepo.CreateBatch(creations); err != nil {
+	// 在事务中同时创建页面并回写章节页面数
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		pageRepoTxn, err := a.pageRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		if err := pageRepoTxn.CreateBatch(creations); err != nil {
+			return err
+		}
+
+		return chapterRepoTxn.UpdatePageCount(args.ChapterID, len(creations))
+	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
 			"预留页面失败：批量创建失败",
@@ -333,8 +354,24 @@ func (a *pageAppImpl) Remove(
 		return errors.New("删除页面失败")
 	}
 
-	// 执行删除
-	if err := a.pageRepo.Delete(pageID); err != nil {
+	// 在事务中同时删除页面并回写章节页面数
+	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		pageRepoTxn, err := a.pageRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		if err := pageRepoTxn.Delete(pageID); err != nil {
+			return err
+		}
+
+		return chapterRepoTxn.UpdatePageCount(targetPage.ChapterID, -1)
+	}); err != nil {
 		// 记录删除失败
 		lgr.Error(
 			"删除页面失败",

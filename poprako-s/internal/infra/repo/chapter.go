@@ -218,3 +218,12 @@ func (r *chapterRepoImpl) UpdateStats(stats *model.ChapterStats) error {
 			"updated_at":            time.Now(),
 		}).Error
 }
+
+func (r *chapterRepoImpl) UpdatePageCount(id string, delta int) error {
+	return r.gdb.Table(entity.ChapterTable).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"page_count": gorm.Expr("page_count + ?", delta),
+			"updated_at":  time.Now(),
+		}).Error
+}

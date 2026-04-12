@@ -59,15 +59,17 @@ type CreateMemberRes struct {
 // ListTeamMemberArgs 表示列出指定汉化组成员请求的参数
 type ListTeamMemberArgs struct {
 	// TeamID 是目标汉化组 ID
-	TeamID string `json:"team_id" validate:"required"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
+	TeamID   string   `json:"team_id" url:"team_id" validate:"required"`
+	Includes []string `json:"includes" url:"includes"`
+	Offset   int      `json:"offset" url:"offset"`
+	Limit    int      `json:"limit" url:"limit"`
 }
 
 // ListMyMemberArgs 表示列出当前用户所有成员记录请求的参数
 type ListMyMemberArgs struct {
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Includes []string `json:"includes" url:"includes"`
+	Offset   int      `json:"offset" url:"offset"`
+	Limit    int      `json:"limit" url:"limit"`
 }
 
 // UpdateMemberRoleArgs 表示更新成员角色请求的参数

@@ -53,9 +53,9 @@ type ChapterInfo struct {
 // ListChapterArgs 表示列出章节列表请求的参数
 type ListChapterArgs struct {
 	// ComicID 是目标漫画 ID
-	ComicID string `json:"comic_id" validate:"required"`
-	Offset  int    `json:"offset"`
-	Limit   int    `json:"limit"`
+	ComicID string `json:"comic_id" url:"comic_id" validate:"required"`
+	Offset  int    `json:"offset" url:"offset"`
+	Limit   int    `json:"limit" url:"limit"`
 }
 
 // CreateChapterArgs 表示创建章节请求的参数

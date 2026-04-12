@@ -115,7 +115,7 @@ func main() {
 	)
 	memberApp := app.NewMemberApp(
 		memberSvc,
-		userRepo, memberRepo, invRepo,
+		userRepo, memberRepo, teamRepo, invRepo,
 		txnMgr, ossClient,
 	)
 	invitationApp := app.NewInvitationApp(
@@ -158,11 +158,12 @@ func main() {
 	pageApp := app.NewPageApp(
 		pageSvc,
 		assignmentRepo, chapterRepo, pageRepo,
+		txnMgr,
 		ossClient,
 	)
 	assignmentApp := app.NewAssignmentApp(
 		assignmentSvc,
-		assignmentRepo, chapterInvRepo, chapterRepo, userRepo,
+		assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, userRepo,
 		txnMgr, eventBus, ossClient,
 	)
 	unitApp := app.NewUnitApp(

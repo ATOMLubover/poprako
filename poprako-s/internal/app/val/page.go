@@ -60,9 +60,9 @@ type PageCreationResult struct {
 // ListChapterPageArgs 表示列出章节页面请求的参数
 type ListChapterPageArgs struct {
 	// ChapterID 是目标章节 ID
-	ChapterID string `json:"chapter_id" validate:"required"`
-	Offset    int    `json:"offset"`
-	Limit     int    `json:"limit"`
+	ChapterID string `json:"chapter_id" url:"chapter_id" validate:"required"`
+	Offset    int    `json:"offset" url:"offset"`
+	Limit     int    `json:"limit" url:"limit"`
 }
 
 // UpdatePageArgs 表示更新页面请求的参数

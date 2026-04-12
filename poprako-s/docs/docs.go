@@ -45,7 +45,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：user, chapter, chapter.comic, chapter.creator",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     },
                     {
@@ -172,7 +172,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：chapter, chapter.comic, chapter.creator",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     },
                     {
@@ -387,7 +387,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：creator",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     }
                 ],
@@ -988,7 +988,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：invitor",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     }
                 ],
@@ -1144,7 +1144,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：user",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     },
                     {
@@ -1271,7 +1271,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：team",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     },
                     {
@@ -1418,7 +1418,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：creator",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     }
                 ],
@@ -2127,7 +2127,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "include 关联信息，可选值：team",
-                        "name": "\"includes[]\"",
+                        "name": "\"includes\"",
                         "in": "query"
                     },
                     {

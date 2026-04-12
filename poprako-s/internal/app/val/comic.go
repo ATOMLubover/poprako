@@ -46,23 +46,23 @@ type ComicInfo struct {
 // ListComicArgs 表示列出漫画列表请求的参数
 type ListComicArgs struct {
 	// WorksetID 是目标作品集 ID
-	WorksetID string `json:"workset_id" validate:"required"`
+	WorksetID string `json:"workset_id" url:"workset_id" validate:"required"`
 	// FuzzyTitle 是模糊搜索标题
-	FuzzyTitle string `json:"fuzzy_title"`
+	FuzzyTitle string `json:"fuzzy_title" url:"fuzzy_title"`
 
 	// 进度筛选
-	UploadStatus    *model.WorkflowPhase `json:"upload_status"`
-	TranslateStatus *model.WorkflowPhase `json:"translate_status"`
-	ProofreadStatus *model.WorkflowPhase `json:"proofread_status"`
-	TypesetStatus   *model.WorkflowPhase `json:"typeset_status"`
-	ReviewStatus    *model.WorkflowPhase `json:"review_status"`
-	PublishStatus   *model.WorkflowPhase `json:"publish_status"`
+	UploadStatus    *model.WorkflowPhase `json:"upload_status" url:"upload_status"`
+	TranslateStatus *model.WorkflowPhase `json:"translate_status" url:"translate_status"`
+	ProofreadStatus *model.WorkflowPhase `json:"proofread_status" url:"proofread_status"`
+	TypesetStatus   *model.WorkflowPhase `json:"typeset_status" url:"typeset_status"`
+	ReviewStatus    *model.WorkflowPhase `json:"review_status" url:"review_status"`
+	PublishStatus   *model.WorkflowPhase `json:"publish_status" url:"publish_status"`
 
 	// Includes 指定查询时要包含的反向单射数据
-	Includes []model.ComicInclude `json:"includes"`
+	Includes []model.ComicInclude `json:"includes" url:"includes"`
 
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Offset int `json:"offset" url:"offset"`
+	Limit  int `json:"limit" url:"limit"`
 }
 
 // CreateComicArgs 表示创建漫画请求的参数

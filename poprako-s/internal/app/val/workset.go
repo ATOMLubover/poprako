@@ -29,9 +29,9 @@ type WorksetInfo struct {
 // ListWorksetArgs 表示列出作品集列表请求的参数
 type ListWorksetArgs struct {
 	// TeamID 是目标汉化组 ID
-	TeamID string `json:"team_id" validate:"required"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
+	TeamID string `json:"team_id" url:"team_id" validate:"required"`
+	Offset int    `json:"offset" url:"offset"`
+	Limit  int    `json:"limit" url:"limit"`
 }
 
 // CreateWorksetArgs 表示创建作品集请求的参数

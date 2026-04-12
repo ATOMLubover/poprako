@@ -35,9 +35,9 @@ type InvitationInfo struct {
 // ListTeamInvitationArgs 表示列出指定汉化组邀请请求的参数
 type ListTeamInvitationArgs struct {
 	// TeamID 是目标汉化组 ID
-	TeamID string `json:"team_id" validate:"required"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
+	TeamID string `json:"team_id" url:"team_id" validate:"required"`
+	Offset int    `json:"offset" url:"offset"`
+	Limit  int    `json:"limit" url:"limit"`
 }
 
 // CreateInvitationArgs 表示创建邀请请求的参数
