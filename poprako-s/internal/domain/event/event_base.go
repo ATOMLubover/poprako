@@ -21,7 +21,15 @@ func (b *EventBase) PushEvent(e Event) {
 	b.events = append(b.events, e)
 }
 
+func (b *EventBase) ClearEvents() {
+	b.events = nil
+}
+
 // 实现 EventSource 接口
-func (b *EventBase) Events() []Event {
-	return b.events
+func (b *EventBase) PullEvents() []Event {
+	// 保证每次拉取事件后都清空事件列表，避免重复拉取同一批事件
+	events := b.events
+	b.ClearEvents()
+
+	return events
 }

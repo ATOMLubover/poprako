@@ -18,7 +18,8 @@ func TestLogAssignmentAppForwardsAllMethods(t *testing.T) {
 	_, _ = app.Create(background(), "user-1", &val.CreateAssignmentArgs{ChapterID: "chapter-1", UserID: "user-2", Roles: model.RoleMask(model.RoleTranslator)})
 	_ = app.Update(background(), "user-1", &val.UpdateAssignmentArgs{ID: "assignment-1", Roles: model.RoleMask(model.RoleReviewer)})
 	_ = app.Remove(background(), "user-1", "assignment-1")
-	if !stub.listByChapterCalled || !stub.listMyCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled {
+	_ = app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "123456"})
+	if !stub.listByChapterCalled || !stub.listMyCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.joinInvitorChapterCalled {
 		t.Fatalf("expected all assignment wrapper calls to forward: %#v", stub)
 	}
 }
@@ -39,5 +40,8 @@ func TestLogAssignmentAppRejectsInvalidArgs(t *testing.T) {
 	}
 	if err := app.Remove(background(), "user-1", ""); err == nil {
 		t.Fatal("expected remove validation error")
+	}
+	if err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{}); err == nil {
+		t.Fatal("expected join validation error")
 	}
 }

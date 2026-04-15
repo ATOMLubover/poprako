@@ -25,7 +25,7 @@ func ListComics(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -39,7 +39,7 @@ func ListComics(appState *state.AppState) iris.Handler {
 
 		result, err := comicApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -68,7 +68,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -82,7 +82,7 @@ func CreateComic(appState *state.AppState) iris.Handler {
 
 		result, err := comicApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -113,7 +113,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -138,7 +138,7 @@ func PatchComic(appState *state.AppState) iris.Handler {
 
 		if err := comicApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -165,7 +165,7 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 	comicApp := appState.ComicApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -178,7 +178,7 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 
 		if err := comicApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			comicID,
 		); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
@@ -186,5 +186,89 @@ func DeleteComic(appState *state.AppState) iris.Handler {
 		}
 
 		accept(ctx, "删除漫画成功", nil)
+	}
+}
+
+// ReserveComicCover godoc
+// @Summary 	预留漫画封面上传
+// @Description 为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key
+//
+// @Tags 		comic
+// @Security 	ApiKeyAuth
+// @Accept 		json
+// @Produce 	json
+// @Param 		comic_id path string true "漫画 ID"
+// @Param 		body body val.ReserveComicCoverArgs true "预留漫画封面参数"
+//
+// @Success 	200 {object} val.ReserveComicCoverRes
+//
+// @Router 		/comics/{comic_id}/cover [post]
+func ReserveComicCover(appState *state.AppState) iris.Handler {
+	comicApp := appState.ComicApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		comicID := ctx.Params().Get("comic_id")
+		if comicID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 comic_id 路径参数")
+			return
+		}
+
+		var args val.ReserveComicCoverArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		args.ComicID = comicID
+
+		result, err := comicApp.ReserveCover(buildReqCx(ctx), currUserID, &args)
+		if err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "预留漫画封面成功", result)
+	}
+}
+
+// ConfirmComicCoverUploaded godoc
+// @Summary 	确认漫画封面已上传
+// @Description 在客户端上传封面后，确认漫画封面上传状态
+//
+// @Tags 		comic
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		comic_id path string true "漫画 ID"
+//
+// @Success 	200
+//
+// @Router 		/comics/{comic_id}/cover/confirm [post]
+func ConfirmComicCoverUploaded(appState *state.AppState) iris.Handler {
+	comicApp := appState.ComicApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		comicID := ctx.Params().Get("comic_id")
+		if comicID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 comic_id 路径参数")
+			return
+		}
+
+		if err := comicApp.ConfirmCoverUploaded(buildReqCx(ctx), currUserID, comicID); err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "确认漫画封面上传成功", nil)
 	}
 }

@@ -1,0 +1,33 @@
+services:
+  db:
+    build:
+      context: ..
+      dockerfile: docker/poprako-s-database/Dockerfile
+    environment:
+      POSTGRES_DB: poprako
+      POSTGRES_USER: poprako
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poprako -d poprako"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/poprako-s-main/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENVIRONMENT: production
+      DATABASE_URL: postgres://poprako:${POSTGRES_PASSWORD}@db:5432/poprako?sslmode=disable
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

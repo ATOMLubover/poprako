@@ -183,6 +183,25 @@ func (r *comicRepoImpl) Delete(id string) error {
 		}).Error
 }
 
+func (r *comicRepoImpl) PreFillCoverOSSKey(id string, coverOSSKey string) error {
+	return r.gdb.Table(entity.ComicTable).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"cover_oss_key":     coverOSSKey,
+			"is_cover_uploaded": false,
+			"updated_at":        time.Now(),
+		}).Error
+}
+
+func (r *comicRepoImpl) ConfirmCoverUploaded(id string) error {
+	return r.gdb.Table(entity.ComicTable).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"is_cover_uploaded": true,
+			"updated_at":        time.Now(),
+		}).Error
+}
+
 func applyComicWorkflowFilter(db *gorm.DB, phase *model.WorkflowPhase, startedColumn string, completedColumn string) *gorm.DB {
 	if phase == nil {
 		return db

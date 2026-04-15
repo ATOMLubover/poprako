@@ -24,7 +24,7 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -36,7 +36,7 @@ func CreateTeam(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApp.Create(buildReqCx(ctx), currentUserID, &args)
+		result, err := teamApp.Create(buildReqCx(ctx), currUserID, &args)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
@@ -64,7 +64,7 @@ func ListTeams(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -76,7 +76,7 @@ func ListTeams(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApp.List(buildReqCx(ctx), currentUserID, &args)
+		result, err := teamApp.List(buildReqCx(ctx), currUserID, &args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -103,7 +103,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -115,7 +115,7 @@ func ListMyTeams(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApp.ListMy(buildReqCx(ctx), currentUserID, &args)
+		result, err := teamApp.ListMy(buildReqCx(ctx), currUserID, &args)
 		if err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
@@ -143,7 +143,7 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -163,7 +163,7 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 
 		args.ID = teamID
 
-		if err := teamApp.Update(buildReqCx(ctx), currentUserID, &args); err != nil {
+		if err := teamApp.Update(buildReqCx(ctx), currUserID, &args); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
 		}
@@ -178,8 +178,10 @@ func UpdateTeam(appState *state.AppState) iris.Handler {
 //
 // @Tags 		team
 // @Security 	ApiKeyAuth
+// @Accept 		json
 // @Produce 	json
 // @Param 		team_id path string true "汉化组 ID"
+// @Param 		body body val.ReserveTeamAvatarArgs true "预留汉化组头像参数"
 //
 // @Success 	200 {object} val.ReserveTeamAvatarRes
 //
@@ -188,7 +190,7 @@ func ReserveTeamAvatar(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -199,7 +201,16 @@ func ReserveTeamAvatar(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		result, err := teamApp.ReserveAvatar(buildReqCx(ctx), currentUserID, teamID)
+		var args val.ReserveTeamAvatarArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		args.TeamID = teamID
+
+		result, err := teamApp.ReserveAvatar(buildReqCx(ctx), currUserID, &args)
 		if err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
@@ -225,7 +236,7 @@ func ConfirmTeamAvatarUploaded(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -236,7 +247,7 @@ func ConfirmTeamAvatarUploaded(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := teamApp.ConfirmAvatarUploaded(buildReqCx(ctx), currentUserID, teamID); err != nil {
+		if err := teamApp.ConfirmAvatarUploaded(buildReqCx(ctx), currUserID, teamID); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
 			return
 		}
@@ -261,7 +272,7 @@ func DeleteTeam(appState *state.AppState) iris.Handler {
 	teamApp := appState.TeamApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -272,7 +283,7 @@ func DeleteTeam(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := teamApp.Remove(buildReqCx(ctx), currentUserID, teamID); err != nil {
+		if err := teamApp.Remove(buildReqCx(ctx), currUserID, teamID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

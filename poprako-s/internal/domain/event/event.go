@@ -5,8 +5,6 @@ package event
 type Event interface {
 	// EventType 返回事件的标识符，用于唤醒对应的处理器
 	EventType() EventType
-	// PubType 决定事件是被同步处理，还是被异步处理
-	PubType() PubType
 	// Payload 返回事件的载荷数据，类型为 any，可以是任意类型
 	// 应当使用类型断言来获取具体的载荷类型，以最大可能地保障类型安全
 	Payload() any
@@ -15,5 +13,5 @@ type Event interface {
 // EventSource 是一个接口，表示一个事件源
 // 通常一个聚合根会实现这个接口，以便在其生命周期内产生事件
 type EventSource interface {
-	Events() []Event
+	PullEvents() []Event
 }

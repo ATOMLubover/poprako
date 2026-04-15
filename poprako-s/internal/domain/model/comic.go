@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 	"time"
+
+	"poprako-s/internal/domain/event"
 )
 
 // ComicInfo 包含作品集/漫画的元信息，用于聚合其章节和统计数据
@@ -21,6 +23,11 @@ type ComicInfo struct {
 
 	ChapterCount int
 
+	// CoverOSSKey 是封面图片在 OSS 中的对象键
+	CoverOSSKey string
+	// IsCoverUploaded 表示封面是否已上传
+	IsCoverUploaded bool
+
 	CreatorID string
 	// Creator 仅在 includes 指定时填充
 	Creator *UserInfo
@@ -33,7 +40,8 @@ type ComicInfo struct {
 
 // ComposeComicTitle 根据序号、作者和标题组合生成展示用的漫画标题
 func (c *ComicInfo) ComposeComicTitle() string {
-	return fmt.Sprintf("【%d】[%s] %s", c.Index, c.Author, c.Title)
+	// 为了更加人类可读，在序号上采用 index + 1 的方式展示
+	return fmt.Sprintf("【%d】[%s] %s", c.Index+1, c.Author, c.Title)
 }
 
 // ComicCreation 是创建漫画时的载荷
@@ -51,6 +59,8 @@ type ComicCreation struct {
 	Description string
 	// CreatorID 是必须的，记录创建者
 	CreatorID string
+
+	event.EventBase
 }
 
 // ComicUpdate 是漫画更新信息的 view，是 PUT 语义的载荷

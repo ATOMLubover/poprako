@@ -26,7 +26,7 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 	invitationApp := appState.InvitationApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -40,7 +40,7 @@ func ListInvitations(appState *state.AppState) iris.Handler {
 
 		result, err := invitationApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -69,7 +69,7 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 	invitationApp := appState.InvitationApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -83,7 +83,7 @@ func CreateInvitation(appState *state.AppState) iris.Handler {
 
 		result, err := invitationApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -114,7 +114,7 @@ func PatchInvitation(appState *state.AppState) iris.Handler {
 	invitationApp := appState.InvitationApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -135,7 +135,7 @@ func PatchInvitation(appState *state.AppState) iris.Handler {
 
 		if err := invitationApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -162,7 +162,7 @@ func DeleteInvitation(appState *state.AppState) iris.Handler {
 	invitationApp := appState.InvitationApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -174,7 +174,7 @@ func DeleteInvitation(appState *state.AppState) iris.Handler {
 			return
 		}
 
-		if err := invitationApp.Remove(buildReqCx(ctx), currentUserID, invitationID); err != nil {
+		if err := invitationApp.Remove(buildReqCx(ctx), currUserID, invitationID); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())
 			return
 		}

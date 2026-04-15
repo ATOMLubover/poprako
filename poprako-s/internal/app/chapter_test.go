@@ -25,7 +25,7 @@ func TestChapterAppList(t *testing.T) {
 		"chapter-1": {ID: "chapter-1", ComicID: "comic-1", Subtitle: "ch1"},
 	}}
 
-	app := NewChapterApp(service.NewChapterService(), memberRepo, worksetRepo, comicRepo, chapterRepo, &mock_repo.AssignmentRepo{}, mock_repo.NewMockUserRepo(), &mock_repo.PageRepo{}, &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, &mock_repo.AssignmentRepo{}, mock_repo.NewMockUserRepo(), &mock_repo.PageRepo{}, mock_repo.NewMockChapterInvitationRepo(), &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
 
 	got, err := app.List(background(), "user-1", &val.ListChapterArgs{ComicID: "comic-1"})
 	requireNoErr(t, err)
@@ -43,11 +43,12 @@ func TestChapterAppCreateUsesMockTxnRepos(t *testing.T) {
 	comicRepo := mock_repo.NewMockComicRepo()
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
 	chapterRepo := mock_repo.NewMockChapterRepo()
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	userRepo := mock_repo.NewMockUserRepo()
 	eventBus := newMockEventBus()
-	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, comic: comicRepo}))
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, comic: comicRepo, assignment: assignmentRepo}))
 
-	app := NewChapterApp(service.NewChapterService(), memberRepo, worksetRepo, comicRepo, chapterRepo, mock_repo.NewMockAssignmentRepo(), userRepo, mock_repo.NewMockPageRepo(), txnMgr, eventBus, newMockOSSClient())
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, mock_repo.NewMockAssignmentRepo(), userRepo, mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), txnMgr, eventBus, newMockOSSClient())
 
 	subtitle := "Intro"
 	res, err := app.Create(background(), "user-1", &val.CreateChapterArgs{ComicID: "comic-1", Subtitle: &subtitle})
@@ -62,6 +63,10 @@ func TestChapterAppCreateUsesMockTxnRepos(t *testing.T) {
 	if !ok || createdEvent.ComicID != "comic-1" {
 		t.Fatalf("unexpected event: %#v", pubCalls)
 	}
+	assignedEvent, ok := pubCalls[0][1].(*event.ChapterCreatorAssignedEvent)
+	if !ok || assignedEvent.ChapterID != res.ID || assignedEvent.CreatorID != "user-1" {
+		t.Fatalf("unexpected creator assigned event: %#v", pubCalls)
+	}
 }
 
 func TestChapterAppPublishUsesMockTxnRepos(t *testing.T) {
@@ -74,7 +79,7 @@ func TestChapterAppPublishUsesMockTxnRepos(t *testing.T) {
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, assignment: assignmentRepo, user: userRepo}))
 	transition := model.WorkflowPublishComplete
 
-	app := NewChapterApp(service.NewChapterService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), chapterRepo, assignmentRepo, userRepo, mock_repo.NewMockPageRepo(), txnMgr, eventBus, newMockOSSClient())
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), chapterRepo, assignmentRepo, userRepo, mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), txnMgr, eventBus, newMockOSSClient())
 
 	err := app.Update(background(), "user-1", &val.UpdateChapterArgs{ChapterID: "chapter-1", WorkflowTransition: &transition})
 	requireNoErr(t, err)
@@ -84,15 +89,14 @@ func TestChapterAppPublishUsesMockTxnRepos(t *testing.T) {
 		t.Fatalf("expected published chapter: %#v", updated)
 	}
 	pubCalls := eventBus.PubCalls()
-	pubAsyncCalls := eventBus.PubAsyncCalls()
-	if len(pubCalls) != 1 || len(pubAsyncCalls) != 1 {
-		t.Fatalf("expected sync and async events, got %#v %#v", pubCalls, pubAsyncCalls)
+	if len(pubCalls) != 1 || len(pubCalls[0]) != 2 {
+		t.Fatalf("expected one Pub call with 2 events, got %#v", pubCalls)
 	}
 	if _, ok := pubCalls[0][0].(*event.ChapterPublishedEvent); !ok {
 		t.Fatalf("unexpected sync event: %#v", pubCalls)
 	}
-	if _, ok := pubAsyncCalls[0][0].(*event.WorkflowPublishCompletedEvent); !ok {
-		t.Fatalf("unexpected async event: %#v", pubAsyncCalls)
+	if _, ok := pubCalls[0][1].(*event.WorkflowPublishCompletedEvent); !ok {
+		t.Fatalf("unexpected async event: %#v", pubCalls)
 	}
 }
 
@@ -102,6 +106,9 @@ func TestChapterAppRemoveUsesMockTxnRepos(t *testing.T) {
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	assignmentRepo.Infos["assignment-1"] = model.AssignmentInfo{ID: "assignment-1", ChapterID: "chapter-1", UserID: "user-2"}
 	assignmentRepo.Infos["assignment-2"] = model.AssignmentInfo{ID: "assignment-2", ChapterID: "chapter-1", UserID: "user-3"}
+	pageRepo := mock_repo.NewMockPageRepo()
+	pageRepo.Infos["page-1"] = model.PageInfo{ID: "page-1", ChapterID: "chapter-1", OSSKey: "page-oss-1"}
+	pageRepo.Infos["page-2"] = model.PageInfo{ID: "page-2", ChapterID: "chapter-1", OSSKey: "page-oss-2"}
 	comicRepo := mock_repo.NewMockComicRepo()
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
 	worksetRepo := mock_repo.NewMockWorksetRepo()
@@ -110,9 +117,10 @@ func TestChapterAppRemoveUsesMockTxnRepos(t *testing.T) {
 	memberRepo.Infos["member-1"] = *adminMember()
 	userRepo := mock_repo.NewMockUserRepo()
 	eventBus := newMockEventBus()
+	ossClient := newMockOSSClient()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, assignment: assignmentRepo, comic: comicRepo, user: userRepo}))
 
-	app := NewChapterApp(service.NewChapterService(), memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, userRepo, mock_repo.NewMockPageRepo(), txnMgr, eventBus, newMockOSSClient())
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, userRepo, pageRepo, mock_repo.NewMockChapterInvitationRepo(), txnMgr, eventBus, ossClient)
 
 	err := app.Remove(background(), "user-1", "chapter-1")
 	requireNoErr(t, err)
@@ -125,6 +133,83 @@ func TestChapterAppRemoveUsesMockTxnRepos(t *testing.T) {
 	if !ok || len(removedEvent.AssignedUserIDs) != 2 {
 		t.Fatalf("unexpected remove event: %#v", pubCalls)
 	}
+	deleted := ossClient.Deleted()
+	if len(deleted) != 2 {
+		t.Fatalf("expected page oss cleanup, got %#v", deleted)
+	}
+}
+
+func TestChapterAppInviteAssigneeUsesMockTxnRepos(t *testing.T) {
+	chapterRepo := mock_repo.NewMockChapterRepo()
+	chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-1"] = *reviewerAssignment()
+	comicRepo := mock_repo.NewMockComicRepo()
+	worksetRepo := mock_repo.NewMockWorksetRepo()
+	memberRepo := mock_repo.NewMockMemberRepo()
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{
+		chapter:           chapterRepo,
+		assignment:        assignmentRepo,
+		chapterInvitation: chapterInvRepo,
+	}))
+
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), chapterInvRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+
+	res, err := app.InviteAssignee(background(), "user-1", &val.InviteChapterAssigneeArgs{
+		ChapterID: "chapter-1",
+		InviteeQQ: "10001",
+		Roles:     model.MaskRoles([]model.Role{model.RoleTranslator, model.RoleReviewer}),
+	})
+	requireNoErr(t, err)
+
+	if res == nil || res.InvCode == "" {
+		t.Fatalf("expected invitation code, got %#v", res)
+	}
+
+	if len(chapterInvRepo.Infos) != 1 {
+		t.Fatalf("expected one invitation, got %#v", chapterInvRepo.Infos)
+	}
+
+	for _, info := range chapterInvRepo.Infos {
+		if info.ChapterID != "chapter-1" || info.InviterID != "user-1" || info.InviteeQQ != "10001" {
+			t.Fatalf("unexpected invitation info: %#v", info)
+		}
+		if !info.ToBeTranslator || !info.ToBeReviewer {
+			t.Fatalf("unexpected invitation roles: %#v", info)
+		}
+	}
+}
+
+func TestChapterAppInviteAssigneeForbidden(t *testing.T) {
+	chapterRepo := mock_repo.NewMockChapterRepo()
+	chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-1"] = *translatorAssignment()
+	comicRepo := mock_repo.NewMockComicRepo()
+	worksetRepo := mock_repo.NewMockWorksetRepo()
+	memberRepo := mock_repo.NewMockMemberRepo()
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{
+		chapter:           chapterRepo,
+		assignment:        assignmentRepo,
+		chapterInvitation: chapterInvRepo,
+	}))
+
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), chapterInvRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+
+	_, err := app.InviteAssignee(background(), "user-1", &val.InviteChapterAssigneeArgs{
+		ChapterID: "chapter-1",
+		InviteeQQ: "10001",
+		Roles:     model.MaskRoles([]model.Role{model.RoleTranslator}),
+	})
+	if err == nil {
+		t.Fatal("expected forbidden invite error")
+	}
+
+	if len(chapterInvRepo.Infos) != 0 {
+		t.Fatalf("expected no invitation on forbidden request, got %#v", chapterInvRepo.Infos)
+	}
 }
 
 func TestChapterAppListForbidden(t *testing.T) {
@@ -133,26 +218,10 @@ func TestChapterAppListForbidden(t *testing.T) {
 	worksetRepo := mock_repo.NewMockWorksetRepo()
 	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
 
-	app := NewChapterApp(service.NewChapterService(), mock_repo.NewMockMemberRepo(), worksetRepo, comicRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), mock_repo.NewMockMemberRepo(), worksetRepo, comicRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 
 	if _, err := app.List(background(), "user-1", &val.ListChapterArgs{ComicID: "comic-1"}); err == nil {
 		t.Fatal("expected forbidden error")
-	}
-}
-
-func TestChapterCleanupChapterPagesDeletesOSSKeys(t *testing.T) {
-	pageRepo := mock_repo.NewMockPageRepo()
-	pageRepo.Infos["page-1"] = model.PageInfo{ID: "page-1", ChapterID: "chapter-1", OSSKey: "page-oss-1"}
-	pageRepo.Infos["page-2"] = model.PageInfo{ID: "page-2", ChapterID: "chapter-1"}
-	ossClient := newMockOSSClient()
-	ossClient.SetDeleteErr(errors.New("delete failed"))
-
-	app := &chapterAppImpl{pageRepo: pageRepo, ossClient: ossClient}
-	app.cleanupChapterPages("chapter-1")
-
-	deleted := ossClient.Deleted()
-	if len(deleted) != 1 || deleted[0] != "page-oss-1" {
-		t.Fatalf("expected oss delete attempts, got %#v", deleted)
 	}
 }
 
@@ -165,14 +234,14 @@ func TestChapterAppErrorPaths(t *testing.T) {
 		memberRepo := mock_repo.NewMockMemberRepo()
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-1", TeamID: "team-1"}
 
-		app := NewChapterApp(service.NewChapterService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 		if _, err := app.Create(background(), "user-1", &val.CreateChapterArgs{ComicID: "comic-1"}); err == nil {
 			t.Fatal("expected forbidden create error")
 		}
 	})
 
 	t.Run("update rejects missing chapter", func(t *testing.T) {
-		app := NewChapterApp(service.NewChapterService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 		if err := app.Update(background(), "user-1", &val.UpdateChapterArgs{ChapterID: "missing"}); err == nil {
 			t.Fatal("expected missing chapter error")
 		}
@@ -182,7 +251,7 @@ func TestChapterAppErrorPaths(t *testing.T) {
 		transition := model.WorkflowTranslateStart
 		chapterRepo := mock_repo.NewMockChapterRepo()
 		chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
-		app := NewChapterApp(service.NewChapterService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), chapterRepo, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), chapterRepo, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 		if err := app.Update(background(), "user-1", &val.UpdateChapterArgs{ChapterID: "chapter-1", WorkflowTransition: &transition}); err == nil {
 			t.Fatal("expected workflow permission error")
 		}
@@ -198,9 +267,41 @@ func TestChapterAppErrorPaths(t *testing.T) {
 		memberRepo := mock_repo.NewMockMemberRepo()
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-1", TeamID: "team-1"}
 
-		app := NewChapterApp(service.NewChapterService(), memberRepo, worksetRepo, comicRepo, chapterRepo, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockChapterInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
 		if err := app.Remove(background(), "user-1", "chapter-1"); err == nil {
 			t.Fatal("expected forbidden remove error")
+		}
+	})
+
+	t.Run("remove blocks db delete when page oss cleanup fails", func(t *testing.T) {
+		chapterRepo := mock_repo.NewMockChapterRepo()
+		chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
+		comicRepo := mock_repo.NewMockComicRepo()
+		comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
+		worksetRepo := mock_repo.NewMockWorksetRepo()
+		worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
+		memberRepo := mock_repo.NewMockMemberRepo()
+		memberRepo.Infos["member-1"] = *adminMember()
+		assignmentRepo := mock_repo.NewMockAssignmentRepo()
+		pageRepo := mock_repo.NewMockPageRepo()
+		pageRepo.Infos["page-1"] = model.PageInfo{ID: "page-1", ChapterID: "chapter-1", OSSKey: "page-oss-1"}
+		ossClient := newMockOSSClient()
+		ossClient.SetDeleteErr(errors.New("boom"))
+		txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{chapter: chapterRepo, assignment: assignmentRepo, comic: comicRepo, user: mock_repo.NewMockUserRepo()}))
+
+		app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, mock_repo.NewMockUserRepo(), pageRepo, mock_repo.NewMockChapterInvitationRepo(), txnMgr, newMockEventBus(), ossClient)
+
+		err := app.Remove(background(), "user-1", "chapter-1")
+		if err == nil {
+			t.Fatal("expected remove failure")
+		}
+
+		if _, ok := chapterRepo.Infos["chapter-1"]; !ok {
+			t.Fatalf("expected chapter to remain, got %#v", chapterRepo.Infos)
+		}
+
+		if len(ossClient.Deleted()) != 3 {
+			t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
 		}
 	})
 }

@@ -12,7 +12,13 @@ type AssignmentInfo struct {
 	// UserID 是被分配用户的 ID
 	UserID string `json:"user_id"`
 
-	// Roles 是该分配包含的角色掩码
+	// Roles 是该分配包含的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
 	Roles model.RoleMask `json:"roles"`
 
 	// Chapter 是可选的章节信息（仅在 includes 时填充）
@@ -46,7 +52,13 @@ type CreateAssignmentArgs struct {
 	ChapterID string `json:"chapter_id" validate:"required"`
 	// UserID 是被分配的用户 ID
 	UserID string `json:"user_id" validate:"required"`
-	// Roles 是分配的角色掩码
+	// Roles 是分配的角色位掩码，各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 
@@ -60,6 +72,18 @@ type CreateAssignmentRes struct {
 type UpdateAssignmentArgs struct {
 	// ID 是要更新的分配记录标识
 	ID string `json:"id" validate:"required"`
-	// Roles 是更新后的角色掩码（PUT 语义全量替换）
+	// Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：
+	//   bit 0 (1)  = RawProvider（图源）
+	//   bit 1 (2)  = Translator（翻译）
+	//   bit 2 (4)  = Proofreader（校对）
+	//   bit 3 (8)  = Typesetter（嵌字）
+	//   bit 4 (16) = Reviewer（监修）
+	//   bit 5 (32) = Publisher（发布）
 	Roles model.RoleMask `json:"roles" validate:"required"`
+}
+
+// JoinInvitorChapterArgs 表示通过章节邀请加入协作请求的参数
+type JoinInvitorChapterArgs struct {
+	// InvitationCode 是章节邀请代码
+	InvitationCode string `json:"invitation_code" validate:"required"`
 }

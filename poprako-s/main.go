@@ -30,7 +30,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		panic("加载 .env 环境变量失败")
+		zap.L().Warn("加载 .env 文件失败，可能是因为文件不存在")
 	}
 
 	appCfg, err := cfg.Load()
@@ -50,17 +50,18 @@ func main() {
 	userRepo := repo_infra.NewUserRepo(gdb)
 	teamRepo := repo_infra.NewTeamRepo(gdb)
 	memberRepo := repo_infra.NewMemberRepo(gdb)
-	invRepo := repo_infra.NewInvitationRepo(gdb)
+	invRepo := repo_infra.NewMemberInvitationRepo(gdb)
 	worksetRepo := repo_infra.NewWorksetRepo(gdb)
 	comicRepo := repo_infra.NewComicRepo(gdb)
 	chapterRepo := repo_infra.NewChapterRepo(gdb)
 	pageRepo := repo_infra.NewPageRepo(gdb)
 	assignmentRepo := repo_infra.NewAssignmentRepo(gdb)
 	unitRepo := repo_infra.NewUnitRepo(gdb)
+	chapterInvRepo := repo_infra.NewChapterInvitationRepo(gdb)
 	txnMgr := repo_infra.NewTxnMgr(gdb)
 
-	// 初始化 OSS 客户端（当前为占位实现）
-	ossClient := oss_infra.NewNoopClient()
+	// 初始化 OSS 客户端（按 OSS_PLATFORM 选择实现）
+	ossClient := oss_infra.NewClient()
 
 	// 初始化事件总线
 	eventBus, err := event_infra.NewEventBus()
@@ -77,6 +78,7 @@ func main() {
 		event_handler.NewComicCreateHandler(),
 		event_handler.NewComicRemoveHandler(),
 		event_handler.NewChapterCreateHandler(),
+		event_handler.NewChapterCreatorAssignedHandler(),
 		event_handler.NewChapterRemoveHandler(),
 		event_handler.NewChapterPublishedHandler(),
 	}
@@ -90,10 +92,11 @@ func main() {
 	userSvc := service.NewUserService()
 	teamSvc := service.NewTeamService()
 	memberSvc := service.NewMemberService()
-	invSvc := service.NewInvitationService()
+	invSvc := service.NewMemberInvitationService()
 	worksetSvc := service.NewWorksetService()
 	comicSvc := service.NewComicService()
 	chapterSvc := service.NewChapterService()
+	chapterInvSvc := service.NewChapterInvitationService()
 	pageSvc := service.NewPageService()
 	assignmentSvc := service.NewAssignmentService()
 	unitSvc := service.NewUnitService()
@@ -130,10 +133,27 @@ func main() {
 		txnMgr, eventBus, ossClient,
 	)
 	chapterApp := app.NewChapterApp(
-		chapterSvc,
+		chapterSvc, chapterInvSvc,
 		memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
-		userRepo, pageRepo,
+		userRepo, pageRepo, chapterInvRepo,
 		txnMgr, eventBus, ossClient,
+	)
+
+	chapterExportApp := app.NewLogChapterExportApp(
+		app.NewChapterExportApp(
+			chapterRepo, comicRepo, pageRepo, unitRepo, assignmentRepo, ossClient,
+		),
+	)
+	chapterImportApp := app.NewLogChapterImportApp(
+		app.NewChapterImportApp(
+			unitSvc,
+			eventBus,
+			assignmentRepo,
+			chapterRepo,
+			pageRepo,
+			unitRepo,
+			txnMgr,
+		),
 	)
 	pageApp := app.NewPageApp(
 		pageSvc,
@@ -142,7 +162,7 @@ func main() {
 	)
 	assignmentApp := app.NewAssignmentApp(
 		assignmentSvc,
-		assignmentRepo, chapterRepo, userRepo,
+		assignmentRepo, chapterInvRepo, chapterRepo, userRepo,
 		txnMgr, eventBus, ossClient,
 	)
 	unitApp := app.NewUnitApp(
@@ -155,7 +175,7 @@ func main() {
 	state := app_state.NewAppState(
 		appCfg,
 		userApp, teamApp, memberApp, invitationApp,
-		worksetApp, comicApp, chapterApp, pageApp,
+		worksetApp, comicApp, chapterApp, chapterExportApp, chapterImportApp, pageApp,
 		assignmentApp, unitApp,
 	)
 

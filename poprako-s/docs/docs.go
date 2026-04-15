@@ -113,6 +113,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/assignments/join": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "使用章节邀请码加入对应章节协作并授予邀请中的分工",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment"
+                ],
+                "summary": "通过章节邀请加入协作",
+                "parameters": [
+                    {
+                        "description": "加入章节协作参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.JoinInvitorChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/assignments/mine": {
             "get": {
                 "security": [
@@ -441,7 +477,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改",
+                "description": "局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改；除了 reviewer 以外，其他任何角色都只能修改自己对应的 workflow 的状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -473,6 +509,166 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "导出指定章节的完整数据，包含页面与翻译单元信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "导出章节数据（JSON 格式）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ChapterExport"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/export/lp": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "导出指定章节的 LabelPlus 格式文本文件，可直接用于 LabelPlus 工具导入",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "导出章节数据（LabelPlus 格式）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/import": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "以 Poprako JSON 或 LabelPlus 文本格式导入章节内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "导入章节数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "导入参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ImportChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ImportChapterRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapters/{chapter_id}/invitations": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在指定章节下创建协作邀请并返回邀请码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "创建章节协作邀请",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "章节 ID",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "邀请参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.InviteChapterAssigneeArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.InviteChapterAssigneeRes"
+                        }
                     }
                 }
             }
@@ -633,6 +829,117 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                }
+            }
+        },
+        "/comics/{comic_id}/cover": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "预留漫画封面上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "预留漫画封面参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveComicCoverArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveComicCoverRes"
+                        }
+                    }
+                }
+            }
+        },
+        "/comics/{comic_id}/cover/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "在客户端上传封面后，确认漫画封面上传状态",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "确认漫画封面已上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/comics/{comic_id}/pinned-chapter": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "获取漫画置顶章节",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "漫画 ID",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/val.ChapterInfo"
+                        }
                     }
                 }
             }
@@ -1442,6 +1749,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1456,6 +1766,15 @@ const docTemplate = `{
                         "name": "team_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "预留汉化组头像参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveTeamAvatarArgs"
+                        }
                     }
                 ],
                 "responses": {
@@ -1541,7 +1860,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段",
+                "description": "以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段，注意只有当前用户在当前章节有 translator 或者 proofreader 分配时才允许执行此操作",
                 "consumes": [
                     "application/json"
                 ],
@@ -1637,6 +1956,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1644,6 +1966,17 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "预留当前用户头像上传",
+                "parameters": [
+                    {
+                        "description": "预留用户头像参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ReserveUserAvatarArgs"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1985,7 +2318,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是该分配包含的角色掩码",
+                    "description": "Roles 是该分配包含的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）",
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2006,9 +2339,49 @@ const docTemplate = `{
                 }
             }
         },
+        "val.ChapterExport": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "description": "ChapterID 表示章节 ID",
+                    "type": "string"
+                },
+                "chapter_index": {
+                    "description": "ChapterIndex 表示章节序号",
+                    "type": "integer"
+                },
+                "chapter_subtitle": {
+                    "description": "ChapterSubtitle 表示章节副标题",
+                    "type": "string"
+                },
+                "comic_id": {
+                    "description": "ComicID 表示漫画 ID",
+                    "type": "string"
+                },
+                "comic_title": {
+                    "description": "ComicTitle 表示漫画标题",
+                    "type": "string"
+                },
+                "pages": {
+                    "description": "Pages 表示章节中的页面列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.PageExport"
+                    }
+                }
+            }
+        },
         "val.ChapterInfo": {
             "type": "object",
             "properties": {
+                "comic": {
+                    "description": "TODO",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ComicInfo"
+                        }
+                    ]
+                },
                 "comic_id": {
                     "description": "ComicID 是所属漫画 ID",
                     "type": "string"
@@ -2106,6 +2479,10 @@ const docTemplate = `{
                     "description": "ChapterCount 是漫画下章节数量",
                     "type": "integer"
                 },
+                "cover_url": {
+                    "description": "CoverURL 是漫画封面的可访问地址",
+                    "type": "string"
+                },
                 "created_at": {
                     "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
                     "type": "integer"
@@ -2133,6 +2510,10 @@ const docTemplate = `{
                 "index": {
                     "description": "Index 是漫画在作品集内的序号",
                     "type": "integer"
+                },
+                "is_cover_uploaded": {
+                    "description": "IsCoverUploaded 表示封面是否已经上传",
+                    "type": "boolean"
                 },
                 "last_active_at": {
                     "description": "LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳",
@@ -2173,7 +2554,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是分配的角色掩码",
+                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）",
                     "type": "integer"
                 },
                 "user_id": {
@@ -2264,11 +2645,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是邀请中指定的角色掩码",
+                    "description": "Roles 是邀请中指定的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
                     "type": "integer"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标团队 ID",
+                    "description": "TeamID 是目标汉化组 ID",
                     "type": "string"
                 }
             }
@@ -2282,11 +2663,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "roles": {
-                    "description": "Roles 是分配的角色掩码",
+                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
                     "type": "integer"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标团队 ID",
+                    "description": "TeamID 是目标汉化组 ID",
                     "type": "string"
                 },
                 "user_id": {
@@ -2311,11 +2692,11 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
-                    "description": "Description 是团队描述",
+                    "description": "Description 是汉化组描述",
                     "type": "string"
                 },
                 "name": {
-                    "description": "Name 是团队名称",
+                    "description": "Name 是汉化组名称",
                     "type": "string"
                 }
             }
@@ -2324,7 +2705,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "ID 是新创建团队的标识",
+                    "description": "ID 是新创建汉化组的标识",
                     "type": "string"
                 }
             }
@@ -2345,7 +2726,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标团队 ID",
+                    "description": "TeamID 是目标汉化组 ID",
                     "type": "string"
                 }
             }
@@ -2356,6 +2737,41 @@ const docTemplate = `{
                 "id": {
                     "description": "ID 是新创建作品集的标识",
                     "type": "string"
+                }
+            }
+        },
+        "val.ImportChapterArgs": {
+            "type": "object",
+            "required": [
+                "chapter_id",
+                "content",
+                "format"
+            ],
+            "properties": {
+                "chapter_id": {
+                    "description": "ChapterID 表示目标章节 ID",
+                    "type": "string"
+                },
+                "content": {
+                    "description": "Content 表示导入文件内容",
+                    "type": "string"
+                },
+                "format": {
+                    "description": "Format 表示导入格式",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ImportChapterRes": {
+            "type": "object",
+            "properties": {
+                "imported_page_count": {
+                    "description": "ImportedPageCount 表示成功处理的页面数量",
+                    "type": "integer"
+                },
+                "imported_unit_count": {
+                    "description": "ImportedUnitCount 表示成功写入的单元数量",
+                    "type": "integer"
                 }
             }
         },
@@ -2387,11 +2803,54 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "roles": {
-                    "description": "Roles 是邀请中指定的角色掩码",
+                    "description": "Roles 是邀请中指定的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
                     "type": "integer"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标团队 ID",
+                    "description": "TeamID 是目标汉化组 ID",
+                    "type": "string"
+                }
+            }
+        },
+        "val.InviteChapterAssigneeArgs": {
+            "type": "object",
+            "required": [
+                "chapter_id",
+                "invitee_qq",
+                "role"
+            ],
+            "properties": {
+                "chapter_id": {
+                    "description": "ChapterID 是目标章节 ID",
+                    "type": "string"
+                },
+                "invitee_qq": {
+                    "description": "InviteeQQ 是被邀请者的 QQ 号码\n因为可能有跨组邀请，因此用户只能通过 QQ 指定",
+                    "type": "string"
+                },
+                "role": {
+                    "description": "Roles 是被邀请者的角色",
+                    "type": "integer"
+                }
+            }
+        },
+        "val.InviteChapterAssigneeRes": {
+            "type": "object",
+            "properties": {
+                "invitation_code": {
+                    "description": "InvCode 是邀请代码，供被邀请者使用",
+                    "type": "string"
+                }
+            }
+        },
+        "val.JoinInvitorChapterArgs": {
+            "type": "object",
+            "required": [
+                "invitation_code"
+            ],
+            "properties": {
+                "invitation_code": {
+                    "description": "InvitationCode 是章节邀请代码",
                     "type": "string"
                 }
             }
@@ -2450,11 +2909,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是该成员所拥有的角色掩码",
+                    "description": "Roles 是该成员所拥有的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
                     "type": "integer"
                 },
                 "team": {
-                    "description": "Team 是可选的团队信息（仅在 includes 时填充）",
+                    "description": "Team 是可选的汉化组信息（仅在 includes 时填充）",
                     "allOf": [
                         {
                             "$ref": "#/definitions/val.TeamInfo"
@@ -2462,7 +2921,7 @@ const docTemplate = `{
                     ]
                 },
                 "team_id": {
-                    "description": "TeamID 是该成员所属的团队 ID",
+                    "description": "TeamID 是该成员所属的汉化组 ID",
                     "type": "string"
                 },
                 "updated_at": {
@@ -2493,6 +2952,34 @@ const docTemplate = `{
                 "put_url": {
                     "description": "PutURL 是用于上传的预签名 URL",
                     "type": "string"
+                }
+            }
+        },
+        "val.PageExport": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "description": "ImageURL 表示页面图片地址",
+                    "type": "string"
+                },
+                "is_uploaded": {
+                    "description": "IsUploaded 表示页面是否已上传",
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "description": "PageID 表示页面 ID",
+                    "type": "string"
+                },
+                "page_index": {
+                    "description": "PageIndex 表示页面序号",
+                    "type": "integer"
+                },
+                "units": {
+                    "description": "Units 表示页面中的翻译单元列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.UnitExport"
+                    }
                 }
             }
         },
@@ -2627,11 +3114,66 @@ const docTemplate = `{
                 }
             }
         },
+        "val.ReserveComicCoverArgs": {
+            "type": "object",
+            "required": [
+                "comic_id",
+                "file_name"
+            ],
+            "properties": {
+                "comic_id": {
+                    "description": "ComicID 是要上传封面的漫画标识",
+                    "type": "string"
+                },
+                "file_name": {
+                    "description": "FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"cover.jpg\"",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ReserveComicCoverRes": {
+            "type": "object",
+            "properties": {
+                "put_url": {
+                    "description": "PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ReserveTeamAvatarArgs": {
+            "type": "object",
+            "required": [
+                "file_name",
+                "team_id"
+            ],
+            "properties": {
+                "file_name": {
+                    "description": "FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"avatar.png\"",
+                    "type": "string"
+                },
+                "team_id": {
+                    "description": "TeamID 是要上传头像的汉化组标识",
+                    "type": "string"
+                }
+            }
+        },
         "val.ReserveTeamAvatarRes": {
             "type": "object",
             "properties": {
                 "put_url": {
                     "description": "PutURL 是用于上传头像的预签名 URL",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ReserveUserAvatarArgs": {
+            "type": "object",
+            "required": [
+                "file_name"
+            ],
+            "properties": {
+                "file_name": {
+                    "description": "FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"avatar.png\"",
                     "type": "string"
                 }
             }
@@ -2670,7 +3212,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "avatar_url": {
-                    "description": "AvatarURL 是团队头像的可访问地址",
+                    "description": "AvatarURL 是汉化组头像的可访问地址",
                     "type": "string"
                 },
                 "created_at": {
@@ -2678,19 +3220,19 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "description": {
-                    "description": "Description 是团队的描述",
+                    "description": "Description 是汉化组的描述",
                     "type": "string"
                 },
                 "id": {
-                    "description": "ID 是团队的唯一标识",
+                    "description": "ID 是汉化组的唯一标识",
                     "type": "string"
                 },
                 "is_avatar_uploaded": {
-                    "description": "IsAvatarUploaded 表示团队是否已上传头像",
+                    "description": "IsAvatarUploaded 表示汉化组是否已上传头像",
                     "type": "boolean"
                 },
                 "name": {
-                    "description": "Name 是团队的名称",
+                    "description": "Name 是汉化组的名称",
                     "type": "string"
                 },
                 "updated_at": {
@@ -2778,6 +3320,67 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/val.UnitPatch"
                     }
+                }
+            }
+        },
+        "val.UnitExport": {
+            "type": "object",
+            "properties": {
+                "is_bubble": {
+                    "description": "IsBubble 表示该单元是否是气泡框",
+                    "type": "boolean"
+                },
+                "is_proofread": {
+                    "description": "IsProofread 表示该单元是否已经校对",
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "description": "PageID 表示所属页面 ID",
+                    "type": "string"
+                },
+                "page_index": {
+                    "description": "PageIndex 表示所属页面序号",
+                    "type": "integer"
+                },
+                "proofread_text": {
+                    "description": "ProofreadText 表示校对后的文本",
+                    "type": "string"
+                },
+                "proofreader_comment": {
+                    "description": "ProofreaderComment 表示校对者的备注",
+                    "type": "string"
+                },
+                "proofreader_id": {
+                    "description": "ProofreaderID 表示校对者的用户 ID",
+                    "type": "string"
+                },
+                "translated_text": {
+                    "description": "TranslatedText 表示翻译后的文本",
+                    "type": "string"
+                },
+                "translator_comment": {
+                    "description": "TranslatorComment 表示翻译者的备注",
+                    "type": "string"
+                },
+                "translator_id": {
+                    "description": "TranslatorID 表示翻译者的用户 ID",
+                    "type": "string"
+                },
+                "unit_id": {
+                    "description": "UnitID 表示翻译单元 ID",
+                    "type": "string"
+                },
+                "unit_index": {
+                    "description": "UnitIndex 表示翻译单元序号",
+                    "type": "integer"
+                },
+                "x_coord": {
+                    "description": "XCoord 表示翻译单元的 X 坐标",
+                    "type": "integer"
+                },
+                "y_coord": {
+                    "description": "YCoord 表示翻译单元的 Y 坐标",
+                    "type": "integer"
                 }
             }
         },
@@ -2906,7 +3509,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是更新后的角色掩码（PUT 语义全量替换）",
+                    "description": "Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）",
                     "type": "integer"
                 }
             }
@@ -2978,11 +3581,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是更新后的角色掩码",
+                    "description": "Roles 是更新后的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
                     "type": "integer"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标团队 ID，用于鉴权",
+                    "description": "TeamID 是目标汉化组 ID，用于鉴权",
                     "type": "string"
                 }
             }
@@ -2999,7 +3602,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是目标角色掩码（PUT 语义全量替换）",
+                    "description": "Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
                     "type": "integer"
                 }
             }
@@ -3028,15 +3631,15 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
-                    "description": "Description 是更新后的团队描述",
+                    "description": "Description 是更新后的汉化组描述",
                     "type": "string"
                 },
                 "id": {
-                    "description": "ID 是要更新的团队标识",
+                    "description": "ID 是要更新的汉化组标识",
                     "type": "string"
                 },
                 "name": {
-                    "description": "Name 是更新后的团队名称",
+                    "description": "Name 是更新后的汉化组名称",
                     "type": "string"
                 }
             }
@@ -3160,7 +3763,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "index": {
-                    "description": "Index 是作品集在团队内的序号",
+                    "description": "Index 是作品集在汉化组内的序号",
                     "type": "integer"
                 },
                 "name": {
@@ -3168,7 +3771,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "team": {
-                    "description": "Team 是可选的团队信息（仅在 includes 时填充）",
+                    "description": "Team 是可选的汉化组信息（仅在 includes 时填充）",
                     "allOf": [
                         {
                             "$ref": "#/definitions/val.TeamInfo"
@@ -3176,7 +3779,7 @@ const docTemplate = `{
                     ]
                 },
                 "team_id": {
-                    "description": "TeamID 是所属团队 ID",
+                    "description": "TeamID 是所属汉化组 ID",
                     "type": "string"
                 },
                 "updated_at": {
@@ -3197,12 +3800,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.1.0",
+	Version:          "0.0.1",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Poprako-S API",
-	Description:      "Poprako-S 后端 API 文档",
+	Title:            "PopRaKo-S API",
+	Description:      "PopRaKo-S 后端 API 文档",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

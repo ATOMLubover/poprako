@@ -8,6 +8,9 @@ CREATE TABLE "comic_table" (
     "author"             TEXT        NOT NULL,
     "composed_title"     TEXT        NOT NULL,
     "description"        TEXT,
+    
+    "cover_oss_key"      TEXT,
+    "is_cover_uploaded"  BOOLEAN     NOT NULL DEFAULT FALSE,
 
     "chapter_count"      INTEGER     NOT NULL DEFAULT 0,
     

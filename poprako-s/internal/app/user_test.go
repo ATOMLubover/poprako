@@ -55,7 +55,7 @@ func TestUserAppLoginSuccess(t *testing.T) {
 func TestUserAppRegUsesMockTxnRepos(t *testing.T) {
 	userRepo := mock_repo.NewMockUserRepo()
 	invRepo := mock_repo.NewMockInvitationRepo()
-	invRepo.Infos["inv-1"] = model.InvitationInfo{ID: "inv-1", InvitorID: "admin-1", TeamID: "team-1", InviteeQQ: "100001", Pending: true}
+	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", InvitorID: "admin-1", TeamID: "team-1", InviteeQQ: "100001", Pending: true}
 	memberRepo := mock_repo.NewMockMemberRepo()
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{user: userRepo, invitation: invRepo, member: memberRepo}))
@@ -83,8 +83,8 @@ func TestUserAppProfileAvatarAndRemoveFlows(t *testing.T) {
 	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Old Name", AvatarKey: "user-avatar_user-1", IsAvatarUploaded: true, LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 	userRepo.Infos["user-2"] = model.UserInfo{ID: "user-2", QQ: "100002", Name: "To Delete", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 	ossClient := newMockOSSClient()
-	ossClient.SetGetURLs(map[string]string{"user-avatar_user-1": "https://cdn.example/user-1"})
-	ossClient.SetPutURLs(map[string]string{"user-avatar_user-1": "https://upload.example/user-1"})
+	ossClient.SetGetURLs(map[string]string{"user-avatar_user-1": "https://cdn.example/user-1", "user-avatar_user-1.png": "https://cdn.example/user-1"})
+	ossClient.SetPutURLs(map[string]string{"user-avatar_user-1.png": "https://upload.example/user-1"})
 
 	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
 
@@ -100,7 +100,7 @@ func TestUserAppProfileAvatarAndRemoveFlows(t *testing.T) {
 		t.Fatalf("unexpected user update: %#v", userRepo.Infos["user-1"])
 	}
 
-	reserveRes, err := app.ReserveMyAvatar(background(), "user-1")
+	reserveRes, err := app.ReserveMyAvatar(background(), "user-1", &val.ReserveUserAvatarArgs{FileName: "avatar.png"})
 	requireNoErr(t, err)
 	if reserveRes.PutURL != "https://upload.example/user-1" {
 		t.Fatalf("unexpected reserve avatar result: %#v", reserveRes)
@@ -121,6 +121,30 @@ func TestUserAppProfileAvatarAndRemoveFlows(t *testing.T) {
 	requireNoErr(t, err)
 	if _, ok := userRepo.Infos["user-2"]; ok {
 		t.Fatalf("expected removed user, got %#v", userRepo.Infos)
+	}
+}
+
+func TestUserAppRemoveFailsWhenAvatarCleanupFails(t *testing.T) {
+	now := time.Now()
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Admin", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
+	userRepo.Infos["user-2"] = model.UserInfo{ID: "user-2", QQ: "100002", Name: "Target", AvatarKey: "avatar-user-2", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
+	ossClient := newMockOSSClient()
+	ossClient.SetDeleteErr(errors.New("boom"))
+
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+
+	err := app.Remove(background(), "user-1", "user-2")
+	if err == nil {
+		t.Fatal("expected remove failure when avatar cleanup fails")
+	}
+
+	if _, ok := userRepo.Infos["user-2"]; !ok {
+		t.Fatalf("expected user to remain, got %#v", userRepo.Infos)
+	}
+
+	if len(ossClient.Deleted()) != 3 {
+		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
 	}
 }
 
@@ -239,7 +263,7 @@ func TestUserAppErrorPaths(t *testing.T) {
 		ossClient := newMockOSSClient()
 		ossClient.SetPutErr(errors.New("boom"))
 		app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
-		if _, err := app.ReserveMyAvatar(background(), "user-1"); err == nil {
+		if _, err := app.ReserveMyAvatar(background(), "user-1", &val.ReserveUserAvatarArgs{FileName: "avatar.png"}); err == nil {
 			t.Fatal("expected reserve avatar failure")
 		}
 	})

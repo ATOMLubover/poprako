@@ -26,7 +26,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -40,7 +40,7 @@ func ListChapterAssignments(appState *state.AppState) iris.Handler {
 
 		result, err := assignmentApp.ListByChapter(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -70,7 +70,7 @@ func ListMyAssignments(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -84,7 +84,7 @@ func ListMyAssignments(appState *state.AppState) iris.Handler {
 
 		result, err := assignmentApp.ListMy(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -113,7 +113,7 @@ func CreateChapterAssignment(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -127,7 +127,7 @@ func CreateChapterAssignment(appState *state.AppState) iris.Handler {
 
 		result, err := assignmentApp.Create(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		)
 		if err != nil {
@@ -158,7 +158,7 @@ func UpdateAssignment(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -179,7 +179,7 @@ func UpdateAssignment(appState *state.AppState) iris.Handler {
 
 		if err := assignmentApp.Update(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -206,7 +206,7 @@ func RemoveAssignment(appState *state.AppState) iris.Handler {
 	assignmentApp := appState.AssignmentApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -219,7 +219,7 @@ func RemoveAssignment(appState *state.AppState) iris.Handler {
 
 		if err := assignmentApp.Remove(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			assignmentID,
 		); err != nil {
 			reject(ctx, iris.StatusBadRequest, err.Error())
@@ -227,5 +227,47 @@ func RemoveAssignment(appState *state.AppState) iris.Handler {
 		}
 
 		accept(ctx, "删除分配成功", nil)
+	}
+}
+
+// JoinInvitorChapter godoc
+// @Summary 	通过章节邀请加入协作
+// @Description 使用章节邀请码加入对应章节协作并授予邀请中的分工
+//
+// @Tags 		assignment
+// @Security 	ApiKeyAuth
+// @Accept 		json
+// @Produce 	json
+// @Param 		body body val.JoinInvitorChapterArgs true "加入章节协作参数"
+//
+// @Success 	200
+//
+// @Router 		/assignments/join [post]
+func JoinInvitorChapter(appState *state.AppState) iris.Handler {
+	assignmentApp := appState.AssignmentApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		var args val.JoinInvitorChapterArgs
+
+		if err := ctx.ReadJSON(&args); err != nil {
+			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+			return
+		}
+
+		if err := assignmentApp.JoinInvitorChapter(
+			buildReqCx(ctx),
+			currUserID,
+			&args,
+		); err != nil {
+			reject(ctx, iris.StatusBadRequest, err.Error())
+			return
+		}
+
+		accept(ctx, "加入章节协作成功", nil)
 	}
 }

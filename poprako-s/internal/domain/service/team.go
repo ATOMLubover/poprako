@@ -7,16 +7,16 @@ import (
 	"poprako-s/internal/domain/model"
 )
 
-// TeamService 定义团队领域相关的业务能力
+// TeamService 定义汉化组领域相关的业务能力
 type TeamService interface {
 	// NewCreation 根据业务参数创建 TeamCreation 领域模型（ID 由 service 内部生成）
-	// 仅超级管理员可以创建团队
+	// 仅超级管理员可以创建汉化组
 	NewCreation(
 		currUser *model.UserInfo,
 		name string,
 		description string,
 	) (*model.TeamCreation, error)
-	// GenAvatarOSSKey 根据团队 ID 生成头像的 OSS Key
+	// GenAvatarOSSKey 根据汉化组 ID 生成头像的 OSS Key
 	GenAvatarOSSKey(
 		teamID string,
 	) string
@@ -31,7 +31,7 @@ func NewTeamService() TeamService {
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 TeamCreation
-// 仅超级管理员可以创建团队
+// 仅超级管理员可以创建汉化组
 func (s *teamServiceImpl) NewCreation(
 	currUser *model.UserInfo,
 	name string,
@@ -39,7 +39,7 @@ func (s *teamServiceImpl) NewCreation(
 ) (*model.TeamCreation, error) {
 	// 校验超级管理员权限
 	if !currUser.IsSuperAdmin {
-		return nil, errors.New("仅超级管理员可以创建团队")
+		return nil, errors.New("仅超级管理员可以创建汉化组")
 	}
 
 	// 返回创建载荷
@@ -50,7 +50,7 @@ func (s *teamServiceImpl) NewCreation(
 	}, nil
 }
 
-// GenAvatarOSSKey 以固定前缀拼接团队 ID 作为头像的 OSS Key
+// GenAvatarOSSKey 以固定前缀拼接汉化组 ID 作为头像的 OSS Key
 func (s *teamServiceImpl) GenAvatarOSSKey(
 	teamID string,
 ) string {

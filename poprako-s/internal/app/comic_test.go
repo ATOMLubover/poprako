@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"testing"
 
 	"poprako-s/internal/app/val"
@@ -77,15 +78,16 @@ func TestComicAppCreateUsesMockTxnRepos(t *testing.T) {
 
 func TestComicAppRemoveUsesMockTxnRepos(t *testing.T) {
 	comicRepo := mock_repo.NewMockComicRepo()
-	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
+	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", CoverOSSKey: "comic-cover-1", IsCoverUploaded: true}
 	memberRepo := mock_repo.NewMockMemberRepo()
 	memberRepo.Infos["member-1"] = *adminMember()
 	worksetRepo := mock_repo.NewMockWorksetRepo()
 	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, workset: worksetRepo}))
+	ossClient := newMockOSSClient()
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, eventBus, newMockOSSClient())
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, eventBus, ossClient)
 
 	err := app.Remove(background(), "user-1", "comic-1")
 	requireNoErr(t, err)
@@ -97,6 +99,37 @@ func TestComicAppRemoveUsesMockTxnRepos(t *testing.T) {
 	removedEvent, ok := pubCalls[0][0].(*event.ComicRemovedEvent)
 	if !ok || removedEvent.WorksetID != "workset-1" {
 		t.Fatalf("unexpected event: %#v", pubCalls)
+	}
+	deleted := ossClient.Deleted()
+	if len(deleted) != 1 || deleted[0] != "comic-cover-1" {
+		t.Fatalf("expected cover oss cleanup, got %#v", deleted)
+	}
+}
+
+func TestComicAppRemoveFailsWhenCoverCleanupFails(t *testing.T) {
+	comicRepo := mock_repo.NewMockComicRepo()
+	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", CoverOSSKey: "comic-cover-1", IsCoverUploaded: true}
+	memberRepo := mock_repo.NewMockMemberRepo()
+	memberRepo.Infos["member-1"] = *adminMember()
+	worksetRepo := mock_repo.NewMockWorksetRepo()
+	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, workset: worksetRepo}))
+	ossClient := newMockOSSClient()
+	ossClient.SetDeleteErr(errors.New("boom"))
+
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, newMockEventBus(), ossClient)
+
+	err := app.Remove(background(), "user-1", "comic-1")
+	if err == nil {
+		t.Fatal("expected remove failure when cover cleanup fails")
+	}
+
+	if _, ok := comicRepo.Infos["comic-1"]; !ok {
+		t.Fatalf("expected comic to remain, got %#v", comicRepo.Infos)
+	}
+
+	if len(ossClient.Deleted()) != 3 {
+		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
 	}
 }
 

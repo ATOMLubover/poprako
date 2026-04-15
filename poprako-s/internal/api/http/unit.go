@@ -23,7 +23,7 @@ func ListPageUnits(appState *state.AppState) iris.Handler {
 	unitApp := appState.UnitApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -36,7 +36,7 @@ func ListPageUnits(appState *state.AppState) iris.Handler {
 
 		result, err := unitApp.List(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			pageID,
 		)
 		if err != nil {
@@ -50,7 +50,7 @@ func ListPageUnits(appState *state.AppState) iris.Handler {
 
 // SavePageUnits godoc
 // @Summary 	保存页面 unit diff
-// @Description 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段
+// @Description 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段，注意只有当前用户在当前章节有 translator 或者 proofreader 分配时才允许执行此操作
 //
 // @Tags 		unit
 // @Security 	ApiKeyAuth
@@ -65,7 +65,7 @@ func SavePageUnits(appState *state.AppState) iris.Handler {
 	unitApp := appState.UnitApp
 
 	return func(ctx iris.Context) {
-		currentUserID, ok := extractCurrUserID(ctx)
+		currUserID, ok := extractCurrUserID(ctx)
 		if !ok {
 			return
 		}
@@ -79,7 +79,7 @@ func SavePageUnits(appState *state.AppState) iris.Handler {
 
 		if err := unitApp.Save(
 			buildReqCx(ctx),
-			currentUserID,
+			currUserID,
 			&args,
 		); err != nil {
 			reject(ctx, iris.StatusForbidden, err.Error())

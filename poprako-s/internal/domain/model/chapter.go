@@ -144,6 +144,8 @@ func (c *ChapterInfo) TransiteWorkflow(t WorkflowTransition) error {
 			return err
 		}
 
+		c.events = append(c.events, &event.ChapterPublishedEvent{ChapterID: c.ID})
+
 		c.events = append(c.events, &event.WorkflowPublishCompletedEvent{ChapterID: c.ID})
 
 	default:
@@ -153,9 +155,11 @@ func (c *ChapterInfo) TransiteWorkflow(t WorkflowTransition) error {
 	return nil
 }
 
-// 实现 EventSource 接口
-func (c *ChapterInfo) Events() []event.Event {
-	return c.events
+// PullEvents 实现 EventSource 接口，返回并清除所有待发布的事件
+func (c *ChapterInfo) PullEvents() []event.Event {
+	evs := c.events
+	c.events = nil
+	return evs
 }
 
 type ChapterCreation struct {
@@ -175,6 +179,8 @@ type ChapterCreation struct {
 	// IsPinned 是可选的，因为默认情况下新创建的章节会被 **自动** 顶置
 	// 但用户也可以选择不顶置
 	IsPinned *bool
+
+	event.EventBase
 }
 
 // ChapterStats 聚合一个章节的统计数据

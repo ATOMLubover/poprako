@@ -38,7 +38,14 @@ definitions:
         description: ID 是分配记录的唯一标识
         type: string
       roles:
-        description: Roles 是该分配包含的角色掩码
+        description: |-
+          Roles 是该分配包含的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
         type: integer
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -51,8 +58,35 @@ definitions:
         description: UserID 是被分配用户的 ID
         type: string
     type: object
+  val.ChapterExport:
+    properties:
+      chapter_id:
+        description: ChapterID 表示章节 ID
+        type: string
+      chapter_index:
+        description: ChapterIndex 表示章节序号
+        type: integer
+      chapter_subtitle:
+        description: ChapterSubtitle 表示章节副标题
+        type: string
+      comic_id:
+        description: ComicID 表示漫画 ID
+        type: string
+      comic_title:
+        description: ComicTitle 表示漫画标题
+        type: string
+      pages:
+        description: Pages 表示章节中的页面列表
+        items:
+          $ref: '#/definitions/val.PageExport'
+        type: array
+    type: object
   val.ChapterInfo:
     properties:
+      comic:
+        allOf:
+        - $ref: '#/definitions/val.ComicInfo'
+        description: TODO
       comic_id:
         description: ComicID 是所属漫画 ID
         type: string
@@ -121,6 +155,9 @@ definitions:
       chapter_count:
         description: ChapterCount 是漫画下章节数量
         type: integer
+      cover_url:
+        description: CoverURL 是漫画封面的可访问地址
+        type: string
       created_at:
         description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
@@ -140,6 +177,9 @@ definitions:
       index:
         description: Index 是漫画在作品集内的序号
         type: integer
+      is_cover_uploaded:
+        description: IsCoverUploaded 表示封面是否已经上传
+        type: boolean
       last_active_at:
         description: LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳
         type: integer
@@ -163,7 +203,14 @@ definitions:
         description: ChapterID 是目标章节 ID
         type: string
       roles:
-        description: Roles 是分配的角色掩码
+        description: |-
+          Roles 是分配的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
         type: integer
       user_id:
         description: UserID 是被分配的用户 ID
@@ -227,10 +274,18 @@ definitions:
         description: InviteeQQ 是被邀请者的 QQ 号
         type: string
       roles:
-        description: Roles 是邀请中指定的角色掩码
+        description: |-
+          Roles 是邀请中指定的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
     required:
     - invitee_qq
@@ -240,10 +295,18 @@ definitions:
   val.CreateMemberArgs:
     properties:
       roles:
-        description: Roles 是分配的角色掩码
+        description: |-
+          Roles 是分配的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
       user_id:
         description: UserID 是要创建成员的用户 ID
@@ -262,10 +325,10 @@ definitions:
   val.CreateTeamArgs:
     properties:
       description:
-        description: Description 是团队描述
+        description: Description 是汉化组描述
         type: string
       name:
-        description: Name 是团队名称
+        description: Name 是汉化组名称
         type: string
     required:
     - name
@@ -273,7 +336,7 @@ definitions:
   val.CreateTeamRes:
     properties:
       id:
-        description: ID 是新创建团队的标识
+        description: ID 是新创建汉化组的标识
         type: string
     type: object
   val.CreateWorksetArgs:
@@ -285,7 +348,7 @@ definitions:
         description: Name 是作品集名称
         type: string
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
     required:
     - name
@@ -296,6 +359,31 @@ definitions:
       id:
         description: ID 是新创建作品集的标识
         type: string
+    type: object
+  val.ImportChapterArgs:
+    properties:
+      chapter_id:
+        description: ChapterID 表示目标章节 ID
+        type: string
+      content:
+        description: Content 表示导入文件内容
+        type: string
+      format:
+        description: Format 表示导入格式
+        type: string
+    required:
+    - chapter_id
+    - content
+    - format
+    type: object
+  val.ImportChapterRes:
+    properties:
+      imported_page_count:
+        description: ImportedPageCount 表示成功处理的页面数量
+        type: integer
+      imported_unit_count:
+        description: ImportedUnitCount 表示成功写入的单元数量
+        type: integer
     type: object
   val.InvitationInfo:
     properties:
@@ -318,11 +406,51 @@ definitions:
         description: Pending 表示邀请是否仍有效
         type: boolean
       roles:
-        description: Roles 是邀请中指定的角色掩码
+        description: |-
+          Roles 是邀请中指定的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID
+        description: TeamID 是目标汉化组 ID
         type: string
+    type: object
+  val.InviteChapterAssigneeArgs:
+    properties:
+      chapter_id:
+        description: ChapterID 是目标章节 ID
+        type: string
+      invitee_qq:
+        description: |-
+          InviteeQQ 是被邀请者的 QQ 号码
+          因为可能有跨组邀请，因此用户只能通过 QQ 指定
+        type: string
+      role:
+        description: Roles 是被邀请者的角色
+        type: integer
+    required:
+    - chapter_id
+    - invitee_qq
+    - role
+    type: object
+  val.InviteChapterAssigneeRes:
+    properties:
+      invitation_code:
+        description: InvCode 是邀请代码，供被邀请者使用
+        type: string
+    type: object
+  val.JoinInvitorChapterArgs:
+    properties:
+      invitation_code:
+        description: InvitationCode 是章节邀请代码
+        type: string
+    required:
+    - invitation_code
     type: object
   val.JoinTeamArgs:
     properties:
@@ -362,14 +490,22 @@ definitions:
         description: ID 是成员记录的唯一标识
         type: string
       roles:
-        description: Roles 是该成员所拥有的角色掩码
+        description: |-
+          Roles 是该成员所拥有的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team:
         allOf:
         - $ref: '#/definitions/val.TeamInfo'
-        description: Team 是可选的团队信息（仅在 includes 时填充）
+        description: Team 是可选的汉化组信息（仅在 includes 时填充）
       team_id:
-        description: TeamID 是该成员所属的团队 ID
+        description: TeamID 是该成员所属的汉化组 ID
         type: string
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -390,6 +526,26 @@ definitions:
       put_url:
         description: PutURL 是用于上传的预签名 URL
         type: string
+    type: object
+  val.PageExport:
+    properties:
+      image_url:
+        description: ImageURL 表示页面图片地址
+        type: string
+      is_uploaded:
+        description: IsUploaded 表示页面是否已上传
+        type: boolean
+      page_id:
+        description: PageID 表示页面 ID
+        type: string
+      page_index:
+        description: PageIndex 表示页面序号
+        type: integer
+      units:
+        description: Units 表示页面中的翻译单元列表
+        items:
+          $ref: '#/definitions/val.UnitExport'
+        type: array
     type: object
   val.PageInfo:
     properties:
@@ -484,11 +640,55 @@ definitions:
           $ref: '#/definitions/val.PageCreationResult'
         type: array
     type: object
+  val.ReserveComicCoverArgs:
+    properties:
+      comic_id:
+        description: ComicID 是要上传封面的漫画标识
+        type: string
+      file_name:
+        description: |-
+          FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名
+          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "cover.jpg"
+        type: string
+    required:
+    - comic_id
+    - file_name
+    type: object
+  val.ReserveComicCoverRes:
+    properties:
+      put_url:
+        description: PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件
+        type: string
+    type: object
+  val.ReserveTeamAvatarArgs:
+    properties:
+      file_name:
+        description: |-
+          FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名
+          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
+        type: string
+      team_id:
+        description: TeamID 是要上传头像的汉化组标识
+        type: string
+    required:
+    - file_name
+    - team_id
+    type: object
   val.ReserveTeamAvatarRes:
     properties:
       put_url:
         description: PutURL 是用于上传头像的预签名 URL
         type: string
+    type: object
+  val.ReserveUserAvatarArgs:
+    properties:
+      file_name:
+        description: |-
+          FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名
+          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
+        type: string
+    required:
+    - file_name
     type: object
   val.ReserveUserAvatarRes:
     properties:
@@ -512,22 +712,22 @@ definitions:
   val.TeamInfo:
     properties:
       avatar_url:
-        description: AvatarURL 是团队头像的可访问地址
+        description: AvatarURL 是汉化组头像的可访问地址
         type: string
       created_at:
         description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
       description:
-        description: Description 是团队的描述
+        description: Description 是汉化组的描述
         type: string
       id:
-        description: ID 是团队的唯一标识
+        description: ID 是汉化组的唯一标识
         type: string
       is_avatar_uploaded:
-        description: IsAvatarUploaded 表示团队是否已上传头像
+        description: IsAvatarUploaded 表示汉化组是否已上传头像
         type: boolean
       name:
-        description: Name 是团队的名称
+        description: Name 是汉化组的名称
         type: string
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -591,6 +791,51 @@ definitions:
         items:
           $ref: '#/definitions/val.UnitPatch'
         type: array
+    type: object
+  val.UnitExport:
+    properties:
+      is_bubble:
+        description: IsBubble 表示该单元是否是气泡框
+        type: boolean
+      is_proofread:
+        description: IsProofread 表示该单元是否已经校对
+        type: boolean
+      page_id:
+        description: PageID 表示所属页面 ID
+        type: string
+      page_index:
+        description: PageIndex 表示所属页面序号
+        type: integer
+      proofread_text:
+        description: ProofreadText 表示校对后的文本
+        type: string
+      proofreader_comment:
+        description: ProofreaderComment 表示校对者的备注
+        type: string
+      proofreader_id:
+        description: ProofreaderID 表示校对者的用户 ID
+        type: string
+      translated_text:
+        description: TranslatedText 表示翻译后的文本
+        type: string
+      translator_comment:
+        description: TranslatorComment 表示翻译者的备注
+        type: string
+      translator_id:
+        description: TranslatorID 表示翻译者的用户 ID
+        type: string
+      unit_id:
+        description: UnitID 表示翻译单元 ID
+        type: string
+      unit_index:
+        description: UnitIndex 表示翻译单元序号
+        type: integer
+      x_coord:
+        description: XCoord 表示翻译单元的 X 坐标
+        type: integer
+      y_coord:
+        description: YCoord 表示翻译单元的 Y 坐标
+        type: integer
     type: object
   val.UnitInfo:
     properties:
@@ -681,7 +926,14 @@ definitions:
         description: ID 是要更新的分配记录标识
         type: string
       roles:
-        description: Roles 是更新后的角色掩码（PUT 语义全量替换）
+        description: |-
+          Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
         type: integer
     required:
     - id
@@ -730,10 +982,18 @@ definitions:
         description: ID 是要更新的邀请记录 ID
         type: string
       roles:
-        description: Roles 是更新后的角色掩码
+        description: |-
+          Roles 是更新后的角色位掩码，各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
       team_id:
-        description: TeamID 是目标团队 ID，用于鉴权
+        description: TeamID 是目标汉化组 ID，用于鉴权
         type: string
     required:
     - id
@@ -746,7 +1006,15 @@ definitions:
         description: ID 是目标成员记录 ID
         type: string
       roles:
-        description: Roles 是目标角色掩码（PUT 语义全量替换）
+        description: |-
+          Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：
+            bit 0 (1)  = RawProvider（图源）
+            bit 1 (2)  = Translator（翻译）
+            bit 2 (4)  = Proofreader（校对）
+            bit 3 (8)  = Typesetter（嵌字）
+            bit 4 (16) = Reviewer（监修）
+            bit 5 (32) = Publisher（发布）
+            bit 6 (64) = Admin（管理员）
         type: integer
     required:
     - id
@@ -766,13 +1034,13 @@ definitions:
   val.UpdateTeamArgs:
     properties:
       description:
-        description: Description 是更新后的团队描述
+        description: Description 是更新后的汉化组描述
         type: string
       id:
-        description: ID 是要更新的团队标识
+        description: ID 是要更新的汉化组标识
         type: string
       name:
-        description: Name 是更新后的团队名称
+        description: Name 是更新后的汉化组名称
         type: string
     required:
     - id
@@ -863,7 +1131,7 @@ definitions:
         description: ID 是作品集的唯一标识
         type: string
       index:
-        description: Index 是作品集在团队内的序号
+        description: Index 是作品集在汉化组内的序号
         type: integer
       name:
         description: Name 是作品集名称
@@ -871,9 +1139,9 @@ definitions:
       team:
         allOf:
         - $ref: '#/definitions/val.TeamInfo'
-        description: Team 是可选的团队信息（仅在 includes 时填充）
+        description: Team 是可选的汉化组信息（仅在 includes 时填充）
       team_id:
-        description: TeamID 是所属团队 ID
+        description: TeamID 是所属汉化组 ID
         type: string
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -881,9 +1149,9 @@ definitions:
     type: object
 info:
   contact: {}
-  description: Poprako-S 后端 API 文档
-  title: Poprako-S API
-  version: 0.1.0
+  description: PopRaKo-S 后端 API 文档
+  title: PopRaKo-S API
+  version: 0.0.1
 paths:
   /assignments:
     get:
@@ -991,6 +1259,28 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 更新分配角色
+      tags:
+      - assignment
+  /assignments/join:
+    post:
+      consumes:
+      - application/json
+      description: 使用章节邀请码加入对应章节协作并授予邀请中的分工
+      parameters:
+      - description: 加入章节协作参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.JoinInvitorChapterArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 通过章节邀请加入协作
       tags:
       - assignment
   /assignments/mine:
@@ -1157,7 +1447,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改
+      description: 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改；除了 reviewer 以外，其他任何角色都只能修改自己对应的
+        workflow 的状态
       parameters:
       - description: 章节 ID
         in: path
@@ -1178,6 +1469,106 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 更新章节
+      tags:
+      - chapter
+  /chapters/{chapter_id}/export:
+    get:
+      description: 导出指定章节的完整数据，包含页面与翻译单元信息
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.ChapterExport'
+      security:
+      - ApiKeyAuth: []
+      summary: 导出章节数据（JSON 格式）
+      tags:
+      - chapter
+  /chapters/{chapter_id}/export/lp:
+    get:
+      description: 导出指定章节的 LabelPlus 格式文本文件，可直接用于 LabelPlus 工具导入
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: 导出章节数据（LabelPlus 格式）
+      tags:
+      - chapter
+  /chapters/{chapter_id}/import:
+    post:
+      consumes:
+      - application/json
+      description: 以 Poprako JSON 或 LabelPlus 文本格式导入章节内容
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: 导入参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ImportChapterArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.ImportChapterRes'
+      security:
+      - ApiKeyAuth: []
+      summary: 导入章节数据
+      tags:
+      - chapter
+  /chapters/{chapter_id}/invitations:
+    post:
+      consumes:
+      - application/json
+      description: 在指定章节下创建协作邀请并返回邀请码
+      parameters:
+      - description: 章节 ID
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: 邀请参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.InviteChapterAssigneeArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.InviteChapterAssigneeRes'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建章节协作邀请
       tags:
       - chapter
   /comics:
@@ -1281,6 +1672,75 @@ paths:
       summary: 更新漫画
       tags:
       - comic
+  /comics/{comic_id}/cover:
+    post:
+      consumes:
+      - application/json
+      description: 为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: 预留漫画封面参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ReserveComicCoverArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.ReserveComicCoverRes'
+      security:
+      - ApiKeyAuth: []
+      summary: 预留漫画封面上传
+      tags:
+      - comic
+  /comics/{comic_id}/cover/confirm:
+    post:
+      description: 在客户端上传封面后，确认漫画封面上传状态
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - ApiKeyAuth: []
+      summary: 确认漫画封面已上传
+      tags:
+      - comic
+  /comics/{comic_id}/pinned-chapter:
+    get:
+      description: 获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null
+      parameters:
+      - description: 漫画 ID
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/val.ChapterInfo'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取漫画置顶章节
+      tags:
+      - chapter
   /invitations:
     get:
       description: 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
@@ -1760,6 +2220,8 @@ paths:
       - team
   /teams/{team_id}/avatar:
     post:
+      consumes:
+      - application/json
       description: 为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key
       parameters:
       - description: 汉化组 ID
@@ -1767,6 +2229,12 @@ paths:
         name: team_id
         required: true
         type: string
+      - description: 预留汉化组头像参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ReserveTeamAvatarArgs'
       produces:
       - application/json
       responses:
@@ -1852,7 +2320,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段
+      description: 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段，注意只有当前用户在当前章节有
+        translator 或者 proofreader 分配时才允许执行此操作
       parameters:
       - description: unit diff 参数
         in: body
@@ -1947,7 +2416,16 @@ paths:
       - user
   /users/mine/avatar:
     post:
+      consumes:
+      - application/json
       description: 为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key
+      parameters:
+      - description: 预留用户头像参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ReserveUserAvatarArgs'
       produces:
       - application/json
       responses:

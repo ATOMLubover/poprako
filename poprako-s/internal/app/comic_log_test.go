@@ -16,7 +16,9 @@ func TestLogComicAppForwardsAllMethods(t *testing.T) {
 	_, _ = app.Create(background(), "user-1", &val.CreateComicArgs{WorksetID: "workset-1", Title: "Comic"})
 	_ = app.Update(background(), "user-1", &val.UpdateComicArgs{ID: "comic-1"})
 	_ = app.Remove(background(), "user-1", "comic-1")
-	if !stub.listCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled {
+	_, _ = app.ReserveCover(background(), "user-1", &val.ReserveComicCoverArgs{ComicID: "comic-1", FileName: "cover.jpg"})
+	_ = app.ConfirmCoverUploaded(background(), "user-1", "comic-1")
+	if !stub.listCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.reserveCoverCalled || !stub.confirmCoverCalled {
 		t.Fatalf("expected all comic wrapper calls to forward: %#v", stub)
 	}
 }
@@ -34,5 +36,14 @@ func TestLogComicAppRejectsInvalidArgs(t *testing.T) {
 	}
 	if err := app.Remove(background(), "user-1", ""); err == nil {
 		t.Fatal("expected remove validation error")
+	}
+	if _, err := app.ReserveCover(background(), "user-1", &val.ReserveComicCoverArgs{}); err == nil {
+		t.Fatal("expected reserve cover validation error")
+	}
+	if _, err := app.ReserveCover(background(), "user-1", &val.ReserveComicCoverArgs{ComicID: "comic-1"}); err == nil {
+		t.Fatal("expected reserve cover file_name validation error")
+	}
+	if err := app.ConfirmCoverUploaded(background(), "user-1", ""); err == nil {
+		t.Fatal("expected confirm cover validation error")
 	}
 }

@@ -26,9 +26,9 @@ type WorksetCreation struct {
 	// ID 由 domain service 生成，外部不提供
 	ID string
 
-	// TeamID 是必须的，因为一个作品集必须属于一个团队
+	// TeamID 是必须的，因为一个作品集必须属于一个汉化组
 	TeamID string
-	// Index 是该作品集在团队内的序号
+	// Index 是该作品集在汉化组内的序号
 	Index int
 
 	Name        string
@@ -49,6 +49,6 @@ type WorksetUpdate struct {
 type WorksetQueryOpt struct {
 	// ID 按作品集 ID 筛选
 	ID *string
-	// TeamID 按所属团队 ID 筛选
+	// TeamID 按所属汉化组 ID 筛选
 	TeamID *string
 }

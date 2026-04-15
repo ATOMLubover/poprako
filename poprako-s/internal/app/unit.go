@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
@@ -176,25 +176,25 @@ func (a *unitAppImpl) Save(
 		return errors.New("无法获取用户信息")
 	}
 
-	// 将 val 层类型转换为 model 层类型
+	// 通过领域服务将 val 层类型转换为 model 层类型
 	insertUnits := make([]model.UnitCreation, len(args.UnitDiff.Insert))
 
-	for i, creation := range args.UnitDiff.Insert {
-		insertUnits[i] = model.UnitCreation{
-			ID:                 creation.ID,
-			PageID:             args.PageID,
-			Index:              creation.Index,
-			XCoord:             creation.XCoord,
-			YCoord:             creation.YCoord,
-			IsBubble:           creation.IsBubble,
-			TranslatedText:     creation.TranslatedText,
-			TranslatorID:       creation.TranslatorID,
-			TranslatorComment:  creation.TranslatorComment,
-			IsProofread:        creation.IsProofread,
-			ProofreadText:      creation.ProofreadText,
-			ProofreaderID:      creation.ProofreaderID,
-			ProofreaderComment: creation.ProofreaderComment,
-		}
+	for i, c := range args.UnitDiff.Insert {
+		insertUnits[i] = a.unitSvc.NewCreation(
+			c.ID,
+			args.PageID,
+			c.Index,
+			c.XCoord,
+			c.YCoord,
+			c.IsBubble,
+			c.TranslatedText,
+			c.TranslatorID,
+			c.TranslatorComment,
+			c.IsProofread,
+			c.ProofreadText,
+			c.ProofreaderID,
+			c.ProofreaderComment,
+		)
 	}
 
 	patchUnits := make([]model.UnitPatch, len(args.UnitDiff.Patch))
@@ -413,27 +413,23 @@ func (a *unitAppImpl) Save(
 			return err
 		}
 
-		eventCx := eventhandler.WithChapterRepoTxn(
-			eventhandler.WithPageRepoTxn(cx, pageRepoTxn),
+		eventCx := event_handler.WithChapterRepoTxn(
+			event_handler.WithPageRepoTxn(cx, pageRepoTxn),
 			chapterRepoTxn,
 		)
 
-		// 发布同步事件，由 UnitSaveHandler 负责更新 Page 和 Chapter 统计字段
-		// 将事务上下文 cx 随事件传递，Handler 内通过 FromCx 创建绑定事务的 repo
-		if err := a.eventBus.Pub([]event.Event{&event.UnitSaveEvent{
-			PageID:    args.PageID,
-			ChapterID: pageInfo.ChapterID,
+		saveEvent := a.unitSvc.NewSaveEvent(
+			args.PageID,
+			pageInfo.ChapterID,
+			len(insertUnits),
+			len(patchUnits),
+			len(args.UnitDiff.Delete),
+			totalUnitCountDelta,
+			translatedUnitCountDelta,
+			proofreadUnitCountDelta,
+		)
 
-			InsertCount: len(insertUnits),
-			PatchCount:  len(patchUnits),
-			DeleteCount: len(args.UnitDiff.Delete),
-
-			TotalDelta:      totalUnitCountDelta,
-			TranslatedDelta: translatedUnitCountDelta,
-			ProofreadDelta:  proofreadUnitCountDelta,
-
-			Cx: eventCx,
-		}}); err != nil {
+		if err := a.eventBus.Pub(eventCx, []event.Event{saveEvent}); err != nil {
 			lgr.Error(
 				"保存翻译单元失败：发布事件失败",
 				zap.String("page_id", args.PageID),

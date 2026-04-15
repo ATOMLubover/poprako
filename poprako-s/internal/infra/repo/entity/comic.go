@@ -21,6 +21,9 @@ type ComicInfoRow struct {
 
 	ChapterCount int `gorm:"column:chapter_count"`
 
+	CoverOSSKey     *string `gorm:"column:cover_oss_key"`
+	IsCoverUploaded bool    `gorm:"column:is_cover_uploaded"`
+
 	HasPinnedChapter     bool       `gorm:"column:has_pinned_chapter"`
 	PinnedUploadedAt     *time.Time `gorm:"column:pinned_uploaded_at"`
 	PinnedTransalatingAt *time.Time `gorm:"column:pinned_transalating_at"`
@@ -42,20 +45,25 @@ type ComicInfoRow struct {
 
 func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 	info := model.ComicInfo{
-		ID:           row.ID,
-		WorksetID:    row.WorksetID,
-		Index:        row.Index,
-		Title:        row.Title,
-		Author:       row.Author,
-		ChapterCount: row.ChapterCount,
-		CreatorID:    row.CreatorID,
-		LastActiveAt: row.LastActiveAt,
-		CreatedAt:    row.CreatedAt,
-		UpdatedAt:    row.UpdatedAt,
+		ID:              row.ID,
+		WorksetID:       row.WorksetID,
+		Index:           row.Index,
+		Title:           row.Title,
+		Author:          row.Author,
+		ChapterCount:    row.ChapterCount,
+		IsCoverUploaded: row.IsCoverUploaded,
+		CreatorID:       row.CreatorID,
+		LastActiveAt:    row.LastActiveAt,
+		CreatedAt:       row.CreatedAt,
+		UpdatedAt:       row.UpdatedAt,
 	}
 
 	if row.Description != nil {
 		info.Description = *row.Description
+	}
+
+	if row.CoverOSSKey != nil {
+		info.CoverOSSKey = *row.CoverOSSKey
 	}
 
 	return info

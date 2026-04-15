@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -22,6 +22,14 @@ type ChapterApp interface {
 		currUserID string,
 		args *val.ListChapterArgs,
 	) ([]*val.ChapterInfo, error)
+
+	// GetComicPinned 获取指定漫画的置顶章节信息
+	// 如果没有置顶章节则返回 nil 而非错误
+	GetComicPinned(
+		cx context.Context,
+		currUserID string,
+		comicID string,
+	) (*val.ChapterInfo, error)
 
 	// Create 创建一个新的章节
 	Create(
@@ -43,10 +51,18 @@ type ChapterApp interface {
 		currUserID string,
 		chapterID string,
 	) error
+
+	// InviteAssignee 创建章节协作邀请
+	InviteAssignee(
+		cx context.Context,
+		currUserID string,
+		args *val.InviteChapterAssigneeArgs,
+	) (*val.InviteChapterAssigneeRes, error)
 }
 
 type chapterAppImpl struct {
-	chapterSvc service.ChapterService
+	chapterSvc    service.ChapterService
+	chapterInvSvc service.ChapterInvitationService
 
 	memberRepo     repo.MemberRepo
 	worksetRepo    repo.WorksetRepo
@@ -55,6 +71,7 @@ type chapterAppImpl struct {
 	assignmentRepo repo.AssignmentRepo
 	userRepo       repo.UserRepo
 	pageRepo       repo.PageRepo
+	chapterInvRepo repo.ChapterInvitationRepo
 	txnMgr         repo.TxnMgr
 	eventBus       event.EventBus
 	ossClient      oss.Client
@@ -62,6 +79,7 @@ type chapterAppImpl struct {
 
 func NewChapterApp(
 	chapterSvc service.ChapterService,
+	chapterInvSvc service.ChapterInvitationService,
 	memberRepo repo.MemberRepo,
 	worksetRepo repo.WorksetRepo,
 	comicRepo repo.ComicRepo,
@@ -69,12 +87,14 @@ func NewChapterApp(
 	assignmentRepo repo.AssignmentRepo,
 	userRepo repo.UserRepo,
 	pageRepo repo.PageRepo,
+	chapterInvRepo repo.ChapterInvitationRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
 	ossClient oss.Client,
 ) ChapterApp {
 	// 校验构造函数依赖
 	if chapterSvc == nil ||
+		chapterInvSvc == nil ||
 		memberRepo == nil ||
 		worksetRepo == nil ||
 		comicRepo == nil ||
@@ -82,12 +102,14 @@ func NewChapterApp(
 		assignmentRepo == nil ||
 		userRepo == nil ||
 		pageRepo == nil ||
+		chapterInvRepo == nil ||
 		txnMgr == nil ||
 		eventBus == nil ||
 		ossClient == nil {
 		zap.L().Panic(
 			"NewChapterApp: 依赖项不能为空",
 			zap.Bool("chapterSvc_nil", chapterSvc == nil),
+			zap.Bool("chapterInvSvc_nil", chapterInvSvc == nil),
 			zap.Bool("memberRepo_nil", memberRepo == nil),
 			zap.Bool("worksetRepo_nil", worksetRepo == nil),
 			zap.Bool("comicRepo_nil", comicRepo == nil),
@@ -95,6 +117,7 @@ func NewChapterApp(
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
+			zap.Bool("chapterInvRepo_nil", chapterInvRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
 			zap.Bool("ossClient_nil", ossClient == nil),
@@ -104,6 +127,7 @@ func NewChapterApp(
 	// 返回真实业务实现
 	return &chapterAppImpl{
 		chapterSvc:     chapterSvc,
+		chapterInvSvc:  chapterInvSvc,
 		memberRepo:     memberRepo,
 		worksetRepo:    worksetRepo,
 		comicRepo:      comicRepo,
@@ -111,6 +135,7 @@ func NewChapterApp(
 		assignmentRepo: assignmentRepo,
 		userRepo:       userRepo,
 		pageRepo:       pageRepo,
+		chapterInvRepo: chapterInvRepo,
 		txnMgr:         txnMgr,
 		eventBus:       eventBus,
 		ossClient:      ossClient,
@@ -125,7 +150,7 @@ func (a *chapterAppImpl) List(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过漫画获取所属作品集，再获取所属团队 ID 用于鉴权
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
 	targetComic, err := a.comicRepo.GetByID(args.ComicID)
 	if err != nil {
 		// 记录查询失败
@@ -139,7 +164,7 @@ func (a *chapterAppImpl) List(
 		return nil, errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID
+	// 通过作品集获取所属汉化组 ID
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -153,7 +178,7 @@ func (a *chapterAppImpl) List(
 		return nil, errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户是否为该团队成员
+	// 鉴权：检查当前用户是否为该汉化组成员
 	_, err = a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -196,6 +221,81 @@ func (a *chapterAppImpl) List(
 	return result, nil
 }
 
+func (a *chapterAppImpl) GetComicPinned(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) (*val.ChapterInfo, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
+	targetComic, err := a.comicRepo.GetByID(comicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取置顶章节失败：获取漫画信息失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取漫画信息")
+	}
+
+	// 通过作品集获取所属汉化组 ID
+	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取置顶章节失败：获取作品集信息失败",
+			zap.String("workset_id", targetComic.WorksetID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取作品集信息")
+	}
+
+	// 鉴权：检查当前用户是否为该汉化组成员
+	_, err = a.memberRepo.Get(model.MemberQueryOpt{
+		UserID: &currUserID,
+		TeamID: &targetWorkset.TeamID,
+	})
+	if err != nil {
+		// 记录权限校验失败
+		lgr.Warn(
+			"获取置顶章节失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("权限不足")
+	}
+
+	// 查询置顶章节；若漫画尚无置顶章节则返回 nil 而非错误
+	chapter, err := a.chapterRepo.FindPinnedByComicID(comicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取置顶章节失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("获取置顶章节失败")
+	}
+
+	// 置顶章节不存在时返回 nil
+	if chapter == nil {
+		return nil, nil
+	}
+
+	// 组装为 app 层值对象并返回
+	return assembleChapterInfo(chapter, a.ossClient), nil
+}
+
 func (a *chapterAppImpl) Create(
 	cx context.Context,
 	currUserID string,
@@ -204,7 +304,7 @@ func (a *chapterAppImpl) Create(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过漫画获取所属作品集，再获取所属团队 ID 用于鉴权
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
 	targetComic, err := a.comicRepo.GetByID(args.ComicID)
 	if err != nil {
 		// 记录查询失败
@@ -218,7 +318,7 @@ func (a *chapterAppImpl) Create(
 		return nil, errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID
+	// 通过作品集获取所属汉化组 ID
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -232,7 +332,7 @@ func (a *chapterAppImpl) Create(
 		return nil, errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在漫画所属团队中是否为管理员
+	// 鉴权：检查当前用户在漫画所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -249,7 +349,6 @@ func (a *chapterAppImpl) Create(
 	}
 
 	// 在事务中创建章节（需要 count 获取 index）
-
 	var createdID string
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
@@ -263,21 +362,15 @@ func (a *chapterAppImpl) Create(
 			return err
 		}
 
-		// 统计当前漫画下的章节数量以确定 index
-		count, err := chapterRepoTxn.Count(model.ChapterQueryOpt{
-			ComicID: &args.ComicID,
-		})
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(cx)
 		if err != nil {
 			return err
 		}
 
-		// 构造章节创建载荷
-		creation := &model.ChapterCreation{
-			ID:        service.GenID("chapter"),
-			ComicID:   args.ComicID,
-			Index:     int(count),
-			Subtitle:  args.Subtitle,
-			CreatorID: currUserID,
+		// 统计当前漫画下的章节数量以确定 index，并由领域服务构造创建载荷
+		creation, err := a.chapterSvc.NewCreation(chapterRepoTxn, args.ComicID, args.Subtitle, currUserID)
+		if err != nil {
+			return err
 		}
 
 		// 持久化章节
@@ -287,12 +380,11 @@ func (a *chapterAppImpl) Create(
 		}
 
 		createdID = chInfo.ID
-		eventCx := eventhandler.WithComicRepoTxn(cx, comicRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.ChapterCreatedEvent{
-			ComicID: args.ComicID,
-			Cx:      eventCx,
-		}})
+		eventCx := event_handler.WithComicRepoTxn(cx, comicRepoTxn)
+		eventCx = event_handler.WithAssignmentRepoTxn(eventCx, assignmentRepoTxn)
+
+		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -400,15 +492,12 @@ func (a *chapterAppImpl) Update(
 				return err
 			}
 
-			eventCx := eventhandler.WithUserRepoTxn(
-				eventhandler.WithAssignmentRepoTxn(cx, assignmentRepoTxn),
+			eventCx := event_handler.WithUserRepoTxn(
+				event_handler.WithAssignmentRepoTxn(cx, assignmentRepoTxn),
 				userRepoTxn,
 			)
 
-			return a.eventBus.Pub([]event.Event{&event.ChapterPublishedEvent{
-				ChapterID: args.ChapterID,
-				Cx:        eventCx,
-			}})
+			return a.eventBus.Pub(eventCx, targetChapter.PullEvents())
 		}); err != nil {
 			lgr.Error(
 				"更新章节失败",
@@ -428,15 +517,15 @@ func (a *chapterAppImpl) Update(
 
 			return errors.New("更新章节失败")
 		}
-	}
 
-	if events := targetChapter.Events(); len(events) > 0 {
-		if err := a.eventBus.PubAsync(events); err != nil {
-			lgr.Error(
-				"章节工作流事件发布失败",
-				zap.String("chapter_id", args.ChapterID),
-				zap.Error(err),
-			)
+		if events := targetChapter.PullEvents(); len(events) > 0 {
+			if err := a.eventBus.Pub(cx, events); err != nil {
+				lgr.Error(
+					"章节工作流事件发布失败",
+					zap.String("chapter_id", args.ChapterID),
+					zap.Error(err),
+				)
+			}
 		}
 	}
 
@@ -465,7 +554,7 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("无法获取章节信息")
 	}
 
-	// 通过漫画获取所属作品集，再获取所属团队 ID 用于鉴权
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
 	targetComic, err := a.comicRepo.GetByID(targetChapter.ComicID)
 	if err != nil {
 		// 记录查询失败
@@ -479,7 +568,7 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID
+	// 通过作品集获取所属汉化组 ID
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -493,7 +582,7 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在章节所属团队中是否为管理员
+	// 鉴权：检查当前用户在章节所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -507,6 +596,35 @@ func (a *chapterAppImpl) Remove(
 
 		// 返回客户端可展示的错误
 		return errors.New("权限不足")
+	}
+
+	pages, err := a.pageRepo.List(model.PageQueryOpt{
+		ChapterID: &chapterID,
+	})
+	if err != nil {
+		lgr.Error(
+			"删除章节失败：获取页面信息失败",
+			zap.String("chapter_id", chapterID),
+			zap.Error(err),
+		)
+
+		return errors.New("删除章节失败")
+	}
+
+	pageOSSKeys := make([]string, 0, len(pages))
+	for _, page := range pages {
+		pageOSSKeys = append(pageOSSKeys, page.OSSKey)
+	}
+
+	if err := newOSSDeleteExecutor(a.ossClient).deleteMany(pageOSSKeys); err != nil {
+		lgr.Error(
+			"删除章节失败：删除页面 OSS 资源失败",
+			zap.String("chapter_id", chapterID),
+			zap.Int("page_count", len(pages)),
+			zap.Error(err),
+		)
+
+		return errors.New("删除章节失败")
 	}
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
@@ -546,17 +664,14 @@ func (a *chapterAppImpl) Remove(
 			return err
 		}
 
-		eventCx := eventhandler.WithUserRepoTxn(
-			eventhandler.WithComicRepoTxn(cx, comicRepoTxn),
+		eventCx := event_handler.WithUserRepoTxn(
+			event_handler.WithComicRepoTxn(cx, comicRepoTxn),
 			userRepoTxn,
 		)
 
-		return a.eventBus.Pub([]event.Event{&event.ChapterRemovedEvent{
-			ComicID:         targetChapter.ComicID,
-			WasPublished:    targetChapter.PublishedAt != nil,
-			AssignedUserIDs: assignedUserIDs,
-			Cx:              eventCx,
-		}})
+		removalEvent := a.chapterSvc.NewRemovalEvent(targetChapter, assignedUserIDs)
+
+		return a.eventBus.Pub(eventCx, []event.Event{removalEvent})
 	}); err != nil {
 		lgr.Error(
 			"删除章节失败",
@@ -567,45 +682,100 @@ func (a *chapterAppImpl) Remove(
 		return errors.New("删除章节失败")
 	}
 
-	// 异步清理章节页面的 OSS 资源
-	go a.cleanupChapterPages(chapterID)
-
 	// 返回删除成功
 	return nil
 }
 
-// cleanupChapterPages 异步清理章节下所有页面的 OSS 资源
-func (a *chapterAppImpl) cleanupChapterPages(chapterID string) {
-	// 查询章节下所有页面
-	pages, err := a.pageRepo.List(model.PageQueryOpt{
-		ChapterID: &chapterID,
-	})
-	if err != nil {
-		// 记录查询失败
-		zap.L().Error(
-			"清理章节页面失败：查询页面失败",
-			zap.String("chapter_id", chapterID),
-			zap.Error(err),
-		)
-
-		return
+func (a *chapterAppImpl) InviteAssignee(
+	cx context.Context,
+	currUserID string,
+	args *val.InviteChapterAssigneeArgs,
+) (*val.InviteChapterAssigneeRes, error) {
+	if args == nil || args.ChapterID == "" || args.InviteeQQ == "" {
+		return nil, errors.New("参数不合法")
 	}
 
-	// 逐个删除页面 OSS 资源
-	for _, page := range pages {
-		if page.OSSKey != "" {
-			if err := a.ossClient.Delete(page.OSSKey); err != nil {
-				// 记录删除 OSS 资源失败（继续处理其他页面）
-				zap.L().Error(
-					"清理章节页面失败：删除 OSS 资源失败",
-					zap.String("chapter_id", chapterID),
-					zap.String("page_id", page.ID),
-					zap.String("oss_key", page.OSSKey),
-					zap.Error(err),
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	errNoChapter := errors.New("无法获取章节信息")
+	errForbidden := errors.New("权限不足")
+
+	invCode := ""
+
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		chapterInvRepoTxn, err := a.chapterInvRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		targetChapter, err := chapterRepoTxn.GetByID(args.ChapterID)
+		if err != nil {
+			return errNoChapter
+		}
+
+		currAssignment, err := assignmentRepoTxn.Get(model.AssignmentQueryOpt{
+			ChapterID: &targetChapter.ID,
+			UserID:    &currUserID,
+		})
+		if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
+			return errForbidden
+		}
+
+		creation, err := a.chapterInvSvc.NewCreation(
+			currUserID,
+			args.ChapterID,
+			args.InviteeQQ,
+			model.UnmaskRoles(args.Roles)...,
+		)
+		if err != nil {
+			return err
+		}
+
+		created, err := chapterInvRepoTxn.Create(creation)
+		if err != nil {
+			return err
+		}
+
+		invCode = created.InvitationCode
+
+		return nil
+	}); err != nil {
+		switch {
+		case errors.Is(err, errNoChapter), errors.Is(err, errForbidden):
+			if errors.Is(err, errForbidden) {
+				lgr.Warn(
+					"创建章节邀请失败：权限不足",
+					zap.String("curr_user_id", currUserID),
+					zap.String("chapter_id", args.ChapterID),
 				)
 			}
+
+			return nil, err
+		default:
+			lgr.Error(
+				"创建章节邀请失败",
+				zap.String("curr_user_id", currUserID),
+				zap.String("chapter_id", args.ChapterID),
+				zap.String("invitee_qq", args.InviteeQQ),
+				zap.Error(err),
+			)
+
+			return nil, errors.New("创建章节邀请失败")
 		}
 	}
+
+	return &val.InviteChapterAssigneeRes{InvCode: invCode}, nil
 }
 
 // assembleChapterInfo 将领域层章节信息转换为 app 层值对象
@@ -701,6 +871,32 @@ func NewLogChapterApp(
 	return &logChapterAppImpl{app: app}
 }
 
+func (a *logChapterAppImpl) GetComicPinned(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) (*val.ChapterInfo, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ChapterApp 不可用")
+	}
+
+	if comicID == "" {
+		return nil, errors.New("漫画 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(
+		zap.String("method", "GetComicPinned"),
+		zap.String("curr_user_id", currUserID),
+		zap.String("comic_id", comicID),
+	)
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logChapterAppImpl.GetComicPinned] CALL")
+
+	return a.app.GetComicPinned(cx, currUserID, comicID)
+}
+
 func (a *logChapterAppImpl) List(
 	cx context.Context,
 	currUserID string,
@@ -787,4 +983,31 @@ func (a *logChapterAppImpl) Remove(
 	lgr.Info("[logChapterAppImpl.Remove] CALL")
 
 	return a.app.Remove(cx, currUserID, chapterID)
+}
+
+func (a *logChapterAppImpl) InviteAssignee(
+	cx context.Context,
+	currUserID string,
+	args *val.InviteChapterAssigneeArgs,
+) (*val.InviteChapterAssigneeRes, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ChapterApp 不可用")
+	}
+
+	if args == nil || args.ChapterID == "" || args.InviteeQQ == "" {
+		return nil, errors.New("参数不合法")
+	}
+
+	lgr := retrieveLgr(cx).With(
+		zap.String("method", "InviteAssignee"),
+		zap.String("curr_user_id", currUserID),
+		zap.String("chapter_id", args.ChapterID),
+		zap.String("invitee_qq", args.InviteeQQ),
+	)
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logChapterAppImpl.InviteAssignee] CALL")
+
+	return a.app.InviteAssignee(cx, currUserID, args)
 }

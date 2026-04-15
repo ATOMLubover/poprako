@@ -100,6 +100,30 @@ func TestPageAppErrorPaths(t *testing.T) {
 		}
 	})
 
+	t.Run("remove blocks db delete when oss cleanup fails", func(t *testing.T) {
+		assignmentRepo := mock_repo.NewMockAssignmentRepo()
+		assignmentRepo.Infos["assignment-1"] = *rawProviderAssignment()
+		pageRepo := mock_repo.NewMockPageRepo()
+		pageRepo.Infos["page-1"] = model.PageInfo{ID: "page-1", ChapterID: "chapter-1", OSSKey: "page-oss-1"}
+		ossClient := newMockOSSClient()
+		ossClient.SetDeleteErr(errors.New("boom"))
+
+		app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), pageRepo, ossClient)
+
+		err := app.Remove(background(), "user-1", "page-1")
+		if err == nil {
+			t.Fatal("expected remove failure")
+		}
+
+		if _, ok := pageRepo.Infos["page-1"]; !ok {
+			t.Fatalf("expected page to remain, got %#v", pageRepo.Infos)
+		}
+
+		if len(ossClient.Deleted()) != 3 {
+			t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
+		}
+	})
+
 	t.Run("assemble swallows image url errors", func(t *testing.T) {
 		ossClient := newMockOSSClient()
 		ossClient.SetGetErr(errors.New("boom"))

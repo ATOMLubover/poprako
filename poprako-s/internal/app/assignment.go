@@ -3,8 +3,9 @@ package app
 import (
 	"context"
 	"errors"
+	"time"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -50,12 +51,20 @@ type AssignmentApp interface {
 		currUserID string,
 		assignmentID string,
 	) error
+
+	// JoinInvitorChapter 通过章节邀请加入协作
+	JoinInvitorChapter(
+		cx context.Context,
+		currUserID string,
+		args *val.JoinInvitorChapterArgs,
+	) error
 }
 
 type assignmentAppImpl struct {
 	assignmentSvc service.AssignmentService
 
 	assignmentRepo repo.AssignmentRepo
+	chapterInvRepo repo.ChapterInvitationRepo
 	chapterRepo    repo.ChapterRepo
 	userRepo       repo.UserRepo
 	txnMgr         repo.TxnMgr
@@ -66,6 +75,7 @@ type assignmentAppImpl struct {
 func NewAssignmentApp(
 	assignmentSvc service.AssignmentService,
 	assignmentRepo repo.AssignmentRepo,
+	chapterInvRepo repo.ChapterInvitationRepo,
 	chapterRepo repo.ChapterRepo,
 	userRepo repo.UserRepo,
 	txnMgr repo.TxnMgr,
@@ -75,6 +85,7 @@ func NewAssignmentApp(
 	// 校验构造函数依赖
 	if assignmentSvc == nil ||
 		assignmentRepo == nil ||
+		chapterInvRepo == nil ||
 		chapterRepo == nil ||
 		userRepo == nil ||
 		txnMgr == nil ||
@@ -84,6 +95,7 @@ func NewAssignmentApp(
 			"NewAssignmentApp: 依赖项不能为空",
 			zap.Bool("assignmentSvc_nil", assignmentSvc == nil),
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
+			zap.Bool("chapterInvRepo_nil", chapterInvRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
@@ -96,6 +108,7 @@ func NewAssignmentApp(
 	return &assignmentAppImpl{
 		assignmentSvc:  assignmentSvc,
 		assignmentRepo: assignmentRepo,
+		chapterInvRepo: chapterInvRepo,
 		chapterRepo:    chapterRepo,
 		userRepo:       userRepo,
 		txnMgr:         txnMgr,
@@ -229,13 +242,9 @@ func (a *assignmentAppImpl) Create(
 		}
 
 		createdID = assignInfo.ID
-		eventCx := eventhandler.WithUserRepoTxn(cx, userRepoTxn)
+		eventCx := event_handler.WithUserRepoTxn(cx, userRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.AssignmentCreatedEvent{
-			UserID:    args.UserID,
-			ChapterID: args.ChapterID,
-			Cx:        eventCx,
-		}})
+		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		lgr.Error(
 			"创建分配失败",
@@ -356,13 +365,11 @@ func (a *assignmentAppImpl) Remove(
 			return err
 		}
 
-		eventCx := eventhandler.WithUserRepoTxn(cx, userRepoTxn)
+		eventCx := event_handler.WithUserRepoTxn(cx, userRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.AssignmentRemovedEvent{
-			UserID:       targetAssignment.UserID,
-			WasPublished: targetChapter.PublishedAt != nil,
-			Cx:           eventCx,
-		}})
+		removalEvent := a.assignmentSvc.NewRemovalEvent(targetAssignment, targetChapter.PublishedAt != nil)
+
+		return a.eventBus.Pub(eventCx, []event.Event{removalEvent})
 	}); err != nil {
 		lgr.Error(
 			"删除分配失败",
@@ -375,6 +382,167 @@ func (a *assignmentAppImpl) Remove(
 		}
 
 		return errors.New("删除分配失败")
+	}
+
+	return nil
+}
+
+func (a *assignmentAppImpl) JoinInvitorChapter(
+	cx context.Context,
+	currUserID string,
+	args *val.JoinInvitorChapterArgs,
+) error {
+	if args == nil || args.InvitationCode == "" {
+		return errors.New("参数不合法")
+	}
+
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 查询当前用户信息
+	currUser, err := a.userRepo.GetByID(currUserID)
+	if err != nil {
+		lgr.Error(
+			"加入章节协作失败：无法获取用户信息",
+			zap.String("curr_user_id", currUserID),
+			zap.Error(err),
+		)
+
+		return errors.New("加入章节协作失败：无法获取用户信息")
+	}
+
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		assignmentRepoTxn, err := a.assignmentRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		chapterInvRepoTxn, err := a.chapterInvRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		userRepoTxn, err := a.userRepo.FromTxnCx(txCx)
+		if err != nil {
+			return err
+		}
+
+		invs, err := chapterInvRepoTxn.List(model.ChapterInvitationQueryOpt{
+			InviteeQQ:       &currUser.QQ,
+			OnlyPendingTrue: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		var targetInv *model.ChapterInvitationInfo
+
+		for i := range invs {
+			if invs[i].InvitationCode == args.InvitationCode {
+				targetInv = &invs[i]
+
+				break
+			}
+		}
+
+		if targetInv == nil || !targetInv.Pending {
+			return errors.New("邀请码无效或已被使用")
+		}
+
+		now := time.Now()
+
+		toAssign := func(flag bool, currAt *time.Time) *time.Time {
+			if !flag {
+				return currAt
+			}
+
+			if currAt != nil {
+				t := *currAt
+				return &t
+			}
+
+			t := now
+			return &t
+		}
+
+		exists, err := assignmentRepoTxn.Exist(model.AssignmentQueryOpt{
+			ChapterID: &targetInv.ChapterID,
+			UserID:    &currUserID,
+		})
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			existing, err := assignmentRepoTxn.Get(model.AssignmentQueryOpt{
+				ChapterID: &targetInv.ChapterID,
+				UserID:    &currUserID,
+			})
+			if err != nil {
+				return err
+			}
+
+			update := &model.AssignmentUpdate{
+				ID:                    existing.ID,
+				AssignedRawProviderAt: toAssign(targetInv.ToBeRawProvider, existing.AssignedRawProviderAt),
+				AssignedTranslatorAt:  toAssign(targetInv.ToBeTranslator, existing.AssignedTranslatorAt),
+				AssignedProofreaderAt: toAssign(targetInv.ToBeProofreader, existing.AssignedProofreaderAt),
+				AssignedTypesetterAt:  toAssign(targetInv.ToBeTypesetter, existing.AssignedTypesetterAt),
+				AssignedRedrawerAt:    toAssign(targetInv.ToBeRedrawer, existing.AssignedRedrawerAt),
+				AssignedReviewerAt:    toAssign(targetInv.ToBeReviewer, existing.AssignedReviewerAt),
+				AssignedPublisherAt:   toAssign(targetInv.ToBePublisher, existing.AssignedPublisherAt),
+			}
+
+			if err := assignmentRepoTxn.Update(update); err != nil {
+				return err
+			}
+		} else {
+			creation := &model.AssignmentCreation{
+				ID:                    service.GenID("assignment"),
+				ChapterID:             targetInv.ChapterID,
+				UserID:                currUserID,
+				AssignedRawProviderAt: toAssign(targetInv.ToBeRawProvider, nil),
+				AssignedTranslatorAt:  toAssign(targetInv.ToBeTranslator, nil),
+				AssignedProofreaderAt: toAssign(targetInv.ToBeProofreader, nil),
+				AssignedTypesetterAt:  toAssign(targetInv.ToBeTypesetter, nil),
+				AssignedRedrawerAt:    toAssign(targetInv.ToBeRedrawer, nil),
+				AssignedReviewerAt:    toAssign(targetInv.ToBeReviewer, nil),
+				AssignedPublisherAt:   toAssign(targetInv.ToBePublisher, nil),
+			}
+
+			creation.PushEvent(&event.AssignmentCreatedEvent{
+				UserID:    currUserID,
+				ChapterID: targetInv.ChapterID,
+			})
+
+			if _, err := assignmentRepoTxn.Create(creation); err != nil {
+				return err
+			}
+
+			eventCx := event_handler.WithUserRepoTxn(txCx, userRepoTxn)
+
+			if err := a.eventBus.Pub(eventCx, creation.PullEvents()); err != nil {
+				return err
+			}
+		}
+
+		if err := chapterInvRepoTxn.Invalidate(targetInv.ID); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		if err.Error() == "邀请码无效或已被使用" {
+			return err
+		}
+
+		lgr.Error(
+			"加入章节协作失败",
+			zap.String("curr_user_id", currUserID),
+			zap.Error(err),
+		)
+
+		return errors.New("加入章节协作失败")
 	}
 
 	return nil
@@ -534,4 +702,26 @@ func (a *logAssignmentAppImpl) Remove(
 	lgr.Info("[logAssignmentAppImpl.Remove] CALL")
 
 	return a.app.Remove(cx, currUserID, assignmentID)
+}
+
+func (a *logAssignmentAppImpl) JoinInvitorChapter(
+	cx context.Context,
+	currUserID string,
+	args *val.JoinInvitorChapterArgs,
+) error {
+	if a == nil || a.app == nil {
+		return errors.New("AssignmentApp 不可用")
+	}
+
+	if args == nil || args.InvitationCode == "" {
+		return errors.New("参数不合法")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "JoinInvitorChapter"), zap.String("curr_user_id", currUserID))
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logAssignmentAppImpl.JoinInvitorChapter] CALL")
+
+	return a.app.JoinInvitorChapter(cx, currUserID, args)
 }

@@ -21,6 +21,10 @@ type ComicRepo interface {
 	Update(u *model.ComicUpdate) error
 	// UpdateChapterCount 按 delta 更新漫画下的章节数量
 	UpdateChapterCount(id string, delta int) error
+	// PreFillCoverOSSKey 预填充封面对象 Key，并将上传状态重置为未上传
+	PreFillCoverOSSKey(id string, coverOSSKey string) error
+	// ConfirmCoverUploaded 将漫画封面状态标记为已上传
+	ConfirmCoverUploaded(id string) error
 	// Delete 删除漫画（硬删除）
 	Delete(id string) error
 

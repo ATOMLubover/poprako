@@ -9,6 +9,8 @@ type ChapterInfo struct {
 
 	// ComicID 是所属漫画 ID
 	ComicID string `json:"comic_id"`
+	// TODO
+	Comic *ComicInfo `json:"comic,omitempty"`
 	// IsPinned 表示章节是否被顶置
 	IsPinned bool `json:"is_pinned"`
 
@@ -81,4 +83,21 @@ type UpdateChapterArgs struct {
 
 	// 工作流转换事件（可选）
 	WorkflowTransition *model.WorkflowTransition `json:"workflow_transition"`
+}
+
+// InviteChapterAssigneeArgs 表示邀请章节协助者的请求参数
+type InviteChapterAssigneeArgs struct {
+	// ChapterID 是目标章节 ID
+	ChapterID string `json:"chapter_id" validate:"required"`
+	// InviteeQQ 是被邀请者的 QQ 号码
+	// 因为可能有跨组邀请，因此用户只能通过 QQ 指定
+	InviteeQQ string `json:"invitee_qq" validate:"required"`
+	// Roles 是被邀请者的角色
+	Roles model.RoleMask `json:"role" validate:"required"`
+}
+
+// InviteChapterAssigneeRes 表示邀请章节协助者成功后的响应数据
+type InviteChapterAssigneeRes struct {
+	// InvCode 是邀请代码，供被邀请者使用
+	InvCode string `json:"invitation_code"`
 }

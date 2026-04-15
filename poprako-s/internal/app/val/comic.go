@@ -9,6 +9,9 @@ type ComicInfo struct {
 
 	// WorksetID 是所属作品集 ID
 	WorksetID string `json:"workset_id"`
+	// Workset 是可选的作品集信息（仅在 includes 时填充）
+	Workset *WorksetInfo `json:"workset,omitempty"`
+
 	// Index 是漫画在作品集内的序号
 	Index int `json:"index"`
 
@@ -22,12 +25,15 @@ type ComicInfo struct {
 	// ChapterCount 是漫画下章节数量
 	ChapterCount int `json:"chapter_count"`
 
+	// CoverURL 是漫画封面的可访问地址
+	CoverURL string `json:"cover_url"`
+	// IsCoverUploaded 表示封面是否已经上传
+	IsCoverUploaded bool `json:"is_cover_uploaded"`
+
 	// CreatorID 是漫画创建者 ID
 	CreatorID string `json:"creator_id"`
 	// Creator 是可选的创建者信息（仅在 includes 时填充）
 	Creator *UserInfo `json:"creator,omitempty"`
-	// Workset 是可选的作品集信息（仅在 includes 时填充）
-	Workset *WorksetInfo `json:"workset,omitempty"`
 
 	// LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳
 	LastActiveAt int64 `json:"last_active_at"`
@@ -87,4 +93,19 @@ type UpdateComicArgs struct {
 	Author string `json:"author" validate:"required"`
 	// Description 是更新后的描述
 	Description string `json:"description"`
+}
+
+// ReserveComicCoverArgs 表示预留漫画封面上传接口的请求参数
+type ReserveComicCoverArgs struct {
+	// ComicID 是要上传封面的漫画标识
+	ComicID string `json:"comic_id" validate:"required"`
+	// FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名
+	// 需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "cover.jpg"
+	FileName string `json:"file_name" validate:"required"`
+}
+
+// ReserveComicCoverRes 表示预留漫画封面上传接口的响应数据
+type ReserveComicCoverRes struct {
+	// PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件
+	PutURL string `json:"put_url"`
 }

@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"poprako-s/internal/domain/event"
+)
 
 // AssignmentInfo 表示某个用户被分配到章节中的任务分配信息
 type AssignmentInfo struct {
@@ -101,6 +105,8 @@ type AssignmentCreation struct {
 	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
+
+	event.EventBase
 }
 
 // AssignmentUpdate 用于 PUT 语义的角色全量替换，保留已有角色的时间戳

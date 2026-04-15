@@ -8,11 +8,12 @@ import (
 )
 
 type assignmentAppStub struct {
-	listByChapterCalled bool
-	listMyCalled        bool
-	createCalled        bool
-	updateCalled        bool
-	removeCalled        bool
+	listByChapterCalled      bool
+	listMyCalled             bool
+	createCalled             bool
+	updateCalled             bool
+	removeCalled             bool
+	joinInvitorChapterCalled bool
 }
 
 func (s *assignmentAppStub) ListByChapter(context.Context, string, *val.ListChapterAssignmentArgs) ([]*val.AssignmentInfo, error) {
@@ -40,16 +41,28 @@ func (s *assignmentAppStub) Remove(context.Context, string, string) error {
 	return nil
 }
 
+func (s *assignmentAppStub) JoinInvitorChapter(context.Context, string, *val.JoinInvitorChapterArgs) error {
+	s.joinInvitorChapterCalled = true
+	return nil
+}
+
 type chapterAppStub struct {
-	listCalled   bool
-	createCalled bool
-	updateCalled bool
-	removeCalled bool
+	listCalled           bool
+	getComicPinnedCalled bool
+	createCalled         bool
+	updateCalled         bool
+	removeCalled         bool
+	inviteCalled         bool
 }
 
 func (s *chapterAppStub) List(context.Context, string, *val.ListChapterArgs) ([]*val.ChapterInfo, error) {
 	s.listCalled = true
 	return []*val.ChapterInfo{{ID: "chapter-1"}}, nil
+}
+
+func (s *chapterAppStub) GetComicPinned(context.Context, string, string) (*val.ChapterInfo, error) {
+	s.getComicPinnedCalled = true
+	return &val.ChapterInfo{ID: "chapter-1"}, nil
 }
 
 func (s *chapterAppStub) Create(context.Context, string, *val.CreateChapterArgs) (*val.CreateChapterRes, error) {
@@ -67,11 +80,18 @@ func (s *chapterAppStub) Remove(context.Context, string, string) error {
 	return nil
 }
 
+func (s *chapterAppStub) InviteAssignee(context.Context, string, *val.InviteChapterAssigneeArgs) (*val.InviteChapterAssigneeRes, error) {
+	s.inviteCalled = true
+	return &val.InviteChapterAssigneeRes{InvCode: "123456"}, nil
+}
+
 type comicAppStub struct {
-	listCalled   bool
-	createCalled bool
-	updateCalled bool
-	removeCalled bool
+	listCalled         bool
+	createCalled       bool
+	updateCalled       bool
+	removeCalled       bool
+	reserveCoverCalled bool
+	confirmCoverCalled bool
 }
 
 func (s *comicAppStub) List(context.Context, string, *val.ListComicArgs) ([]*val.ComicInfo, error) {
@@ -91,6 +111,16 @@ func (s *comicAppStub) Update(context.Context, string, *val.UpdateComicArgs) err
 
 func (s *comicAppStub) Remove(context.Context, string, string) error {
 	s.removeCalled = true
+	return nil
+}
+
+func (s *comicAppStub) ReserveCover(_ context.Context, _ string, _ *val.ReserveComicCoverArgs) (*val.ReserveComicCoverRes, error) {
+	s.reserveCoverCalled = true
+	return &val.ReserveComicCoverRes{PutURL: "put-url"}, nil
+}
+
+func (s *comicAppStub) ConfirmCoverUploaded(context.Context, string, string) error {
+	s.confirmCoverCalled = true
 	return nil
 }
 
@@ -222,7 +252,7 @@ func (s *teamAppStub) Remove(context.Context, string, string) error {
 	return nil
 }
 
-func (s *teamAppStub) ReserveAvatar(context.Context, string, string) (*val.ReserveTeamAvatarRes, error) {
+func (s *teamAppStub) ReserveAvatar(_ context.Context, _ string, _ *val.ReserveTeamAvatarArgs) (*val.ReserveTeamAvatarRes, error) {
 	s.reserveCalled = true
 	return &val.ReserveTeamAvatarRes{PutURL: "put-url"}, nil
 }
@@ -295,7 +325,7 @@ func (s *userAppStub) GetMyStats(context.Context, string) (*val.UserStatsInfo, e
 	return &val.UserStatsInfo{UserID: "user-1"}, nil
 }
 
-func (s *userAppStub) ReserveMyAvatar(context.Context, string) (*val.ReserveUserAvatarRes, error) {
+func (s *userAppStub) ReserveMyAvatar(_ context.Context, _ string, _ *val.ReserveUserAvatarArgs) (*val.ReserveUserAvatarRes, error) {
 	s.reserveCalled = true
 	return &val.ReserveUserAvatarRes{PutURL: "put-url"}, nil
 }

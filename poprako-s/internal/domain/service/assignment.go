@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
 )
@@ -20,6 +21,17 @@ type AssignmentService interface {
 		userID string,
 		roles model.RoleMask,
 	) (*model.AssignmentCreation, error)
+	// NewInitReviewerCreation 为章节创建者生成初始监修分配载荷
+	// 无需鉴权，仅用于章节刚创建时的引导性分配
+	NewInitReviewerCreation(
+		chapterID string,
+		creatorID string,
+	) *model.AssignmentCreation
+	// NewRemovalEvent 根据被删除分配记录的信息构造 AssignmentRemovedEvent
+	NewRemovalEvent(
+		assignment *model.AssignmentInfo,
+		wasPublished bool,
+	) *event.AssignmentRemovedEvent
 	// NewUpdate 根据当前分配信息和目标角色掩码生成 AssignmentUpdate
 	// 已有角色保留原时间戳，新增角色使用当前时间，移除的角色清空时间戳
 	// 仅章节的监修可以更新分配
@@ -27,7 +39,7 @@ type AssignmentService interface {
 		ar repo.AssignmentRepo,
 		currUserID string,
 		id string,
-		current *model.AssignmentInfo,
+		curr *model.AssignmentInfo,
 		targetRoles model.RoleMask,
 	) (*model.AssignmentUpdate, error)
 }
@@ -39,6 +51,42 @@ type assignmentServiceImpl struct{}
 func NewAssignmentService() AssignmentService {
 	// 返回无状态实现
 	return &assignmentServiceImpl{}
+}
+
+// NewInitReviewerCreation 为章节创建者生成初始监修分配载荷
+// 无需鉴权，仅用于章节刚创建时的引导性分配
+func (s *assignmentServiceImpl) NewInitReviewerCreation(
+	chapterID string,
+	creatorID string,
+) *model.AssignmentCreation {
+	// 记录当前时间作为监修分配时间
+	now := time.Now()
+
+	// 返回仅含监修角色的创建载荷
+	return &model.AssignmentCreation{
+		ID:                    GenID("assignment"),
+		ChapterID:             chapterID,
+		UserID:                creatorID,
+		AssignedRawProviderAt: nil,
+		AssignedTranslatorAt:  nil,
+		AssignedProofreaderAt: nil,
+		AssignedTypesetterAt:  nil,
+		AssignedRedrawerAt:    nil,
+		AssignedReviewerAt:    &now,
+		AssignedPublisherAt:   nil,
+	}
+}
+
+// NewRemovalEvent 根据被删除分配记录的信息构造 AssignmentRemovedEvent
+func (s *assignmentServiceImpl) NewRemovalEvent(
+	assignment *model.AssignmentInfo,
+	wasPublished bool,
+) *event.AssignmentRemovedEvent {
+	// 返回组装好的删除事件
+	return &event.AssignmentRemovedEvent{
+		UserID:       assignment.UserID,
+		WasPublished: wasPublished,
+	}
 }
 
 // NewCreation 构造一个带有 service 生成 ID 的 AssignmentCreation
@@ -60,6 +108,8 @@ func (s *assignmentServiceImpl) NewCreation(
 		return nil, errors.New("仅章节监修可以创建分配")
 	}
 
+	// TODO: 应该检查被分配用户是否有资质担任目标角色
+
 	// 记录当前时间 作为新分配角色时间戳
 	now := time.Now()
 
@@ -75,7 +125,7 @@ func (s *assignmentServiceImpl) NewCreation(
 	}
 
 	// 返回创建载荷
-	return &model.AssignmentCreation{
+	c := &model.AssignmentCreation{
 		ID:                    GenID("assignment"),
 		ChapterID:             chapterID,
 		UserID:                userID,
@@ -86,7 +136,15 @@ func (s *assignmentServiceImpl) NewCreation(
 		AssignedRedrawerAt:    nil,
 		AssignedReviewerAt:    toAssign(model.RoleReviewer),
 		AssignedPublisherAt:   toAssign(model.RolePublisher),
-	}, nil
+	}
+
+	// 分配创建时推送同步统计事件
+	c.PushEvent(&event.AssignmentCreatedEvent{
+		UserID:    userID,
+		ChapterID: chapterID,
+	})
+
+	return c, nil
 }
 
 // NewUpdate 根据目标角色掩码和当前分配信息构造 AssignmentUpdate
@@ -95,12 +153,12 @@ func (s *assignmentServiceImpl) NewUpdate(
 	ar repo.AssignmentRepo,
 	currUserID string,
 	id string,
-	current *model.AssignmentInfo,
+	curr *model.AssignmentInfo,
 	targetRoles model.RoleMask,
 ) (*model.AssignmentUpdate, error) {
 	// 查询当前用户在章节中的分配 用于鉴权
 	currAssignment, err := ar.Get(model.AssignmentQueryOpt{
-		ChapterID: &current.ChapterID,
+		ChapterID: &curr.ChapterID,
 		UserID:    &currUserID,
 	})
 	if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
@@ -112,13 +170,13 @@ func (s *assignmentServiceImpl) NewUpdate(
 	now := time.Now()
 
 	// 解析目标角色对应时间戳
-	resolve := func(currentAt *time.Time, role model.Role) *time.Time {
+	resolve := func(currAt *time.Time, role model.Role) *time.Time {
 		if targetRoles&model.RoleMask(role) == 0 {
 			return nil
 		}
 
-		if currentAt != nil {
-			t := *currentAt
+		if currAt != nil {
+			t := *currAt
 			return &t
 		}
 
@@ -130,12 +188,12 @@ func (s *assignmentServiceImpl) NewUpdate(
 	// 返回更新载荷
 	return &model.AssignmentUpdate{
 		ID:                    id,
-		AssignedRawProviderAt: resolve(current.AssignedRawProviderAt, model.RoleRawProvider),
-		AssignedTranslatorAt:  resolve(current.AssignedTranslatorAt, model.RoleTranslator),
-		AssignedProofreaderAt: resolve(current.AssignedProofreaderAt, model.RoleProofreader),
-		AssignedTypesetterAt:  resolve(current.AssignedTypesetterAt, model.RoleTypesetter),
-		AssignedRedrawerAt:    current.AssignedRedrawerAt,
-		AssignedReviewerAt:    resolve(current.AssignedReviewerAt, model.RoleReviewer),
-		AssignedPublisherAt:   resolve(current.AssignedPublisherAt, model.RolePublisher),
+		AssignedRawProviderAt: resolve(curr.AssignedRawProviderAt, model.RoleRawProvider),
+		AssignedTranslatorAt:  resolve(curr.AssignedTranslatorAt, model.RoleTranslator),
+		AssignedProofreaderAt: resolve(curr.AssignedProofreaderAt, model.RoleProofreader),
+		AssignedTypesetterAt:  resolve(curr.AssignedTypesetterAt, model.RoleTypesetter),
+		AssignedRedrawerAt:    curr.AssignedRedrawerAt,
+		AssignedReviewerAt:    resolve(curr.AssignedReviewerAt, model.RoleReviewer),
+		AssignedPublisherAt:   resolve(curr.AssignedPublisherAt, model.RolePublisher),
 	}, nil
 }

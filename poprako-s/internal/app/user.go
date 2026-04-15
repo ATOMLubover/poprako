@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"path/filepath"
 
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/cfg"
@@ -65,6 +66,7 @@ type UserApp interface {
 	ReserveMyAvatar(
 		cx context.Context,
 		currUserID string,
+		args *val.ReserveUserAvatarArgs,
 	) (*val.ReserveUserAvatarRes, error)
 
 	// ConfirmMyAvatarUploaded 确认当前用户头像已经完成上传
@@ -86,7 +88,7 @@ type userAppImpl struct {
 	memberSvc service.MemberService
 
 	userRepo   repo.UserRepo
-	invRepo    repo.InvitationRepo
+	invRepo    repo.MemberInvitationRepo
 	memberRepo repo.MemberRepo
 	txnMgr     repo.TxnMgr
 
@@ -100,7 +102,7 @@ func NewUserApp(
 	userSvc service.UserService,
 	memberSvc service.MemberService,
 	userRepo repo.UserRepo,
-	invRepo repo.InvitationRepo,
+	invRepo repo.MemberInvitationRepo,
 	memberRepo repo.MemberRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
@@ -203,7 +205,7 @@ func (a *userAppImpl) Login(
 	}
 
 	// 发布登录成功后产生的领域事件
-	if err := a.eventBus.Pub(creds.Events()); err != nil {
+	if err := a.eventBus.Pub(cx, creds.PullEvents()); err != nil {
 		// 记录领域事件处理失败
 		lgr.Error(
 			"登录失败：处理领域事件失败",
@@ -318,7 +320,7 @@ func (a *userAppImpl) Reg(
 		}
 
 		// 发布用户创建时产生的领域事件
-		if err := a.eventBus.Pub(userCreation.Events()); err != nil {
+		if err := a.eventBus.Pub(cx, userCreation.PullEvents()); err != nil {
 			// 记录领域事件处理失败
 			lgr.Error(
 				"注册失败：处理领域事件失败",
@@ -369,6 +371,19 @@ func (a *userAppImpl) Reg(
 
 			// 返回通用错误提示
 			return errors.New("注册失败：加入汉化组失败")
+		}
+
+		// 将对应的 invitation 标记为已使用
+		if err := invRepoTxn.Invalidate(inv.ID); err != nil {
+			// 记录标记邀请码失败
+			lgr.Error(
+				"注册失败：标记邀请码失败",
+				zap.String("qq", args.QQ),
+				zap.Error(err),
+			)
+
+			// 返回通用错误提示
+			return errors.New("注册失败：内部错误")
 		}
 
 		// 保存已创建的用户信息供事务外继续使用
@@ -509,12 +524,16 @@ func (a *userAppImpl) GetMyStats(
 func (a *userAppImpl) ReserveMyAvatar(
 	cx context.Context,
 	currUserID string,
+	args *val.ReserveUserAvatarArgs,
 ) (*val.ReserveUserAvatarRes, error) {
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 基于用户 ID 生成头像对象 Key
-	avatarOSSKey := a.userSvc.GenAvatarOSSKey(currUserID)
+	// 提取文件扩展名，与 OSS Key 拼接以便 OSS 正确识别 Content-Type
+	ext := filepath.Ext(args.FileName)
+
+	// 基于用户 ID 生成头像对象 Key，并附加扩展名
+	avatarOSSKey := a.userSvc.GenAvatarOSSKey(currUserID) + ext
 
 	// 为客户端生成预签名上传链接
 	putURL, err := a.ossClient.GeneratePutPresignedURL(avatarOSSKey)
@@ -583,6 +602,30 @@ func (a *userAppImpl) Remove(
 	if currUserID == targetUserID {
 		// 返回客户端可展示的错误
 		return errors.New("无法删除自己")
+	}
+
+	targetUser, err := a.userRepo.GetByID(targetUserID)
+	if err != nil {
+		lgr.Error(
+			"删除用户失败：获取目标用户信息失败",
+			zap.String("curr_user_id", currUserID),
+			zap.String("target_user_id", targetUserID),
+			zap.Error(err),
+		)
+
+		return errors.New("删除用户失败")
+	}
+
+	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetUser.AvatarKey); err != nil {
+		lgr.Error(
+			"删除用户失败：删除头像 OSS 资源失败",
+			zap.String("curr_user_id", currUserID),
+			zap.String("target_user_id", targetUserID),
+			zap.String("avatar_oss_key", targetUser.AvatarKey),
+			zap.Error(err),
+		)
+
+		return errors.New("删除用户失败")
 	}
 
 	// 执行目标用户删除
@@ -891,6 +934,7 @@ func (a *logUserAppImpl) GetMyStats(
 func (a *logUserAppImpl) ReserveMyAvatar(
 	cx context.Context,
 	currUserID string,
+	args *val.ReserveUserAvatarArgs,
 ) (*val.ReserveUserAvatarRes, error) {
 	// 校验包装器实例本身是否合法
 	if a == nil || a.app == nil {
@@ -902,6 +946,12 @@ func (a *logUserAppImpl) ReserveMyAvatar(
 	if currUserID == "" {
 		// 返回客户端可展示的错误
 		return nil, errors.New("用户 ID 不能为空")
+	}
+
+	// 校验上传参数
+	if args == nil || args.FileName == "" {
+		// 返回客户端可展示的错误
+		return nil, errors.New("文件名不能为空")
 	}
 
 	// 为当前调用构造带上下文的日志记录器
@@ -917,7 +967,7 @@ func (a *logUserAppImpl) ReserveMyAvatar(
 	lgr.Info("[logUserAppImpl.ReserveMyAvatar] CALL")
 
 	// 转发调用到真实实现
-	return a.app.ReserveMyAvatar(cx, currUserID)
+	return a.app.ReserveMyAvatar(cx, currUserID, args)
 }
 
 func (a *logUserAppImpl) ConfirmMyAvatarUploaded(

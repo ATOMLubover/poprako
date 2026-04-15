@@ -1,6 +1,7 @@
 package event_handler
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -16,7 +17,11 @@ func (h *UserLoginHandler) EventType() event.EventType {
 	return event.EventTypeUserLogin
 }
 
-func (h *UserLoginHandler) Handle(ev event.Event) error {
+func (h *UserLoginHandler) PubType() event.PubType {
+	return event.PubTypeAsync
+}
+
+func (h *UserLoginHandler) Handle(_ context.Context, ev event.Event) error {
 	payload, ok := ev.(*event.UserLoginEvent)
 	if !ok {
 		return errors.New("[UserLoginHandler] 事件载荷类型不是 UserLoginEvent")

@@ -3,8 +3,9 @@ package app
 import (
 	"context"
 	"errors"
+	"path/filepath"
 
-	eventhandler "poprako-s/internal/app/event_handler"
+	event_handler "poprako-s/internal/app/event_handler"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/ext/oss"
@@ -39,6 +40,20 @@ type ComicApp interface {
 
 	// Remove 删除漫画
 	Remove(
+		cx context.Context,
+		currUserID string,
+		comicID string,
+	) error
+
+	// ReserveCover 为漫画封面生成预签名上传 URL，并预留 cover_oss_key
+	ReserveCover(
+		cx context.Context,
+		currUserID string,
+		args *val.ReserveComicCoverArgs,
+	) (*val.ReserveComicCoverRes, error)
+
+	// ConfirmCoverUploaded 确认漫画封面已完成上传
+	ConfirmCoverUploaded(
 		cx context.Context,
 		currUserID string,
 		comicID string,
@@ -105,7 +120,7 @@ func (a *comicAppImpl) List(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 通过作品集获取所属团队 ID 用于鉴权
+	// 通过作品集获取所属汉化组 ID 用于鉴权
 	targetWorkset, err := a.worksetRepo.GetByID(args.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -119,7 +134,7 @@ func (a *comicAppImpl) List(
 		return nil, errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户是否为该团队成员
+	// 鉴权：检查当前用户是否为该汉化组成员
 	_, err = a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -235,12 +250,9 @@ func (a *comicAppImpl) Create(
 		}
 
 		createdID = comicInfo.ID
-		eventCx := eventhandler.WithWorksetRepoTxn(cx, worksetRepoTxn)
+		eventCx := event_handler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.ComicCreatedEvent{
-			WorksetID: args.WorksetID,
-			Cx:        eventCx,
-		}})
+		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		// 记录创建失败
 		lgr.Error(
@@ -280,7 +292,7 @@ func (a *comicAppImpl) Update(
 		return errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID 用于鉴权
+	// 通过作品集获取所属汉化组 ID 用于鉴权
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -294,7 +306,7 @@ func (a *comicAppImpl) Update(
 		return errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在漫画所属团队中是否为管理员
+	// 鉴权：检查当前用户在漫画所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -357,7 +369,7 @@ func (a *comicAppImpl) Remove(
 		return errors.New("无法获取漫画信息")
 	}
 
-	// 通过作品集获取所属团队 ID 用于鉴权
+	// 通过作品集获取所属汉化组 ID 用于鉴权
 	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
 	if err != nil {
 		// 记录查询失败
@@ -371,7 +383,7 @@ func (a *comicAppImpl) Remove(
 		return errors.New("无法获取作品集信息")
 	}
 
-	// 鉴权：检查当前用户在漫画所属团队中是否为管理员
+	// 鉴权：检查当前用户在漫画所属汉化组中是否为管理员
 	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
 		UserID: &currUserID,
 		TeamID: &targetWorkset.TeamID,
@@ -385,6 +397,17 @@ func (a *comicAppImpl) Remove(
 
 		// 返回客户端可展示的错误
 		return errors.New("权限不足")
+	}
+
+	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetComic.CoverOSSKey); err != nil {
+		lgr.Error(
+			"删除漫画失败：删除封面 OSS 资源失败",
+			zap.String("comic_id", comicID),
+			zap.String("cover_oss_key", targetComic.CoverOSSKey),
+			zap.Error(err),
+		)
+
+		return errors.New("删除漫画失败")
 	}
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
@@ -402,12 +425,11 @@ func (a *comicAppImpl) Remove(
 			return err
 		}
 
-		eventCx := eventhandler.WithWorksetRepoTxn(cx, worksetRepoTxn)
+		eventCx := event_handler.WithWorksetRepoTxn(cx, worksetRepoTxn)
 
-		return a.eventBus.Pub([]event.Event{&event.ComicRemovedEvent{
-			WorksetID: targetComic.WorksetID,
-			Cx:        eventCx,
-		}})
+		removalEvent := a.comicSvc.NewRemovalEvent(comicID, targetComic.WorksetID)
+
+		return a.eventBus.Pub(eventCx, []event.Event{removalEvent})
 	}); err != nil {
 		lgr.Error(
 			"删除漫画失败",
@@ -421,23 +443,191 @@ func (a *comicAppImpl) Remove(
 	return nil
 }
 
+func (a *comicAppImpl) ReserveCover(
+	cx context.Context,
+	currUserID string,
+	args *val.ReserveComicCoverArgs,
+) (*val.ReserveComicCoverRes, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 获取漫画信息以解析所属汉化组，用于鉴权
+	targetComic, err := a.comicRepo.GetByID(args.ComicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Warn(
+			"预留漫画封面失败：查询漫画信息失败",
+			zap.String("comic_id", args.ComicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("漫画不存在")
+	}
+
+	// 通过作品集获取所属汉化组 ID 用于鉴权
+	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Warn(
+			"预留漫画封面失败：查询作品集信息失败",
+			zap.String("workset_id", targetComic.WorksetID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取作品集信息")
+	}
+
+	// 鉴权：检查当前用户是否为汉化组管理员
+	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
+		UserID: &currUserID,
+		TeamID: &targetWorkset.TeamID,
+	})
+	if err != nil || !currMember.HasAnyRole(model.RoleAdmin) {
+		// 记录权限校验失败
+		lgr.Warn(
+			"预留漫画封面失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+			zap.String("comic_id", args.ComicID),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("权限不足")
+	}
+
+	// 提取文件扩展名，与 OSS Key 拼接以便 OSS 正确识别 Content-Type
+	ext := filepath.Ext(args.FileName)
+
+	// 基于漫画 ID 生成封面对象 Key，并附加扩展名
+	coverOSSKey := a.comicSvc.GenCoverOSSKey(args.ComicID) + ext
+
+	// 为客户端生成预签名上传链接
+	putURL, err := a.ossClient.GeneratePutPresignedURL(coverOSSKey)
+	if err != nil {
+		// 记录上传链接生成失败
+		lgr.Error(
+			"预留漫画封面失败：生成上传链接失败",
+			zap.String("comic_id", args.ComicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("预留漫画封面失败")
+	}
+
+	// 在数据库中预填充封面对象 Key
+	if err := a.comicRepo.PreFillCoverOSSKey(args.ComicID, coverOSSKey); err != nil {
+		// 记录预写失败
+		lgr.Error(
+			"预留漫画封面失败：写入封面 OSS Key 失败",
+			zap.String("comic_id", args.ComicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("预留漫画封面失败")
+	}
+
+	// 返回预留结果
+	return &val.ReserveComicCoverRes{PutURL: putURL}, nil
+}
+
+func (a *comicAppImpl) ConfirmCoverUploaded(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) error {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 获取漫画信息以解析所属汉化组，用于鉴权
+	targetComic, err := a.comicRepo.GetByID(comicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Warn(
+			"确认漫画封面上传失败：查询漫画信息失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return errors.New("漫画不存在")
+	}
+
+	// 通过作品集获取所属汉化组 ID 用于鉴权
+	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Warn(
+			"确认漫画封面上传失败：查询作品集信息失败",
+			zap.String("workset_id", targetComic.WorksetID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return errors.New("无法获取作品集信息")
+	}
+
+	// 鉴权：检查当前用户是否为汉化组管理员
+	currMember, err := a.memberRepo.Get(model.MemberQueryOpt{
+		UserID: &currUserID,
+		TeamID: &targetWorkset.TeamID,
+	})
+	if err != nil || !currMember.HasAnyRole(model.RoleAdmin) {
+		// 记录权限校验失败
+		lgr.Warn(
+			"确认漫画封面上传失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+			zap.String("comic_id", comicID),
+		)
+
+		// 返回客户端可展示的错误
+		return errors.New("权限不足")
+	}
+
+	// 将封面状态标记为已上传
+	if err := a.comicRepo.ConfirmCoverUploaded(comicID); err != nil {
+		// 记录确认失败
+		lgr.Error(
+			"确认漫画封面上传失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return errors.New("确认漫画封面上传失败")
+	}
+
+	// 返回确认成功
+	return nil
+}
+
 // assembleComicInfo 将领域层漫画信息转换为 app 层值对象
 func assembleComicInfo(
 	info *model.ComicInfo,
 	ossClient oss.Client,
 ) *val.ComicInfo {
 	result := &val.ComicInfo{
-		ID:           info.ID,
-		WorksetID:    info.WorksetID,
-		Index:        info.Index,
-		Title:        info.Title,
-		Author:       info.Author,
-		Description:  info.Description,
-		ChapterCount: info.ChapterCount,
-		CreatorID:    info.CreatorID,
-		LastActiveAt: info.LastActiveAt.UnixMilli(),
-		CreatedAt:    info.CreatedAt.UnixMilli(),
-		UpdatedAt:    info.UpdatedAt.UnixMilli(),
+		ID:              info.ID,
+		WorksetID:       info.WorksetID,
+		Index:           info.Index,
+		Title:           info.Title,
+		Author:          info.Author,
+		Description:     info.Description,
+		ChapterCount:    info.ChapterCount,
+		IsCoverUploaded: info.IsCoverUploaded,
+		CreatorID:       info.CreatorID,
+		LastActiveAt:    info.LastActiveAt.UnixMilli(),
+		CreatedAt:       info.CreatedAt.UnixMilli(),
+		UpdatedAt:       info.UpdatedAt.UnixMilli(),
+	}
+
+	// 若封面已上传则生成可访问地址
+	if info.IsCoverUploaded && info.CoverOSSKey != "" {
+		if coverURL, err := ossClient.GenerateGetPresignedURL(info.CoverOSSKey); err == nil {
+			result.CoverURL = coverURL
+		}
 	}
 
 	// 若包含创建者信息则一并组装
@@ -558,4 +748,52 @@ func (a *logComicAppImpl) Remove(
 	lgr.Info("[logComicAppImpl.Remove] CALL")
 
 	return a.app.Remove(cx, currUserID, comicID)
+}
+
+func (a *logComicAppImpl) ReserveCover(
+	cx context.Context,
+	currUserID string,
+	args *val.ReserveComicCoverArgs,
+) (*val.ReserveComicCoverRes, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ComicApp 不可用")
+	}
+
+	if args == nil || args.ComicID == "" {
+		return nil, errors.New("漫画 ID 不能为空")
+	}
+
+	if args.FileName == "" {
+		return nil, errors.New("文件名不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "ReserveCover"), zap.String("curr_user_id", currUserID), zap.String("comic_id", args.ComicID))
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logComicAppImpl.ReserveCover] CALL")
+
+	return a.app.ReserveCover(cx, currUserID, args)
+}
+
+func (a *logComicAppImpl) ConfirmCoverUploaded(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) error {
+	if a == nil || a.app == nil {
+		return errors.New("ComicApp 不可用")
+	}
+
+	if comicID == "" {
+		return errors.New("漫画 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "ConfirmCoverUploaded"), zap.String("curr_user_id", currUserID), zap.String("comic_id", comicID))
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logComicAppImpl.ConfirmCoverUploaded] CALL")
+
+	return a.app.ConfirmCoverUploaded(cx, currUserID, comicID)
 }

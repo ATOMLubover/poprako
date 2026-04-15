@@ -109,6 +109,9 @@ func initApp(appState *state.AppState) *iris.Application {
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
 		comicParty.Delete("/{comic_id}", DeleteComic(appState))
+		comicParty.Get("/{comic_id}/pinned-chapter", GetComicPinnedChapter(appState))
+		comicParty.Post("/{comic_id}/cover", ReserveComicCover(appState))
+		comicParty.Post("/{comic_id}/cover/confirm", ConfirmComicCoverUploaded(appState))
 	}
 
 	// 章节相关路由
@@ -116,6 +119,10 @@ func initApp(appState *state.AppState) *iris.Application {
 	{
 		chapterParty.Get("/", ListComicChapters(appState))
 		chapterParty.Post("/", CreateComicChapter(appState))
+		chapterParty.Post("/{chapter_id}/invitations", InviteChapterAssignee(appState))
+		chapterParty.Get("/{chapter_id}/export", ExportChapter(appState))
+		chapterParty.Get("/{chapter_id}/export/lp", ExportChapterLp(appState))
+		chapterParty.Post("/{chapter_id}/import", ImportChapter(appState))
 		chapterParty.Patch("/{chapter_id}", UpdateChapter(appState))
 		chapterParty.Delete("/{chapter_id}", DeleteComicChapter(appState))
 	}
@@ -134,6 +141,7 @@ func initApp(appState *state.AppState) *iris.Application {
 	{
 		assignmentParty.Get("/mine", ListMyAssignments(appState))
 		assignmentParty.Get("/", ListChapterAssignments(appState))
+		assignmentParty.Post("/join", JoinInvitorChapter(appState))
 		assignmentParty.Post("/", CreateChapterAssignment(appState))
 		assignmentParty.Put("/{assignment_id}", UpdateAssignment(appState))
 		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))

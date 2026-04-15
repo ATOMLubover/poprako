@@ -63,6 +63,14 @@ func (r *UnitRepo) CreateBatch(units []*model.UnitCreation) error {
 	return nil
 }
 
+func (r *UnitRepo) UpsertBatch(units []*model.UnitCreation) error {
+	r.ensure()
+	for _, unit := range units {
+		r.Infos[unit.ID] = *unit
+	}
+	return nil
+}
+
 func (r *UnitRepo) PatchBatch(patches []*model.UnitPatch) error {
 	r.ensure()
 	for _, patch := range patches {
