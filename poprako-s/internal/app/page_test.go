@@ -89,21 +89,21 @@ func TestPageAppErrorPaths(t *testing.T) {
 		assignmentRepo.Infos["assignment-1"] = *rawProviderAssignment()
 		ossClient := newMockOSSClient()
 		ossClient.SetPutErr(errors.New("boom"))
-			app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), ossClient)
+		app := NewPageApp(service.NewPageService(), assignmentRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), ossClient)
 		if _, err := app.Reserve(background(), "user-1", &val.ReserveChapterPagesArgs{ChapterID: "chapter-1", PageCount: 1, Extension: "png"}); err == nil {
 			t.Fatal("expected reserve failure")
 		}
 	})
 
 	t.Run("update rejects missing page", func(t *testing.T) {
-			app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.Update(background(), "user-1", &val.UpdatePageArgs{ID: "missing", IsUploaded: true}); err == nil {
 			t.Fatal("expected missing page error")
 		}
 	})
 
 	t.Run("remove rejects missing page", func(t *testing.T) {
-			app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewPageApp(service.NewPageService(), mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.Remove(background(), "user-1", "missing"); err == nil {
 			t.Fatal("expected missing page error")
 		}

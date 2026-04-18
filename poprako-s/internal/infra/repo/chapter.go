@@ -224,6 +224,6 @@ func (r *chapterRepoImpl) UpdatePageCount(id string, delta int) error {
 		Where("id = ? AND deleted_at IS NULL", id).
 		Updates(map[string]any{
 			"page_count": gorm.Expr("page_count + ?", delta),
-			"updated_at":  time.Now(),
+			"updated_at": time.Now(),
 		}).Error
 }
