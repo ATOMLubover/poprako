@@ -62,6 +62,7 @@ type memberAppImpl struct {
 
 	userRepo   repo.UserRepo
 	memberRepo repo.MemberRepo
+	teamRepo   repo.TeamRepo
 	invRepo    repo.MemberInvitationRepo
 	txnMgr     repo.TxnMgr
 
@@ -72,6 +73,7 @@ func NewMemberApp(
 	memberSvc service.MemberService,
 	userRepo repo.UserRepo,
 	memberRepo repo.MemberRepo,
+	teamRepo repo.TeamRepo,
 	invRepo repo.MemberInvitationRepo,
 	txnMgr repo.TxnMgr,
 	ossClient oss.Client,
@@ -80,6 +82,7 @@ func NewMemberApp(
 	if memberSvc == nil ||
 		userRepo == nil ||
 		memberRepo == nil ||
+		teamRepo == nil ||
 		invRepo == nil ||
 		txnMgr == nil ||
 		ossClient == nil {
@@ -88,6 +91,7 @@ func NewMemberApp(
 			zap.Bool("memberSvc_nil", memberSvc == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("memberRepo_nil", memberRepo == nil),
+			zap.Bool("teamRepo_nil", teamRepo == nil),
 			zap.Bool("invRepo_nil", invRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("ossClient_nil", ossClient == nil),
@@ -99,6 +103,7 @@ func NewMemberApp(
 		memberSvc:  memberSvc,
 		userRepo:   userRepo,
 		memberRepo: memberRepo,
+		teamRepo:   teamRepo,
 		invRepo:    invRepo,
 		txnMgr:     txnMgr,
 		ossClient:  ossClient,
@@ -225,6 +230,9 @@ func (a *memberAppImpl) ListByTeam(
 		return nil, errors.New("获取汉化组成员列表失败")
 	}
 
+	// 按需补充 includes 嵌套数据
+	a.populateMemberIncludes(members, args.Includes)
+
 	// 组装为 app 层值对象列表
 	result := make([]*val.MemberInfo, len(members))
 
@@ -260,6 +268,9 @@ func (a *memberAppImpl) ListMy(
 		return nil, errors.New("获取我的成员列表失败")
 	}
 
+	// 按需补充 includes 嵌套数据
+	a.populateMemberIncludes(members, args.Includes)
+
 	// 组装为 app 层值对象列表
 	result := make([]*val.MemberInfo, len(members))
 
@@ -269,6 +280,42 @@ func (a *memberAppImpl) ListMy(
 
 	// 返回成员列表
 	return result, nil
+}
+
+func hasMemberInclude(includes []string, key string) bool {
+	for _, inc := range includes {
+		if inc == key {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (a *memberAppImpl) populateMemberIncludes(
+	members []model.MemberInfo,
+	includes []string,
+) {
+	if len(includes) == 0 {
+		return
+	}
+
+	wantUser := hasMemberInclude(includes, "user")
+	wantTeam := hasMemberInclude(includes, "team")
+
+	for i := range members {
+		if wantUser && members[i].User == nil {
+			if user, err := a.userRepo.GetByID(members[i].UserID); err == nil {
+				members[i].User = user
+			}
+		}
+
+		if wantTeam && members[i].Team == nil {
+			if team, err := a.teamRepo.GetByID(members[i].TeamID); err == nil {
+				members[i].Team = team
+			}
+		}
+	}
 }
 
 func (a *memberAppImpl) UpdateRole(

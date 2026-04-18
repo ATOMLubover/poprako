@@ -66,6 +66,7 @@ type assignmentAppImpl struct {
 	assignmentRepo repo.AssignmentRepo
 	chapterInvRepo repo.ChapterInvitationRepo
 	chapterRepo    repo.ChapterRepo
+	comicRepo      repo.ComicRepo
 	userRepo       repo.UserRepo
 	txnMgr         repo.TxnMgr
 	eventBus       event.EventBus
@@ -77,6 +78,7 @@ func NewAssignmentApp(
 	assignmentRepo repo.AssignmentRepo,
 	chapterInvRepo repo.ChapterInvitationRepo,
 	chapterRepo repo.ChapterRepo,
+	comicRepo repo.ComicRepo,
 	userRepo repo.UserRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
@@ -87,6 +89,7 @@ func NewAssignmentApp(
 		assignmentRepo == nil ||
 		chapterInvRepo == nil ||
 		chapterRepo == nil ||
+		comicRepo == nil ||
 		userRepo == nil ||
 		txnMgr == nil ||
 		eventBus == nil ||
@@ -97,6 +100,7 @@ func NewAssignmentApp(
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
 			zap.Bool("chapterInvRepo_nil", chapterInvRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
+			zap.Bool("comicRepo_nil", comicRepo == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
@@ -110,6 +114,7 @@ func NewAssignmentApp(
 		assignmentRepo: assignmentRepo,
 		chapterInvRepo: chapterInvRepo,
 		chapterRepo:    chapterRepo,
+		comicRepo:      comicRepo,
 		userRepo:       userRepo,
 		txnMgr:         txnMgr,
 		eventBus:       eventBus,
@@ -158,6 +163,9 @@ func (a *assignmentAppImpl) ListByChapter(
 		return nil, errors.New("获取分配列表失败")
 	}
 
+	// 按需补充 includes 嵌套数据
+	a.populateAssignmentIncludes(assignments, args.Includes)
+
 	// 组装为 app 层值对象列表
 	result := make([]*val.AssignmentInfo, len(assignments))
 
@@ -193,6 +201,9 @@ func (a *assignmentAppImpl) ListMy(
 		return nil, errors.New("获取分配列表失败")
 	}
 
+	// 按需补充 includes 嵌套数据
+	a.populateAssignmentIncludes(assignments, args.Includes)
+
 	// 组装为 app 层值对象列表
 	result := make([]*val.AssignmentInfo, len(assignments))
 
@@ -202,6 +213,66 @@ func (a *assignmentAppImpl) ListMy(
 
 	// 返回分配列表
 	return result, nil
+}
+
+// hasInclude 检查 includes 切片中是否包含指定的 key
+func hasInclude(includes []string, key string) bool {
+	for _, inc := range includes {
+		if inc == key {
+			return true
+		}
+	}
+
+	return false
+}
+
+// populateAssignmentIncludes 按照 includes 列表为每条分配记录补充嵌套数据
+// 涉及的嵌套键：user, chapter, chapter.comic, chapter.creator
+func (a *assignmentAppImpl) populateAssignmentIncludes(
+	assignments []model.AssignmentInfo,
+	includes []string,
+) {
+	if len(includes) == 0 {
+		return
+	}
+
+	wantUser := hasInclude(includes, "user")
+	wantChapter := hasInclude(includes, "chapter") ||
+		hasInclude(includes, "chapter.comic") ||
+		hasInclude(includes, "chapter.creator")
+	wantChapterComic := hasInclude(includes, "chapter.comic")
+	wantChapterCreator := hasInclude(includes, "chapter.creator")
+
+	for i := range assignments {
+		// 按需获取用户信息
+		if wantUser && assignments[i].User == nil {
+			if user, err := a.userRepo.GetByID(assignments[i].UserID); err == nil {
+				assignments[i].User = user
+			}
+		}
+
+		// 按需获取章节信息
+		if wantChapter && assignments[i].Chapter == nil {
+			chapter, err := a.chapterRepo.GetByID(assignments[i].ChapterID)
+			if err == nil {
+				// 按需获取章节所属漫画
+				if wantChapterComic {
+					if comic, cerr := a.comicRepo.GetByID(chapter.ComicID); cerr == nil {
+						chapter.Comic = comic
+					}
+				}
+
+				// 按需获取章节创建者
+				if wantChapterCreator {
+					if creator, cerr := a.userRepo.GetByID(chapter.CreatorID); cerr == nil {
+						chapter.Creator = creator
+					}
+				}
+
+				assignments[i].Chapter = chapter
+			}
+		}
+	}
 }
 
 func (a *assignmentAppImpl) Create(

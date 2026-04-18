@@ -15,13 +15,15 @@ func TestMemberAppListMy(t *testing.T) {
 	memberRepo := &mock_repo.MemberRepo{Infos: map[string]model.MemberInfo{
 		"member-1": {ID: "member-1", UserID: "user-1", TeamID: "team-1", AssignedAdminAt: &now},
 	}}
+	teamRepo := mock_repo.NewMockTeamRepo()
+	teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1", Name: "Team1", CreatedAt: now, UpdatedAt: now}
 
-	app := NewMemberApp(service.NewMemberService(), &mock_repo.UserRepo{}, memberRepo, &mock_repo.InvitationRepo{}, &mock_repo.TxnMgr{}, newMockOSSClient())
+	app := NewMemberApp(service.NewMemberService(), &mock_repo.UserRepo{}, memberRepo, teamRepo, &mock_repo.InvitationRepo{}, &mock_repo.TxnMgr{}, newMockOSSClient())
 
-	got, err := app.ListMy(background(), "user-1", &val.ListMyMemberArgs{})
+	got, err := app.ListMy(background(), "user-1", &val.ListMyMemberArgs{Includes: []string{"team"}})
 	requireNoErr(t, err)
 
-	if len(got) != 1 || got[0].ID != "member-1" {
+	if len(got) != 1 || got[0].ID != "member-1" || got[0].Team == nil || got[0].Team.ID != "team-1" {
 		t.Fatalf("unexpected result: %#v", got)
 	}
 }
@@ -31,7 +33,7 @@ func TestMemberAppCreateForSuperAdmin(t *testing.T) {
 	userRepo.Infos["user-1"] = *superAdminUser()
 	memberRepo := mock_repo.NewMockMemberRepo()
 
-	app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+	app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 
 	res, err := app.Create(background(), "user-1", &val.CreateMemberArgs{UserID: "user-2", TeamID: "team-1", Roles: model.RoleMask(model.RoleAdmin)})
 	requireNoErr(t, err)
@@ -62,7 +64,7 @@ func TestMemberAppListByTeamAssemblesNestedObjects(t *testing.T) {
 		"team-avatar-1": "https://cdn.example/team-1",
 	})
 
-	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), ossClient)
+	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), ossClient)
 
 	got, err := app.ListByTeam(background(), "user-1", &val.ListTeamMemberArgs{TeamID: "team-1"})
 	requireNoErr(t, err)
@@ -77,7 +79,7 @@ func TestMemberAppUpdateRolePersistsRoleChange(t *testing.T) {
 	memberRepo.Infos["member-admin"] = *adminMember()
 	memberRepo.Infos["member-target"] = model.MemberInfo{ID: "member-target", UserID: "user-2", TeamID: "team-1"}
 
-	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 
 	err := app.UpdateRole(background(), "user-1", &val.UpdateMemberRoleArgs{ID: "member-target", Roles: model.RoleMask(model.RoleAdmin)})
 	requireNoErr(t, err)
@@ -96,7 +98,7 @@ func TestMemberAppJoinTeamUsesMockTxnRepos(t *testing.T) {
 	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true, ToBeTranslator: true}
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{member: memberRepo, invitation: invRepo}))
 
-	app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, invRepo, txnMgr, newMockOSSClient())
+	app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockTeamRepo(), invRepo, txnMgr, newMockOSSClient())
 
 	err := app.JoinTeam(background(), "user-1", &val.JoinTeamArgs{InvitationCode: "654321"})
 	requireNoErr(t, err)
@@ -115,7 +117,7 @@ func TestMemberAppJoinTeamRejectsBadCode(t *testing.T) {
 	invRepo := mock_repo.NewMockInvitationRepo()
 	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true}
 
-	app := NewMemberApp(service.NewMemberService(), userRepo, mock_repo.NewMockMemberRepo(), invRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+	app := NewMemberApp(service.NewMemberService(), userRepo, mock_repo.NewMockMemberRepo(), mock_repo.NewMockTeamRepo(), invRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 	if err := app.JoinTeam(background(), "user-1", &val.JoinTeamArgs{InvitationCode: "000000"}); err == nil {
 		t.Fatal("expected invalid invitation code error")
 	}
@@ -126,7 +128,7 @@ func TestMemberAppRemoveSuccess(t *testing.T) {
 	memberRepo.Infos["member-admin"] = *adminMember()
 	memberRepo.Infos["member-target"] = model.MemberInfo{ID: "member-target", UserID: "user-2", TeamID: "team-1"}
 
-	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 	err := app.Remove(background(), "user-1", "member-target")
 	requireNoErr(t, err)
 
@@ -141,21 +143,21 @@ func TestMemberAppErrorPaths(t *testing.T) {
 		userRepo.Infos["user-1"] = *superAdminUser()
 		memberRepo := mock_repo.NewMockMemberRepo()
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-2", TeamID: "team-1"}
-		app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if _, err := app.Create(background(), "user-1", &val.CreateMemberArgs{UserID: "user-2", TeamID: "team-1", Roles: model.RoleMask(model.RoleAdmin)}); err == nil {
 			t.Fatal("expected duplicate member error")
 		}
 	})
 
 	t.Run("list by team rejects non member", func(t *testing.T) {
-		app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if _, err := app.ListByTeam(background(), "user-1", &val.ListTeamMemberArgs{TeamID: "team-1"}); err == nil {
 			t.Fatal("expected list forbidden error")
 		}
 	})
 
 	t.Run("update rejects missing target", func(t *testing.T) {
-		app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.UpdateRole(background(), "user-1", &val.UpdateMemberRoleArgs{ID: "missing", Roles: model.RoleMask(model.RoleAdmin)}); err == nil {
 			t.Fatal("expected missing member error")
 		}
@@ -165,7 +167,7 @@ func TestMemberAppErrorPaths(t *testing.T) {
 		memberRepo := mock_repo.NewMockMemberRepo()
 		memberRepo.Infos["member-target"] = model.MemberInfo{ID: "member-target", UserID: "user-2", TeamID: "team-1"}
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-1", TeamID: "team-1"}
-		app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.Remove(background(), "user-1", "member-target"); err == nil {
 			t.Fatal("expected remove forbidden error")
 		}
@@ -178,7 +180,7 @@ func TestMemberAppErrorPaths(t *testing.T) {
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-1", TeamID: "team-1"}
 		invRepo := mock_repo.NewMockInvitationRepo()
 		invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", InviteeQQ: "10001", InvitationCode: "654321", Pending: true}
-		app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, invRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+		app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockTeamRepo(), invRepo, mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 		if err := app.JoinTeam(background(), "user-1", &val.JoinTeamArgs{InvitationCode: "654321"}); err == nil {
 			t.Fatal("expected existing member error")
 		}

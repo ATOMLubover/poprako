@@ -62,12 +62,12 @@ type ReserveTeamAvatarRes struct {
 
 // ListTeamArgs 表示列出所有汉化组请求的参数
 type ListTeamArgs struct {
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Offset int `json:"offset" url:"offset"`
+	Limit  int `json:"limit" url:"limit"`
 }
 
 // ListMyTeamArgs 表示列出当前用户所属汉化组请求的参数
 type ListMyTeamArgs struct {
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Offset int `json:"offset" url:"offset"`
+	Limit  int `json:"limit" url:"limit"`
 }

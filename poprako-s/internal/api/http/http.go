@@ -52,6 +52,10 @@ func initApp(appState *state.AppState) *iris.Application {
 	// 用户相关路由
 	userParty := authorizedParty.Party("/users")
 	{
+		// 兼容历史前端路径 /users/me
+		userParty.Get("/me", GetMyUser(appState))
+		// 兼容历史前端路径 /users/me/stats
+		userParty.Get("/me/stats", GetMyUserStats(appState))
 		userParty.Get("/mine", GetMyUser(appState))
 		userParty.Get("/{user_id}", GetUserByID(appState))
 		userParty.Get("/mine/stats", GetMyUserStats(appState))

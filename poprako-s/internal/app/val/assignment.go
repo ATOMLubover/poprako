@@ -35,15 +35,17 @@ type AssignmentInfo struct {
 // ListChapterAssignmentArgs 表示列出章节分配请求的参数
 type ListChapterAssignmentArgs struct {
 	// ChapterID 是目标章节 ID
-	ChapterID string `json:"chapter_id" validate:"required"`
-	Offset    int    `json:"offset"`
-	Limit     int    `json:"limit"`
+	ChapterID string   `json:"chapter_id" url:"chapter_id" validate:"required"`
+	Includes  []string `json:"includes" url:"includes"`
+	Offset    int      `json:"offset" url:"offset"`
+	Limit     int      `json:"limit" url:"limit"`
 }
 
 // ListMyAssignmentArgs 表示列出当前用户分配请求的参数
 type ListMyAssignmentArgs struct {
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Includes []string `json:"includes" url:"includes"`
+	Offset   int      `json:"offset" url:"offset"`
+	Limit    int      `json:"limit" url:"limit"`
 }
 
 // CreateAssignmentArgs 表示创建分配请求的参数

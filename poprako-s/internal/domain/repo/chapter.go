@@ -26,6 +26,8 @@ type ChapterRepo interface {
 
 	// UpdateStats 仅更新章节的统计字段（unit 数量等）
 	UpdateStats(stats *model.ChapterStats) error
+	// UpdatePageCount 更新章节的页面数量统计
+	UpdatePageCount(id string, delta int) error
 
 	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 ChapterRepo 实例
 	FromTxnCx(cx context.Context) (ChapterRepo, error)

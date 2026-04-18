@@ -3,8 +3,10 @@
  *
  * workset → comic → chapter → pages (reserved + marked uploaded)
  *
- * Note: At this point NO ONE can write units yet.
- *       Assignments are needed first (Phase 3).
+ * The backend synchronously assigns the chapter creator as REVIEWER during
+ * chapter creation (ChapterCreatorAssignedEvent, PubTypeSync), so pages can
+ * be reserved immediately after the chapter is created.
+ * Unit writes are still blocked until Phase 4 advances the workflow.
  */
 
 import { api, logStep, logOk, logInfo } from "../client";
@@ -17,46 +19,6 @@ import type {
 } from "../types";
 
 const PAGE_COUNT = 3;
-const RESERVE_RETRY_TIMES = 60;
-const RESERVE_RETRY_DELAY_MS = 500;
-
-async function reservePagesWithRetry(
-  chapterID: string,
-  token: string,
-): Promise<ReserveChapterPagesRes> {
-  let lastErr: unknown;
-
-  for (let i = 1; i <= RESERVE_RETRY_TIMES; i++) {
-    try {
-      return await api<ReserveChapterPagesRes>(
-        "POST",
-        "/pages",
-        {
-          chapter_id: chapterID,
-          page_count: PAGE_COUNT,
-          extension: "png",
-        },
-        { token },
-      );
-    } catch (err) {
-      lastErr = err;
-      if (i < RESERVE_RETRY_TIMES) {
-        logInfo("Reserve pages not ready yet, retrying", {
-          attempt: i,
-          max_attempts: RESERVE_RETRY_TIMES,
-        });
-        await Bun.sleep(RESERVE_RETRY_DELAY_MS);
-      }
-    }
-  }
-
-  throw new Error(
-    "Reserve pages failed after retries. " +
-      "If chapter creator auto-reviewer assignment is asynchronous, it may not be applied yet; " +
-      "or the server build still does not include that behavior. " +
-      `Last error: ${String(lastErr)}`,
-  );
-}
 
 export async function phase2Content(state: SeedState): Promise<void> {
   logStep("Phase 2", "Create content — workset → comic → chapter → pages");
@@ -107,9 +69,17 @@ export async function phase2Content(state: SeedState): Promise<void> {
   logOk("Chapter created", { chapter_id: chapterRes.id });
 
   // ── 2.4 Reserve pages ─────────────────────────────────────────────────────
-  const pagesRes = await reservePagesWithRetry(
-    state.chapterID,
-    state.adminToken,
+  // The REVIEWER assignment for the chapter creator was made synchronously by
+  // the backend during chapter creation, so this call succeeds immediately.
+  const pagesRes = await api<ReserveChapterPagesRes>(
+    "POST",
+    "/pages",
+    {
+      chapter_id: state.chapterID,
+      page_count: PAGE_COUNT,
+      extension: "png",
+    },
+    { token: state.adminToken },
   );
 
   state.pageIDs = pagesRes.creations.map((c) => c.page_id);

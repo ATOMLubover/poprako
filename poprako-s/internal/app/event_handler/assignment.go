@@ -19,7 +19,7 @@ func (h *AssignmentCreateHandler) EventType() event.EventType {
 }
 
 func (h *AssignmentCreateHandler) PubType() event.PubType {
-	return event.PubTypeAsync
+	return event.PubTypeSync
 }
 
 func (h *AssignmentCreateHandler) Handle(cx context.Context, ev event.Event) error {
@@ -52,7 +52,7 @@ func (h *AssignmentRemoveHandler) EventType() event.EventType {
 }
 
 func (h *AssignmentRemoveHandler) PubType() event.PubType {
-	return event.PubTypeAsync
+	return event.PubTypeSync
 }
 
 func (h *AssignmentRemoveHandler) Handle(cx context.Context, ev event.Event) error {
