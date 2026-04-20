@@ -128,6 +128,9 @@ func (r *memberRepoImpl) Create(c *model.MemberCreation) (*model.MemberInfo, err
 	if c.ToBeTypesetter {
 		row["assigned_typesetter_at"] = now
 	}
+	if c.ToBeRedrawer {
+		row["assigned_redrawer_at"] = now
+	}
 	if c.ToBeReviewer {
 		row["assigned_reviewer_at"] = now
 	}
@@ -153,6 +156,7 @@ func (r *memberRepoImpl) Update(u *model.MemberUpdate) error {
 			"assigned_translator_at":   u.AssignedTranslatorAt,
 			"assigned_proofreader_at":  u.AssignedProofreaderAt,
 			"assigned_typesetter_at":   u.AssignedTypesetterAt,
+			"assigned_redrawer_at":     u.AssignedRedrawerAt,
 			"assigned_reviewer_at":     u.AssignedReviewerAt,
 			"assigned_publisher_at":    u.AssignedPublisherAt,
 			"assigned_admin_at":        u.AssignedAdminAt,

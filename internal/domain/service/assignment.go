@@ -133,7 +133,7 @@ func (s *assignmentServiceImpl) NewCreation(
 		AssignedTranslatorAt:  toAssign(model.RoleTranslator),
 		AssignedProofreaderAt: toAssign(model.RoleProofreader),
 		AssignedTypesetterAt:  toAssign(model.RoleTypesetter),
-		AssignedRedrawerAt:    nil,
+		AssignedRedrawerAt:    toAssign(model.RoleRedrawer),
 		AssignedReviewerAt:    toAssign(model.RoleReviewer),
 		AssignedPublisherAt:   toAssign(model.RolePublisher),
 	}
@@ -192,7 +192,7 @@ func (s *assignmentServiceImpl) NewUpdate(
 		AssignedTranslatorAt:  resolve(curr.AssignedTranslatorAt, model.RoleTranslator),
 		AssignedProofreaderAt: resolve(curr.AssignedProofreaderAt, model.RoleProofreader),
 		AssignedTypesetterAt:  resolve(curr.AssignedTypesetterAt, model.RoleTypesetter),
-		AssignedRedrawerAt:    curr.AssignedRedrawerAt,
+		AssignedRedrawerAt:    resolve(curr.AssignedRedrawerAt, model.RoleRedrawer),
 		AssignedReviewerAt:    resolve(curr.AssignedReviewerAt, model.RoleReviewer),
 		AssignedPublisherAt:   resolve(curr.AssignedPublisherAt, model.RolePublisher),
 	}, nil

@@ -18,6 +18,7 @@ type MemberInfo struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 	AssignedAdminAt       *time.Time
@@ -46,6 +47,10 @@ func (mi *MemberInfo) HasAnyRole(roles ...Role) bool {
 			if mi.AssignedTypesetterAt != nil {
 				return true
 			}
+		case RoleRedrawer:
+			if mi.AssignedRedrawerAt != nil {
+				return true
+			}
 		case RoleReviewer:
 			if mi.AssignedReviewerAt != nil {
 				return true
@@ -66,7 +71,7 @@ func (mi *MemberInfo) HasAnyRole(roles ...Role) bool {
 
 // Roles 返回当前成员所拥有的所有角色列表
 func (mi *MemberInfo) Roles() []Role {
-	roles := make([]Role, 0, 7)
+	roles := make([]Role, 0, 8)
 
 	if mi.AssignedRawProviderAt != nil {
 		roles = append(roles, RoleRawProvider)
@@ -79,6 +84,9 @@ func (mi *MemberInfo) Roles() []Role {
 	}
 	if mi.AssignedTypesetterAt != nil {
 		roles = append(roles, RoleTypesetter)
+	}
+	if mi.AssignedRedrawerAt != nil {
+		roles = append(roles, RoleRedrawer)
 	}
 	if mi.AssignedReviewerAt != nil {
 		roles = append(roles, RoleReviewer)
@@ -106,6 +114,7 @@ type MemberCreation struct {
 	ToBeTranslator  bool
 	ToBeProofreader bool
 	ToBeTypesetter  bool
+	ToBeRedrawer    bool
 	ToBeReviewer    bool
 	ToBePublisher   bool
 	ToBeAdmin       bool
@@ -119,6 +128,7 @@ type MemberUpdate struct {
 	AssignedTranslatorAt  *time.Time
 	AssignedProofreaderAt *time.Time
 	AssignedTypesetterAt  *time.Time
+	AssignedRedrawerAt    *time.Time
 	AssignedReviewerAt    *time.Time
 	AssignedPublisherAt   *time.Time
 	AssignedAdminAt       *time.Time

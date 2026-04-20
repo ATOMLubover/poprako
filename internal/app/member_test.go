@@ -44,6 +44,25 @@ func TestMemberAppCreateForSuperAdmin(t *testing.T) {
 	}
 }
 
+func TestMemberAppCreatePersistsRedrawerRole(t *testing.T) {
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = *superAdminUser()
+	memberRepo := mock_repo.NewMockMemberRepo()
+
+	app := NewMemberApp(service.NewMemberService(), userRepo, memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+
+	res, err := app.Create(background(), "user-1", &val.CreateMemberArgs{UserID: "user-2", TeamID: "team-1", Roles: model.RoleMask(model.RoleRedrawer)})
+	requireNoErr(t, err)
+
+	stored := memberRepo.Infos[res.ID]
+	if stored.AssignedRedrawerAt == nil || !stored.HasAnyRole(model.RoleRedrawer) {
+		t.Fatalf("expected redrawer role assigned: %#v", stored)
+	}
+	if got := model.MaskRoles(stored.Roles()); got != model.RoleMask(model.RoleRedrawer) {
+		t.Fatalf("unexpected role mask: %v", got)
+	}
+}
+
 func TestMemberAppListByTeamAssemblesNestedObjects(t *testing.T) {
 	now := time.Now()
 	memberRepo := mock_repo.NewMockMemberRepo()
@@ -87,6 +106,33 @@ func TestMemberAppUpdateRolePersistsRoleChange(t *testing.T) {
 	updated := memberRepo.Infos["member-target"]
 	if updated.AssignedAdminAt == nil {
 		t.Fatalf("expected admin role assigned: %#v", updated)
+	}
+}
+
+func TestMemberAppUpdateRoleUsesTargetMemberState(t *testing.T) {
+	now := time.Now()
+	memberRepo := mock_repo.NewMockMemberRepo()
+	memberRepo.Infos["member-admin"] = *adminMember()
+	memberRepo.Infos["member-target"] = model.MemberInfo{
+		ID:                 "member-target",
+		UserID:             "user-2",
+		TeamID:             "team-1",
+		AssignedRedrawerAt: &now,
+		CreatedAt:          now,
+		UpdatedAt:          now,
+	}
+
+	app := NewMemberApp(service.NewMemberService(), mock_repo.NewMockUserRepo(), memberRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
+
+	err := app.UpdateRole(background(), "user-1", &val.UpdateMemberRoleArgs{ID: "member-target", Roles: model.RoleMask(model.RoleRedrawer)})
+	requireNoErr(t, err)
+
+	updated := memberRepo.Infos["member-target"]
+	if updated.AssignedRedrawerAt == nil {
+		t.Fatalf("expected redrawer role preserved on target member: %#v", updated)
+	}
+	if updated.AssignedAdminAt != nil {
+		t.Fatalf("expected target member not to inherit acting admin role: %#v", updated)
 	}
 }
 

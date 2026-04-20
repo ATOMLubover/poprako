@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: dev-postgres
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: poprako-s-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devuser -d poprako-s-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 数据库初始化（仅运行 up 迁移）
+  database-setup:
+    image: postgres:18-alpine
+    profiles: ["setup"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres      # Docker bridge DNS — service name resolves to the postgres container
+      PGUSER: devuser
+      PGPASSWORD: devpass
+      PGDATABASE: poprako-s-db
+    volumes:
+      - ./migrations:/migrations
+      - ./docker/dev-database-setup.sh:/usr/local/bin/dev-database-setup.sh:ro
+    command: ["sh", "/usr/local/bin/dev-database-setup.sh"]
+
+  # 后端服务
+  backend:
+    build: .
+    container_name: dev-backend
+    profiles: ["app"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Hardcoded dev credentials; "postgres" resolves via Docker bridge DNS
+      DATABASE_URL: postgresql://devuser:devpass@postgres:5432/poprako-s-db?sslmode=disable
+    env_file: .env          # JWT_SECRET_KEY, OSS_PLATFORM, R2_* 等真实密钥
+
+volumes:
+  postgres_data:

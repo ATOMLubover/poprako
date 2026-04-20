@@ -66,6 +66,23 @@ func TestInvitationAppUpdatePersistsRoles(t *testing.T) {
 	}
 }
 
+func TestInvitationAppRejectsRedrawerRole(t *testing.T) {
+	memberRepo := mock_repo.NewMockMemberRepo()
+	memberRepo.Infos["member-1"] = *adminMember()
+	invRepo := mock_repo.NewMockInvitationRepo()
+	invRepo.Infos["inv-1"] = model.MemberInvitationInfo{ID: "inv-1", TeamID: "team-1", Pending: true}
+
+	app := NewInvitationApp(service.NewMemberInvitationService(), memberRepo, invRepo)
+
+	if _, err := app.Create(background(), "user-1", &val.CreateInvitationArgs{TeamID: "team-1", InviteeQQ: "10002", Roles: model.RoleMask(model.RoleRedrawer)}); err == nil {
+		t.Fatal("expected redrawer create rejection")
+	}
+
+	if err := app.Update(background(), "user-1", &val.UpdateInvitationArgs{ID: "inv-1", TeamID: "team-1", Roles: model.RoleMask(model.RoleRedrawer)}); err == nil {
+		t.Fatal("expected redrawer update rejection")
+	}
+}
+
 func TestInvitationAppRemoveDeletesInvitation(t *testing.T) {
 	memberRepo := mock_repo.NewMockMemberRepo()
 	memberRepo.Infos["member-1"] = *adminMember()

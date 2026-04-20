@@ -13,6 +13,7 @@ const (
 	RoleTranslator
 	RoleProofreader
 	RoleTypesetter
+	RoleRedrawer
 	RoleReviewer
 	RolePublisher
 	RoleAdmin
@@ -31,7 +32,7 @@ func MaskRoles(roles []Role) RoleMask {
 
 // UnmaskRoles 从 RoleMask 解码得到角色切片
 func UnmaskRoles(mask RoleMask) []Role {
-	roles := make([]Role, 0, 6)
+	roles := make([]Role, 0, 8)
 
 	if mask&RoleMask(RoleRawProvider) != 0 {
 		roles = append(roles, RoleRawProvider)
@@ -53,6 +54,9 @@ func UnmaskRoles(mask RoleMask) []Role {
 	}
 	if mask&RoleMask(RoleAdmin) != 0 {
 		roles = append(roles, RoleAdmin)
+	}
+	if mask&RoleMask(RoleRedrawer) != 0 {
+		roles = append(roles, RoleRedrawer)
 	}
 
 	return roles

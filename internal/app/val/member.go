@@ -17,9 +17,10 @@ type MemberInfo struct {
 	//   bit 1 (2)  = Translator（翻译）
 	//   bit 2 (4)  = Proofreader（校对）
 	//   bit 3 (8)  = Typesetter（嵌字）
-	//   bit 4 (16) = Reviewer（监修）
-	//   bit 5 (32) = Publisher（发布）
-	//   bit 6 (64) = Admin（管理员）
+	//   bit 4 (16) = Redrawer（美工）
+	//   bit 5 (32) = Reviewer（监修）
+	//   bit 6 (64) = Publisher（发布）
+	//   bit 7 (128)= Admin（管理）
 	Roles model.RoleMask `json:"roles"`
 
 	// User 是可选的用户信息（仅在 includes 时填充）
@@ -47,6 +48,7 @@ type CreateMemberArgs struct {
 	//   bit 4 (16) = Reviewer（监修）
 	//   bit 5 (32) = Publisher（发布）
 	//   bit 6 (64) = Admin（管理员）
+	//   bit 7 (128)= Redrawer（美工）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 
@@ -84,6 +86,7 @@ type UpdateMemberRoleArgs struct {
 	//   bit 4 (16) = Reviewer（监修）
 	//   bit 5 (32) = Publisher（发布）
 	//   bit 6 (64) = Admin（管理员）
+	//   bit 7 (128)= Redrawer（美工）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 

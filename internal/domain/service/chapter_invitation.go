@@ -54,6 +54,8 @@ func (s *chapterInvitationServiceImpl) NewCreation(
 			c.ToBeProofreader = true
 		case model.RoleTypesetter:
 			c.ToBeTypesetter = true
+		case model.RoleRedrawer:
+			c.ToBeRedrawer = true
 		case model.RoleReviewer:
 			c.ToBeReviewer = true
 		case model.RolePublisher:
@@ -67,6 +69,7 @@ func (s *chapterInvitationServiceImpl) NewCreation(
 		!c.ToBeTranslator &&
 		!c.ToBeProofreader &&
 		!c.ToBeTypesetter &&
+		!c.ToBeRedrawer &&
 		!c.ToBeReviewer &&
 		!c.ToBePublisher {
 		return nil, errors.New("至少指定一个有效角色")

@@ -2318,7 +2318,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是该分配包含的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）",
+                    "description": "Roles 是该分配包含的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 7 (128)= Redrawer（美工）",
                     "type": "integer"
                 },
                 "updated_at": {
@@ -2554,7 +2554,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）",
+                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 7 (128)= Redrawer（美工）",
                     "type": "integer"
                 },
                 "user_id": {
@@ -2663,7 +2663,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "roles": {
-                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
+                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）\n  bit 7 (128)= Redrawer（美工）",
                     "type": "integer"
                 },
                 "team_id": {
@@ -2909,7 +2909,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是该成员所拥有的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
+                    "description": "Roles 是该成员所拥有的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
                     "type": "integer"
                 },
                 "team": {
@@ -3509,7 +3509,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）",
+                    "description": "Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 7 (128)= Redrawer（美工）",
                     "type": "integer"
                 }
             }
@@ -3602,7 +3602,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roles": {
-                    "description": "Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）",
+                    "description": "Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Reviewer（监修）\n  bit 5 (32) = Publisher（发布）\n  bit 6 (64) = Admin（管理员）\n  bit 7 (128)= Redrawer（美工）",
                     "type": "integer"
                 }
             }

@@ -19,6 +19,7 @@ type AssignmentInfo struct {
 	//   bit 3 (8)  = Typesetter（嵌字）
 	//   bit 4 (16) = Reviewer（监修）
 	//   bit 5 (32) = Publisher（发布）
+	//   bit 7 (128)= Redrawer（美工）
 	Roles model.RoleMask `json:"roles"`
 
 	// Chapter 是可选的章节信息（仅在 includes 时填充）
@@ -61,6 +62,7 @@ type CreateAssignmentArgs struct {
 	//   bit 3 (8)  = Typesetter（嵌字）
 	//   bit 4 (16) = Reviewer（监修）
 	//   bit 5 (32) = Publisher（发布）
+	//   bit 7 (128)= Redrawer（美工）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 
@@ -81,6 +83,7 @@ type UpdateAssignmentArgs struct {
 	//   bit 3 (8)  = Typesetter（嵌字）
 	//   bit 4 (16) = Reviewer（监修）
 	//   bit 5 (32) = Publisher（发布）
+	//   bit 7 (128)= Redrawer（美工）
 	Roles model.RoleMask `json:"roles" validate:"required"`
 }
 

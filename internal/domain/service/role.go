@@ -45,7 +45,7 @@ func (*roleServiceImpl) UnmaskRoles(
 	mask model.RoleMask,
 ) []model.Role {
 	// 初始化结果切片
-	roles := make([]model.Role, 0, 7)
+	roles := make([]model.Role, 0, 8)
 
 	// 逐个校验每个角色位是否存在于掩码中
 	if mask&model.RoleMask(model.RoleRawProvider) != 0 {
@@ -74,6 +74,10 @@ func (*roleServiceImpl) UnmaskRoles(
 
 	if mask&model.RoleMask(model.RoleAdmin) != 0 {
 		roles = append(roles, model.RoleAdmin)
+	}
+
+	if mask&model.RoleMask(model.RoleRedrawer) != 0 {
+		roles = append(roles, model.RoleRedrawer)
 	}
 
 	// 返回解码后的角色列表

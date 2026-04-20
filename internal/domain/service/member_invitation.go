@@ -70,6 +70,8 @@ func (s *memberInvitationServiceImpl) NewCreation(
 			c.ToBeProofreader = true
 		case model.RoleTypesetter:
 			c.ToBeTypesetter = true
+		case model.RoleRedrawer:
+			return nil, errors.New("成员邀请暂不支持美工角色")
 		case model.RoleReviewer:
 			c.ToBeReviewer = true
 		case model.RolePublisher:

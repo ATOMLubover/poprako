@@ -214,6 +214,8 @@ func (a *memberInvitationAppImpl) Update(
 			update.ToBeProofreader = true
 		case model.RoleTypesetter:
 			update.ToBeTypesetter = true
+		case model.RoleRedrawer:
+			return errors.New("成员邀请暂不支持美工角色")
 		case model.RoleReviewer:
 			update.ToBeReviewer = true
 		case model.RolePublisher:

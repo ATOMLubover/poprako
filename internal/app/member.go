@@ -344,6 +344,7 @@ func (a *memberAppImpl) UpdateRole(
 	update, err := a.memberSvc.NewUpdate(
 		a.memberRepo,
 		currUserID,
+		targetMember,
 		targetMember.TeamID,
 		args.Roles,
 	)

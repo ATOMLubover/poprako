@@ -113,6 +113,9 @@ func (r *MemberRepo) Create(c *model.MemberCreation) (*model.MemberInfo, error) 
 	if c.ToBeTypesetter {
 		info.AssignedTypesetterAt = cloneTimePtr(&now)
 	}
+	if c.ToBeRedrawer {
+		info.AssignedRedrawerAt = cloneTimePtr(&now)
+	}
 	if c.ToBeReviewer {
 		info.AssignedReviewerAt = cloneTimePtr(&now)
 	}
@@ -138,6 +141,7 @@ func (r *MemberRepo) Update(u *model.MemberUpdate) error {
 	info.AssignedTranslatorAt = cloneTimePtr(u.AssignedTranslatorAt)
 	info.AssignedProofreaderAt = cloneTimePtr(u.AssignedProofreaderAt)
 	info.AssignedTypesetterAt = cloneTimePtr(u.AssignedTypesetterAt)
+	info.AssignedRedrawerAt = cloneTimePtr(u.AssignedRedrawerAt)
 	info.AssignedReviewerAt = cloneTimePtr(u.AssignedReviewerAt)
 	info.AssignedPublisherAt = cloneTimePtr(u.AssignedPublisherAt)
 	info.AssignedAdminAt = cloneTimePtr(u.AssignedAdminAt)

@@ -41,6 +41,9 @@ func (i *ChapterInvitationInfo) InvitedRoleMask() RoleMask {
 	if i.ToBeTypesetter {
 		mask |= RoleMask(RoleTypesetter)
 	}
+	if i.ToBeRedrawer {
+		mask |= RoleMask(RoleRedrawer)
+	}
 	if i.ToBeReviewer {
 		mask |= RoleMask(RoleReviewer)
 	}

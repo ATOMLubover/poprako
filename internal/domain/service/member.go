@@ -32,6 +32,7 @@ type MemberService interface {
 	NewUpdate(
 		mr repo.MemberRepo,
 		currUserID string,
+		curr *model.MemberInfo,
 		teamID string,
 		targetRoles model.RoleMask,
 	) (*model.MemberUpdate, error)
@@ -77,6 +78,8 @@ func (s *memberServiceImpl) NewCreation(
 			c.ToBeProofreader = true
 		case model.RoleTypesetter:
 			c.ToBeTypesetter = true
+		case model.RoleRedrawer:
+			c.ToBeRedrawer = true
 		case model.RoleReviewer:
 			c.ToBeReviewer = true
 		case model.RolePublisher:
@@ -104,6 +107,7 @@ func (s *memberServiceImpl) NewCreationFromInvitation(
 		ToBeTranslator:  i.ToBeTranslator,
 		ToBeProofreader: i.ToBeProofreader,
 		ToBeTypesetter:  i.ToBeTypesetter,
+		ToBeRedrawer:    false,
 		ToBeReviewer:    i.ToBeReviewer,
 		ToBePublisher:   i.ToBePublisher,
 		ToBeAdmin:       i.ToBeAdmin,
@@ -117,6 +121,7 @@ func (s *memberServiceImpl) NewCreationFromInvitation(
 func (s *memberServiceImpl) NewUpdate(
 	mr repo.MemberRepo,
 	currUserID string,
+	curr *model.MemberInfo,
 	teamID string,
 	targetRoles model.RoleMask,
 ) (*model.MemberUpdate, error) {
@@ -155,12 +160,13 @@ func (s *memberServiceImpl) NewUpdate(
 	// 构造并返回 MemberUpdate，保留已有时间戳
 	return &model.MemberUpdate{
 		ID:                    teamID,
-		AssignedRawProviderAt: resolve(currMem.AssignedRawProviderAt, model.RoleRawProvider),
-		AssignedTranslatorAt:  resolve(currMem.AssignedTranslatorAt, model.RoleTranslator),
-		AssignedProofreaderAt: resolve(currMem.AssignedProofreaderAt, model.RoleProofreader),
-		AssignedTypesetterAt:  resolve(currMem.AssignedTypesetterAt, model.RoleTypesetter),
-		AssignedReviewerAt:    resolve(currMem.AssignedReviewerAt, model.RoleReviewer),
-		AssignedPublisherAt:   resolve(currMem.AssignedPublisherAt, model.RolePublisher),
-		AssignedAdminAt:       resolve(currMem.AssignedAdminAt, model.RoleAdmin),
+		AssignedRawProviderAt: resolve(curr.AssignedRawProviderAt, model.RoleRawProvider),
+		AssignedTranslatorAt:  resolve(curr.AssignedTranslatorAt, model.RoleTranslator),
+		AssignedProofreaderAt: resolve(curr.AssignedProofreaderAt, model.RoleProofreader),
+		AssignedTypesetterAt:  resolve(curr.AssignedTypesetterAt, model.RoleTypesetter),
+		AssignedRedrawerAt:    resolve(curr.AssignedRedrawerAt, model.RoleRedrawer),
+		AssignedReviewerAt:    resolve(curr.AssignedReviewerAt, model.RoleReviewer),
+		AssignedPublisherAt:   resolve(curr.AssignedPublisherAt, model.RolePublisher),
+		AssignedAdminAt:       resolve(curr.AssignedAdminAt, model.RoleAdmin),
 	}, nil
 }

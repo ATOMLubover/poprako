@@ -47,7 +47,11 @@ func (a *AssignmentInfo) HasAnyRole(r ...Role) bool {
 				return true
 			}
 		case RoleTypesetter:
-			if a.AssignedTypesetterAt != nil {
+			if a.AssignedTypesetterAt != nil || a.AssignedRedrawerAt != nil {
+				return true
+			}
+		case RoleRedrawer:
+			if a.AssignedRedrawerAt != nil {
 				return true
 			}
 		case RoleReviewer:
@@ -79,6 +83,9 @@ func (a *AssignmentInfo) AssignedRoleMask() RoleMask {
 	}
 	if a.AssignedTypesetterAt != nil {
 		mask |= RoleMask(RoleTypesetter)
+	}
+	if a.AssignedRedrawerAt != nil {
+		mask |= RoleMask(RoleRedrawer)
 	}
 	if a.AssignedReviewerAt != nil {
 		mask |= RoleMask(RoleReviewer)

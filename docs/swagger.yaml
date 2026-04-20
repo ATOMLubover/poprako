@@ -46,6 +46,7 @@ definitions:
             bit 3 (8)  = Typesetter（嵌字）
             bit 4 (16) = Reviewer（监修）
             bit 5 (32) = Publisher（发布）
+            bit 7 (128)= Redrawer（美工）
         type: integer
       updated_at:
         description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
@@ -211,6 +212,7 @@ definitions:
             bit 3 (8)  = Typesetter（嵌字）
             bit 4 (16) = Reviewer（监修）
             bit 5 (32) = Publisher（发布）
+            bit 7 (128)= Redrawer（美工）
         type: integer
       user_id:
         description: UserID 是被分配的用户 ID
@@ -304,6 +306,7 @@ definitions:
             bit 4 (16) = Reviewer（监修）
             bit 5 (32) = Publisher（发布）
             bit 6 (64) = Admin（管理员）
+            bit 7 (128)= Redrawer（美工）
         type: integer
       team_id:
         description: TeamID 是目标汉化组 ID
@@ -496,9 +499,10 @@ definitions:
             bit 1 (2)  = Translator（翻译）
             bit 2 (4)  = Proofreader（校对）
             bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Reviewer（监修）
-            bit 5 (32) = Publisher（发布）
-            bit 6 (64) = Admin（管理员）
+            bit 4 (16) = Redrawer（美工）
+            bit 5 (32) = Reviewer（监修）
+            bit 6 (64) = Publisher（发布）
+            bit 7 (128)= Admin（管理）
         type: integer
       team:
         allOf:
@@ -934,6 +938,7 @@ definitions:
             bit 3 (8)  = Typesetter（嵌字）
             bit 4 (16) = Reviewer（监修）
             bit 5 (32) = Publisher（发布）
+            bit 7 (128)= Redrawer（美工）
         type: integer
     required:
     - id
@@ -1015,6 +1020,7 @@ definitions:
             bit 4 (16) = Reviewer（监修）
             bit 5 (32) = Publisher（发布）
             bit 6 (64) = Admin（管理员）
+            bit 7 (128)= Redrawer（美工）
         type: integer
     required:
     - id

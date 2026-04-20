@@ -136,6 +136,43 @@ func TestAssignmentAppCreateUsesMockTxnRepos(t *testing.T) {
 	}
 }
 
+func TestAssignmentAppCreatePersistsRedrawerRole(t *testing.T) {
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	userRepo := mock_repo.NewMockUserRepo()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, user: userRepo}))
+
+	app := NewAssignmentApp(
+		service.NewAssignmentService(),
+		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
+		mock_repo.NewMockChapterRepo(),
+		mock_repo.NewMockComicRepo(),
+		userRepo,
+		txnMgr,
+		newMockEventBus(),
+		newMockOSSClient(),
+	)
+
+	res, err := app.Create(background(), "user-1", &val.CreateAssignmentArgs{
+		ChapterID: "chapter-1",
+		UserID:    "user-2",
+		Roles:     model.RoleMask(model.RoleRedrawer),
+	})
+	requireNoErr(t, err)
+
+	created := assignmentRepo.Infos[res.ID]
+	if created.AssignedRedrawerAt == nil {
+		t.Fatalf("expected redrawer assignment persisted: %#v", created)
+	}
+	if !created.HasAnyRole(model.RoleTypesetter) {
+		t.Fatalf("expected redrawer assignment to satisfy typesetter checks: %#v", created)
+	}
+	if created.AssignedRoleMask() != model.RoleMask(model.RoleRedrawer) {
+		t.Fatalf("unexpected role mask: %v", created.AssignedRoleMask())
+	}
+}
+
 func TestAssignmentAppUpdateReplacesRoles(t *testing.T) {
 	now := time.Now()
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
@@ -167,6 +204,43 @@ func TestAssignmentAppUpdateReplacesRoles(t *testing.T) {
 	updated := assignmentRepo.Infos["assignment-target"]
 	if updated.AssignedTranslatorAt != nil || updated.AssignedPublisherAt == nil {
 		t.Fatalf("unexpected updated assignment: %#v", updated)
+	}
+}
+
+func TestAssignmentAppUpdateSupportsRedrawerRole(t *testing.T) {
+	now := time.Now()
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	assignmentRepo.Infos["assignment-target"] = model.AssignmentInfo{
+		ID:                   "assignment-target",
+		ChapterID:            "chapter-1",
+		UserID:               "user-2",
+		AssignedTypesetterAt: &now,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+
+	app := NewAssignmentApp(
+		service.NewAssignmentService(),
+		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
+		mock_repo.NewMockChapterRepo(),
+		mock_repo.NewMockComicRepo(),
+		mock_repo.NewMockUserRepo(),
+		mock_repo.NewMockTxnMgr(nil),
+		newMockEventBus(),
+		newMockOSSClient(),
+	)
+
+	err := app.Update(background(), "user-1", &val.UpdateAssignmentArgs{ID: "assignment-target", Roles: model.RoleMask(model.RoleRedrawer)})
+	requireNoErr(t, err)
+
+	updated := assignmentRepo.Infos["assignment-target"]
+	if updated.AssignedTypesetterAt != nil || updated.AssignedRedrawerAt == nil {
+		t.Fatalf("unexpected updated assignment: %#v", updated)
+	}
+	if !updated.HasAnyRole(model.RoleTypesetter) {
+		t.Fatalf("expected redrawer assignment to satisfy typesetter checks: %#v", updated)
 	}
 }
 
@@ -348,6 +422,37 @@ func TestAssignmentAppJoinInvitorChapterCreatesAssignmentAndInvalidatesInvitatio
 	createdEvent, ok := pubCalls[0][0].(*event.AssignmentCreatedEvent)
 	if !ok || createdEvent.UserID != "user-1" || createdEvent.ChapterID != "chapter-1" {
 		t.Fatalf("unexpected event: %#v", pubCalls)
+	}
+}
+
+func TestAssignmentAppJoinInvitorChapterCreatesRedrawerAssignment(t *testing.T) {
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
+		ID:             "cinv-1",
+		ChapterID:      "chapter-1",
+		InviterID:      "user-2",
+		InviteeQQ:      "10001",
+		InvitationCode: "654321",
+		Pending:        true,
+		ToBeRedrawer:   true,
+	}
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = *normalUser()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
+
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockComicRepo(), userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+
+	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
+	requireNoErr(t, err)
+
+	if len(assignmentRepo.Infos) != 1 {
+		t.Fatalf("expected one assignment created, got %#v", assignmentRepo.Infos)
+	}
+	for _, info := range assignmentRepo.Infos {
+		if info.AssignedRedrawerAt == nil || !info.HasAnyRole(model.RoleTypesetter) {
+			t.Fatalf("expected redrawer assignment treated as typesetter: %#v", info)
+		}
 	}
 }
 

@@ -212,6 +212,40 @@ func TestChapterAppInviteAssigneeForbidden(t *testing.T) {
 	}
 }
 
+func TestChapterAppInviteAssigneeSupportsRedrawerRole(t *testing.T) {
+	chapterRepo := mock_repo.NewMockChapterRepo()
+	chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-1"] = *reviewerAssignment()
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{
+		chapter:           chapterRepo,
+		assignment:        assignmentRepo,
+		chapterInvitation: chapterInvRepo,
+	}))
+
+	app := NewChapterApp(service.NewChapterService(), service.NewChapterInvitationService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), chapterRepo, assignmentRepo, mock_repo.NewMockUserRepo(), mock_repo.NewMockPageRepo(), chapterInvRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+
+	res, err := app.InviteAssignee(background(), "user-1", &val.InviteChapterAssigneeArgs{
+		ChapterID: "chapter-1",
+		InviteeQQ: "10001",
+		Roles:     model.MaskRoles([]model.Role{model.RoleRedrawer}),
+	})
+	requireNoErr(t, err)
+
+	if res == nil || res.InvCode == "" {
+		t.Fatalf("expected invitation code, got %#v", res)
+	}
+	for _, info := range chapterInvRepo.Infos {
+		if !info.ToBeRedrawer {
+			t.Fatalf("expected redrawer invitation role: %#v", info)
+		}
+		if info.InvitedRoleMask() != model.RoleMask(model.RoleRedrawer) {
+			t.Fatalf("unexpected redrawer invitation mask: %v", info.InvitedRoleMask())
+		}
+	}
+}
+
 func TestChapterAppListForbidden(t *testing.T) {
 	comicRepo := mock_repo.NewMockComicRepo()
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
