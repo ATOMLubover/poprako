@@ -67,6 +67,8 @@ type assignmentAppImpl struct {
 	chapterInvRepo repo.ChapterInvitationRepo
 	chapterRepo    repo.ChapterRepo
 	comicRepo      repo.ComicRepo
+	memberRepo     repo.MemberRepo
+	worksetRepo    repo.WorksetRepo
 	userRepo       repo.UserRepo
 	txnMgr         repo.TxnMgr
 	eventBus       event.EventBus
@@ -79,6 +81,8 @@ func NewAssignmentApp(
 	chapterInvRepo repo.ChapterInvitationRepo,
 	chapterRepo repo.ChapterRepo,
 	comicRepo repo.ComicRepo,
+	memberRepo repo.MemberRepo,
+	worksetRepo repo.WorksetRepo,
 	userRepo repo.UserRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
@@ -90,6 +94,8 @@ func NewAssignmentApp(
 		chapterInvRepo == nil ||
 		chapterRepo == nil ||
 		comicRepo == nil ||
+		memberRepo == nil ||
+		worksetRepo == nil ||
 		userRepo == nil ||
 		txnMgr == nil ||
 		eventBus == nil ||
@@ -101,6 +107,8 @@ func NewAssignmentApp(
 			zap.Bool("chapterInvRepo_nil", chapterInvRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
 			zap.Bool("comicRepo_nil", comicRepo == nil),
+			zap.Bool("memberRepo_nil", memberRepo == nil),
+			zap.Bool("worksetRepo_nil", worksetRepo == nil),
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
@@ -115,6 +123,8 @@ func NewAssignmentApp(
 		chapterInvRepo: chapterInvRepo,
 		chapterRepo:    chapterRepo,
 		comicRepo:      comicRepo,
+		memberRepo:     memberRepo,
+		worksetRepo:    worksetRepo,
 		userRepo:       userRepo,
 		txnMgr:         txnMgr,
 		eventBus:       eventBus,
@@ -298,6 +308,10 @@ func (a *assignmentAppImpl) Create(
 
 		creation, err := a.assignmentSvc.NewCreation(
 			assignmentRepoTxn,
+			a.memberRepo,
+			a.chapterRepo,
+			a.comicRepo,
+			a.worksetRepo,
 			currUserID,
 			args.ChapterID,
 			args.UserID,
@@ -356,6 +370,10 @@ func (a *assignmentAppImpl) Update(
 	// 通过领域服务构造更新载荷（含权限校验）
 	update, err := a.assignmentSvc.NewUpdate(
 		a.assignmentRepo,
+		a.memberRepo,
+		a.chapterRepo,
+		a.comicRepo,
+		a.worksetRepo,
 		currUserID,
 		args.ID,
 		currAssignInfo,
@@ -518,6 +536,18 @@ func (a *assignmentAppImpl) JoinInvitorChapter(
 
 		if targetInv == nil || !targetInv.Pending {
 			return errors.New("邀请码无效或已被使用")
+		}
+
+		if err := a.assignmentSvc.EnsureUserCanTakeRoles(
+			a.memberRepo,
+			a.chapterRepo,
+			a.comicRepo,
+			a.worksetRepo,
+			targetInv.ChapterID,
+			currUserID,
+			targetInv.InvitedRoleMask(),
+		); err != nil {
+			return err
 		}
 
 		now := time.Now()

@@ -128,5 +128,5 @@ type MemberInvitationQueryOpt struct {
 	// InvitationCode 按邀请码筛选
 	InvitationCode *string
 	// Pending 按是否有效筛选
-	Pending bool
+	Pending *bool
 }

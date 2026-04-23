@@ -15,6 +15,7 @@ import (
 // @Security 	ApiKeyAuth
 // @Produce 	json
 // @Param 		team_id query string true "汉化组 ID"
+// @Param 		pending query bool false "是否仅返回待处理邀请"
 // @Param 		offset query int true "偏移量"
 // @Param 		limit query int true "每页数量"
 // @Param 		"includes" query []string false "include 关联信息，可选值：invitor"

@@ -12,13 +12,59 @@ import (
 	mock_repo "poprako-s/internal/infra/repo/mock"
 )
 
+func newAssignmentRoleFixtureRepos(
+	userID string,
+	roles ...model.Role,
+) (*mock_repo.MemberRepo, *mock_repo.ChapterRepo, *mock_repo.ComicRepo, *mock_repo.WorksetRepo) {
+	now := time.Now()
+
+	memberRepo := mock_repo.NewMockMemberRepo()
+	chapterRepo := mock_repo.NewMockChapterRepo()
+	comicRepo := mock_repo.NewMockComicRepo()
+	worksetRepo := mock_repo.NewMockWorksetRepo()
+
+	member := model.MemberInfo{
+		ID:        "member-2",
+		UserID:    userID,
+		TeamID:    "team-1",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	for _, role := range roles {
+		switch role {
+		case model.RoleRawProvider:
+			member.AssignedRawProviderAt = &now
+		case model.RoleTranslator:
+			member.AssignedTranslatorAt = &now
+		case model.RoleProofreader:
+			member.AssignedProofreaderAt = &now
+		case model.RoleTypesetter:
+			member.AssignedTypesetterAt = &now
+		case model.RoleRedrawer:
+			member.AssignedRedrawerAt = &now
+		case model.RoleReviewer:
+			member.AssignedReviewerAt = &now
+		case model.RolePublisher:
+			member.AssignedPublisherAt = &now
+		}
+	}
+
+	memberRepo.Infos[member.ID] = member
+	chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1", CreatedAt: now, UpdatedAt: now}
+	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", CreatedAt: now, UpdatedAt: now}
+	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1", CreatedAt: now, UpdatedAt: now}
+
+	return memberRepo, chapterRepo, comicRepo, worksetRepo
+}
+
 func TestAssignmentAppListMy(t *testing.T) {
 	now := time.Now()
 	repo := &mock_repo.AssignmentRepo{Infos: map[string]model.AssignmentInfo{
 		"assign-1": {ID: "assign-1", ChapterID: "chapter-1", UserID: "user-1", AssignedReviewerAt: &now},
 	}}
 
-	app := NewAssignmentApp(service.NewAssignmentService(), repo, mock_repo.NewMockChapterInvitationRepo(), &mock_repo.ChapterRepo{}, mock_repo.NewMockComicRepo(), mock_repo.NewMockUserRepo(), &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
+	app := NewAssignmentApp(service.NewAssignmentService(), repo, mock_repo.NewMockChapterInvitationRepo(), &mock_repo.ChapterRepo{}, mock_repo.NewMockComicRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockUserRepo(), &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
 
 	got, err := app.ListMy(background(), "user-1", &val.ListMyAssignmentArgs{})
 	requireNoErr(t, err)
@@ -70,6 +116,8 @@ func TestAssignmentAppListByChapterIncludesNestedData(t *testing.T) {
 		mock_repo.NewMockChapterInvitationRepo(),
 		mock_repo.NewMockChapterRepo(),
 		mock_repo.NewMockComicRepo(),
+		mock_repo.NewMockMemberRepo(),
+		mock_repo.NewMockWorksetRepo(),
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
 		newMockEventBus(),
@@ -96,6 +144,7 @@ func TestAssignmentAppListByChapterIncludesNestedData(t *testing.T) {
 func TestAssignmentAppCreateUsesMockTxnRepos(t *testing.T) {
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-2", model.RoleTranslator, model.RolePublisher)
 	userRepo := mock_repo.NewMockUserRepo()
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, user: userRepo}))
@@ -104,8 +153,10 @@ func TestAssignmentAppCreateUsesMockTxnRepos(t *testing.T) {
 		service.NewAssignmentService(),
 		assignmentRepo,
 		mock_repo.NewMockChapterInvitationRepo(),
-		mock_repo.NewMockChapterRepo(),
-		mock_repo.NewMockComicRepo(),
+		chapterRepo,
+		comicRepo,
+		memberRepo,
+		worksetRepo,
 		userRepo,
 		txnMgr,
 		eventBus,
@@ -139,6 +190,7 @@ func TestAssignmentAppCreateUsesMockTxnRepos(t *testing.T) {
 func TestAssignmentAppCreatePersistsRedrawerRole(t *testing.T) {
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-2", model.RoleRedrawer)
 	userRepo := mock_repo.NewMockUserRepo()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, user: userRepo}))
 
@@ -146,8 +198,10 @@ func TestAssignmentAppCreatePersistsRedrawerRole(t *testing.T) {
 		service.NewAssignmentService(),
 		assignmentRepo,
 		mock_repo.NewMockChapterInvitationRepo(),
-		mock_repo.NewMockChapterRepo(),
-		mock_repo.NewMockComicRepo(),
+		chapterRepo,
+		comicRepo,
+		memberRepo,
+		worksetRepo,
 		userRepo,
 		txnMgr,
 		newMockEventBus(),
@@ -177,6 +231,7 @@ func TestAssignmentAppUpdateReplacesRoles(t *testing.T) {
 	now := time.Now()
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-2", model.RolePublisher)
 	assignmentRepo.Infos["assignment-target"] = model.AssignmentInfo{
 		ID:                   "assignment-target",
 		ChapterID:            "chapter-1",
@@ -190,8 +245,10 @@ func TestAssignmentAppUpdateReplacesRoles(t *testing.T) {
 		service.NewAssignmentService(),
 		assignmentRepo,
 		mock_repo.NewMockChapterInvitationRepo(),
-		mock_repo.NewMockChapterRepo(),
-		mock_repo.NewMockComicRepo(),
+		chapterRepo,
+		comicRepo,
+		memberRepo,
+		worksetRepo,
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
 		newMockEventBus(),
@@ -211,6 +268,7 @@ func TestAssignmentAppUpdateSupportsRedrawerRole(t *testing.T) {
 	now := time.Now()
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
 	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-2", model.RoleRedrawer)
 	assignmentRepo.Infos["assignment-target"] = model.AssignmentInfo{
 		ID:                   "assignment-target",
 		ChapterID:            "chapter-1",
@@ -224,8 +282,10 @@ func TestAssignmentAppUpdateSupportsRedrawerRole(t *testing.T) {
 		service.NewAssignmentService(),
 		assignmentRepo,
 		mock_repo.NewMockChapterInvitationRepo(),
-		mock_repo.NewMockChapterRepo(),
-		mock_repo.NewMockComicRepo(),
+		chapterRepo,
+		comicRepo,
+		memberRepo,
+		worksetRepo,
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
 		newMockEventBus(),
@@ -241,6 +301,79 @@ func TestAssignmentAppUpdateSupportsRedrawerRole(t *testing.T) {
 	}
 	if !updated.HasAnyRole(model.RoleTypesetter) {
 		t.Fatalf("expected redrawer assignment to satisfy typesetter checks: %#v", updated)
+	}
+}
+
+func TestAssignmentAppCreateRejectsRoleOutsideMemberCapability(t *testing.T) {
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-2", model.RoleTranslator)
+	userRepo := mock_repo.NewMockUserRepo()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, user: userRepo}))
+
+	app := NewAssignmentApp(
+		service.NewAssignmentService(),
+		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
+		chapterRepo,
+		comicRepo,
+		memberRepo,
+		worksetRepo,
+		userRepo,
+		txnMgr,
+		newMockEventBus(),
+		newMockOSSClient(),
+	)
+
+	_, err := app.Create(background(), "user-1", &val.CreateAssignmentArgs{
+		ChapterID: "chapter-1",
+		UserID:    "user-2",
+		Roles:     model.RoleMask(model.RoleProofreader),
+	})
+	if err == nil {
+		t.Fatal("expected create capability error")
+	}
+	if len(assignmentRepo.Infos) != 1 {
+		t.Fatalf("expected no new assignment created, got %#v", assignmentRepo.Infos)
+	}
+}
+
+func TestAssignmentAppUpdateRejectsRoleOutsideMemberCapability(t *testing.T) {
+	now := time.Now()
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	assignmentRepo.Infos["assignment-reviewer"] = *reviewerAssignment()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-2", model.RoleTranslator)
+	assignmentRepo.Infos["assignment-target"] = model.AssignmentInfo{
+		ID:                   "assignment-target",
+		ChapterID:            "chapter-1",
+		UserID:               "user-2",
+		AssignedTranslatorAt: &now,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+
+	app := NewAssignmentApp(
+		service.NewAssignmentService(),
+		assignmentRepo,
+		mock_repo.NewMockChapterInvitationRepo(),
+		chapterRepo,
+		comicRepo,
+		memberRepo,
+		worksetRepo,
+		mock_repo.NewMockUserRepo(),
+		mock_repo.NewMockTxnMgr(nil),
+		newMockEventBus(),
+		newMockOSSClient(),
+	)
+
+	err := app.Update(background(), "user-1", &val.UpdateAssignmentArgs{ID: "assignment-target", Roles: model.RoleMask(model.RoleProofreader)})
+	if err == nil {
+		t.Fatal("expected update capability error")
+	}
+
+	updated := assignmentRepo.Infos["assignment-target"]
+	if updated.AssignedTranslatorAt == nil || updated.AssignedProofreaderAt != nil {
+		t.Fatalf("expected assignment unchanged on capability rejection: %#v", updated)
 	}
 }
 
@@ -260,6 +393,8 @@ func TestAssignmentAppRemoveUsesMockTxnRepos(t *testing.T) {
 		mock_repo.NewMockChapterInvitationRepo(),
 		chapterRepo,
 		mock_repo.NewMockComicRepo(),
+		mock_repo.NewMockMemberRepo(),
+		mock_repo.NewMockWorksetRepo(),
 		userRepo,
 		txnMgr,
 		eventBus,
@@ -289,6 +424,8 @@ func TestAssignmentAppListByChapterForbidden(t *testing.T) {
 		mock_repo.NewMockChapterInvitationRepo(),
 		mock_repo.NewMockChapterRepo(),
 		mock_repo.NewMockComicRepo(),
+		mock_repo.NewMockMemberRepo(),
+		mock_repo.NewMockWorksetRepo(),
 		mock_repo.NewMockUserRepo(),
 		mock_repo.NewMockTxnMgr(nil),
 		newMockEventBus(),
@@ -308,6 +445,8 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 			mock_repo.NewMockChapterInvitationRepo(),
 			mock_repo.NewMockChapterRepo(),
 			mock_repo.NewMockComicRepo(),
+			mock_repo.NewMockMemberRepo(),
+			mock_repo.NewMockWorksetRepo(),
 			mock_repo.NewMockUserRepo(),
 			mock_repo.NewMockTxnMgr(nil),
 			newMockEventBus(),
@@ -326,6 +465,8 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 			mock_repo.NewMockChapterInvitationRepo(),
 			mock_repo.NewMockChapterRepo(),
 			mock_repo.NewMockComicRepo(),
+			mock_repo.NewMockMemberRepo(),
+			mock_repo.NewMockWorksetRepo(),
 			mock_repo.NewMockUserRepo(),
 			mock_repo.NewMockTxnMgr(nil),
 			newMockEventBus(),
@@ -346,6 +487,8 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 			mock_repo.NewMockChapterInvitationRepo(),
 			mock_repo.NewMockChapterRepo(),
 			mock_repo.NewMockComicRepo(),
+			mock_repo.NewMockMemberRepo(),
+			mock_repo.NewMockWorksetRepo(),
 			mock_repo.NewMockUserRepo(),
 			mock_repo.NewMockTxnMgr(nil),
 			newMockEventBus(),
@@ -364,7 +507,7 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 		chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1"}
 		userRepo := mock_repo.NewMockUserRepo()
 		txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapter: chapterRepo, user: userRepo}))
-		app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, mock_repo.NewMockChapterInvitationRepo(), chapterRepo, mock_repo.NewMockComicRepo(), userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+		app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, mock_repo.NewMockChapterInvitationRepo(), chapterRepo, mock_repo.NewMockComicRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
 
 		err := app.Remove(background(), "user-1", "assignment-target")
 		if err == nil || !errors.Is(err, errors.New("权限不足")) && err.Error() != "权限不足" {
@@ -375,6 +518,7 @@ func TestAssignmentAppCreateUpdateAndRemoveErrorPaths(t *testing.T) {
 
 func TestAssignmentAppJoinInvitorChapterCreatesAssignmentAndInvalidatesInvitation(t *testing.T) {
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-1", model.RoleTranslator, model.RoleReviewer, model.RoleRawProvider)
 	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
 	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
 		ID:              "cinv-1",
@@ -392,7 +536,7 @@ func TestAssignmentAppJoinInvitorChapterCreatesAssignmentAndInvalidatesInvitatio
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
 
-	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockComicRepo(), userRepo, txnMgr, eventBus, newMockOSSClient())
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, memberRepo, worksetRepo, userRepo, txnMgr, eventBus, newMockOSSClient())
 
 	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
 	requireNoErr(t, err)
@@ -427,6 +571,7 @@ func TestAssignmentAppJoinInvitorChapterCreatesAssignmentAndInvalidatesInvitatio
 
 func TestAssignmentAppJoinInvitorChapterCreatesRedrawerAssignment(t *testing.T) {
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-1", model.RoleRedrawer)
 	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
 	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
 		ID:             "cinv-1",
@@ -441,7 +586,7 @@ func TestAssignmentAppJoinInvitorChapterCreatesRedrawerAssignment(t *testing.T) 
 	userRepo.Infos["user-1"] = *normalUser()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
 
-	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockComicRepo(), userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, memberRepo, worksetRepo, userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
 
 	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
 	requireNoErr(t, err)
@@ -459,6 +604,7 @@ func TestAssignmentAppJoinInvitorChapterCreatesRedrawerAssignment(t *testing.T) 
 func TestAssignmentAppJoinInvitorChapterMergesExistingAssignment(t *testing.T) {
 	now := time.Now()
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-1", model.RoleTranslator, model.RoleReviewer)
 	assignmentRepo.Infos["assignment-1"] = model.AssignmentInfo{
 		ID:                   "assignment-1",
 		ChapterID:            "chapter-1",
@@ -481,7 +627,7 @@ func TestAssignmentAppJoinInvitorChapterMergesExistingAssignment(t *testing.T) {
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
 
-	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockComicRepo(), userRepo, txnMgr, eventBus, newMockOSSClient())
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, memberRepo, worksetRepo, userRepo, txnMgr, eventBus, newMockOSSClient())
 
 	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
 	requireNoErr(t, err)
@@ -502,6 +648,7 @@ func TestAssignmentAppJoinInvitorChapterMergesExistingAssignment(t *testing.T) {
 
 func TestAssignmentAppJoinInvitorChapterRejectsInvalidCode(t *testing.T) {
 	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-1", model.RoleReviewer)
 	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
 	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
 		ID:             "cinv-1",
@@ -514,7 +661,7 @@ func TestAssignmentAppJoinInvitorChapterRejectsInvalidCode(t *testing.T) {
 	userRepo := mock_repo.NewMockUserRepo()
 	userRepo.Infos["user-1"] = *normalUser()
 
-	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, mock_repo.NewMockChapterRepo(), mock_repo.NewMockComicRepo(), userRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo})), newMockEventBus(), newMockOSSClient())
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, memberRepo, worksetRepo, userRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo})), newMockEventBus(), newMockOSSClient())
 
 	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "000000"})
 	if err == nil {
@@ -523,5 +670,36 @@ func TestAssignmentAppJoinInvitorChapterRejectsInvalidCode(t *testing.T) {
 
 	if len(assignmentRepo.Infos) != 0 {
 		t.Fatalf("expected no assignment created, got %#v", assignmentRepo.Infos)
+	}
+}
+
+func TestAssignmentAppJoinInvitorChapterRejectsRoleOutsideMemberCapability(t *testing.T) {
+	assignmentRepo := mock_repo.NewMockAssignmentRepo()
+	memberRepo, chapterRepo, comicRepo, worksetRepo := newAssignmentRoleFixtureRepos("user-1", model.RoleTranslator)
+	chapterInvRepo := mock_repo.NewMockChapterInvitationRepo()
+	chapterInvRepo.Infos["cinv-1"] = model.ChapterInvitationInfo{
+		ID:              "cinv-1",
+		ChapterID:       "chapter-1",
+		InviteeQQ:       "10001",
+		InvitationCode:  "654321",
+		Pending:         true,
+		ToBeProofreader: true,
+	}
+	userRepo := mock_repo.NewMockUserRepo()
+	userRepo.Infos["user-1"] = *normalUser()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{assignment: assignmentRepo, chapterInvitation: chapterInvRepo, user: userRepo}))
+
+	app := NewAssignmentApp(service.NewAssignmentService(), assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, memberRepo, worksetRepo, userRepo, txnMgr, newMockEventBus(), newMockOSSClient())
+
+	err := app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "654321"})
+	if err == nil {
+		t.Fatal("expected invitation capability error")
+	}
+
+	if len(assignmentRepo.Infos) != 0 {
+		t.Fatalf("expected no assignment created, got %#v", assignmentRepo.Infos)
+	}
+	if !chapterInvRepo.Infos["cinv-1"].Pending {
+		t.Fatalf("expected invitation to remain pending, got %#v", chapterInvRepo.Infos["cinv-1"])
 	}
 }

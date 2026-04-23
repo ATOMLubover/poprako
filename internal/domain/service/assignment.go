@@ -16,6 +16,10 @@ type AssignmentService interface {
 	// 仅章节的监修可以创建分配
 	NewCreation(
 		ar repo.AssignmentRepo,
+		mr repo.MemberRepo,
+		cr repo.ChapterRepo,
+		cor repo.ComicRepo,
+		wr repo.WorksetRepo,
 		currUserID string,
 		chapterID string,
 		userID string,
@@ -37,11 +41,26 @@ type AssignmentService interface {
 	// 仅章节的监修可以更新分配
 	NewUpdate(
 		ar repo.AssignmentRepo,
+		mr repo.MemberRepo,
+		cr repo.ChapterRepo,
+		cor repo.ComicRepo,
+		wr repo.WorksetRepo,
 		currUserID string,
 		id string,
 		curr *model.AssignmentInfo,
 		targetRoles model.RoleMask,
 	) (*model.AssignmentUpdate, error)
+
+	// EnsureUserCanTakeRoles 校验目标成员是否有资格承担指定章节角色
+	EnsureUserCanTakeRoles(
+		mr repo.MemberRepo,
+		cr repo.ChapterRepo,
+		cor repo.ComicRepo,
+		wr repo.WorksetRepo,
+		chapterID string,
+		userID string,
+		roles model.RoleMask,
+	) error
 }
 
 // assignmentServiceImpl 是 AssignmentService 的具体实现 无内禀状态
@@ -93,6 +112,10 @@ func (s *assignmentServiceImpl) NewRemovalEvent(
 // 仅章节的监修可以创建分配
 func (s *assignmentServiceImpl) NewCreation(
 	ar repo.AssignmentRepo,
+	mr repo.MemberRepo,
+	cr repo.ChapterRepo,
+	cor repo.ComicRepo,
+	wr repo.WorksetRepo,
 	currUserID string,
 	chapterID string,
 	userID string,
@@ -108,7 +131,10 @@ func (s *assignmentServiceImpl) NewCreation(
 		return nil, errors.New("仅章节监修可以创建分配")
 	}
 
-	// TODO: 应该检查被分配用户是否有资质担任目标角色
+	// 校验被分配用户是否有资格承担目标角色
+	if err := s.EnsureUserCanTakeRoles(mr, cr, cor, wr, chapterID, userID, roles); err != nil {
+		return nil, err
+	}
 
 	// 记录当前时间 作为新分配角色时间戳
 	now := time.Now()
@@ -151,6 +177,10 @@ func (s *assignmentServiceImpl) NewCreation(
 // 仅章节的监修可以更新分配
 func (s *assignmentServiceImpl) NewUpdate(
 	ar repo.AssignmentRepo,
+	mr repo.MemberRepo,
+	cr repo.ChapterRepo,
+	cor repo.ComicRepo,
+	wr repo.WorksetRepo,
 	currUserID string,
 	id string,
 	curr *model.AssignmentInfo,
@@ -164,6 +194,11 @@ func (s *assignmentServiceImpl) NewUpdate(
 	if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer) {
 		// 返回权限错误
 		return nil, errors.New("仅章节监修可以更新分配")
+	}
+
+	// 校验目标成员是否有资格承担更新后的角色
+	if err := s.EnsureUserCanTakeRoles(mr, cr, cor, wr, curr.ChapterID, curr.UserID, targetRoles); err != nil {
+		return nil, err
 	}
 
 	// 记录当前时间 用于新增角色
@@ -196,4 +231,54 @@ func (s *assignmentServiceImpl) NewUpdate(
 		AssignedReviewerAt:    resolve(curr.AssignedReviewerAt, model.RoleReviewer),
 		AssignedPublisherAt:   resolve(curr.AssignedPublisherAt, model.RolePublisher),
 	}, nil
+}
+
+// EnsureUserCanTakeRoles 校验目标成员是否有资格承担指定章节角色
+func (s *assignmentServiceImpl) EnsureUserCanTakeRoles(
+	mr repo.MemberRepo,
+	cr repo.ChapterRepo,
+	cor repo.ComicRepo,
+	wr repo.WorksetRepo,
+	chapterID string,
+	userID string,
+	roles model.RoleMask,
+) error {
+	// 空角色集无需校验成员角色能力
+	if roles == 0 {
+		return nil
+	}
+
+	// 先解析章节所属团队
+	chapter, err := cr.GetByID(chapterID)
+	if err != nil {
+		return err
+	}
+
+	comic, err := cor.GetByID(chapter.ComicID)
+	if err != nil {
+		return err
+	}
+
+	workset, err := wr.GetByID(comic.WorksetID)
+	if err != nil {
+		return err
+	}
+
+	// 查询目标用户在团队中的成员身份
+	member, err := mr.Get(model.MemberQueryOpt{
+		UserID: &userID,
+		TeamID: &workset.TeamID,
+	})
+	if err != nil {
+		return errors.New("目标成员不在当前汉化组中")
+	}
+
+	// 逐个校验目标章节角色是否均为成员已具备的组内角色
+	for _, role := range model.UnmaskRoles(roles) {
+		if !member.HasAnyRole(role) {
+			return errors.New("目标成员无法承担指定章节角色")
+		}
+	}
+
+	return nil
 }

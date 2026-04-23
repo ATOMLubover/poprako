@@ -1759,6 +1759,10 @@ paths:
         name: team_id
         required: true
         type: string
+      - description: 是否仅返回待处理邀请
+        in: query
+        name: pending
+        type: boolean
       - description: 偏移量
         in: query
         name: offset

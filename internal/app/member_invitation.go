@@ -102,7 +102,8 @@ func (a *memberInvitationAppImpl) List(
 
 	// 查询邀请列表
 	invitations, err := a.memberInvRepo.List(model.MemberInvitationQueryOpt{
-		TeamID: &args.TeamID,
+		TeamID:  &args.TeamID,
+		Pending: args.Pending,
 	})
 	if err != nil {
 		// 记录查询失败

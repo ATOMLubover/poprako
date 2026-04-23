@@ -968,6 +968,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "boolean",
+                        "description": "是否仅返回待处理邀请",
+                        "name": "pending",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "偏移量",
                         "name": "offset",

@@ -57,7 +57,7 @@ func (r *InvitationRepo) List(opt model.MemberInvitationQueryOpt) ([]model.Membe
 		if opt.InvitationCode != nil && info.InvitationCode != *opt.InvitationCode {
 			continue
 		}
-		if opt.Pending && !info.Pending {
+		if opt.Pending != nil && info.Pending != *opt.Pending {
 			continue
 		}
 		items = append(items, info)

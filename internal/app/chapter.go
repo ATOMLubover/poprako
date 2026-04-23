@@ -384,10 +384,15 @@ func (a *chapterAppImpl) Create(
 			return err
 		}
 
+		// 章节创建者必须立即成为该章节的监修，不能依赖事件侧路补齐。
+		reviewerCreation := service.NewAssignmentService().NewInitReviewerCreation(chInfo.ID, currUserID)
+		if _, err := assignmentRepoTxn.Create(reviewerCreation); err != nil {
+			return err
+		}
+
 		createdID = chInfo.ID
 
 		eventCx := event_handler.WithComicRepoTxn(cx, comicRepoTxn)
-		eventCx = event_handler.WithAssignmentRepoTxn(eventCx, assignmentRepoTxn)
 
 		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {

@@ -59,14 +59,24 @@ func TestChapterAppCreateUsesMockTxnRepos(t *testing.T) {
 	if created.Index != 0 || created.Subtitle != "Intro" {
 		t.Fatalf("unexpected chapter: %#v", created)
 	}
+
+	assignment, err := assignmentRepo.Get(model.AssignmentQueryOpt{
+		ChapterID: &res.ID,
+		UserID:    ptr("user-1"),
+	})
+	requireNoErr(t, err)
+
+	if !assignment.HasAnyRole(model.RoleReviewer) {
+		t.Fatalf("expected creator reviewer assignment, got %#v", assignment)
+	}
+
 	pubCalls := eventBus.PubCalls()
 	createdEvent, ok := pubCalls[0][0].(*event.ChapterCreatedEvent)
 	if !ok || createdEvent.ComicID != "comic-1" {
 		t.Fatalf("unexpected event: %#v", pubCalls)
 	}
-	assignedEvent, ok := pubCalls[0][1].(*event.ChapterCreatorAssignedEvent)
-	if !ok || assignedEvent.ChapterID != res.ID || assignedEvent.CreatorID != "user-1" {
-		t.Fatalf("unexpected creator assigned event: %#v", pubCalls)
+	if len(pubCalls) != 1 || len(pubCalls[0]) != 1 {
+		t.Fatalf("unexpected publish calls: %#v", pubCalls)
 	}
 }
 

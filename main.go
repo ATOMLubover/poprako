@@ -83,7 +83,6 @@ func main() {
 		event_handler.NewComicCreateHandler(),
 		event_handler.NewComicRemoveHandler(),
 		event_handler.NewChapterCreateHandler(),
-		event_handler.NewChapterCreatorAssignedHandler(),
 		event_handler.NewChapterRemoveHandler(),
 		event_handler.NewChapterPublishedHandler(),
 	}
@@ -170,7 +169,7 @@ func main() {
 	)
 	assignmentApp := app.NewAssignmentApp(
 		assignmentSvc,
-		assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, userRepo,
+		assignmentRepo, chapterInvRepo, chapterRepo, comicRepo, memberRepo, worksetRepo, userRepo,
 		txnMgr, eventBus, ossClient,
 	)
 	unitApp := app.NewUnitApp(

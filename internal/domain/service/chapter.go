@@ -75,11 +75,6 @@ func (s *chapterServiceImpl) NewCreation(
 		ComicID: comicID,
 	})
 
-	c.PushEvent(&event.ChapterCreatorAssignedEvent{
-		ChapterID: c.ID,
-		CreatorID: creatorID,
-	})
-
 	return c, nil
 }
 

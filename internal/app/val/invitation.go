@@ -37,8 +37,10 @@ type InvitationInfo struct {
 type ListTeamInvitationArgs struct {
 	// TeamID 是目标汉化组 ID
 	TeamID string `json:"team_id" url:"team_id" validate:"required"`
-	Offset int    `json:"offset" url:"offset"`
-	Limit  int    `json:"limit" url:"limit"`
+	// Pending 是可选的邀请有效性筛选条件
+	Pending *bool `json:"pending,omitempty" url:"pending"`
+	Offset  int   `json:"offset" url:"offset"`
+	Limit   int   `json:"limit" url:"limit"`
 }
 
 // CreateInvitationArgs 表示创建邀请请求的参数

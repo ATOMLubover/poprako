@@ -10,6 +10,10 @@ import (
 	mock_repo "poprako-s/internal/infra/repo/mock"
 )
 
+func boolPtr(v bool) *bool {
+	return &v
+}
+
 func TestInvitationAppList(t *testing.T) {
 	memberRepo := &mock_repo.MemberRepo{Infos: map[string]model.MemberInfo{
 		"member-1": {ID: "member-1", UserID: "user-1", TeamID: "team-1"},
@@ -17,6 +21,7 @@ func TestInvitationAppList(t *testing.T) {
 	now := time.Now()
 	invRepo := &mock_repo.InvitationRepo{Infos: map[string]model.MemberInvitationInfo{
 		"inv-1": {ID: "inv-1", TeamID: "team-1", InviteeQQ: "123", Pending: true, CreatedAt: now},
+		"inv-2": {ID: "inv-2", TeamID: "team-1", InviteeQQ: "456", Pending: false, CreatedAt: now},
 	}}
 
 	app := NewInvitationApp(service.NewMemberInvitationService(), memberRepo, invRepo)
@@ -24,8 +29,15 @@ func TestInvitationAppList(t *testing.T) {
 	got, err := app.List(background(), "user-1", &val.ListTeamInvitationArgs{TeamID: "team-1"})
 	requireNoErr(t, err)
 
-	if len(got) != 1 || got[0].ID != "inv-1" {
+	if len(got) != 2 {
 		t.Fatalf("unexpected result: %#v", got)
+	}
+
+	got, err = app.List(background(), "user-1", &val.ListTeamInvitationArgs{TeamID: "team-1", Pending: boolPtr(true)})
+	requireNoErr(t, err)
+
+	if len(got) != 1 || got[0].ID != "inv-1" {
+		t.Fatalf("unexpected filtered result: %#v", got)
 	}
 }
 

@@ -16,7 +16,6 @@ func TestTxnBoundHandlersUseSyncPubType(t *testing.T) {
 		NewChapterCreateHandler(),
 		NewChapterRemoveHandler(),
 		NewChapterPublishedHandler(),
-		NewChapterCreatorAssignedHandler(),
 	}
 
 	for _, handler := range handlers {

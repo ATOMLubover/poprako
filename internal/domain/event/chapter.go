@@ -10,7 +10,6 @@ const (
 	EventTypeWorkflowReviewCompleted    EventType = "WorkflowReviewCompleted"
 	EventTypeWorkflowPublishCompleted   EventType = "WorkflowPublishCompleted"
 	EventTypeChapterCreated             EventType = "ChapterCreated"
-	EventTypeChapterCreatorAssigned     EventType = "ChapterCreatorAssigned"
 	EventTypeChapterRemoved             EventType = "ChapterRemoved"
 	EventTypeChapterPublished           EventType = "ChapterPublished"
 )
@@ -25,20 +24,6 @@ func (e *ChapterCreatedEvent) EventType() EventType {
 }
 
 func (e *ChapterCreatedEvent) Payload() any {
-	return e
-}
-
-// ChapterCreatorAssignedEvent 代表章节创建时将创建者指定为监修的同步事件
-type ChapterCreatorAssignedEvent struct {
-	ChapterID string
-	CreatorID string
-}
-
-func (e *ChapterCreatorAssignedEvent) EventType() EventType {
-	return EventTypeChapterCreatorAssigned
-}
-
-func (e *ChapterCreatorAssignedEvent) Payload() any {
 	return e
 }
 

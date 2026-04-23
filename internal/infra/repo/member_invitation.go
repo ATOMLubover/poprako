@@ -63,7 +63,9 @@ func (r *memberInvitationRepoImpl) List(opt model.MemberInvitationQueryOpt) ([]m
 	if opt.InvitationCode != nil {
 		db = db.Where("invitation_code = ?", *opt.InvitationCode)
 	}
-	db = db.Where("pending = ?", opt.Pending)
+	if opt.Pending != nil {
+		db = db.Where("pending = ?", *opt.Pending)
+	}
 
 	var rows []entity.MemberInvitationInfoRow
 
