@@ -24,6 +24,7 @@ const (
 	unitRepoCtxKey              mockRepoCtxKey = "unit-repo"
 	userRepoCtxKey              mockRepoCtxKey = "user-repo"
 	worksetRepoCtxKey           mockRepoCtxKey = "workset-repo"
+	ossMessageRepoCtxKey        mockRepoCtxKey = "oss-message-repo"
 )
 
 func withMockRepo(cx context.Context, key mockRepoCtxKey, value any) context.Context {

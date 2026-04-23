@@ -67,8 +67,10 @@ type comicAppImpl struct {
 	worksetRepo repo.WorksetRepo
 	comicRepo   repo.ComicRepo
 	txnMgr      repo.TxnMgr
+	msgRepo     repo.OSSMessageRepo
 	eventBus    event.EventBus
-	ossClient   oss.Client
+
+	urlSigner oss.URLSigner
 }
 
 func NewComicApp(
@@ -77,8 +79,9 @@ func NewComicApp(
 	worksetRepo repo.WorksetRepo,
 	comicRepo repo.ComicRepo,
 	txnMgr repo.TxnMgr,
+	msgRepo repo.OSSMessageRepo,
 	eventBus event.EventBus,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) ComicApp {
 	// 校验构造函数依赖
 	if comicSvc == nil ||
@@ -86,8 +89,9 @@ func NewComicApp(
 		worksetRepo == nil ||
 		comicRepo == nil ||
 		txnMgr == nil ||
+		msgRepo == nil ||
 		eventBus == nil ||
-		ossClient == nil {
+		urlSigner == nil {
 		zap.L().Panic(
 			"NewComicApp: 依赖项不能为空",
 			zap.Bool("comicSvc_nil", comicSvc == nil),
@@ -95,8 +99,9 @@ func NewComicApp(
 			zap.Bool("worksetRepo_nil", worksetRepo == nil),
 			zap.Bool("comicRepo_nil", comicRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
+			zap.Bool("msgRepo_nil", msgRepo == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -107,8 +112,9 @@ func NewComicApp(
 		worksetRepo: worksetRepo,
 		comicRepo:   comicRepo,
 		txnMgr:      txnMgr,
+		msgRepo:     msgRepo,
 		eventBus:    eventBus,
-		ossClient:   ossClient,
+		urlSigner:   urlSigner,
 	}
 }
 
@@ -184,7 +190,7 @@ func (a *comicAppImpl) List(
 	result := make([]*val.ComicInfo, len(comics))
 
 	for i, comic := range comics {
-		result[i] = assembleComicInfo(&comic, a.ossClient)
+		result[i] = assembleComicInfo(&comic, a.urlSigner)
 	}
 
 	// 返回漫画列表
@@ -399,17 +405,6 @@ func (a *comicAppImpl) Remove(
 		return errors.New("权限不足")
 	}
 
-	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetComic.CoverOSSKey); err != nil {
-		lgr.Error(
-			"删除漫画失败：删除封面 OSS 资源失败",
-			zap.String("comic_id", comicID),
-			zap.String("cover_oss_key", targetComic.CoverOSSKey),
-			zap.Error(err),
-		)
-
-		return errors.New("删除漫画失败")
-	}
-
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
 		comicRepoTxn, err := a.comicRepo.FromTxnCx(cx)
 		if err != nil {
@@ -422,6 +417,10 @@ func (a *comicAppImpl) Remove(
 		}
 
 		if err := comicRepoTxn.Delete(comicID); err != nil {
+			return err
+		}
+
+		if err := enqueueDeleteSingleMessage(a.msgRepo, cx, model.OSSResourceComicCover, comicID, targetComic.CoverOSSKey); err != nil {
 			return err
 		}
 
@@ -496,18 +495,16 @@ func (a *comicAppImpl) ReserveCover(
 		return nil, errors.New("权限不足")
 	}
 
-	// 提取文件扩展名，与 OSS Key 拼接以便 OSS 正确识别 Content-Type
+	// 提取文件扩展名
 	ext := filepath.Ext(args.FileName)
 
-	// 基于漫画 ID 生成封面对象 Key，并附加扩展名
-	coverOSSKey := a.comicSvc.GenCoverOSSKey(args.ComicID) + ext
+	ossKey := a.comicSvc.GenCoverOSSKey(args.ComicID) + ext
 
-	// 为客户端生成预签名上传链接
-	putURL, err := a.ossClient.GeneratePutPresignedURL(coverOSSKey)
+	putURL, err := a.urlSigner.GeneratePutPresignedURL(ossKey)
 	if err != nil {
-		// 记录上传链接生成失败
+		// 记录预留失败
 		lgr.Error(
-			"预留漫画封面失败：生成上传链接失败",
+			"预留漫画封面失败",
 			zap.String("comic_id", args.ComicID),
 			zap.Error(err),
 		)
@@ -516,16 +513,24 @@ func (a *comicAppImpl) ReserveCover(
 		return nil, errors.New("预留漫画封面失败")
 	}
 
-	// 在数据库中预填充封面对象 Key
-	if err := a.comicRepo.PreFillCoverOSSKey(args.ComicID, coverOSSKey); err != nil {
-		// 记录预写失败
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		comicRepoTxn, txErr := a.comicRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
+
+		if txErr := comicRepoTxn.PreFillCoverOSSKey(args.ComicID, ossKey); txErr != nil {
+			return txErr
+		}
+
+		return upsertCreatePendingMessage(a.msgRepo, txCx, model.OSSResourceComicCover, args.ComicID, ossKey)
+	}); err != nil {
 		lgr.Error(
-			"预留漫画封面失败：写入封面 OSS Key 失败",
+			"预留漫画封面失败",
 			zap.String("comic_id", args.ComicID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return nil, errors.New("预留漫画封面失败")
 	}
 
@@ -586,8 +591,18 @@ func (a *comicAppImpl) ConfirmCoverUploaded(
 		return errors.New("权限不足")
 	}
 
-	// 将封面状态标记为已上传
-	if err := a.comicRepo.ConfirmCoverUploaded(comicID); err != nil {
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		comicRepoTxn, txErr := a.comicRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
+
+		if txErr := comicRepoTxn.ConfirmCoverUploaded(comicID); txErr != nil {
+			return txErr
+		}
+
+		return completeCreatePendingMessage(a.msgRepo, txCx, model.OSSResourceComicCover, comicID)
+	}); err != nil {
 		// 记录确认失败
 		lgr.Error(
 			"确认漫画封面上传失败",
@@ -606,7 +621,7 @@ func (a *comicAppImpl) ConfirmCoverUploaded(
 // assembleComicInfo 将领域层漫画信息转换为 app 层值对象
 func assembleComicInfo(
 	info *model.ComicInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) *val.ComicInfo {
 	result := &val.ComicInfo{
 		ID:              info.ID,
@@ -625,14 +640,14 @@ func assembleComicInfo(
 
 	// 若封面已上传则生成可访问地址
 	if info.IsCoverUploaded && info.CoverOSSKey != "" {
-		if coverURL, err := ossClient.GenerateGetPresignedURL(info.CoverOSSKey); err == nil {
+		if coverURL, err := urlSigner.GenerateGetPresignedURL(info.CoverOSSKey); err == nil {
 			result.CoverURL = coverURL
 		}
 	}
 
 	// 若包含创建者信息则一并组装
 	if info.Creator != nil {
-		userInfo, _ := assembleUserInfo(info.Creator, ossClient)
+		userInfo, _ := assembleUserInfo(info.Creator, urlSigner)
 		result.Creator = userInfo
 	}
 

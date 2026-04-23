@@ -66,7 +66,7 @@ type memberAppImpl struct {
 	invRepo    repo.MemberInvitationRepo
 	txnMgr     repo.TxnMgr
 
-	ossClient oss.Client
+	urlSigner oss.URLSigner
 }
 
 func NewMemberApp(
@@ -76,7 +76,7 @@ func NewMemberApp(
 	teamRepo repo.TeamRepo,
 	invRepo repo.MemberInvitationRepo,
 	txnMgr repo.TxnMgr,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) MemberApp {
 	// 校验构造函数依赖
 	if memberSvc == nil ||
@@ -85,7 +85,7 @@ func NewMemberApp(
 		teamRepo == nil ||
 		invRepo == nil ||
 		txnMgr == nil ||
-		ossClient == nil {
+		urlSigner == nil {
 		zap.L().Panic(
 			"NewMemberApp: 依赖项不能为空",
 			zap.Bool("memberSvc_nil", memberSvc == nil),
@@ -94,7 +94,7 @@ func NewMemberApp(
 			zap.Bool("teamRepo_nil", teamRepo == nil),
 			zap.Bool("invRepo_nil", invRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -106,7 +106,7 @@ func NewMemberApp(
 		teamRepo:   teamRepo,
 		invRepo:    invRepo,
 		txnMgr:     txnMgr,
-		ossClient:  ossClient,
+		urlSigner:  urlSigner,
 	}
 }
 
@@ -237,7 +237,7 @@ func (a *memberAppImpl) ListByTeam(
 	result := make([]*val.MemberInfo, len(members))
 
 	for i, member := range members {
-		result[i] = assembleMemberInfo(&member, a.ossClient)
+		result[i] = assembleMemberInfo(&member, a.urlSigner)
 	}
 
 	// 返回成员列表
@@ -275,7 +275,7 @@ func (a *memberAppImpl) ListMy(
 	result := make([]*val.MemberInfo, len(members))
 
 	for i, member := range members {
-		result[i] = assembleMemberInfo(&member, a.ossClient)
+		result[i] = assembleMemberInfo(&member, a.urlSigner)
 	}
 
 	// 返回成员列表
@@ -554,7 +554,7 @@ func (a *memberAppImpl) JoinTeam(
 // assembleMemberInfo 将领域层成员信息转换为 app 层值对象
 func assembleMemberInfo(
 	info *model.MemberInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) *val.MemberInfo {
 	// 组装基础成员信息
 	result := &val.MemberInfo{
@@ -568,14 +568,14 @@ func assembleMemberInfo(
 
 	// 如果包含了用户信息，则组装用户子对象
 	if info.User != nil {
-		userInfo, _ := assembleUserInfo(info.User, ossClient)
+		userInfo, _ := assembleUserInfo(info.User, urlSigner)
 
 		result.User = userInfo
 	}
 
 	// 如果包含了汉化组信息，则组装汉化组子对象
 	if info.Team != nil {
-		teamInfo, _ := assembleTeamInfo(info.Team, ossClient)
+		teamInfo, _ := assembleTeamInfo(info.Team, urlSigner)
 
 		result.Team = teamInfo
 	}

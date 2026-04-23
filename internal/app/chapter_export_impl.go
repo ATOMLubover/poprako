@@ -22,7 +22,7 @@ type chapterExportAppImpl struct {
 	pageRepo       repo.PageRepo
 	unitRepo       repo.UnitRepo
 	assignmentRepo repo.AssignmentRepo
-	ossClient      oss.Client
+	urlSigner      oss.URLSigner
 }
 
 // NewChapterExportApp 返回 ChapterExportApp 的真实业务实现
@@ -32,10 +32,10 @@ func NewChapterExportApp(
 	pageRepo repo.PageRepo,
 	unitRepo repo.UnitRepo,
 	assignmentRepo repo.AssignmentRepo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) ChapterExportApp {
 	// 校验构造函数依赖
-	if chapterRepo == nil || comicRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || ossClient == nil {
+	if chapterRepo == nil || comicRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || urlSigner == nil {
 		zap.L().Panic(
 			"NewChapterExportApp: 依赖项不能为空",
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
@@ -43,7 +43,7 @@ func NewChapterExportApp(
 			zap.Bool("pageRepo_nil", pageRepo == nil),
 			zap.Bool("unitRepo_nil", unitRepo == nil),
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -54,7 +54,7 @@ func NewChapterExportApp(
 		pageRepo:       pageRepo,
 		unitRepo:       unitRepo,
 		assignmentRepo: assignmentRepo,
-		ossClient:      ossClient,
+		urlSigner:      urlSigner,
 	}
 }
 
@@ -163,7 +163,7 @@ func (a *chapterExportAppImpl) ExportChapter(
 		imageURL := ""
 
 		if page.IsUploaded && page.OSSKey != "" {
-			url, urlErr := a.ossClient.GenerateGetPresignedURL(page.OSSKey)
+			url, urlErr := a.urlSigner.GenerateGetPresignedURL(page.OSSKey)
 			if urlErr != nil {
 				lgr.Warn("生成图片预签名 URL 失败", zap.String("pageID", page.ID), zap.Error(urlErr))
 			} else {

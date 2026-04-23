@@ -15,24 +15,22 @@ fmt:
 cloc:
     cloc internal/
 
-# Start postgres and apply all up-migrations
-setup-database:
-    docker compose up -d postgres --wait
-    docker compose --profile setup run --rm database-setup
+# Start dev-postgres and apply all up-migrations (safe to re-run)
+setup:
+    docker compose --profile db up -d --wait dev-postgres
+    docker compose --profile db --profile setup run --rm dev-database-setup
 
-# Format, regenerate Swagger docs, then build & run backend container
-# (schema setup runs first and is safe to repeat)
+# Format, regenerate Swagger docs, then build & run dev-main-server
 dev: fmt swag
-    just setup-database
-    docker compose --profile app up --build backend
+    docker compose --profile app up --build dev-main-server
+
+# Tear down all containers and volumes (full clean slate)
+reset:
+    docker compose --profile db --profile setup --profile app --profile prod down -v
 
 # Run seed scripts against the running backend
 seed:
     cd tests/seed && bun run seed
-
-# Bring up the full production stack
-product:
-    docker compose -f docker/docker-compose.yml up
 
 build:
     GOOS=linux GOARCH=amd64 go build -o output/poprako-s
@@ -51,4 +49,4 @@ mgr-rvt mode="step":
     }}}
 
 psql:
-  psql -U devuser -d poprako-s-db
+  psql -U devuser -d poprako_s_db

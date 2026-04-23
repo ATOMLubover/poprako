@@ -22,7 +22,7 @@ func TestComicAppList(t *testing.T) {
 		"comic-1": {ID: "comic-1", WorksetID: "workset-1", Title: "title"},
 	}}
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient())
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, &mock_repo.TxnMgr{}, mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 
 	got, err := app.List(background(), "user-1", &val.ListComicArgs{WorksetID: "workset-1"})
 	requireNoErr(t, err)
@@ -41,7 +41,7 @@ func TestComicAppListFiltersByFuzzyTitle(t *testing.T) {
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", Index: 0, Title: "Target Story", Author: "A"}
 	comicRepo.Infos["comic-2"] = model.ComicInfo{ID: "comic-2", WorksetID: "workset-1", Index: 1, Title: "Another", Author: "B"}
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 
 	got, err := app.List(background(), "user-1", &val.ListComicArgs{WorksetID: "workset-1", FuzzyTitle: "Target"})
 	requireNoErr(t, err)
@@ -60,7 +60,7 @@ func TestComicAppCreateUsesMockTxnRepos(t *testing.T) {
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, member: memberRepo, workset: worksetRepo}))
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, eventBus, newMockOSSClient())
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, mock_repo.NewMockOSSMessageRepo(), eventBus, newMockOSSClient())
 
 	res, err := app.Create(background(), "user-1", &val.CreateComicArgs{WorksetID: "workset-1", Title: "Title", Author: "Author", Description: "Desc"})
 	requireNoErr(t, err)
@@ -84,10 +84,11 @@ func TestComicAppRemoveUsesMockTxnRepos(t *testing.T) {
 	worksetRepo := mock_repo.NewMockWorksetRepo()
 	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
 	eventBus := newMockEventBus()
-	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, workset: worksetRepo}))
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, workset: worksetRepo, ossMessage: msgRepo}))
 	ossClient := newMockOSSClient()
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, eventBus, ossClient)
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, msgRepo, eventBus, ossClient)
 
 	err := app.Remove(background(), "user-1", "comic-1")
 	requireNoErr(t, err)
@@ -100,9 +101,8 @@ func TestComicAppRemoveUsesMockTxnRepos(t *testing.T) {
 	if !ok || removedEvent.WorksetID != "workset-1" {
 		t.Fatalf("unexpected event: %#v", pubCalls)
 	}
-	deleted := ossClient.Deleted()
-	if len(deleted) != 1 || deleted[0] != "comic-cover-1" {
-		t.Fatalf("expected cover oss cleanup, got %#v", deleted)
+	if len(msgRepo.Messages) != 1 || msgRepo.Messages[0].ObjectKey != "comic-cover-1" {
+		t.Fatalf("expected cover oss cleanup message, got %#v", msgRepo.Messages)
 	}
 }
 
@@ -113,23 +113,19 @@ func TestComicAppRemoveFailsWhenCoverCleanupFails(t *testing.T) {
 	memberRepo.Infos["member-1"] = *adminMember()
 	worksetRepo := mock_repo.NewMockWorksetRepo()
 	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
-	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, workset: worksetRepo}))
-	ossClient := newMockOSSClient()
-	ossClient.SetDeleteErr(errors.New("boom"))
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	msgRepo.InsertErr = errors.New("boom")
+	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{comic: comicRepo, workset: worksetRepo, ossMessage: msgRepo}))
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, newMockEventBus(), ossClient)
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, msgRepo, newMockEventBus(), newMockOSSClient())
 
 	err := app.Remove(background(), "user-1", "comic-1")
 	if err == nil {
 		t.Fatal("expected remove failure when cover cleanup fails")
 	}
 
-	if _, ok := comicRepo.Infos["comic-1"]; !ok {
-		t.Fatalf("expected comic to remain, got %#v", comicRepo.Infos)
-	}
-
-	if len(ossClient.Deleted()) != 3 {
-		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
+	if len(msgRepo.Messages) != 0 {
+		t.Fatalf("expected no queued messages, got %#v", msgRepo.Messages)
 	}
 }
 
@@ -137,7 +133,7 @@ func TestComicAppListForbidden(t *testing.T) {
 	worksetRepo := mock_repo.NewMockWorksetRepo()
 	worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
 
-	app := NewComicApp(service.NewComicService(), mock_repo.NewMockMemberRepo(), worksetRepo, mock_repo.NewMockComicRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+	app := NewComicApp(service.NewComicService(), mock_repo.NewMockMemberRepo(), worksetRepo, mock_repo.NewMockComicRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 
 	if _, err := app.List(background(), "user-1", &val.ListComicArgs{WorksetID: "workset-1"}); err == nil {
 		t.Fatal("expected forbidden error")
@@ -152,7 +148,7 @@ func TestComicAppUpdateSuccess(t *testing.T) {
 	comicRepo := mock_repo.NewMockComicRepo()
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", Title: "Old", Author: "A"}
 
-	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 	err := app.Update(background(), "user-1", &val.UpdateComicArgs{ID: "comic-1", Title: "New", Author: "B", Description: "Desc"})
 	requireNoErr(t, err)
 
@@ -169,14 +165,14 @@ func TestComicAppErrorPaths(t *testing.T) {
 		worksetRepo := mock_repo.NewMockWorksetRepo()
 		worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
 		comicRepo := mock_repo.NewMockComicRepo()
-		app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{member: memberRepo, workset: worksetRepo, comic: comicRepo})), newMockEventBus(), newMockOSSClient())
+		app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{member: memberRepo, workset: worksetRepo, comic: comicRepo})), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 		if _, err := app.Create(background(), "user-1", &val.CreateComicArgs{WorksetID: "workset-1", Title: "T", Author: "A"}); err == nil {
 			t.Fatal("expected forbidden create error")
 		}
 	})
 
 	t.Run("update rejects missing comic", func(t *testing.T) {
-		app := NewComicApp(service.NewComicService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		app := NewComicApp(service.NewComicService(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 		if err := app.Update(background(), "user-1", &val.UpdateComicArgs{ID: "missing", Title: "T", Author: "A"}); err == nil {
 			t.Fatal("expected missing comic error")
 		}
@@ -189,7 +185,7 @@ func TestComicAppErrorPaths(t *testing.T) {
 		worksetRepo.Infos["workset-1"] = model.WorksetInfo{ID: "workset-1", TeamID: "team-1"}
 		comicRepo := mock_repo.NewMockComicRepo()
 		comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1"}
-		app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient())
+		app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
 		if err := app.Remove(background(), "user-1", "comic-1"); err == nil {
 			t.Fatal("expected forbidden remove error")
 		}

@@ -70,7 +70,7 @@ type assignmentAppImpl struct {
 	userRepo       repo.UserRepo
 	txnMgr         repo.TxnMgr
 	eventBus       event.EventBus
-	ossClient      oss.Client
+	urlSigner      oss.URLSigner
 }
 
 func NewAssignmentApp(
@@ -82,7 +82,7 @@ func NewAssignmentApp(
 	userRepo repo.UserRepo,
 	txnMgr repo.TxnMgr,
 	eventBus event.EventBus,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) AssignmentApp {
 	// 校验构造函数依赖
 	if assignmentSvc == nil ||
@@ -93,7 +93,7 @@ func NewAssignmentApp(
 		userRepo == nil ||
 		txnMgr == nil ||
 		eventBus == nil ||
-		ossClient == nil {
+		urlSigner == nil {
 		zap.L().Panic(
 			"NewAssignmentApp: 依赖项不能为空",
 			zap.Bool("assignmentSvc_nil", assignmentSvc == nil),
@@ -104,7 +104,7 @@ func NewAssignmentApp(
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -118,7 +118,7 @@ func NewAssignmentApp(
 		userRepo:       userRepo,
 		txnMgr:         txnMgr,
 		eventBus:       eventBus,
-		ossClient:      ossClient,
+		urlSigner:      urlSigner,
 	}
 }
 
@@ -170,7 +170,7 @@ func (a *assignmentAppImpl) ListByChapter(
 	result := make([]*val.AssignmentInfo, len(assignments))
 
 	for i, assignment := range assignments {
-		result[i] = assembleAssignmentInfo(&assignment, a.ossClient)
+		result[i] = assembleAssignmentInfo(&assignment, a.urlSigner)
 	}
 
 	// 返回分配列表
@@ -208,7 +208,7 @@ func (a *assignmentAppImpl) ListMy(
 	result := make([]*val.AssignmentInfo, len(assignments))
 
 	for i, assignment := range assignments {
-		result[i] = assembleAssignmentInfo(&assignment, a.ossClient)
+		result[i] = assembleAssignmentInfo(&assignment, a.urlSigner)
 	}
 
 	// 返回分配列表
@@ -622,7 +622,7 @@ func (a *assignmentAppImpl) JoinInvitorChapter(
 // assembleAssignmentInfo 将领域层分配信息转换为 app 层值对象
 func assembleAssignmentInfo(
 	info *model.AssignmentInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) *val.AssignmentInfo {
 	result := &val.AssignmentInfo{
 		ID:        info.ID,
@@ -635,12 +635,12 @@ func assembleAssignmentInfo(
 
 	// 若包含章节信息则一并组装
 	if info.Chapter != nil {
-		result.Chapter = assembleChapterInfo(info.Chapter, ossClient)
+		result.Chapter = assembleChapterInfo(info.Chapter, urlSigner)
 	}
 
 	// 若包含用户信息则一并组装
 	if info.User != nil {
-		userInfo, _ := assembleUserInfo(info.User, ossClient)
+		userInfo, _ := assembleUserInfo(info.User, urlSigner)
 		result.User = userInfo
 	}
 

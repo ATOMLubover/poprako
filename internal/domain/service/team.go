@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"strings"
 
 	"poprako-s/internal/domain/model"
 )
@@ -50,10 +49,10 @@ func (s *teamServiceImpl) NewCreation(
 	}, nil
 }
 
-// GenAvatarOSSKey 以固定前缀拼接汉化组 ID 作为头像的 OSS Key
+// GenAvatarOSSKey 以目录式命名生成汉化组头像的 OSS Key，格式为 team_{teamID}/avatar
 func (s *teamServiceImpl) GenAvatarOSSKey(
 	teamID string,
 ) string {
-	// 返回拼接结果
-	return strings.Join([]string{"team-avatar", teamID}, "_")
+	// 返回目录式对象 Key，避免跨实体命名冲突
+	return "team_" + teamID + "/avatar"
 }

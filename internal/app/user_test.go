@@ -17,7 +17,7 @@ func TestUserAppGetMyStats(t *testing.T) {
 		"user-1": {UserID: "user-1", TotalAssignmentCount: 3, ActiveAssignmentCount: 2, FinishedAssignmentCount: 1},
 	}}
 
-	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, &mock_repo.InvitationRepo{}, &mock_repo.MemberRepo{}, &mock_repo.TxnMgr{}, newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{})
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, &mock_repo.InvitationRepo{}, &mock_repo.MemberRepo{}, &mock_repo.TxnMgr{}, mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{})
 
 	got, err := app.GetMyStats(background(), "user-1")
 	requireNoErr(t, err)
@@ -38,7 +38,7 @@ func TestUserAppLoginSuccess(t *testing.T) {
 	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Tester", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 	eventBus := newMockEventBus()
 
-	app := NewUserApp(userSvc, service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), eventBus, newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+	app := NewUserApp(userSvc, service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), eventBus, newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
 
 	res, err := app.Login(background(), &val.LoginUserArgs{QQ: "100001", Pwd: "secret123"})
 	requireNoErr(t, err)
@@ -60,7 +60,7 @@ func TestUserAppRegUsesMockTxnRepos(t *testing.T) {
 	eventBus := newMockEventBus()
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{user: userRepo, invitation: invRepo, member: memberRepo}))
 
-	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, invRepo, memberRepo, txnMgr, eventBus, newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, invRepo, memberRepo, txnMgr, mock_repo.NewMockOSSMessageRepo(), eventBus, newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
 
 	res, err := app.Reg(background(), &val.RegUserArgs{QQ: "100001", Pwd: "secret123", Name: "New User", InvCode: "whatever"})
 	requireNoErr(t, err)
@@ -84,9 +84,12 @@ func TestUserAppProfileAvatarAndRemoveFlows(t *testing.T) {
 	userRepo.Infos["user-2"] = model.UserInfo{ID: "user-2", QQ: "100002", Name: "To Delete", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 	ossClient := newMockOSSClient()
 	ossClient.SetGetURLs(map[string]string{"user-avatar_user-1": "https://cdn.example/user-1", "user-avatar_user-1.png": "https://cdn.example/user-1"})
-	ossClient.SetPutURLs(map[string]string{"user-avatar_user-1.png": "https://upload.example/user-1"})
+	ossClient.SetPutURLs(map[string]string{"user_user-1/avatar.png": "https://upload.example/user-1"})
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	txCx := newMockTxnContext(mockTxnRepos{user: userRepo, ossMessage: msgRepo})
+	txnMgr := mock_repo.NewMockTxnMgr(txCx)
 
-	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), txnMgr, msgRepo, newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
 
 	info, err := app.GetInfo(background(), "user-1")
 	requireNoErr(t, err)
@@ -129,22 +132,18 @@ func TestUserAppRemoveFailsWhenAvatarCleanupFails(t *testing.T) {
 	userRepo := mock_repo.NewMockUserRepo()
 	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Admin", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 	userRepo.Infos["user-2"] = model.UserInfo{ID: "user-2", QQ: "100002", Name: "Target", AvatarKey: "avatar-user-2", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
-	ossClient := newMockOSSClient()
-	ossClient.SetDeleteErr(errors.New("boom"))
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	msgRepo.InsertErr = errors.New("boom")
 
-	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{user: userRepo, ossMessage: msgRepo})), msgRepo, newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
 
 	err := app.Remove(background(), "user-1", "user-2")
 	if err == nil {
 		t.Fatal("expected remove failure when avatar cleanup fails")
 	}
 
-	if _, ok := userRepo.Infos["user-2"]; !ok {
-		t.Fatalf("expected user to remain, got %#v", userRepo.Infos)
-	}
-
-	if len(ossClient.Deleted()) != 3 {
-		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
+	if len(msgRepo.Messages) != 0 {
+		t.Fatalf("expected no queued messages, got %#v", msgRepo.Messages)
 	}
 }
 
@@ -157,7 +156,7 @@ func TestUserAppLoginRejectsWrongPassword(t *testing.T) {
 	userRepo.Creds["100001"] = model.UserCreds{QQ: "100001", PwdHash: hash}
 	userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Tester", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 
-	app := NewUserApp(userSvc, service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
+	app := NewUserApp(userSvc, service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret-key", ExpHrs: 1})
 	if _, err := app.Login(background(), &val.LoginUserArgs{QQ: "100001", Pwd: "wrongpwd"}); err == nil {
 		t.Fatal("expected wrong password error")
 	}
@@ -170,7 +169,7 @@ func TestUserAppGetMyInfo(t *testing.T) {
 	ossClient := newMockOSSClient()
 	ossClient.SetGetURLs(map[string]string{"avatar-1": "https://cdn.example/avatar-1"})
 
-	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
+	app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
 
 	info, err := app.GetMyInfo(background(), "user-1")
 	requireNoErr(t, err)
@@ -233,7 +232,7 @@ func TestUserAppErrorPaths(t *testing.T) {
 		userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Tester", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
 		eventBus := newMockEventBus()
 		eventBus.SetPubErr(errors.New("boom"))
-		app := NewUserApp(userSvc, service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), eventBus, newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
+		app := NewUserApp(userSvc, service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), eventBus, newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
 		if _, err := app.Login(background(), &val.LoginUserArgs{QQ: "100001", Pwd: "secret123"}); err == nil {
 			t.Fatal("expected login event bus error")
 		}
@@ -244,14 +243,14 @@ func TestUserAppErrorPaths(t *testing.T) {
 		invRepo := mock_repo.NewMockInvitationRepo()
 		memberRepo := mock_repo.NewMockMemberRepo()
 		txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{user: userRepo, invitation: invRepo, member: memberRepo}))
-		app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, invRepo, memberRepo, txnMgr, newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
+		app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, invRepo, memberRepo, txnMgr, mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
 		if _, err := app.Reg(background(), &val.RegUserArgs{QQ: "100001", Pwd: "secret123", Name: "Name", InvCode: "bad"}); err == nil {
 			t.Fatal("expected invalid invitation error")
 		}
 	})
 
 	t.Run("get info rejects missing user", func(t *testing.T) {
-		app := NewUserApp(service.NewUserService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
+		app := NewUserApp(service.NewUserService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
 		if _, err := app.GetInfo(background(), "missing"); err == nil {
 			t.Fatal("expected missing user error")
 		}
@@ -262,14 +261,14 @@ func TestUserAppErrorPaths(t *testing.T) {
 		userRepo.Infos["user-1"] = *normalUser()
 		ossClient := newMockOSSClient()
 		ossClient.SetPutErr(errors.New("boom"))
-		app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
+		app := NewUserApp(service.NewUserService(), service.NewMemberService(), userRepo, mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), ossClient, &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
 		if _, err := app.ReserveMyAvatar(background(), "user-1", &val.ReserveUserAvatarArgs{FileName: "avatar.png"}); err == nil {
 			t.Fatal("expected reserve avatar failure")
 		}
 	})
 
 	t.Run("confirm avatar rejects missing user", func(t *testing.T) {
-		app := NewUserApp(service.NewUserService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
+		app := NewUserApp(service.NewUserService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient(), &cfg.AuthCfg{SecretKey: "secret", ExpHrs: 1})
 		if err := app.ConfirmMyAvatarUploaded(background(), "user-1"); err == nil {
 			t.Fatal("expected confirm avatar failure")
 		}

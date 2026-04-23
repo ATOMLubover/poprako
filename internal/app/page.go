@@ -50,7 +50,8 @@ type pageAppImpl struct {
 	chapterRepo    repo.ChapterRepo
 	pageRepo       repo.PageRepo
 	txnMgr         repo.TxnMgr
-	ossClient      oss.Client
+	msgRepo        repo.OSSMessageRepo
+	urlSigner      oss.URLSigner
 }
 
 func NewPageApp(
@@ -59,7 +60,8 @@ func NewPageApp(
 	chapterRepo repo.ChapterRepo,
 	pageRepo repo.PageRepo,
 	txnMgr repo.TxnMgr,
-	ossClient oss.Client,
+	msgRepo repo.OSSMessageRepo,
+	urlSigner oss.URLSigner,
 ) PageApp {
 	// 校验构造函数依赖
 	if pageSvc == nil ||
@@ -67,7 +69,8 @@ func NewPageApp(
 		chapterRepo == nil ||
 		pageRepo == nil ||
 		txnMgr == nil ||
-		ossClient == nil {
+		msgRepo == nil ||
+		urlSigner == nil {
 		zap.L().Panic(
 			"NewPageApp: 依赖项不能为空",
 			zap.Bool("pageSvc_nil", pageSvc == nil),
@@ -75,7 +78,8 @@ func NewPageApp(
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("msgRepo_nil", msgRepo == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -86,7 +90,8 @@ func NewPageApp(
 		chapterRepo:    chapterRepo,
 		pageRepo:       pageRepo,
 		txnMgr:         txnMgr,
-		ossClient:      ossClient,
+		msgRepo:        msgRepo,
+		urlSigner:      urlSigner,
 	}
 }
 
@@ -98,26 +103,32 @@ func (a *pageAppImpl) Reserve(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 批量构建页面创建载荷
-	creations := make([]*model.PageCreation, args.PageCount)
+	// 获取章节信息（含 chapterID，用于生成 OSS Key）
+	targetChapter, err := a.chapterRepo.GetByID(args.ChapterID)
+	if err != nil {
+		lgr.Error(
+			"预留页面失败：获取章节信息失败",
+			zap.String("chapter_id", args.ChapterID),
+			zap.Error(err),
+		)
 
-	creationResults := make([]val.PageCreationResult, args.PageCount)
+		return nil, errors.New("无法获取章节信息")
+	}
+
+	// 批量预留页面：每个页面独立事务（page 行写入 + create_pending 消息写入原子完成）
+	creationResults := make([]val.PageCreationResult, 0, args.PageCount)
 
 	for i := 0; i < args.PageCount; i++ {
-		// 通过领域服务生成 OSS Key
-		ossKey := a.pageSvc.GenOSSKey(i)
-
 		// 通过领域服务构造页面创建载荷（含权限校验）
 		creation, err := a.pageSvc.NewCreation(
 			a.assignmentRepo,
 			currUserID,
 			args.ChapterID,
 			i,
-			ossKey,
+			"", // ossKey 将由 ReservePageImage 填入
 			currUserID,
 		)
 		if err != nil {
-			// 记录权限校验失败
 			lgr.Warn(
 				"预留页面失败：权限不足或参数不合法",
 				zap.String("curr_user_id", currUserID),
@@ -125,58 +136,68 @@ func (a *pageAppImpl) Reserve(
 				zap.Error(err),
 			)
 
-			// 返回领域服务返回的错误
 			return nil, err
 		}
 
-		// 生成上传预签名 URL
-		putURL, err := a.ossClient.GeneratePutPresignedURL(ossKey)
+		ossKey := a.pageSvc.GenOSSKey(targetChapter.ID, i)
+
+		putURL, err := a.urlSigner.GeneratePutPresignedURL(ossKey)
 		if err != nil {
-			// 记录生成预签名 URL 失败
 			lgr.Error(
 				"预留页面失败：生成预签名 URL 失败",
-				zap.String("oss_key", ossKey),
+				zap.String("chapter_id", args.ChapterID),
+				zap.Int("index", i),
 				zap.Error(err),
 			)
 
-			// 返回客户端可展示的错误
 			return nil, errors.New("生成上传地址失败")
 		}
 
-		creations[i] = creation
+		if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+			pageRepoTxn, txErr := a.pageRepo.FromTxnCx(txCx)
+			if txErr != nil {
+				return txErr
+			}
 
-		creationResults[i] = val.PageCreationResult{
+			creation.OSSKey = ossKey
+
+			if txErr := pageRepoTxn.CreateBatch([]*model.PageCreation{creation}); txErr != nil {
+				return txErr
+			}
+
+			return upsertCreatePendingMessage(a.msgRepo, txCx, model.OSSResourcePageImage, creation.ID, ossKey)
+		}); err != nil {
+			lgr.Error(
+				"预留页面失败：写入页面或消息失败",
+				zap.String("chapter_id", args.ChapterID),
+				zap.Int("index", i),
+				zap.Error(err),
+			)
+
+			return nil, errors.New("预留页面失败")
+		}
+
+		creationResults = append(creationResults, val.PageCreationResult{
 			PageID: creation.ID,
 			PutURL: putURL,
-		}
+		})
 	}
 
-	// 在事务中同时创建页面并回写章节页面数
+	// 回写章节页面数
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
 		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
 		if err != nil {
 			return err
 		}
 
-		pageRepoTxn, err := a.pageRepo.FromTxnCx(cx)
-		if err != nil {
-			return err
-		}
-
-		if err := pageRepoTxn.CreateBatch(creations); err != nil {
-			return err
-		}
-
-		return chapterRepoTxn.UpdatePageCount(args.ChapterID, len(creations))
+		return chapterRepoTxn.UpdatePageCount(args.ChapterID, args.PageCount)
 	}); err != nil {
-		// 记录创建失败
 		lgr.Error(
-			"预留页面失败：批量创建失败",
+			"预留页面失败：回写章节页面数失败",
 			zap.String("chapter_id", args.ChapterID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return nil, errors.New("预留页面失败")
 	}
 
@@ -231,7 +252,7 @@ func (a *pageAppImpl) List(
 	result := make([]*val.PageInfo, len(pages))
 
 	for i, page := range pages {
-		result[i] = assemblePageInfo(&page, a.ossClient)
+		result[i] = assemblePageInfo(&page, a.urlSigner)
 	}
 
 	// 返回页面列表
@@ -274,6 +295,42 @@ func (a *pageAppImpl) Update(
 
 		// 返回客户端可展示的错误
 		return errors.New("权限不足")
+	}
+
+	// 若此次更新将 is_uploaded 标记为已上传，则同时完成 create_pending 消息
+	if args.IsUploaded && !targetPage.IsUploaded {
+		if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+			pageRepoTxn, txErr := a.pageRepo.FromTxnCx(txCx)
+			if txErr != nil {
+				return txErr
+			}
+
+			update := &model.PageUpdate{
+				ID:                  args.ID,
+				Index:               targetPage.Index,
+				OSSKey:              targetPage.OSSKey,
+				IsUploaded:          args.IsUploaded,
+				TotalUnitCount:      targetPage.TotalUnitCount,
+				TranslatedUnitCount: targetPage.TranslatedUnitCount,
+				ProofreadUnitCount:  targetPage.ProofreadUnitCount,
+			}
+
+			if txErr := pageRepoTxn.Update(update); txErr != nil {
+				return txErr
+			}
+
+			return completeCreatePendingMessage(a.msgRepo, txCx, model.OSSResourcePageImage, targetPage.ID)
+		}); err != nil {
+			lgr.Error(
+				"更新页面失败",
+				zap.String("page_id", args.ID),
+				zap.Error(err),
+			)
+
+			return errors.New("更新页面失败")
+		}
+
+		return nil
 	}
 
 	// 构造更新载荷
@@ -342,19 +399,7 @@ func (a *pageAppImpl) Remove(
 		return errors.New("权限不足")
 	}
 
-	// 删除 OSS 资源
-	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetPage.OSSKey); err != nil {
-		lgr.Error(
-			"删除页面失败：删除 OSS 资源失败",
-			zap.String("page_id", pageID),
-			zap.String("oss_key", targetPage.OSSKey),
-			zap.Error(err),
-		)
-
-		return errors.New("删除页面失败")
-	}
-
-	// 在事务中同时删除页面并回写章节页面数
+	// 在事务中同时删除页面、入队 OSS 删除并回写章节页面数
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
 		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
 		if err != nil {
@@ -367,6 +412,10 @@ func (a *pageAppImpl) Remove(
 		}
 
 		if err := pageRepoTxn.Delete(pageID); err != nil {
+			return err
+		}
+
+		if err := enqueueDeleteSingleMessage(a.msgRepo, cx, model.OSSResourcePageImage, pageID, targetPage.OSSKey); err != nil {
 			return err
 		}
 
@@ -390,14 +439,14 @@ func (a *pageAppImpl) Remove(
 // assemblePageInfo 将领域层页面信息转换为 app 层值对象
 func assemblePageInfo(
 	info *model.PageInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) *val.PageInfo {
 	// 默认图片地址为空字符串
 	imageURL := ""
 
-	// 仅在存在 OSS Key 时生成访问地址
-	if info.OSSKey != "" {
-		url, err := ossClient.GenerateGetPresignedURL(info.OSSKey)
+	// 仅在页面已上传且存在 OSS Key 时生成访问地址
+	if info.IsUploaded && info.OSSKey != "" {
+		url, err := urlSigner.GenerateGetPresignedURL(info.OSSKey)
 		if err == nil {
 			imageURL = url
 		}
@@ -419,7 +468,7 @@ func assemblePageInfo(
 
 	// 若包含创建者信息则一并组装
 	if info.Creator != nil {
-		userInfo, _ := assembleUserInfo(info.Creator, ossClient)
+		userInfo, _ := assembleUserInfo(info.Creator, urlSigner)
 		result.Creator = userInfo
 	}
 

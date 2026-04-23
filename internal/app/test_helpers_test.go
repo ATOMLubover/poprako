@@ -94,6 +94,7 @@ type mockTxnRepos struct {
 	comic             *mock_repo.ComicRepo
 	invitation        *mock_repo.InvitationRepo
 	member            *mock_repo.MemberRepo
+	ossMessage        *mock_repo.OSSMessageRepo
 	page              *mock_repo.PageRepo
 	team              *mock_repo.TeamRepo
 	unit              *mock_repo.UnitRepo
@@ -120,6 +121,9 @@ func newMockTxnContext(repos mockTxnRepos) context.Context {
 	}
 	if repos.member != nil {
 		cx = mock_repo.WithMockMemberRepo(cx, repos.member)
+	}
+	if repos.ossMessage != nil {
+		cx = mock_repo.WithMockOSSMessageRepo(cx, repos.ossMessage)
 	}
 	if repos.page != nil {
 		cx = mock_repo.WithMockPageRepo(cx, repos.page)

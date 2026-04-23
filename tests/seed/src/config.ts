@@ -8,15 +8,16 @@ export const SUPER_ADMIN_CREDS = {
 // Unique suffix for this run — avoids unique-constraint collisions on repeated runs
 const RUN_ID = Date.now() % 999_999;
 
-// Role bitmasks
+// Role bitmasks — must match Go model/role.go (1 << iota order)
 export const ROLE = {
   RAW_PROVIDER: 1,
   TRANSLATOR: 2,
   PROOFREADER: 4,
   TYPESETTER: 8,
-  REVIEWER: 16,
-  PUBLISHER: 32,
-  ADMIN: 64,
+  REDRAWER: 16,
+  REVIEWER: 32,
+  PUBLISHER: 64,
+  ADMIN: 128,
 } as const;
 
 // Workflow transition strings

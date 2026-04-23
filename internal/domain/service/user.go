@@ -1,8 +1,6 @@
 package service
 
 import (
-	"strings"
-
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
 
@@ -127,10 +125,10 @@ func (s *userServiceImpl) HashPwd(
 	return string(hash), nil
 }
 
-// GenAvatarOSSKey 以固定前缀拼接用户 ID 作为头像的 OSS Key
+// GenAvatarOSSKey 以目录式命名生成用户头像的 OSS Key，格式为 user_{userID}/avatar
 func (s *userServiceImpl) GenAvatarOSSKey(
 	userID string,
 ) string {
-	// 返回拼接后的对象 Key
-	return strings.Join([]string{"user-avatar", userID}, "_")
+	// 返回目录式对象 Key，避免跨实体命名冲突
+	return "user_" + userID + "/avatar"
 }

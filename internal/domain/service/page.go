@@ -20,8 +20,9 @@ type PageService interface {
 		ossKey string,
 		creatorID string,
 	) (*model.PageCreation, error)
-	// GenOSSKey 根据页面序号生成 OSS Key
+	// GenOSSKey 根据章节 ID 与页面序号生成 OSS Key，格式为 chapter_{chapterID}/page_{index}
 	GenOSSKey(
+		chapterID string,
 		index int,
 	) string
 }
@@ -65,10 +66,11 @@ func (s *pageServiceImpl) NewCreation(
 	}, nil
 }
 
-// GenOSSKey 以固定前缀拼接页面序号作为 OSS Key
+// GenOSSKey 以目录式命名生成页面图片的 OSS Key，格式为 chapter_{chapterID}/page_{index}
 func (s *pageServiceImpl) GenOSSKey(
+	chapterID string,
 	index int,
 ) string {
-	// 返回拼接结果
-	return "page_" + strconv.Itoa(index)
+	// 必须包含 chapterID 以避免跨章节 key 冲突
+	return "chapter_" + chapterID + "/page_" + strconv.Itoa(index)
 }

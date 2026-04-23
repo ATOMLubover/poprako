@@ -10,11 +10,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	api_http "poprako-s/internal/api/http"
 	"poprako-s/internal/app"
 	event_handler "poprako-s/internal/app/event_handler"
+	"poprako-s/internal/app/worker"
 	"poprako-s/internal/cfg"
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/service"
@@ -59,6 +63,7 @@ func main() {
 	unitRepo := repo_infra.NewUnitRepo(gdb)
 	chapterInvRepo := repo_infra.NewChapterInvitationRepo(gdb)
 	txnMgr := repo_infra.NewTxnMgr(gdb)
+	ossMessageRepo := repo_infra.NewOSSMessageRepo(gdb)
 
 	// 初始化 OSS 客户端（按 OSS_PLATFORM 选择实现）
 	ossClient := oss_infra.NewClient()
@@ -101,17 +106,19 @@ func main() {
 	assignmentSvc := service.NewAssignmentService()
 	unitSvc := service.NewUnitService()
 
+	ossWorker := worker.NewOSSWorker(ossMessageRepo, ossClient)
+
 	// 初始化应用层
 	userApp := app.NewUserApp(
 		userSvc, memberSvc,
 		userRepo, invRepo, memberRepo,
-		txnMgr, eventBus, ossClient,
+		txnMgr, ossMessageRepo, eventBus, ossClient,
 		&appCfg.Auth,
 	)
 	teamApp := app.NewTeamApp(
 		teamSvc, memberSvc,
 		userRepo, teamRepo, memberRepo,
-		ossClient,
+		txnMgr, ossMessageRepo, ossClient,
 	)
 	memberApp := app.NewMemberApp(
 		memberSvc,
@@ -130,13 +137,13 @@ func main() {
 	comicApp := app.NewComicApp(
 		comicSvc,
 		memberRepo, worksetRepo, comicRepo,
-		txnMgr, eventBus, ossClient,
+		txnMgr, ossMessageRepo, eventBus, ossClient,
 	)
 	chapterApp := app.NewChapterApp(
 		chapterSvc, chapterInvSvc,
 		memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
 		userRepo, pageRepo, chapterInvRepo,
-		txnMgr, eventBus, ossClient,
+		txnMgr, ossMessageRepo, eventBus, ossClient,
 	)
 
 	chapterExportApp := app.NewLogChapterExportApp(
@@ -159,7 +166,7 @@ func main() {
 		pageSvc,
 		assignmentRepo, chapterRepo, pageRepo,
 		txnMgr,
-		ossClient,
+		ossMessageRepo, ossClient,
 	)
 	assignmentApp := app.NewAssignmentApp(
 		assignmentSvc,
@@ -179,6 +186,12 @@ func main() {
 		worksetApp, comicApp, chapterApp, chapterExportApp, chapterImportApp, pageApp,
 		assignmentApp, unitApp,
 	)
+
+	// 启动 OSS Worker 后台协程，使用 SIGINT/SIGTERM 信号优雅退出
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go ossWorker.Start(ctx)
 
 	zap.L().Info("应用状态初始化完成，HTTP 服务器启动")
 

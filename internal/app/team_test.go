@@ -23,17 +23,19 @@ func TestTeamAppReserveAvatar(t *testing.T) {
 	ossClient.SetGeneratePutPresignedURLFunc(func(objectKey string) (string, error) {
 		return "https://upload.example/" + objectKey, nil
 	})
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	txCx := newMockTxnContext(mockTxnRepos{team: teamRepo, member: memberRepo, ossMessage: msgRepo})
 
-	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), &mock_repo.UserRepo{}, teamRepo, memberRepo, ossClient)
+	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), &mock_repo.UserRepo{}, teamRepo, memberRepo, mock_repo.NewMockTxnMgr(txCx), msgRepo, ossClient)
 
 	got, err := app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{TeamID: "team-1", FileName: "avatar.png"})
 	requireNoErr(t, err)
 
-	if got.PutURL != "https://upload.example/team-avatar_team-1.png" {
+	if got.PutURL != "https://upload.example/team_team-1/avatar.png" {
 		t.Fatalf("unexpected put url: %#v", got)
 	}
 	team := teamRepo.Infos["team-1"]
-	if team.AvatarOSSKey != "team-avatar_team-1.png" {
+	if team.AvatarOSSKey != "team_team-1/avatar.png" {
 		t.Fatalf("unexpected avatar key: %#v", team)
 	}
 }
@@ -48,9 +50,12 @@ func TestTeamAppAdminFlows(t *testing.T) {
 	teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1", Name: "Existing", AvatarOSSKey: "team-avatar_team-1", IsAvatarUploaded: true, CreatedAt: now, UpdatedAt: now}
 	ossClient := newMockOSSClient()
 	ossClient.SetGetURLs(map[string]string{"team-avatar_team-1": "https://cdn.example/team-1", "team-avatar_team-1.png": "https://cdn.example/team-1"})
-	ossClient.SetPutURLs(map[string]string{"team-avatar_team-1.png": "https://upload.example/team-1"})
+	ossClient.SetPutURLs(map[string]string{"team_team-1/avatar.png": "https://upload.example/team-1"})
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	txCx := newMockTxnContext(mockTxnRepos{team: teamRepo, member: memberRepo, ossMessage: msgRepo})
+	txnMgr := mock_repo.NewMockTxnMgr(txCx)
 
-	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, ossClient)
+	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, txnMgr, msgRepo, ossClient)
 
 	createRes, err := app.Create(background(), "user-1", &val.CreateTeamArgs{Name: "Created", Description: "desc"})
 	requireNoErr(t, err)
@@ -100,9 +105,8 @@ func TestTeamAppAdminFlows(t *testing.T) {
 	if _, ok := teamRepo.Infos["team-1"]; ok {
 		t.Fatalf("expected deleted team, got %#v", teamRepo.Infos)
 	}
-	deleted := ossClient.Deleted()
-	if len(deleted) == 0 || deleted[0] == "" {
-		t.Fatalf("expected avatar oss cleanup, got %#v", deleted)
+	if len(msgRepo.Messages) == 0 {
+		t.Fatalf("expected avatar oss cleanup message, got %#v", msgRepo.Messages)
 	}
 }
 
@@ -113,22 +117,18 @@ func TestTeamAppRemoveFailsWhenAvatarCleanupFails(t *testing.T) {
 	teamRepo := mock_repo.NewMockTeamRepo()
 	teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1", Name: "Team", AvatarOSSKey: "team-avatar-1", IsAvatarUploaded: true, CreatedAt: now, UpdatedAt: now}
 	memberRepo := mock_repo.NewMockMemberRepo()
-	ossClient := newMockOSSClient()
-	ossClient.SetDeleteErr(errors.New("boom"))
+	msgRepo := mock_repo.NewMockOSSMessageRepo()
+	msgRepo.InsertErr = errors.New("boom")
 
-	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, ossClient)
+	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{team: teamRepo, ossMessage: msgRepo})), msgRepo, newMockOSSClient())
 
 	err := app.Remove(background(), "user-1", "team-1")
 	if err == nil {
 		t.Fatal("expected remove failure when avatar cleanup fails")
 	}
 
-	if _, ok := teamRepo.Infos["team-1"]; !ok {
-		t.Fatalf("expected team to remain, got %#v", teamRepo.Infos)
-	}
-
-	if len(ossClient.Deleted()) != 3 {
-		t.Fatalf("expected 3 delete attempts, got %#v", ossClient.Deleted())
+	if len(msgRepo.Messages) != 0 {
+		t.Fatalf("expected no queued messages, got %#v", msgRepo.Messages)
 	}
 }
 
@@ -139,7 +139,7 @@ func TestTeamAppPermissionErrors(t *testing.T) {
 	teamRepo := mock_repo.NewMockTeamRepo()
 	teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1", Name: "Team"}
 
-	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, mock_repo.NewMockMemberRepo(), newMockOSSClient())
+	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())
 	if _, err := app.List(background(), "user-1", &val.ListTeamArgs{}); err == nil {
 		t.Fatal("expected list forbidden error")
 	}
@@ -153,14 +153,14 @@ func TestTeamAppAdditionalErrorPaths(t *testing.T) {
 		now := time.Now()
 		userRepo := mock_repo.NewMockUserRepo()
 		userRepo.Infos["user-1"] = model.UserInfo{ID: "user-1", QQ: "100001", Name: "Normal", LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
-		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockMemberRepo(), newMockOSSClient())
+		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, mock_repo.NewMockTeamRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())
 		if _, err := app.Create(background(), "user-1", &val.CreateTeamArgs{Name: "Team"}); err == nil {
 			t.Fatal("expected create forbidden error")
 		}
 	})
 
 	t.Run("list my returns nil for no membership", func(t *testing.T) {
-		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockTeamRepo(), mock_repo.NewMockMemberRepo(), newMockOSSClient())
+		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockTeamRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())
 		got, err := app.ListMy(background(), "user-1", &val.ListMyTeamArgs{})
 		requireNoErr(t, err)
 		if got != nil {
@@ -175,7 +175,7 @@ func TestTeamAppAdditionalErrorPaths(t *testing.T) {
 		teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1"}
 		ossClient := newMockOSSClient()
 		ossClient.SetPutErr(errors.New("boom"))
-		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), teamRepo, memberRepo, ossClient)
+		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), teamRepo, memberRepo, mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{team: teamRepo, ossMessage: mock_repo.NewMockOSSMessageRepo()})), mock_repo.NewMockOSSMessageRepo(), ossClient)
 		if _, err := app.ReserveAvatar(background(), "user-1", &val.ReserveTeamAvatarArgs{TeamID: "team-1", FileName: "avatar.png"}); err == nil {
 			t.Fatal("expected reserve avatar failure")
 		}
@@ -186,7 +186,7 @@ func TestTeamAppAdditionalErrorPaths(t *testing.T) {
 		memberRepo.Infos["member-1"] = model.MemberInfo{ID: "member-1", UserID: "user-1", TeamID: "team-1"}
 		teamRepo := mock_repo.NewMockTeamRepo()
 		teamRepo.Infos["team-1"] = model.TeamInfo{ID: "team-1"}
-		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), teamRepo, memberRepo, newMockOSSClient())
+		app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), mock_repo.NewMockUserRepo(), teamRepo, memberRepo, mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())
 		if err := app.ConfirmAvatarUploaded(background(), "user-1", "team-1"); err == nil {
 			t.Fatal("expected confirm forbidden error")
 		}

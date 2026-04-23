@@ -46,6 +46,9 @@ func UnmaskRoles(mask RoleMask) []Role {
 	if mask&RoleMask(RoleTypesetter) != 0 {
 		roles = append(roles, RoleTypesetter)
 	}
+	if mask&RoleMask(RoleRedrawer) != 0 {
+		roles = append(roles, RoleRedrawer)
+	}
 	if mask&RoleMask(RoleReviewer) != 0 {
 		roles = append(roles, RoleReviewer)
 	}
@@ -54,9 +57,6 @@ func UnmaskRoles(mask RoleMask) []Role {
 	}
 	if mask&RoleMask(RoleAdmin) != 0 {
 		roles = append(roles, RoleAdmin)
-	}
-	if mask&RoleMask(RoleRedrawer) != 0 {
-		roles = append(roles, RoleRedrawer)
 	}
 
 	return roles

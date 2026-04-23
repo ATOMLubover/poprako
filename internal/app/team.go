@@ -72,8 +72,10 @@ type teamAppImpl struct {
 	userRepo   repo.UserRepo
 	teamRepo   repo.TeamRepo
 	memberRepo repo.MemberRepo
+	txnMgr     repo.TxnMgr
+	msgRepo    repo.OSSMessageRepo
 
-	ossClient oss.Client
+	urlSigner oss.URLSigner
 }
 
 func NewTeamApp(
@@ -82,7 +84,9 @@ func NewTeamApp(
 	userRepo repo.UserRepo,
 	teamRepo repo.TeamRepo,
 	memberRepo repo.MemberRepo,
-	ossClient oss.Client,
+	txnMgr repo.TxnMgr,
+	msgRepo repo.OSSMessageRepo,
+	urlSigner oss.URLSigner,
 ) TeamApp {
 	// 校验构造函数依赖，避免在运行期出现空指针问题
 	if teamSvc == nil ||
@@ -90,7 +94,9 @@ func NewTeamApp(
 		userRepo == nil ||
 		teamRepo == nil ||
 		memberRepo == nil ||
-		ossClient == nil {
+		txnMgr == nil ||
+		msgRepo == nil ||
+		urlSigner == nil {
 		zap.L().Panic(
 			"NewTeamApp: 依赖项不能为空",
 			zap.Bool("teamSvc_nil", teamSvc == nil),
@@ -98,7 +104,9 @@ func NewTeamApp(
 			zap.Bool("userRepo_nil", userRepo == nil),
 			zap.Bool("teamRepo_nil", teamRepo == nil),
 			zap.Bool("memberRepo_nil", memberRepo == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("txnMgr_nil", txnMgr == nil),
+			zap.Bool("msgRepo_nil", msgRepo == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -109,7 +117,9 @@ func NewTeamApp(
 		userRepo:   userRepo,
 		teamRepo:   teamRepo,
 		memberRepo: memberRepo,
-		ossClient:  ossClient,
+		txnMgr:     txnMgr,
+		msgRepo:    msgRepo,
+		urlSigner:  urlSigner,
 	}
 }
 
@@ -219,7 +229,7 @@ func (a *teamAppImpl) List(
 
 	for i, team := range teams {
 		// 组装单个汉化组信息
-		info, err := assembleTeamInfo(&team, a.ossClient)
+		info, err := assembleTeamInfo(&team, a.urlSigner)
 		if err != nil {
 			// 记录组装失败
 			lgr.Error(
@@ -287,7 +297,7 @@ func (a *teamAppImpl) ListMy(
 		}
 
 		// 组装单个汉化组信息
-		info, err := assembleTeamInfo(team, a.ossClient)
+		info, err := assembleTeamInfo(team, a.urlSigner)
 		if err != nil {
 			// 记录组装失败
 			lgr.Error(
@@ -401,19 +411,18 @@ func (a *teamAppImpl) Remove(
 		return errors.New("删除汉化组失败")
 	}
 
-	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetTeam.AvatarOSSKey); err != nil {
-		lgr.Error(
-			"删除汉化组失败：删除头像 OSS 资源失败",
-			zap.String("team_id", teamID),
-			zap.String("avatar_oss_key", targetTeam.AvatarOSSKey),
-			zap.Error(err),
-		)
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		teamRepoTxn, txErr := a.teamRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
 
-		return errors.New("删除汉化组失败")
-	}
+		if txErr := teamRepoTxn.Delete(teamID); txErr != nil {
+			return txErr
+		}
 
-	// 执行删除
-	if err := a.teamRepo.Delete(teamID); err != nil {
+		return enqueueDeleteSingleMessage(a.msgRepo, txCx, model.OSSResourceTeamAvatar, teamID, targetTeam.AvatarOSSKey)
+	}); err != nil {
 		// 记录删除失败
 		lgr.Error(
 			"删除汉化组失败",
@@ -454,18 +463,16 @@ func (a *teamAppImpl) ReserveAvatar(
 		return nil, errors.New("权限不足")
 	}
 
-	// 提取文件扩展名，与 OSS Key 拼接以便 OSS 正确识别 Content-Type
+	// 提取文件扩展名
 	ext := filepath.Ext(args.FileName)
 
-	// 基于汉化组 ID 生成头像对象 Key，并附加扩展名
-	avatarOSSKey := a.teamSvc.GenAvatarOSSKey(args.TeamID) + ext
+	ossKey := a.teamSvc.GenAvatarOSSKey(args.TeamID) + ext
 
-	// 为客户端生成预签名上传链接
-	putURL, err := a.ossClient.GeneratePutPresignedURL(avatarOSSKey)
+	putURL, err := a.urlSigner.GeneratePutPresignedURL(ossKey)
 	if err != nil {
-		// 记录上传链接生成失败
+		// 记录预留失败
 		lgr.Error(
-			"预留汉化组头像失败：生成上传链接失败",
+			"预留汉化组头像失败",
 			zap.String("team_id", args.TeamID),
 			zap.Error(err),
 		)
@@ -474,16 +481,24 @@ func (a *teamAppImpl) ReserveAvatar(
 		return nil, errors.New("预留汉化组头像失败")
 	}
 
-	// 在数据库中预填充头像对象 Key
-	if err := a.teamRepo.PreFillAvatarOSSKey(args.TeamID, avatarOSSKey); err != nil {
-		// 记录预写失败
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		teamRepoTxn, txErr := a.teamRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
+
+		if txErr := teamRepoTxn.PreFillAvatarOSSKey(args.TeamID, ossKey); txErr != nil {
+			return txErr
+		}
+
+		return upsertCreatePendingMessage(a.msgRepo, txCx, model.OSSResourceTeamAvatar, args.TeamID, ossKey)
+	}); err != nil {
 		lgr.Error(
-			"预留汉化组头像失败：写入头像 OSS Key 失败",
+			"预留汉化组头像失败",
 			zap.String("team_id", args.TeamID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return nil, errors.New("预留汉化组头像失败")
 	}
 
@@ -516,8 +531,18 @@ func (a *teamAppImpl) ConfirmAvatarUploaded(
 		return errors.New("权限不足")
 	}
 
-	// 将头像状态标记为已上传
-	if err := a.teamRepo.ConfirmAvatarUploaded(teamID); err != nil {
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		teamRepoTxn, txErr := a.teamRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
+
+		if txErr := teamRepoTxn.ConfirmAvatarUploaded(teamID); txErr != nil {
+			return txErr
+		}
+
+		return completeCreatePendingMessage(a.msgRepo, txCx, model.OSSResourceTeamAvatar, teamID)
+	}); err != nil {
 		// 记录确认失败
 		lgr.Error(
 			"确认汉化组头像上传失败",
@@ -536,7 +561,7 @@ func (a *teamAppImpl) ConfirmAvatarUploaded(
 // assembleTeamInfo 将领域层汉化组信息转换为 app 层值对象
 func assembleTeamInfo(
 	info *model.TeamInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) (*val.TeamInfo, error) {
 	// 默认头像地址为空字符串
 	avatarURL := ""
@@ -544,7 +569,7 @@ func assembleTeamInfo(
 	// 仅在头像已上传且存在对象 Key 时生成访问地址
 	if info.IsAvatarUploaded && info.AvatarOSSKey != "" {
 		// 生成头像下载链接
-		url, err := ossClient.GenerateGetPresignedURL(info.AvatarOSSKey)
+		url, err := urlSigner.GenerateGetPresignedURL(info.AvatarOSSKey)
 		if err != nil {
 			// 将错误返回给调用方处理
 			return nil, err

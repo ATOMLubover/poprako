@@ -64,6 +64,10 @@ func (*roleServiceImpl) UnmaskRoles(
 		roles = append(roles, model.RoleTypesetter)
 	}
 
+	if mask&model.RoleMask(model.RoleRedrawer) != 0 {
+		roles = append(roles, model.RoleRedrawer)
+	}
+
 	if mask&model.RoleMask(model.RoleReviewer) != 0 {
 		roles = append(roles, model.RoleReviewer)
 	}
@@ -74,10 +78,6 @@ func (*roleServiceImpl) UnmaskRoles(
 
 	if mask&model.RoleMask(model.RoleAdmin) != 0 {
 		roles = append(roles, model.RoleAdmin)
-	}
-
-	if mask&model.RoleMask(model.RoleRedrawer) != 0 {
-		roles = append(roles, model.RoleRedrawer)
 	}
 
 	// 返回解码后的角色列表

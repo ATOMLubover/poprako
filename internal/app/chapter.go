@@ -73,8 +73,9 @@ type chapterAppImpl struct {
 	pageRepo       repo.PageRepo
 	chapterInvRepo repo.ChapterInvitationRepo
 	txnMgr         repo.TxnMgr
+	msgRepo        repo.OSSMessageRepo
 	eventBus       event.EventBus
-	ossClient      oss.Client
+	urlSigner      oss.URLSigner
 }
 
 func NewChapterApp(
@@ -89,8 +90,9 @@ func NewChapterApp(
 	pageRepo repo.PageRepo,
 	chapterInvRepo repo.ChapterInvitationRepo,
 	txnMgr repo.TxnMgr,
+	msgRepo repo.OSSMessageRepo,
 	eventBus event.EventBus,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) ChapterApp {
 	// 校验构造函数依赖
 	if chapterSvc == nil ||
@@ -104,8 +106,9 @@ func NewChapterApp(
 		pageRepo == nil ||
 		chapterInvRepo == nil ||
 		txnMgr == nil ||
+		msgRepo == nil ||
 		eventBus == nil ||
-		ossClient == nil {
+		urlSigner == nil {
 		zap.L().Panic(
 			"NewChapterApp: 依赖项不能为空",
 			zap.Bool("chapterSvc_nil", chapterSvc == nil),
@@ -119,8 +122,9 @@ func NewChapterApp(
 			zap.Bool("pageRepo_nil", pageRepo == nil),
 			zap.Bool("chapterInvRepo_nil", chapterInvRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
+			zap.Bool("msgRepo_nil", msgRepo == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 		)
 	}
 
@@ -137,8 +141,9 @@ func NewChapterApp(
 		pageRepo:       pageRepo,
 		chapterInvRepo: chapterInvRepo,
 		txnMgr:         txnMgr,
+		msgRepo:        msgRepo,
 		eventBus:       eventBus,
-		ossClient:      ossClient,
+		urlSigner:      urlSigner,
 	}
 }
 
@@ -214,7 +219,7 @@ func (a *chapterAppImpl) List(
 	result := make([]*val.ChapterInfo, len(chapters))
 
 	for i, ch := range chapters {
-		result[i] = assembleChapterInfo(&ch, a.ossClient)
+		result[i] = assembleChapterInfo(&ch, a.urlSigner)
 	}
 
 	// 返回章节列表
@@ -293,7 +298,7 @@ func (a *chapterAppImpl) GetComicPinned(
 	}
 
 	// 组装为 app 层值对象并返回
-	return assembleChapterInfo(chapter, a.ossClient), nil
+	return assembleChapterInfo(chapter, a.urlSigner), nil
 }
 
 func (a *chapterAppImpl) Create(
@@ -616,17 +621,6 @@ func (a *chapterAppImpl) Remove(
 		pageOSSKeys = append(pageOSSKeys, page.OSSKey)
 	}
 
-	if err := newOSSDeleteExecutor(a.ossClient).deleteMany(pageOSSKeys); err != nil {
-		lgr.Error(
-			"删除章节失败：删除页面 OSS 资源失败",
-			zap.String("chapter_id", chapterID),
-			zap.Int("page_count", len(pages)),
-			zap.Error(err),
-		)
-
-		return errors.New("删除章节失败")
-	}
-
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
 		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)
 		if err != nil {
@@ -661,6 +655,10 @@ func (a *chapterAppImpl) Remove(
 		}
 
 		if err := chapterRepoTxn.Remove(chapterID); err != nil {
+			return err
+		}
+
+		if err := enqueueDeleteBatchMessage(a.msgRepo, cx, model.OSSResourcePageImage, chapterID, pageOSSKeys); err != nil {
 			return err
 		}
 
@@ -781,7 +779,7 @@ func (a *chapterAppImpl) InviteAssignee(
 // assembleChapterInfo 将领域层章节信息转换为 app 层值对象
 func assembleChapterInfo(
 	info *model.ChapterInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) *val.ChapterInfo {
 	result := &val.ChapterInfo{
 		ID:                  info.ID,
@@ -846,13 +844,13 @@ func assembleChapterInfo(
 
 	// 若包含创建者信息则一并组装
 	if info.Creator != nil {
-		userInfo, _ := assembleUserInfo(info.Creator, ossClient)
+		userInfo, _ := assembleUserInfo(info.Creator, urlSigner)
 		result.Creator = userInfo
 	}
 
 	// 若包含漫画信息则一并组装
 	if info.Comic != nil {
-		result.Comic = assembleComicInfo(info.Comic, ossClient)
+		result.Comic = assembleComicInfo(info.Comic, urlSigner)
 	}
 
 	return result

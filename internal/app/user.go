@@ -91,9 +91,10 @@ type userAppImpl struct {
 	invRepo    repo.MemberInvitationRepo
 	memberRepo repo.MemberRepo
 	txnMgr     repo.TxnMgr
+	msgRepo    repo.OSSMessageRepo
 
 	eventBus  event.EventBus
-	ossClient oss.Client
+	urlSigner oss.URLSigner
 
 	authCfg *cfg.AuthCfg
 }
@@ -105,8 +106,9 @@ func NewUserApp(
 	invRepo repo.MemberInvitationRepo,
 	memberRepo repo.MemberRepo,
 	txnMgr repo.TxnMgr,
+	msgRepo repo.OSSMessageRepo,
 	eventBus event.EventBus,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 	authCfg *cfg.AuthCfg,
 ) UserApp {
 	// 校验构造函数依赖，避免在运行期出现空指针问题
@@ -116,8 +118,9 @@ func NewUserApp(
 		invRepo == nil ||
 		memberRepo == nil ||
 		txnMgr == nil ||
+		msgRepo == nil ||
 		eventBus == nil ||
-		ossClient == nil ||
+		urlSigner == nil ||
 		authCfg == nil {
 		zap.L().Panic(
 			"NewUserApp: 依赖项不能为空",
@@ -127,8 +130,9 @@ func NewUserApp(
 			zap.Bool("invRepo_nil", invRepo == nil),
 			zap.Bool("memberRepo_nil", memberRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
+			zap.Bool("msgRepo_nil", msgRepo == nil),
 			zap.Bool("eventBus_nil", eventBus == nil),
-			zap.Bool("ossClient_nil", ossClient == nil),
+			zap.Bool("urlSigner_nil", urlSigner == nil),
 			zap.Bool("authCfg_nil", authCfg == nil),
 		)
 	}
@@ -141,8 +145,9 @@ func NewUserApp(
 		invRepo:    invRepo,
 		memberRepo: memberRepo,
 		txnMgr:     txnMgr,
+		msgRepo:    msgRepo,
 		eventBus:   eventBus,
-		ossClient:  ossClient,
+		urlSigner:  urlSigner,
 		authCfg:    authCfg,
 	}
 }
@@ -439,7 +444,7 @@ func (a *userAppImpl) GetInfo(
 	}
 
 	// 将领域模型组装为 app 层值对象
-	infoVal, err := assembleUserInfo(info, a.ossClient)
+	infoVal, err := assembleUserInfo(info, a.urlSigner)
 	if err != nil {
 		// 记录头像访问地址生成失败
 		lgr.Error(
@@ -529,18 +534,16 @@ func (a *userAppImpl) ReserveMyAvatar(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 提取文件扩展名，与 OSS Key 拼接以便 OSS 正确识别 Content-Type
+	// 提取文件扩展名
 	ext := filepath.Ext(args.FileName)
 
-	// 基于用户 ID 生成头像对象 Key，并附加扩展名
-	avatarOSSKey := a.userSvc.GenAvatarOSSKey(currUserID) + ext
+	ossKey := a.userSvc.GenAvatarOSSKey(currUserID) + ext
 
-	// 为客户端生成预签名上传链接
-	putURL, err := a.ossClient.GeneratePutPresignedURL(avatarOSSKey)
+	putURL, err := a.urlSigner.GeneratePutPresignedURL(ossKey)
 	if err != nil {
-		// 记录上传链接生成失败
+		// 记录预留失败
 		lgr.Error(
-			"预留头像失败：生成上传链接失败",
+			"预留头像失败",
 			zap.String("user_id", currUserID),
 			zap.Error(err),
 		)
@@ -549,16 +552,24 @@ func (a *userAppImpl) ReserveMyAvatar(
 		return nil, errors.New("预留头像失败")
 	}
 
-	// 在用户记录中预填充头像对象 Key
-	if err := a.userRepo.PreFillAvatarOSSKey(currUserID, avatarOSSKey); err != nil {
-		// 记录预写头像 Key 失败
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		userRepoTxn, txErr := a.userRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
+
+		if txErr := userRepoTxn.PreFillAvatarOSSKey(currUserID, ossKey); txErr != nil {
+			return txErr
+		}
+
+		return upsertCreatePendingMessage(a.msgRepo, txCx, model.OSSResourceUserAvatar, currUserID, ossKey)
+	}); err != nil {
 		lgr.Error(
-			"预留头像失败：写入头像 OSS Key 失败",
+			"预留头像失败",
 			zap.String("user_id", currUserID),
 			zap.Error(err),
 		)
 
-		// 返回客户端可展示的错误
 		return nil, errors.New("预留头像失败")
 	}
 
@@ -573,8 +584,18 @@ func (a *userAppImpl) ConfirmMyAvatarUploaded(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 将头像状态标记为已上传
-	if err := a.userRepo.ConfirmAvatarUploaded(currUserID); err != nil {
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		userRepoTxn, txErr := a.userRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
+
+		if txErr := userRepoTxn.ConfirmAvatarUploaded(currUserID); txErr != nil {
+			return txErr
+		}
+
+		return completeCreatePendingMessage(a.msgRepo, txCx, model.OSSResourceUserAvatar, currUserID)
+	}); err != nil {
 		// 记录确认失败
 		lgr.Error(
 			"确认头像上传失败",
@@ -616,20 +637,19 @@ func (a *userAppImpl) Remove(
 		return errors.New("删除用户失败")
 	}
 
-	if err := newOSSDeleteExecutor(a.ossClient).deleteOne(targetUser.AvatarKey); err != nil {
-		lgr.Error(
-			"删除用户失败：删除头像 OSS 资源失败",
-			zap.String("curr_user_id", currUserID),
-			zap.String("target_user_id", targetUserID),
-			zap.String("avatar_oss_key", targetUser.AvatarKey),
-			zap.Error(err),
-		)
+	// 在事务中同步删除本地记录，并写入 delete_pending 消息
+	if err := a.txnMgr.RunInTxn(func(txCx context.Context) error {
+		userRepoTxn, txErr := a.userRepo.FromTxnCx(txCx)
+		if txErr != nil {
+			return txErr
+		}
 
-		return errors.New("删除用户失败")
-	}
+		if txErr := userRepoTxn.Remove(targetUserID); txErr != nil {
+			return txErr
+		}
 
-	// 执行目标用户删除
-	if err := a.userRepo.Remove(targetUserID); err != nil {
+		return enqueueDeleteSingleMessage(a.msgRepo, txCx, model.OSSResourceUserAvatar, targetUserID, targetUser.AvatarKey)
+	}); err != nil {
 		// 记录删除失败
 		lgr.Error(
 			"删除用户失败",
@@ -649,7 +669,7 @@ func (a *userAppImpl) Remove(
 // assembleUserInfo 将领域层用户信息转换为 app 层值对象
 func assembleUserInfo(
 	info *model.UserInfo,
-	ossClient oss.Client,
+	urlSigner oss.URLSigner,
 ) (*val.UserInfo, error) {
 	// 默认头像地址为空字符串
 	avatarURL := ""
@@ -657,7 +677,7 @@ func assembleUserInfo(
 	// 仅在头像已上传且存在对象 Key 时生成访问地址
 	if info.IsAvatarUploaded && info.AvatarKey != "" {
 		// 生成头像下载链接
-		url, err := ossClient.GenerateGetPresignedURL(info.AvatarKey)
+		url, err := urlSigner.GenerateGetPresignedURL(info.AvatarKey)
 		if err != nil {
 			// 将错误返回给调用方处理
 			return nil, err

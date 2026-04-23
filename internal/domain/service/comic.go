@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"strings"
 
 	"poprako-s/internal/domain/event"
 	"poprako-s/internal/domain/model"
@@ -107,10 +106,10 @@ func (s *comicServiceImpl) NewRemovalEvent(
 	}
 }
 
-// GenCoverOSSKey 以固定前缀拼接漫画 ID 作为封面的 OSS Key
+// GenCoverOSSKey 以目录式命名生成漫画封面的 OSS Key，格式为 comic_{comicID}/cover
 func (s *comicServiceImpl) GenCoverOSSKey(
 	comicID string,
 ) string {
-	// 返回拼接结果
-	return strings.Join([]string{"comic-cover", comicID}, "_")
+	// 返回目录式对象 Key，避免跨实体命名冲突
+	return "comic_" + comicID + "/cover"
 }
