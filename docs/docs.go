@@ -1873,7 +1873,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     }
                 }
@@ -2027,7 +2027,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     }
                 }
@@ -2259,6 +2259,47 @@ const docTemplate = `{
                 "WorkflowPublishComplete"
             ]
         },
+        "poprako-s_internal_app_val.UserInfo": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "description": "AvatarURL 是用户头像的可访问地址",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "ID 是用户的唯一标识（例如 UUID 或数据库主键）",
+                    "type": "string"
+                },
+                "is_avatar_uploaded": {
+                    "description": "IsAvatarUploaded 表示用户是否已上传头像",
+                    "type": "boolean"
+                },
+                "is_super_admin": {
+                    "description": "IsSuperAdmin 表示用户是否具有超级管理员权限",
+                    "type": "boolean"
+                },
+                "last_login_at": {
+                    "description": "LastLoginAt 是一个 Unix 毫秒时间戳，表示用户最后一次登录的时间",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "Name 是用户的显示名称或昵称",
+                    "type": "string"
+                },
+                "qq": {
+                    "description": "QQ 是用户的 QQ 号，用于登录或联系方式",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
+                    "type": "integer"
+                }
+            }
+        },
         "val.AssignmentInfo": {
             "type": "object",
             "properties": {
@@ -2294,7 +2335,7 @@ const docTemplate = `{
                     "description": "User 是可选的用户信息（仅在 includes 时填充）",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     ]
                 },
@@ -2359,7 +2400,7 @@ const docTemplate = `{
                     "description": "Creator 是可选的创建者信息（仅在 includes 时填充）",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     ]
                 },
@@ -2456,7 +2497,7 @@ const docTemplate = `{
                     "description": "Creator 是可选的创建者信息（仅在 includes 时填充）",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     ]
                 },
@@ -2897,7 +2938,7 @@ const docTemplate = `{
                     "description": "User 是可选的用户信息（仅在 includes 时填充）",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     ]
                 },
@@ -2963,7 +3004,7 @@ const docTemplate = `{
                     "description": "Creator 是可选的创建者信息（仅在 includes 时填充）",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/val.UserInfo"
+                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
                         }
                     ]
                 },
@@ -3630,47 +3671,6 @@ const docTemplate = `{
                 "name": {
                     "description": "Name 是更新后的名称",
                     "type": "string"
-                }
-            }
-        },
-        "val.UserInfo": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "description": "AvatarURL 是用户头像的可访问地址",
-                    "type": "string"
-                },
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "ID 是用户的唯一标识（例如 UUID 或数据库主键）",
-                    "type": "string"
-                },
-                "is_avatar_uploaded": {
-                    "description": "IsAvatarUploaded 表示用户是否已上传头像",
-                    "type": "boolean"
-                },
-                "is_super_admin": {
-                    "description": "IsSuperAdmin 表示用户是否具有超级管理员权限",
-                    "type": "boolean"
-                },
-                "last_login_at": {
-                    "description": "LastLoginAt 是一个 Unix 毫秒时间戳，表示用户最后一次登录的时间",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "Name 是用户的显示名称或昵称",
-                    "type": "string"
-                },
-                "qq": {
-                    "description": "QQ 是用户的 QQ 号，用于登录或联系方式",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
-                    "type": "integer"
                 }
             }
         },

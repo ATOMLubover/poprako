@@ -4,6 +4,26 @@
 
 ---
 
+## Code Style Constitution
+
+Before writing or reviewing **any** Go code in this repository, agents **must**
+load and follow the code style constitution:
+
+**Skill:** `common-code-style-constitution`  
+**Location:** `.agents/skills/common-code-style-constitution/SKILL.md`
+
+The rules defined there are non-negotiable and apply uniformly across every
+layer of the codebase. They cover comment language and coverage, identifier
+quoting, package naming (`*_iface` / `*_impl` / `*_infra`), constant
+documentation, camelCase/PascalCase conventions (no Go-style acronym
+uppercasing), context parameter naming, error format, import organization,
+and constructor conventions.
+
+Other layer-specific skills (listed at the bottom of the constitution) extend
+these base rules for their respective packages.
+
+---
+
 ## Module & Runtime
 
 - **Go module**: `poprako-s` (`go 1.25.5`)

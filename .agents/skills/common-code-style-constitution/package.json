@@ -1,0 +1,10 @@
+{
+  "name": "common-code-style-constitution-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "check-types": "node scripts/check-type-comments.js",
+    "test": "node --test scripts/check-type-comments.test.js"
+  },
+  "devDependencies": {}
+}
