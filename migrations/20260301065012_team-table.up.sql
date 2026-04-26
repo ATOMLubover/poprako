@@ -15,3 +15,18 @@ CREATE TABLE "team_table" (
 CREATE UNIQUE INDEX "uidx_team_name"
     ON "team_table" ("name")
     WHERE "deleted_at" IS NULL;
+
+-- 预插入一个默认汉化组，供超级管理员加入并管理系统内初始资源
+INSERT INTO "team_table" (
+    "id",
+    "name",
+    "description",
+    "avatar_oss_key",
+    "is_avatar_uploaded"
+) VALUES (
+    '00000000-0000-0000-0000-000000000101',
+    '默认汉化组',
+    '系统初始化时自动创建的默认汉化组。',
+    '',
+    FALSE
+);

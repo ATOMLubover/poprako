@@ -7,8 +7,8 @@ type UnitInfo struct {
 	PageID string
 	Index  int
 
-	XCoord int
-	YCoord int
+	XCoord float64
+	YCoord float64
 
 	IsBubble bool
 
@@ -30,8 +30,8 @@ type UnitPatch struct {
 
 	Index *int
 
-	XCoord *int
-	YCoord *int
+	XCoord *float64
+	YCoord *float64
 
 	IsBubble *bool
 

@@ -14,8 +14,8 @@ type UnitService interface {
 		id string,
 		pageID string,
 		index int,
-		xCoord int,
-		yCoord int,
+		xCoord float64,
+		yCoord float64,
 		isBubble bool,
 		translatedText *string,
 		translatorID *string,
@@ -65,8 +65,8 @@ func (s *unitServiceImpl) NewCreation(
 	id string,
 	pageID string,
 	index int,
-	xCoord int,
-	yCoord int,
+	xCoord float64,
+	yCoord float64,
 	isBubble bool,
 	translatedText *string,
 	translatorID *string,
@@ -76,6 +76,10 @@ func (s *unitServiceImpl) NewCreation(
 	proofreaderID *string,
 	proofreaderComment *string,
 ) model.UnitCreation {
+	if id == "" {
+		id = GenID("unit")
+	}
+
 	// 返回组装后的创建载荷
 	return model.UnitCreation{
 		ID:                 id,

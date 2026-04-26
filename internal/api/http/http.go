@@ -147,7 +147,6 @@ func initApp(appState *state.AppState) *iris.Application {
 		assignmentParty.Get("/", ListChapterAssignments(appState))
 		assignmentParty.Post("/join", JoinInvitorChapter(appState))
 		assignmentParty.Post("/", CreateChapterAssignment(appState))
-		assignmentParty.Put("/{assignment_id}", UpdateAssignment(appState))
 		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))
 	}
 

@@ -10,6 +10,7 @@ import (
 	entity "poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type pageRepoImpl struct {
@@ -88,6 +89,14 @@ func (r *pageRepoImpl) GetStatsByID(pageID string) (*model.PageStats, error) {
 		TranslatedUnitCount: row.TranslatedUnitCount,
 		ProofreadUnitCount:  row.ProofreadUnitCount,
 	}, nil
+}
+
+func (r *pageRepoImpl) LockByID(id string) error {
+	return r.gdb.Table(entity.PageTable).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ?", id).
+		Select("id").
+		First(&entity.PageInfoRow{}).Error
 }
 
 func (r *pageRepoImpl) CreateBatch(pages []*model.PageCreation) error {

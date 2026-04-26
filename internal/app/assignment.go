@@ -38,13 +38,6 @@ type AssignmentApp interface {
 		args *val.CreateAssignmentArgs,
 	) (*val.CreateAssignmentRes, error)
 
-	// Update 更新分配记录的角色
-	Update(
-		cx context.Context,
-		currUserID string,
-		args *val.UpdateAssignmentArgs,
-	) error
-
 	// Remove 删除分配记录
 	Remove(
 		cx context.Context,
@@ -321,7 +314,7 @@ func (a *assignmentAppImpl) Create(
 			return err
 		}
 
-		assignInfo, err := assignmentRepoTxn.Create(creation)
+		assignInfo, err := assignmentRepoTxn.UpsertCreate(creation)
 		if err != nil {
 			return err
 		}
@@ -332,80 +325,17 @@ func (a *assignmentAppImpl) Create(
 		return a.eventBus.Pub(eventCx, creation.PullEvents())
 	}); err != nil {
 		lgr.Error(
-			"创建分配失败",
+			"创建或更新分配失败",
 			zap.String("curr_user_id", currUserID),
 			zap.String("chapter_id", args.ChapterID),
 			zap.String("user_id", args.UserID),
 			zap.Error(err),
 		)
 
-		return nil, errors.New("创建分配失败")
+		return nil, errors.New("创建或更新分配失败")
 	}
 
 	return &val.CreateAssignmentRes{ID: createdID}, nil
-}
-
-func (a *assignmentAppImpl) Update(
-	cx context.Context,
-	currUserID string,
-	args *val.UpdateAssignmentArgs,
-) error {
-	// 获取上下文中的日志记录器
-	lgr := retrieveLgr(cx)
-
-	// 查询当前分配信息
-	currAssignInfo, err := a.assignmentRepo.GetByID(args.ID)
-	if err != nil {
-		// 记录查询失败
-		lgr.Error(
-			"更新分配失败：获取当前分配信息失败",
-			zap.String("assignment_id", args.ID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("无法获取分配信息")
-	}
-
-	// 通过领域服务构造更新载荷（含权限校验）
-	update, err := a.assignmentSvc.NewUpdate(
-		a.assignmentRepo,
-		a.memberRepo,
-		a.chapterRepo,
-		a.comicRepo,
-		a.worksetRepo,
-		currUserID,
-		args.ID,
-		currAssignInfo,
-		args.Roles,
-	)
-	if err != nil {
-		// 记录权限校验失败
-		lgr.Warn(
-			"更新分配失败：权限不足",
-			zap.String("curr_user_id", currUserID),
-			zap.Error(err),
-		)
-
-		// 返回领域服务返回的错误
-		return err
-	}
-
-	// 持久化更新
-	if err := a.assignmentRepo.Update(update); err != nil {
-		// 记录更新失败
-		lgr.Error(
-			"更新分配失败",
-			zap.String("assignment_id", args.ID),
-			zap.Error(err),
-		)
-
-		// 返回客户端可展示的错误
-		return errors.New("更新分配失败")
-	}
-
-	// 返回更新成功
-	return nil
 }
 
 func (a *assignmentAppImpl) Remove(
@@ -566,65 +496,32 @@ func (a *assignmentAppImpl) JoinInvitorChapter(
 			return &t
 		}
 
-		exists, err := assignmentRepoTxn.Exist(model.AssignmentQueryOpt{
-			ChapterID: &targetInv.ChapterID,
-			UserID:    &currUserID,
+		creation := &model.AssignmentCreation{
+			ID:                    service.GenID("assignment"),
+			ChapterID:             targetInv.ChapterID,
+			UserID:                currUserID,
+			AssignedRawProviderAt: toAssign(targetInv.ToBeRawProvider, nil),
+			AssignedTranslatorAt:  toAssign(targetInv.ToBeTranslator, nil),
+			AssignedProofreaderAt: toAssign(targetInv.ToBeProofreader, nil),
+			AssignedTypesetterAt:  toAssign(targetInv.ToBeTypesetter, nil),
+			AssignedRedrawerAt:    toAssign(targetInv.ToBeRedrawer, nil),
+			AssignedReviewerAt:    toAssign(targetInv.ToBeReviewer, nil),
+			AssignedPublisherAt:   toAssign(targetInv.ToBePublisher, nil),
+		}
+
+		creation.PushEvent(&event.AssignmentCreatedEvent{
+			UserID:    currUserID,
+			ChapterID: targetInv.ChapterID,
 		})
-		if err != nil {
+
+		if _, err := assignmentRepoTxn.UpsertCreate(creation); err != nil {
 			return err
 		}
 
-		if exists {
-			existing, err := assignmentRepoTxn.Get(model.AssignmentQueryOpt{
-				ChapterID: &targetInv.ChapterID,
-				UserID:    &currUserID,
-			})
-			if err != nil {
-				return err
-			}
+		eventCx := event_handler.WithUserRepoTxn(txCx, userRepoTxn)
 
-			update := &model.AssignmentUpdate{
-				ID:                    existing.ID,
-				AssignedRawProviderAt: toAssign(targetInv.ToBeRawProvider, existing.AssignedRawProviderAt),
-				AssignedTranslatorAt:  toAssign(targetInv.ToBeTranslator, existing.AssignedTranslatorAt),
-				AssignedProofreaderAt: toAssign(targetInv.ToBeProofreader, existing.AssignedProofreaderAt),
-				AssignedTypesetterAt:  toAssign(targetInv.ToBeTypesetter, existing.AssignedTypesetterAt),
-				AssignedRedrawerAt:    toAssign(targetInv.ToBeRedrawer, existing.AssignedRedrawerAt),
-				AssignedReviewerAt:    toAssign(targetInv.ToBeReviewer, existing.AssignedReviewerAt),
-				AssignedPublisherAt:   toAssign(targetInv.ToBePublisher, existing.AssignedPublisherAt),
-			}
-
-			if err := assignmentRepoTxn.Update(update); err != nil {
-				return err
-			}
-		} else {
-			creation := &model.AssignmentCreation{
-				ID:                    service.GenID("assignment"),
-				ChapterID:             targetInv.ChapterID,
-				UserID:                currUserID,
-				AssignedRawProviderAt: toAssign(targetInv.ToBeRawProvider, nil),
-				AssignedTranslatorAt:  toAssign(targetInv.ToBeTranslator, nil),
-				AssignedProofreaderAt: toAssign(targetInv.ToBeProofreader, nil),
-				AssignedTypesetterAt:  toAssign(targetInv.ToBeTypesetter, nil),
-				AssignedRedrawerAt:    toAssign(targetInv.ToBeRedrawer, nil),
-				AssignedReviewerAt:    toAssign(targetInv.ToBeReviewer, nil),
-				AssignedPublisherAt:   toAssign(targetInv.ToBePublisher, nil),
-			}
-
-			creation.PushEvent(&event.AssignmentCreatedEvent{
-				UserID:    currUserID,
-				ChapterID: targetInv.ChapterID,
-			})
-
-			if _, err := assignmentRepoTxn.Create(creation); err != nil {
-				return err
-			}
-
-			eventCx := event_handler.WithUserRepoTxn(txCx, userRepoTxn)
-
-			if err := a.eventBus.Pub(eventCx, creation.PullEvents()); err != nil {
-				return err
-			}
+		if err := a.eventBus.Pub(eventCx, creation.PullEvents()); err != nil {
+			return err
 		}
 
 		if err := chapterInvRepoTxn.Invalidate(targetInv.ID); err != nil {
@@ -759,28 +656,6 @@ func (a *logAssignmentAppImpl) Create(
 	lgr.Info("[logAssignmentAppImpl.Create] CALL")
 
 	return a.app.Create(cx, currUserID, args)
-}
-
-func (a *logAssignmentAppImpl) Update(
-	cx context.Context,
-	currUserID string,
-	args *val.UpdateAssignmentArgs,
-) error {
-	if a == nil || a.app == nil {
-		return errors.New("AssignmentApp 不可用")
-	}
-
-	if args == nil || args.ID == "" {
-		return errors.New("参数不合法")
-	}
-
-	lgr := retrieveLgr(cx).With(zap.String("method", "Update"), zap.String("curr_user_id", currUserID), zap.String("assignment_id", args.ID))
-
-	cx = injectLgr(cx, lgr)
-
-	lgr.Info("[logAssignmentAppImpl.Update] CALL")
-
-	return a.app.Update(cx, currUserID, args)
 }
 
 func (a *logAssignmentAppImpl) Remove(

@@ -11,9 +11,9 @@ type UnitInfo struct {
 	Index int `json:"index"`
 
 	// XCoord 是翻译单元的 X 坐标
-	XCoord int `json:"x_coord"`
+	XCoord float64 `json:"x_coord"`
 	// YCoord 是翻译单元的 Y 坐标
-	YCoord int `json:"y_coord"`
+	YCoord float64 `json:"y_coord"`
 
 	// IsBubble 表示该单元是否是气泡框
 	IsBubble bool `json:"is_bubble"`
@@ -61,9 +61,9 @@ type UnitCreation struct {
 	Index int `json:"index"`
 
 	// XCoord 是翻译单元的 X 坐标
-	XCoord int `json:"x_coord"`
+	XCoord float64 `json:"x_coord"`
 	// YCoord 是翻译单元的 Y 坐标
-	YCoord int `json:"y_coord"`
+	YCoord float64 `json:"y_coord"`
 
 	// IsBubble 表示该单元是否是气泡框
 	IsBubble bool `json:"is_bubble"`
@@ -94,9 +94,9 @@ type UnitPatch struct {
 	Index *int `json:"index"`
 
 	// XCoord 是翻译单元的 X 坐标
-	XCoord *int `json:"x_coord"`
+	XCoord *float64 `json:"x_coord"`
 	// YCoord 是翻译单元的 Y 坐标
-	YCoord *int `json:"y_coord"`
+	YCoord *float64 `json:"y_coord"`
 
 	// IsBubble 表示该单元是否是气泡框
 	IsBubble *bool `json:"is_bubble"`

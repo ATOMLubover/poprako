@@ -81,8 +81,8 @@ type chapterImportUnit struct {
 	id string
 
 	index int
-	x     int
-	y     int
+	x     float64
+	y     float64
 
 	isBubble bool
 
@@ -734,8 +734,8 @@ func normalizeStringToPtr(s string) *string {
 	return &value
 }
 
-func normalizeCoord(v float64) int {
-	return int(math.Round(v))
+func normalizeCoord(v float64) float64 {
+	return v
 }
 
 func isFiniteNumber(v float64) bool {

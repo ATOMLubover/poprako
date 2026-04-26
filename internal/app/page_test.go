@@ -37,7 +37,10 @@ func TestPageAppReserveUpdateAndRemove(t *testing.T) {
 	chapterRepo.Infos["chapter-1"] = model.ChapterInfo{ID: "chapter-1", ComicID: "comic-1", PageCount: 0}
 	pageRepo := mock_repo.NewMockPageRepo()
 	ossClient := newMockOSSClient()
-	ossClient.SetPutURLs(map[string]string{"chapter_chapter-1/page_0": "https://upload.example/page_0", "chapter_chapter-1/page_1": "https://upload.example/page_1"})
+	ossClient.SetPutURLs(map[string]string{
+		"chapter_chapter-1/page_page-000001": "https://upload.example/page_page-000001",
+		"chapter_chapter-1/page_page-000002": "https://upload.example/page_page-000002",
+	})
 	msgRepo := mock_repo.NewMockOSSMessageRepo()
 	txCx := newMockTxnContext(mockTxnRepos{chapter: chapterRepo, page: pageRepo, ossMessage: msgRepo})
 	txnMgr := mock_repo.NewMockTxnMgr(txCx)

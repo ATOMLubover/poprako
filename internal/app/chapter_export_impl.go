@@ -284,8 +284,8 @@ func (a *chapterExportAppImpl) ExportChapterLp(
 			sb.WriteString(fmt.Sprintf(
 				"----------------[%d]----------------[%.4f,%.4f,%d]\n",
 				i+1,
-				float64(unit.XCoord),
-				float64(unit.YCoord),
+				unit.XCoord,
+				unit.YCoord,
 				g,
 			))
 

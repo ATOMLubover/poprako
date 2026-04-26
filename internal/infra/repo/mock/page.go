@@ -84,6 +84,15 @@ func (r *PageRepo) GetStatsByID(pageID string) (*model.PageStats, error) {
 	return &stats, nil
 }
 
+func (r *PageRepo) LockByID(id string) error {
+	r.ensure()
+	if _, ok := r.Infos[id]; !ok {
+		return errNotFound
+	}
+
+	return nil
+}
+
 func (r *PageRepo) CreateBatch(pages []*model.PageCreation) error {
 	r.ensure()
 	now := time.Now()

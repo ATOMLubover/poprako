@@ -197,47 +197,6 @@
             }
         },
         "/assignments/{assignment_id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "全量替换指定分配的角色（PUT 语义），需要当前用户在该章节中拥有 reviewer 角色",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assignment"
-                ],
-                "summary": "更新分配角色",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "分配 ID",
-                        "name": "assignment_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新分配参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.UpdateAssignmentArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
             "delete": {
                 "security": [
                     {
@@ -3288,11 +3247,11 @@
                 },
                 "x_coord": {
                     "description": "XCoord 是翻译单元的 X 坐标",
-                    "type": "integer"
+                    "type": "number"
                 },
                 "y_coord": {
                     "description": "YCoord 是翻译单元的 Y 坐标",
-                    "type": "integer"
+                    "type": "number"
                 }
             }
         },
@@ -3375,11 +3334,11 @@
                 },
                 "x_coord": {
                     "description": "XCoord 表示翻译单元的 X 坐标",
-                    "type": "integer"
+                    "type": "number"
                 },
                 "y_coord": {
                     "description": "YCoord 表示翻译单元的 Y 坐标",
-                    "type": "integer"
+                    "type": "number"
                 }
             }
         },
@@ -3432,11 +3391,11 @@
                 },
                 "x_coord": {
                     "description": "XCoord 是翻译单元的 X 坐标",
-                    "type": "integer"
+                    "type": "number"
                 },
                 "y_coord": {
                     "description": "YCoord 是翻译单元的 Y 坐标",
-                    "type": "integer"
+                    "type": "number"
                 }
             }
         },
@@ -3488,28 +3447,11 @@
                 },
                 "x_coord": {
                     "description": "XCoord 是翻译单元的 X 坐标",
-                    "type": "integer"
+                    "type": "number"
                 },
                 "y_coord": {
                     "description": "YCoord 是翻译单元的 Y 坐标",
-                    "type": "integer"
-                }
-            }
-        },
-        "val.UpdateAssignmentArgs": {
-            "type": "object",
-            "required": [
-                "id",
-                "roles"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID 是要更新的分配记录标识",
-                    "type": "string"
-                },
-                "roles": {
-                    "description": "Roles 是更新后的角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）",
-                    "type": "integer"
+                    "type": "number"
                 }
             }
         },

@@ -17,10 +17,8 @@ type AssignmentRepo interface {
 	// Exist 根据筛选条件判断是否存在匹配的分配记录
 	Exist(opt model.AssignmentQueryOpt) (bool, error)
 
-	// Create 持久化一个新的分配记录
-	Create(c *model.AssignmentCreation) (*model.AssignmentInfo, error)
-	// Update 更新分配记录（PUT 语义，全量角色替换）
-	Update(u *model.AssignmentUpdate) error
+	// UpsertCreate UPSERT 语义：若 (chapter_id, user_id) 已存在则更新，不存在则创建
+	UpsertCreate(c *model.AssignmentCreation) (*model.AssignmentInfo, error)
 	// Delete 删除分配记录（硬删除）
 	Delete(id string) error
 

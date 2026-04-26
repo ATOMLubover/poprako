@@ -22,7 +22,7 @@ setup:
 
 # Format, regenerate Swagger docs, then build & run dev-main-server
 dev: fmt swag
-    docker compose --profile app up --build dev-main-server
+    DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose --profile app up --build --pull never dev-main-server
 
 # Tear down all containers and volumes (full clean slate)
 reset:

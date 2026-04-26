@@ -139,7 +139,7 @@ func (a *pageAppImpl) Reserve(
 			return nil, err
 		}
 
-		ossKey := a.pageSvc.GenOSSKey(targetChapter.ID, i)
+		ossKey := a.pageSvc.GenOSSKey(targetChapter.ID, creation.ID)
 
 		putURL, err := a.urlSigner.GeneratePutPresignedURL(ossKey)
 		if err != nil {

@@ -14,6 +14,8 @@ type PageRepo interface {
 	List(opt model.PageQueryOpt) ([]model.PageInfo, error)
 	// GetStatsByID 根据页面 ID 获取页面统计数据
 	GetStatsByID(pageID string) (*model.PageStats, error)
+	// LockByID 在当前事务中锁定页面行，用于串行化同一页面的并发修改
+	LockByID(id string) error
 
 	// CreateBatch 批量创建页面
 	CreateBatch(pages []*model.PageCreation) error

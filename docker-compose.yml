@@ -2,6 +2,7 @@ services:
   # ── Dev: postgres ────────────────────────────────────────────────────────────
   dev-postgres:
     image: postgres:18-alpine
+    pull_policy: if_not_present
     container_name: dev-postgres
     profiles: ["db", "app", "setup"]
     environment:
@@ -11,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U devuser -d poprako_s_db"]
       interval: 5s
@@ -21,6 +22,7 @@ services:
   # ── Dev: one-shot migration runner ──────────────────────────────────────────
   dev-database-setup:
     image: postgres:18-alpine
+    pull_policy: if_not_present
     profiles: ["setup"]
     depends_on:
       dev-postgres:
@@ -37,7 +39,10 @@ services:
 
   # ── Dev: main-server ─────────────────────────────────────────────────────────────
   dev-main-server:
-    build: .
+    build:
+      context: .
+      pull: false
+    pull_policy: if_not_present
     container_name: dev-main-server
     profiles: ["app"]
     ports:
@@ -62,7 +67,7 @@ services:
       POSTGRES_USER: poprako
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - prod_db_data:/var/lib/postgresql/data
+      - prod_db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U poprako -d poprako"]
       interval: 10s
@@ -74,6 +79,7 @@ services:
     build:
       context: .
       dockerfile: docker/poprako-s-main/Dockerfile
+    pull_policy: missing
     container_name: prod-main-server
     profiles: ["prod"]
     ports:
@@ -82,6 +88,19 @@ services:
       APP_ENVIRONMENT: production
       DATABASE_URL: postgres://poprako:${POSTGRES_PASSWORD}@prod-postgres:5432/poprako?sslmode=disable
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      OSS_PLATFORM: ${OSS_PLATFORM}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME}
+      R2_REGION: ${R2_REGION:-auto}
+      R2_CUSTOM_DOMAIN: ${R2_CUSTOM_DOMAIN:-}
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+      ALIYUN_OSS_REGION: ${ALIYUN_OSS_REGION}
+      ALIYUN_OSS_BUCKET_NAME: ${ALIYUN_OSS_BUCKET_NAME}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT}
+      ALIYUN_OSS_CUSTOM_DOMAIN: ${ALIYUN_OSS_CUSTOM_DOMAIN}
     depends_on:
       prod-postgres:
         condition: service_healthy

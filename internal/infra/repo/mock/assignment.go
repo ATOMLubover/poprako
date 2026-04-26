@@ -110,24 +110,43 @@ func (r *AssignmentRepo) Create(c *model.AssignmentCreation) (*model.AssignmentI
 	return &copy, nil
 }
 
-func (r *AssignmentRepo) Update(u *model.AssignmentUpdate) error {
+func (r *AssignmentRepo) UpsertCreate(c *model.AssignmentCreation) (*model.AssignmentInfo, error) {
 	r.ensure()
-	info, ok := r.Infos[u.ID]
-	if !ok {
-		return errNotFound
+	now := time.Now()
+
+	for _, info := range r.Infos {
+		if info.ChapterID == c.ChapterID && info.UserID == c.UserID {
+			info.AssignedRawProviderAt = cloneTimePtr(c.AssignedRawProviderAt)
+			info.AssignedTranslatorAt = cloneTimePtr(c.AssignedTranslatorAt)
+			info.AssignedProofreaderAt = cloneTimePtr(c.AssignedProofreaderAt)
+			info.AssignedTypesetterAt = cloneTimePtr(c.AssignedTypesetterAt)
+			info.AssignedRedrawerAt = cloneTimePtr(c.AssignedRedrawerAt)
+			info.AssignedReviewerAt = cloneTimePtr(c.AssignedReviewerAt)
+			info.AssignedPublisherAt = cloneTimePtr(c.AssignedPublisherAt)
+			info.UpdatedAt = now
+			r.Infos[info.ID] = info
+			copy := info
+			return &copy, nil
+		}
 	}
 
-	info.AssignedRawProviderAt = cloneTimePtr(u.AssignedRawProviderAt)
-	info.AssignedTranslatorAt = cloneTimePtr(u.AssignedTranslatorAt)
-	info.AssignedProofreaderAt = cloneTimePtr(u.AssignedProofreaderAt)
-	info.AssignedTypesetterAt = cloneTimePtr(u.AssignedTypesetterAt)
-	info.AssignedRedrawerAt = cloneTimePtr(u.AssignedRedrawerAt)
-	info.AssignedReviewerAt = cloneTimePtr(u.AssignedReviewerAt)
-	info.AssignedPublisherAt = cloneTimePtr(u.AssignedPublisherAt)
-	info.UpdatedAt = time.Now()
-	r.Infos[u.ID] = info
-
-	return nil
+	info := model.AssignmentInfo{
+		ID:                    c.ID,
+		ChapterID:             c.ChapterID,
+		UserID:                c.UserID,
+		AssignedRawProviderAt: cloneTimePtr(c.AssignedRawProviderAt),
+		AssignedTranslatorAt:  cloneTimePtr(c.AssignedTranslatorAt),
+		AssignedProofreaderAt: cloneTimePtr(c.AssignedProofreaderAt),
+		AssignedTypesetterAt:  cloneTimePtr(c.AssignedTypesetterAt),
+		AssignedRedrawerAt:    cloneTimePtr(c.AssignedRedrawerAt),
+		AssignedReviewerAt:    cloneTimePtr(c.AssignedReviewerAt),
+		AssignedPublisherAt:   cloneTimePtr(c.AssignedPublisherAt),
+		CreatedAt:             now,
+		UpdatedAt:             now,
+	}
+	r.Infos[info.ID] = info
+	copy := info
+	return &copy, nil
 }
 
 func (r *AssignmentRepo) Delete(id string) error {

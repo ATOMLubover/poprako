@@ -386,7 +386,7 @@ func (a *chapterAppImpl) Create(
 
 		// 章节创建者必须立即成为该章节的监修，不能依赖事件侧路补齐。
 		reviewerCreation := service.NewAssignmentService().NewInitReviewerCreation(chInfo.ID, currUserID)
-		if _, err := assignmentRepoTxn.Create(reviewerCreation); err != nil {
+		if _, err := assignmentRepoTxn.UpsertCreate(reviewerCreation); err != nil {
 			return err
 		}
 

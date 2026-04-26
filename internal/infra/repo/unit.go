@@ -65,8 +65,8 @@ func (r *unitRepoImpl) CreateBatch(units []*model.UnitCreation) error {
 		rows = append(rows, map[string]any{
 			"id":                  unit.ID,
 			"page_id":             unit.PageID,
-			"x_coord":             float64(unit.XCoord),
-			"y_coord":             float64(unit.YCoord),
+			"x_coord":             unit.XCoord,
+			"y_coord":             unit.YCoord,
 			"index":               unit.Index,
 			"in_bubble":           unit.IsBubble,
 			"is_proofread":        unit.IsProofread,
@@ -96,8 +96,8 @@ func (r *unitRepoImpl) UpsertBatch(units []*model.UnitCreation) error {
 		rows = append(rows, map[string]any{
 			"id":                  unit.ID,
 			"page_id":             unit.PageID,
-			"x_coord":             float64(unit.XCoord),
-			"y_coord":             float64(unit.YCoord),
+			"x_coord":             unit.XCoord,
+			"y_coord":             unit.YCoord,
 			"index":               unit.Index,
 			"in_bubble":           unit.IsBubble,
 			"is_proofread":        unit.IsProofread,
@@ -142,10 +142,10 @@ func (r *unitRepoImpl) PatchBatch(patches []*model.UnitPatch) error {
 			updates["index"] = *patch.Index
 		}
 		if patch.XCoord != nil {
-			updates["x_coord"] = float64(*patch.XCoord)
+			updates["x_coord"] = *patch.XCoord
 		}
 		if patch.YCoord != nil {
-			updates["y_coord"] = float64(*patch.YCoord)
+			updates["y_coord"] = *patch.YCoord
 		}
 		if patch.IsBubble != nil {
 			updates["in_bubble"] = *patch.IsBubble

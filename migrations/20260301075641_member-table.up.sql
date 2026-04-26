@@ -62,3 +62,30 @@ CREATE INDEX "idx_member_admin"
     ON "member_table" ("assigned_admin_at")
     WHERE "assigned_admin_at" IS NOT NULL
       AND "deleted_at" IS NULL;
+
+-- 将预置超级管理员加入默认汉化组，并授予全部成员权限
+INSERT INTO "member_table" (
+    "id",
+    "user_id",
+    "team_id",
+    "assigned_raw_provider_at",
+    "assigned_translator_at",
+    "assigned_proofreader_at",
+    "assigned_typesetter_at",
+    "assigned_redrawer_at",
+    "assigned_reviewer_at",
+    "assigned_publisher_at",
+    "assigned_admin_at"
+) VALUES (
+    '00000000-0000-0000-0000-000000000201',
+    '00000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000101',
+    NOW(),
+    NOW(),
+    NOW(),
+    NOW(),
+    NOW(),
+    NOW(),
+    NOW(),
+    NOW()
+);

@@ -253,6 +253,21 @@ func (a *unitAppImpl) Save(
 	}
 
 	if err := a.txnMgr.RunInTxn(func(cx context.Context) error {
+		pageRepoTxn, err := a.pageRepo.FromTxnCx(cx)
+		if err != nil {
+			return err
+		}
+
+		if err := pageRepoTxn.LockByID(args.PageID); err != nil {
+			lgr.Error(
+				"保存翻译单元失败：锁定页面失败",
+				zap.String("page_id", args.PageID),
+				zap.Error(err),
+			)
+
+			return errors.New("保存翻译单元失败")
+		}
+
 		// 从事务上下文中构造事务版 Repo
 		unitRepoTxn, err := a.unitRepo.FromTxnCx(cx)
 		if err != nil {
@@ -355,16 +370,10 @@ func (a *unitAppImpl) Save(
 			}
 		}
 
-		if len(insertUnits) > 0 {
-			insertPtrs := make([]*model.UnitCreation, len(insertUnits))
-
-			for i := range insertUnits {
-				insertPtrs[i] = &insertUnits[i]
-			}
-
-			if err := unitRepoTxn.CreateBatch(insertPtrs); err != nil {
+		if len(args.UnitDiff.Delete) > 0 {
+			if err := unitRepoTxn.DeleteBatch(args.UnitDiff.Delete); err != nil {
 				lgr.Error(
-					"保存翻译单元失败：批量创建失败",
+					"保存翻译单元失败：批量删除失败",
 					zap.String("page_id", args.PageID),
 					zap.Error(err),
 				)
@@ -391,21 +400,22 @@ func (a *unitAppImpl) Save(
 			}
 		}
 
-		if len(args.UnitDiff.Delete) > 0 {
-			if err := unitRepoTxn.DeleteBatch(args.UnitDiff.Delete); err != nil {
+		if len(insertUnits) > 0 {
+			insertPtrs := make([]*model.UnitCreation, len(insertUnits))
+
+			for i := range insertUnits {
+				insertPtrs[i] = &insertUnits[i]
+			}
+
+			if err := unitRepoTxn.CreateBatch(insertPtrs); err != nil {
 				lgr.Error(
-					"保存翻译单元失败：批量删除失败",
+					"保存翻译单元失败：批量创建失败",
 					zap.String("page_id", args.PageID),
 					zap.Error(err),
 				)
 
 				return errors.New("保存翻译单元失败")
 			}
-		}
-
-		pageRepoTxn, err := a.pageRepo.FromTxnCx(cx)
-		if err != nil {
-			return err
 		}
 
 		chapterRepoTxn, err := a.chapterRepo.FromTxnCx(cx)

@@ -140,56 +140,6 @@ func CreateChapterAssignment(appState *state.AppState) iris.Handler {
 	}
 }
 
-// UpdateAssignment godoc
-// @Summary 	更新分配角色
-// @Description 全量替换指定分配的角色（PUT 语义），需要当前用户在该章节中拥有 reviewer 角色
-//
-// @Tags 		assignment
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		assignment_id path string true "分配 ID"
-// @Param 		body body val.UpdateAssignmentArgs true "更新分配参数"
-//
-// @Success 	200
-//
-// @Router 		/assignments/{assignment_id} [put]
-func UpdateAssignment(appState *state.AppState) iris.Handler {
-	assignmentApp := appState.AssignmentApp
-
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
-		if !ok {
-			return
-		}
-
-		assignmentID := ctx.Params().Get("assignment_id")
-		if assignmentID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 assignment_id 路径参数")
-			return
-		}
-
-		var args val.UpdateAssignmentArgs
-
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
-			return
-		}
-		args.ID = assignmentID
-
-		if err := assignmentApp.Update(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		); err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
-			return
-		}
-
-		accept(ctx, "更新分配成功", nil)
-	}
-}
-
 // RemoveAssignment godoc
 // @Summary 	删除分配
 // @Description 删除指定分配记录，需要当前用户在该章节中拥有 reviewer 角色

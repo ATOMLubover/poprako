@@ -3,8 +3,8 @@ CREATE TABLE "unit_table" (
 
     "page_id"            TEXT        NOT NULL REFERENCES "page_table" ("id") ON DELETE CASCADE,
 
-    "x_coord"            REAL        NOT NULL,
-    "y_coord"            REAL        NOT NULL,
+    "x_coord"            DOUBLE PRECISION NOT NULL,
+    "y_coord"            DOUBLE PRECISION NOT NULL,
 
     "index"              INTEGER     NOT NULL,
     "in_bubble"          BOOLEAN     NOT NULL DEFAULT TRUE,

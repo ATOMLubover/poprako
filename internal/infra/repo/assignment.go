@@ -10,6 +10,7 @@ import (
 	entity "poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type assignmentRepoImpl struct {
@@ -122,19 +123,46 @@ func (r *assignmentRepoImpl) Create(c *model.AssignmentCreation) (*model.Assignm
 	return r.GetByID(c.ID)
 }
 
-func (r *assignmentRepoImpl) Update(u *model.AssignmentUpdate) error {
-	return r.gdb.Table(entity.AssignmentTable).
-		Where("id = ?", u.ID).
-		Updates(map[string]any{
-			"assigned_raw_provider_at": u.AssignedRawProviderAt,
-			"assigned_translator_at":   u.AssignedTranslatorAt,
-			"assigned_proofreader_at":  u.AssignedProofreaderAt,
-			"assigned_typesetter_at":   u.AssignedTypesetterAt,
-			"assigned_redrawer_at":     u.AssignedRedrawerAt,
-			"assigned_reviewer_at":     u.AssignedReviewerAt,
-			"assigned_publisher_at":    u.AssignedPublisherAt,
-			"updated_at":               time.Now(),
-		}).Error
+func (r *assignmentRepoImpl) UpsertCreate(c *model.AssignmentCreation) (*model.AssignmentInfo, error) {
+	now := time.Now()
+	row := map[string]any{
+		"id":                       c.ID,
+		"chapter_id":               c.ChapterID,
+		"user_id":                  c.UserID,
+		"assigned_raw_provider_at": c.AssignedRawProviderAt,
+		"assigned_translator_at":   c.AssignedTranslatorAt,
+		"assigned_proofreader_at":  c.AssignedProofreaderAt,
+		"assigned_typesetter_at":   c.AssignedTypesetterAt,
+		"assigned_redrawer_at":     c.AssignedRedrawerAt,
+		"assigned_reviewer_at":     c.AssignedReviewerAt,
+		"assigned_publisher_at":    c.AssignedPublisherAt,
+		"created_at":               now,
+		"updated_at":               now,
+	}
+
+	err := r.gdb.Table(entity.AssignmentTable).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "chapter_id"}, {Name: "user_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"assigned_raw_provider_at",
+				"assigned_translator_at",
+				"assigned_proofreader_at",
+				"assigned_typesetter_at",
+				"assigned_redrawer_at",
+				"assigned_reviewer_at",
+				"assigned_publisher_at",
+				"updated_at",
+			}),
+		}).
+		Create(row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Get(model.AssignmentQueryOpt{
+		ChapterID: &c.ChapterID,
+		UserID:    &c.UserID,
+	})
 }
 
 func (r *assignmentRepoImpl) Delete(id string) error {

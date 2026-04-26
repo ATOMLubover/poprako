@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"strconv"
 
 	"poprako-s/internal/domain/model"
 	"poprako-s/internal/domain/repo"
@@ -20,10 +19,10 @@ type PageService interface {
 		ossKey string,
 		creatorID string,
 	) (*model.PageCreation, error)
-	// GenOSSKey 根据章节 ID 与页面序号生成 OSS Key，格式为 chapter_{chapterID}/page_{index}
+	// GenOSSKey 根据章节 ID 与页面 ID 生成 OSS Key，格式为 chapter_{chapterID}/page_{pageID}
 	GenOSSKey(
 		chapterID string,
-		index int,
+		pageID string,
 	) string
 }
 
@@ -66,11 +65,11 @@ func (s *pageServiceImpl) NewCreation(
 	}, nil
 }
 
-// GenOSSKey 以目录式命名生成页面图片的 OSS Key，格式为 chapter_{chapterID}/page_{index}
+// GenOSSKey 以目录式命名生成页面图片的 OSS Key，格式为 chapter_{chapterID}/page_{pageID}
 func (s *pageServiceImpl) GenOSSKey(
 	chapterID string,
-	index int,
+	pageID string,
 ) string {
-	// 必须包含 chapterID 以避免跨章节 key 冲突
-	return "chapter_" + chapterID + "/page_" + strconv.Itoa(index)
+	// 必须包含 pageID 以避免重排/重拍时 key 变化或覆盖
+	return "chapter_" + chapterID + "/page_" + pageID
 }
