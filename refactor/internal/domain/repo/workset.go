@@ -28,6 +28,10 @@ type WorksetRepo interface {
 	// `Update` applies the mutable fields in `upd` to an existing workset.
 	Update(upd *aggr.WorksetUpd) RepoErr
 
+	// `UpdateComicCount` applies delta to one workset comic counter.
+	// The counter update is usually called inside app transaction flows.
+	UpdateComicCount(id string, delta int) RepoErr
+
 	// `Remove` marks the workset as deleted by setting its `deleted_at`
 	// timestamp without physically removing the row.
 	Remove(id string) RepoErr

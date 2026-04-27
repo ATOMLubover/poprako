@@ -54,6 +54,7 @@ applyTo:
 
 - 若聚合有 belongs to 关联字段（例如 `Workset.Team`）repo 必须实现 typed include 到 preload 的映射 不能声明字段但不支持 include
 - `PUT` 语义更新时 可空字段即使为 `nil` 也要被显式 `Select` 并写入 `NULL` 禁止把 `nil` 当作“跳过列更新”
+- `List` 查询的排序必须严格匹配业务默认排序 并在 `refactor/migrations` 提供与过滤列 + 排序列一致的复合索引
 - 删除命名固定：`Delete` 只能实现硬删除 `Remove` 只能实现软删除
 - 已有常见缩写必须统一使用 例如 `Desc`/`desc` 禁止回退到 `Description`/`description`（SQL 字符串除外）
 

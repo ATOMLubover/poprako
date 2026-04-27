@@ -146,6 +146,21 @@ func (r *worksetRepoImpl) Update(upd *aggr.WorksetUpd) repo_iface.RepoErr {
 	return err
 }
 
+// `UpdateComicCount` applies delta to `comic_count` and refreshes `updated_at`.
+func (r *worksetRepoImpl) UpdateComicCount(id string, delta int) repo_iface.RepoErr {
+	now := time.Now()
+
+	err := r.gdb.
+		Table(entity.WORKSET_TABLE).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"comic_count": gorm.Expr("GREATEST(comic_count + ?, 0)", delta),
+			"updated_at":  now,
+		}).Error
+
+	return err
+}
+
 // `Remove` marks the workset as deleted by setting `deleted_at` to the current time.
 func (r *worksetRepoImpl) Remove(id string) repo_iface.RepoErr {
 	now := time.Now()

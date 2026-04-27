@@ -57,14 +57,14 @@ type UserCreds struct {
 	PwdHash string
 }
 
-// `VerifyPwd` verifies the raw password against the stored hash and emits a login event on success
-func (c *UserCreds) VerifyPwd(pwd string) error {
+// `VfyPwd` verifies the raw password against the stored hash and emits a login event on success
+func (c *UserCreds) VfyPwd(pwd string) error {
 	// Compare password hash and raw password.
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(c.PwdHash),
 		[]byte(pwd),
 	); err != nil {
-		return fmt.Errorf("[UserCreds.VerifyPwd] unmatched password: %w", err)
+		return fmt.Errorf("[UserCreds.VfyPwd] unmatched password: %w", err)
 	}
 
 	c.PushEv(event.NewUserLoginEv(c.Id))

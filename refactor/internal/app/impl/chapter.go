@@ -1,0 +1,417 @@
+package app_impl
+
+import (
+	"context"
+	"fmt"
+
+	app_iface "poprako-s/internal/app"
+	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
+	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/domain/svc"
+	repo_infra "poprako-s/internal/infra/repo"
+
+	"go.uber.org/zap"
+)
+
+// `chapterAppImpl` is the default implementation of `ChapterApp`.
+type chapterAppImpl struct {
+	txnCtrl repo_iface.TxnCtrl
+
+	chapterSvc svc.ChapterSvc
+
+	memberRepo  repo_iface.MemberRepo
+	worksetRepo repo_iface.WorksetRepo
+	comicRepo   repo_iface.ComicRepo
+	chapterRepo repo_iface.ChapterRepo
+}
+
+// `NewChapterApp` creates one `ChapterApp` implementation.
+func NewChapterApp(
+	txnCtrl repo_iface.TxnCtrl,
+	chapterSvc svc.ChapterSvc,
+	memberRepo repo_iface.MemberRepo,
+	worksetRepo repo_iface.WorksetRepo,
+	comicRepo repo_iface.ComicRepo,
+	chapterRepo repo_iface.ChapterRepo,
+) app_iface.ChapterApp {
+	if txnCtrl == nil ||
+		memberRepo == nil ||
+		worksetRepo == nil ||
+		comicRepo == nil ||
+		chapterRepo == nil {
+		zap.L().Panic(
+			"[NewChapterApp] nil dependency",
+			zap.Bool("txnCtrl", txnCtrl == nil),
+			zap.Bool("memberRepo", memberRepo == nil),
+			zap.Bool("worksetRepo", worksetRepo == nil),
+			zap.Bool("comicRepo", comicRepo == nil),
+			zap.Bool("chapterRepo", chapterRepo == nil),
+		)
+	}
+
+	return &chapterAppImpl{
+		txnCtrl:     txnCtrl,
+		chapterSvc:  chapterSvc,
+		memberRepo:  memberRepo,
+		worksetRepo: worksetRepo,
+		comicRepo:   comicRepo,
+		chapterRepo: chapterRepo,
+	}
+}
+
+// `List` returns chapter list under target comic.
+func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.ListChapterArgs) res.AppRes[[]val.ChapterVal] {
+	lgr := app_util.TakeLgr(cx)
+
+	if code, msg, reject := vfyListChapterArgs(args); reject {
+		return res.Reject[[]val.ChapterVal](code, msg)
+	}
+
+	cm, err := a.comicRepo.GetById(args.ComicId, enum.ComicInclWorkset)
+	if err != nil {
+		return res.Reject[[]val.ChapterVal](res.BadRequest, "漫画不存在")
+	}
+
+	ok, err := a.memberRepo.ExistByUserTeamId(currUid, cm.Workset.TeamId)
+	if err != nil {
+		lgr.Error("[chapterAppImpl.List] failed to verify team membership", zap.Error(err))
+		return res.Reject[[]val.ChapterVal](res.ServerError, "获取章节列表失败")
+	}
+
+	if !ok {
+		return res.Reject[[]val.ChapterVal](res.Forbidden, "无权访问该漫画的章节")
+	}
+
+	chapters, err := a.chapterRepo.List(&query.ListChapterOpt{
+		ComicId: &args.ComicId,
+		Pagi: query.PagiOpt{
+			Offset: args.Offset,
+			Limit:  args.Limit,
+		},
+	})
+	if err != nil {
+		lgr.Error("[chapterAppImpl.List] failed to list chapters", zap.Error(err))
+		return res.Reject[[]val.ChapterVal](res.ServerError, "获取章节列表失败")
+	}
+
+	vals := make([]val.ChapterVal, len(chapters))
+	for i, ch := range chapters {
+		vals[i] = asmChapterVal(ch)
+	}
+
+	return res.Accept(&vals)
+}
+
+// `GetPinned` returns pinned chapter under target comic.
+func (a *chapterAppImpl) GetPinned(cx context.Context, currUid string, comicId string) res.AppRes[val.ChapterVal] {
+	lgr := app_util.TakeLgr(cx)
+
+	if comicId == "" {
+		return res.Reject[val.ChapterVal](res.BadRequest, "comic_id 不能为空")
+	}
+
+	cm, err := a.comicRepo.GetById(comicId, enum.ComicInclWorkset)
+	if err != nil {
+		return res.Reject[val.ChapterVal](res.BadRequest, "漫画不存在")
+	}
+
+	ok, err := a.memberRepo.ExistByUserTeamId(currUid, cm.Workset.TeamId)
+	if err != nil {
+		lgr.Error("[chapterAppImpl.GetPinned] failed to verify team membership", zap.Error(err))
+		return res.Reject[val.ChapterVal](res.ServerError, "获取置顶章节失败")
+	}
+
+	if !ok {
+		return res.Reject[val.ChapterVal](res.Forbidden, "无权访问该漫画的章节")
+	}
+
+	ch, err := a.chapterRepo.FindPinnedByComicId(comicId)
+	if err != nil {
+		lgr.Error("[chapterAppImpl.GetPinned] failed to get pinned chapter", zap.Error(err))
+		return res.Reject[val.ChapterVal](res.ServerError, "获取置顶章节失败")
+	}
+
+	if ch == nil {
+		return res.Accept[val.ChapterVal](nil)
+	}
+
+	v := asmChapterVal(ch)
+
+	return res.Accept(&v)
+}
+
+// `Create` creates one chapter under target comic.
+func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.CreateChapterArgs) res.AppRes[val.ChapterCreatedRes] {
+	lgr := app_util.TakeLgr(cx)
+
+	if code, msg, reject := vfyCreateChapterArgs(args); reject {
+		return res.Reject[val.ChapterCreatedRes](code, msg)
+	}
+
+	var (
+		createdId string
+		errCode   = res.BadRequest
+	)
+
+	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
+		memberRepo, err := repo_infra.TxnMemberRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+		comicRepo, err := repo_infra.TxnComicRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+		chapterRepo, err := repo_infra.TxnChapterRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		cm, err := comicRepo.GetById(args.ComicId)
+		if err != nil {
+			return err
+		}
+
+		ws, err := worksetRepo.GetById(cm.WorksetId)
+		if err != nil {
+			return err
+		}
+
+		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
+		if err != nil {
+			return err
+		}
+
+		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
+			return fmt.Errorf("only team admin can create chapter")
+		}
+
+		count, err := chapterRepo.Count(&query.ListChapterOpt{ComicId: &args.ComicId})
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		cre := a.chapterSvc.NewChapterCre(args.ComicId, int(count), args.Subtitle, currUid)
+		ch, err := chapterRepo.Create(cre)
+		if err != nil {
+			return err
+		}
+
+		if err := comicRepo.UpdateChapterCount(args.ComicId, 1); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		if err := comicRepo.TouchLastActive(args.ComicId); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		createdId = ch.Id
+		return nil
+	}); err != nil {
+		lgr.Error("[chapterAppImpl.Create] failed to run create chapter transaction", zap.Error(err))
+
+		switch errCode {
+		case res.ServerError:
+			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败")
+		default:
+			return res.Reject[val.ChapterCreatedRes](res.Forbidden, "仅汉化组管理员可创建章节")
+		}
+	}
+
+	return res.Accept(&val.ChapterCreatedRes{Id: createdId})
+}
+
+// `Update` updates one chapter.
+func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.ChapterUpdArgs) res.AppRes[res.None] {
+	lgr := app_util.TakeLgr(cx)
+
+	if code, msg, reject := vfyUpdateChapterArgs(args); reject {
+		return res.Reject[res.None](code, msg)
+	}
+
+	var errCode = res.BadRequest
+
+	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
+		memberRepo, err := repo_infra.TxnMemberRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		comicRepo, err := repo_infra.TxnComicRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		chapterRepo, err := repo_infra.TxnChapterRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		ch, err := chapterRepo.GetById(args.Id)
+		if err != nil {
+			return err
+		}
+
+		cm, err := comicRepo.GetById(ch.ComicId)
+		if err != nil {
+			return err
+		}
+
+		ws, err := worksetRepo.GetById(cm.WorksetId)
+		if err != nil {
+			return err
+		}
+
+		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
+		if err != nil {
+			return err
+		}
+
+		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
+			return fmt.Errorf("only team admin can update chapter")
+		}
+
+		if args.WorkflowTransition != nil {
+			if err := ch.TransiteWorkflow(*args.WorkflowTransition); err != nil {
+				return err
+			}
+		}
+
+		upd := mkChapterUpd(args, ch)
+		if err := chapterRepo.Update(upd); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		lgr.Error("[chapterAppImpl.Update] failed to run update chapter transaction", zap.Error(err))
+
+		switch errCode {
+		case res.ServerError:
+			return res.Reject[res.None](res.ServerError, "更新章节失败")
+		default:
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节")
+		}
+	}
+
+	return res.Accept(&res.None{})
+}
+
+// `Remove` soft-deletes one chapter.
+func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId string) res.AppRes[res.None] {
+	lgr := app_util.TakeLgr(cx)
+
+	if code, msg, reject := vfyRemoveChapterId(chapterId); reject {
+		return res.Reject[res.None](code, msg)
+	}
+
+	var errCode = res.BadRequest
+
+	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
+		memberRepo, err := repo_infra.TxnMemberRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		comicRepo, err := repo_infra.TxnComicRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		chapterRepo, err := repo_infra.TxnChapterRepo(cx)
+		if err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		ch, err := chapterRepo.GetById(chapterId)
+		if err != nil {
+			return err
+		}
+
+		cm, err := comicRepo.GetById(ch.ComicId)
+		if err != nil {
+			return err
+		}
+
+		ws, err := worksetRepo.GetById(cm.WorksetId)
+		if err != nil {
+			return err
+		}
+
+		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
+		if err != nil {
+			return err
+		}
+
+		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
+			return fmt.Errorf("only team admin can remove chapter")
+		}
+
+		if err := chapterRepo.Remove(chapterId); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		if err := comicRepo.UpdateChapterCount(ch.ComicId, -1); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+			errCode = res.ServerError
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		lgr.Error("[chapterAppImpl.Remove] failed to run remove chapter transaction", zap.Error(err))
+
+		switch errCode {
+		case res.ServerError:
+			return res.Reject[res.None](res.ServerError, "删除章节失败")
+		default:
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节")
+		}
+	}
+
+	return res.Accept(&res.None{})
+}

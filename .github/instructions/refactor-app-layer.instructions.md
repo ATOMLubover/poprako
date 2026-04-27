@@ -53,11 +53,13 @@ applyTo:
 
 - 当前用户 id 参数和变量统一使用 `currUid` 命名 禁止使用 `currUserId`
 - 事务编排风格统一对齐 `userAppImpl` 已有写法 使用本地 `errCode` + 直接返回真实错误的流程 禁止构造哨兵业务错误（例如 `errNotAdmin`）
+- 在事务闭包里拿到事务态 repo 后 局部变量命名使用业务名本身 例如 `memberRepo` `worksetRepo` 禁止添加 `txn` 前缀
 - 当 use-case 是 `PUT` 语义时 app 层必须构造全量更新输入 不能把 `nil` 可空字段解释为“跳过更新”
 - 删除语义命名固定：`Delete` 表示硬删除 `Remove` 表示软删除
 - 已有常见缩写必须统一使用 例如 `Desc`/`desc` 禁止回退到 `Description`/`description`（SQL 字符串除外）
 - 当 app 方法除 `cx` 和 `currUid` 外存在超过一个业务参数时 必须封装为 `val` args 结构体
 - 所有 `List` 类 app 接口必须带分页参数 并通过 `val.ListXxxArgs` 显式传入
+- `inner app impl` 的参数校验与参数归一化必须收敛到同模块 `*_util.go` helper 主流程方法只保留编排与业务步骤
 
 ## `log app impl` 规则
 

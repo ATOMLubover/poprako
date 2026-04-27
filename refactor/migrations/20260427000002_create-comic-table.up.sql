@@ -1,0 +1,43 @@
+CREATE TABLE IF NOT EXISTS "t_comic" (
+    "id"                TEXT        PRIMARY KEY,
+
+    "workset_id"        TEXT        NOT NULL REFERENCES "t_workset" ("id") ON DELETE CASCADE,
+
+    "index"             INTEGER     NOT NULL,
+    "title"             TEXT        NOT NULL,
+    "author"            TEXT        NOT NULL,
+    "fuzzy_title"       TEXT        NOT NULL,
+    "description"       TEXT,
+    "is_completed"      BOOLEAN     NOT NULL DEFAULT FALSE,
+
+    "chapter_count"     INTEGER     NOT NULL DEFAULT 0,
+
+    "creator_id"        TEXT        NOT NULL REFERENCES "t_user" ("id"),
+
+    "last_active_at"    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "created_at"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updated_at"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Soft-delete timestamp NULL means the comic is active
+    "deleted_at"        TIMESTAMPTZ
+);
+
+-- Partial unique index ensures active comics use unique index inside one workset
+CREATE UNIQUE INDEX IF NOT EXISTS "uidx_comic_workset_id_index"
+    ON "t_comic" ("workset_id", "index")
+    WHERE deleted_at IS NULL;
+
+-- Support fuzzy search on dedicated fuzzy title
+CREATE INDEX IF NOT EXISTS "trgm_idx_comic_fuzzy_title"
+    ON "t_comic" USING gin ("fuzzy_title" gin_trgm_ops)
+    WHERE deleted_at IS NULL AND is_completed = FALSE;
+
+-- Support title-only fuzzy search with last active sort under one workset
+CREATE INDEX IF NOT EXISTS "idx_comic_workset_id_last_active"
+    ON "t_comic" ("workset_id", "last_active_at" DESC)
+    WHERE deleted_at IS NULL;
+
+-- Support filtered comic search that excludes completed rows.
+CREATE INDEX IF NOT EXISTS "idx_comic_workset_id_last_active_filtered"
+    ON "t_comic" ("workset_id", "last_active_at" DESC)
+    WHERE deleted_at IS NULL AND is_completed = FALSE;

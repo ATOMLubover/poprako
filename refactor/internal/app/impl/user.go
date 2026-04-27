@@ -101,7 +101,7 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.App
 		return res.Reject[val.UserLoginRes](res.BadRequest, "用户不存在或密码错误")
 	}
 
-	if err := creds.VerifyPwd(args.Pwd); err != nil {
+	if err := creds.VfyPwd(args.Pwd); err != nil {
 		lgr.Error(
 			"[userAppImpl.Login] failed to verify user password",
 			zap.Error(err),
