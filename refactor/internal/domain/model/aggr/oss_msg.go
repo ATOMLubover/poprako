@@ -6,6 +6,28 @@ import (
 	"poprako-s/internal/domain/model/enum"
 )
 
+// `OssMsg` is the generic queue message used by background processors.
+type OssMsg struct {
+	Id string
+
+	ResTyp enum.OssResTyp
+	ResId  string
+	Op     enum.OssOp
+	Status enum.OssMsgStatus
+
+	ObjKeys []string
+
+	VisibleAt time.Time
+	ExpireAt  time.Time
+	ProcAt    *time.Time
+
+	AttemptCnt int
+	LastErr    string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type OssCreMsg struct {
 	Id string
 
@@ -20,9 +42,9 @@ type OssCreMsg struct {
 
 	VisibleAt time.Time
 	ExpireAt  time.Time
-	// `OnProcAt` is set when the message is claimed for processing,
+	// `ProcAt` is set when the message is claimed for processing,
 	// and is used to detect stuck messages.
-	OnProcAt *time.Time
+	ProcAt *time.Time
 
 	AttemptCnt int
 	LastErr    string
@@ -44,9 +66,9 @@ type OssDelMsg struct {
 
 	VisibleAt time.Time
 	ExpireAt  time.Time
-	// `OnProcAt` is set when the message is claimed for processing,
+	// `ProcAt` is set when the message is claimed for processing,
 	// and is used to detect stuck messages.
-	OnProcAt *time.Time
+	ProcAt *time.Time
 
 	AttemptCnt int
 	LastErr    string

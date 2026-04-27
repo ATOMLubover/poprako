@@ -20,3 +20,7 @@ func takeLgr(cx context.Context) *zap.Logger {
 
 	return lgr
 }
+
+func saveLgr(cx context.Context, lgr *zap.Logger) context.Context {
+	return context.WithValue(cx, LgrKey, lgr)
+}

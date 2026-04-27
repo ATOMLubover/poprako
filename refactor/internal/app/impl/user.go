@@ -31,10 +31,9 @@ type userAppImpl struct {
 	ossMsgSvc svc.OssMsgSvc
 
 	tknParser token_iface.Parser
+	ossSigner oss_iface.Signer
 
 	evBus event_iface.EvBus
-
-	ossSigner oss_iface.Signer
 }
 
 func NewUserApp(
@@ -47,8 +46,8 @@ func NewUserApp(
 	memberSvc svc.MemberSvc,
 	ossMsgSvc svc.OssMsgSvc,
 	tknParser token_iface.Parser,
-	evBus event_iface.EvBus,
 	ossSigner oss_iface.Signer,
+	evBus event_iface.EvBus,
 ) app_iface.UserApp {
 	if txnCtrl == nil ||
 		userRepo == nil ||
@@ -282,7 +281,7 @@ func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArg
 	// it's not a problem if the generated URL is not used within a short period of time,
 	// as long as the URL is generated successfully and the corresponding pending
 	// creation message is created in the database.
-	url, err := a.ossSigner.GenPutURL(key)
+	url, err := a.ossSigner.GenPutUrl(key)
 	if err != nil {
 		lgr.Error(
 			"[userAppImpl.ResvAvatar] failed to generate avatar upload URL",

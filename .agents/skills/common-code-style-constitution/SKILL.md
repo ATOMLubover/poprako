@@ -95,7 +95,7 @@ func (c *UserCreds) VerifyPwd(pwd string) error {
     }
 
     // Emit a login event so downstream handlers can react.
-    c.PushEv(&event_impl.UserLoginEv{UserID: c.ID})
+    c.PushEv(&event.UserLoginEv{UserID: c.ID})
 
     return nil
 }

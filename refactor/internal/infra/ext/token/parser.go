@@ -1,4 +1,4 @@
-package token_impl
+package token_infra
 
 import (
 	"os"

@@ -1,4 +1,4 @@
-package event_impl
+package event
 
 import event_iface "poprako-s/internal/event"
 

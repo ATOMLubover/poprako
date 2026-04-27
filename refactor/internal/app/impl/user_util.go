@@ -10,7 +10,7 @@ func asmUserVal(user *aggr.User, signer oss_iface.Signer) (*val.UserVal, error) 
 	// avatarUrl is defaulted to empty string.
 	avatarUrl := ""
 	if user.AvatarUploaded && user.AvatarKey != "" {
-		url, err := signer.GenGetURL(user.AvatarKey)
+		url, err := signer.GenGetUrl(user.AvatarKey)
 		if err != nil {
 			return nil, err
 		}

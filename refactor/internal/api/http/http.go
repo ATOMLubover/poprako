@@ -2,6 +2,8 @@ package http
 
 import (
 	// _ "poprako-s/docs"
+	"fmt"
+
 	"poprako-s/internal/api/http/middleware"
 	"poprako-s/internal/api/state"
 	"poprako-s/internal/cfg"
@@ -13,7 +15,7 @@ import (
 	"github.com/kataras/iris/v12/middleware/requestid"
 )
 
-func newApp(st *state.AppState) *iris.Application {
+func NewApp(st *state.AppState) *iris.Application {
 	app := iris.Default()
 
 	// Enable(from first to last):
@@ -47,10 +49,23 @@ func newApp(st *state.AppState) *iris.Application {
 				user.Post("/avatar", ResvUserAvatar(st))
 				user.Post("/avatar/confirm", MarkUserAvatarUploaded(st))
 			}
+
+			team := authorized.Party("/team")
+			{
+				team.Get("/{team_id}", GetTeamInfo(st))
+			}
 		}
 	}
 
 	return app
+}
+
+func RunServer(app *iris.Application, st *state.AppState) {
+	addr := fmt.Sprintf("%s:%d", st.Cfg.Http.Host, st.Cfg.Http.Port)
+
+	if err := app.Run(iris.Addr(addr)); err != nil {
+		panic(fmt.Sprintf("[RunServer] failed to start http server: %v", err))
+	}
 }
 
 func enableSwag(app *iris.Application) {

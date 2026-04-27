@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	event_impl "poprako-s/internal/domain/model/event"
+	"poprako-s/internal/domain/model/event"
 	event_iface "poprako-s/internal/event"
 
 	"golang.org/x/crypto/bcrypt"
@@ -58,7 +58,7 @@ func (c *UserCreds) VerifyPwd(pwd string) error {
 		return fmt.Errorf("[UserCreds.VerifyPwd] unmatched password: %w", err)
 	}
 
-	c.PushEv(event_impl.NewUserLoginEv(c.Id))
+	c.PushEv(event.NewUserLoginEv(c.Id))
 
 	return nil
 }

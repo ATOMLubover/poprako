@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
-	event_impl "poprako-s/internal/domain/model/event"
+	"poprako-s/internal/domain/model/event"
 	repo_iface "poprako-s/internal/domain/repo"
 	event_iface "poprako-s/internal/event"
 	"poprako-s/pkg/util"
@@ -23,11 +23,11 @@ func NewUpdateUserActiveHandler(userRepo repo_iface.UserRepo) *UpdateUserActiveH
 }
 
 func (h *UpdateUserActiveHandler) EvTyp() event_iface.EvTyp {
-	return event_impl.EvUserLogin
+	return event.EvUserLogin
 }
 
 func (h *UpdateUserActiveHandler) Handle(_ context.Context, ev event_iface.Event) {
-	payload, ok := ev.Payload().(*event_impl.UserLoginEv)
+	payload, ok := ev.Payload().(*event.UserLoginEv)
 	if !ok || payload == nil {
 		zap.L().Error(
 			"[UpdateUserActiveHandler.Handle] invalid event payload for UpdateUserActiveHandler",
@@ -58,11 +58,11 @@ func NewNotifyInvitorHandler(sysMailRepo repo_iface.SysMailRepo) *NotifyInvitorH
 }
 
 func (h *NotifyInvitorHandler) EvTyp() event_iface.EvTyp {
-	return event_impl.EvUserReg
+	return event.EvUserReg
 }
 
 func (h *NotifyInvitorHandler) Handle(_ context.Context, ev event_iface.Event) {
-	payload, ok := ev.Payload().(*event_impl.UserRegEv)
+	payload, ok := ev.Payload().(*event.UserRegEv)
 	if !ok || payload == nil {
 		zap.L().Error(
 			"[NotifyInvitorHandler.Handle] invalid event payload for NotifyInvitorHandler",

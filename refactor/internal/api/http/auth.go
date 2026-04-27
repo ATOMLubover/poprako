@@ -8,6 +8,16 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// `LoginUser` godoc
+// @Summary User Login
+// @Description Login by qid and password and return a `res.HttpRes` wrapper with `val.UserLoginRes`
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body val.UserLoginArgs true "login args"
+// @Success 200 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes
+// @Router /auth/login [post]
 func LoginUser(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -29,6 +39,16 @@ func LoginUser(st *state.AppState) iris.Handler {
 	}
 }
 
+// `RegUser` godoc
+// @Summary User Registration
+// @Description Register by invitation code and return a `res.HttpRes` wrapper with `val.UserRegRes`
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body val.UserRegArgs true "registration args"
+// @Success 200 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes
+// @Router /auth/reg [post]
 func RegUser(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 

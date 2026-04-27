@@ -2,7 +2,7 @@ package svc
 
 import (
 	"poprako-s/internal/domain/model/aggr"
-	event_impl "poprako-s/internal/domain/model/event"
+	"poprako-s/internal/domain/model/event"
 	"poprako-s/pkg/util"
 
 	"golang.org/x/crypto/bcrypt"
@@ -29,7 +29,7 @@ func (UserSvc) NewUserReg(inv *aggr.MemberInv, name string, pwd string) (*aggr.U
 		PwdHash:  string(hash),
 	}
 
-	reg.PushEv(event_impl.NewUserRegEv(inv.InvitorId, inv.InviteeQid, inv.TeamId))
+	reg.PushEv(event.NewUserRegEv(inv.InvitorId, inv.InviteeQid, inv.TeamId))
 
 	return reg, nil
 }

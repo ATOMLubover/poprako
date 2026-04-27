@@ -17,5 +17,10 @@ CREATE TABLE IF NOT EXISTS "t_member_invitation" (
     "updated_at" TIMESTAMPTZ DEFAULT NOW(),
 );
 
-CREATE INDEX IF NOT EXISTS "idx_member_invitation_invitee_qid" ON "t_member_invitation" ("invitee_qid");
-CREATE INDEX IF NOT EXISTS "idx_member_invitation_team_id_created_at_desc" ON "t_member_invitation" ("team_id", "created_at" DESC);
+CREATE INDEX IF NOT EXISTS "idx_member_invitation_invitee_qid"
+  ON "t_member_invitation" ("invitee_qid");
+CREATE UNIQUE INDEX IF NOT EXISTS "uidx_member_invitation_team_id_invitee_qid_pending"
+  ON "t_member_invitation" ("team_id", "invitee_qid")
+  WHERE "pending" = TRUE;
+CREATE INDEX IF NOT EXISTS "idx_member_invitation_team_id_created_at_desc"
+  ON "t_member_invitation" ("team_id", "created_at" DESC);

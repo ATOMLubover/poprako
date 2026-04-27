@@ -8,6 +8,16 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// `GetUserInfo` godoc
+// @Summary Get User Info
+// @Description Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Tags user
+// @Security ApiKeyAuth
+// @Produce json
+// @Param user_id path string true "user id"
+// @Success 200 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes
+// @Router /user/{user_id} [get]
 func GetUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -28,6 +38,15 @@ func GetUserInfo(st *state.AppState) iris.Handler {
 	}
 }
 
+// `GetMyUserInfo` godoc
+// @Summary Get My User Info
+// @Description Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Tags user
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {object} res.HttpRes
+// @Failure 401 {object} res.HttpRes
+// @Router /user/me [get]
 func GetMyUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -48,6 +67,17 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 	}
 }
 
+// `ResvUserAvatar` godoc
+// @Summary Reserve User Avatar Upload
+// @Description Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
+// @Tags user
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.ResvUserAvatarArgs true "reserve avatar args"
+// @Success 200 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes
+// @Router /user/avatar [post]
 func ResvUserAvatar(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -65,10 +95,19 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 			return
 		}
 
-		res.Accept(cx, iris.StatusOK, nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
+// `MarkUserAvatarUploaded` godoc
+// @Summary Confirm User Avatar Uploaded
+// @Description Confirm avatar uploaded after client upload completed and return no JSON body
+// @Tags user
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200
+// @Failure 401 {object} res.HttpRes
+// @Router /user/avatar/confirm [post]
 func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 

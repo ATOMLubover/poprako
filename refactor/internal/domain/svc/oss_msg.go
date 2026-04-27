@@ -13,8 +13,8 @@ const OSS_CRE_EXP = 30 * time.Minute
 
 type OssMsgSvc struct{}
 
-func NewOssMsgSvc() *OssMsgSvc {
-	return &OssMsgSvc{}
+func NewOssMsgSvc() OssMsgSvc {
+	return OssMsgSvc{}
 }
 
 func (OssMsgSvc) SavePendingCre(

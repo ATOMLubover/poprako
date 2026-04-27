@@ -19,9 +19,12 @@ type OssMsgRepo interface {
 	// This method will mark that one pending message as completed.
 	MarkCmplByRes(ty enum.OssResTyp, resId string) RepoErr
 
-	ClaimPending()
+	// `ClaimPending` claims one pending message for the specified operation.
+	// It returns nil when no message is available.
+	ClaimPending(op enum.OssOp) (*aggr.OssMsg, RepoErr)
 
-	MarkPending(id string) RepoErr
+	// `MarkPending` resets one processing message to pending and records retry metadata.
+	MarkPending(id string, errMsg string, nextVisibleAt time.Time) RepoErr
 
 	// `ResetStuck` resets messages that are in a processing state
 	// and were created before the specified time.
