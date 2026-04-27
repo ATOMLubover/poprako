@@ -6,8 +6,10 @@ import (
 	"poprako-s/internal/domain/model/enum"
 )
 
+// `RoleMask` is a bitmask that encodes a set of roles as a single uint32 value
 type RoleMask uint32
 
+// `HasAnyRole` reports whether the mask contains at least one of the given roles
 func (m RoleMask) HasAnyRole(r ...enum.Role) bool {
 	for _, role := range r {
 		if m&RoleMask(role) != 0 {
@@ -18,6 +20,7 @@ func (m RoleMask) HasAnyRole(r ...enum.Role) bool {
 	return false
 }
 
+// `ToRoleArr` expands the mask into a slice of individual roles in ascending bit order
 func (m RoleMask) ToRoleArr() []enum.Role {
 	var arr []enum.Role
 
@@ -31,10 +34,12 @@ func (m RoleMask) ToRoleArr() []enum.Role {
 	return arr
 }
 
+// `ToRoleMask` returns the receiver as-is, satisfying the `WithRoles` interface
 func (m RoleMask) ToRoleMask() RoleMask {
 	return m
 }
 
+// `FromRoleArr` sets the mask by ORing together all roles in the given slice
 func (m *RoleMask) FromRoleArr(arr []enum.Role) {
 	var mask RoleMask
 
@@ -45,6 +50,8 @@ func (m *RoleMask) FromRoleArr(arr []enum.Role) {
 	*m = mask
 }
 
+// `TimedRoles` records when each role was assigned by storing a nullable timestamp per role.
+// A nil timestamp means the role is not currently held
 type TimedRoles struct {
 	AssignedRawProviderAt *time.Time
 	AssignedTranslatorAt  *time.Time
@@ -56,6 +63,7 @@ type TimedRoles struct {
 	AssignedAdminAt       *time.Time
 }
 
+// `HasAnyRole` reports whether at least one of the given roles has been assigned
 func (t *TimedRoles) HasAnyRole(r ...enum.Role) bool {
 	for _, role := range r {
 		switch role {
@@ -97,6 +105,7 @@ func (t *TimedRoles) HasAnyRole(r ...enum.Role) bool {
 	return false
 }
 
+// `ToRoleArr` returns the slice of roles for which an assignment timestamp exists
 func (t *TimedRoles) ToRoleArr() []enum.Role {
 	var arr []enum.Role
 
@@ -128,6 +137,7 @@ func (t *TimedRoles) ToRoleArr() []enum.Role {
 	return arr
 }
 
+// `ToRoleMask` converts the timed role set into a `RoleMask` bitmask
 func (t *TimedRoles) ToRoleMask() RoleMask {
 	var m RoleMask
 
@@ -159,6 +169,8 @@ func (t *TimedRoles) ToRoleMask() RoleMask {
 	return m
 }
 
+// `FromRoleArr` assigns roles from the given slice by setting each role's timestamp to now,
+// only if the role has not been previously assigned
 func (t *TimedRoles) FromRoleArr(arr []enum.Role) {
 	now := time.Now()
 
@@ -200,6 +212,8 @@ func (t *TimedRoles) FromRoleArr(arr []enum.Role) {
 	}
 }
 
+// `FromRoleMask` assigns roles from a `RoleMask` by setting each role's timestamp to now,
+// only if the role has not been previously assigned
 func (t *TimedRoles) FromRoleMask(m RoleMask) {
 	now := time.Now()
 

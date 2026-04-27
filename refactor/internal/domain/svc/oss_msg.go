@@ -9,6 +9,7 @@ import (
 	"poprako-s/pkg/util"
 )
 
+// `OSS_CRE_EXP` defines the expiration duration for OSS creation messages.
 const OSS_CRE_EXP = 30 * time.Minute
 
 type OssMsgSvc struct{}
@@ -25,6 +26,7 @@ func (OssMsgSvc) SavePendingCre(
 ) error {
 	id := util.GenId("oss_msg")
 	exp := time.Now().Add(OSS_CRE_EXP)
+	now := time.Now()
 
 	return ossMsgRepo.SavePendingCre(&aggr.OssCreMsg{
 		Id:        id,
@@ -32,8 +34,8 @@ func (OssMsgSvc) SavePendingCre(
 		ResId:     resId,
 		Status:    enum.OssMsgStatePend,
 		ObjKeys:   keys,
-		VisibleAt: time.Now(),
+		VisibleAt: now,
 		ExpireAt:  exp,
-		CreatedAt: time.Now(),
+		CreatedAt: now,
 	})
 }

@@ -1,7 +1,9 @@
 package enum
 
+// `Role` is a bitmask flag that identifies a single team or assignment role
 type Role uint32
 
+// Role flag constants, each occupying one bit position in a `RoleMask`
 const (
 	RoleRawProvider Role = 1 << iota
 	RoleTranslator
@@ -16,7 +18,7 @@ const (
 	// works in team level.
 	RoleAdmin
 
-	// Range henlpers.
+	// Range helpers.
 	RoleInf Role = RoleRawProvider
 	RoleSup Role = RoleAdmin
 )

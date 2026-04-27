@@ -6,7 +6,7 @@ import (
 )
 
 type MemberInvRepo interface {
-	GetByInviteeQid(qid string) (*aggr.MemberInv, RepoErr)
+	GetPendingByInviteeQid(qid string) (*aggr.MemberInv, RepoErr)
 	List(opt query.ListMemberInvOpt) ([]aggr.MemberInv, RepoErr)
 
 	Create(cre *aggr.MemberInvCre) (*aggr.MemberInv, RepoErr)

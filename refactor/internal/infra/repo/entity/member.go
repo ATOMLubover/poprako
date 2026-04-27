@@ -9,7 +9,7 @@ import (
 const MEMBER_TABLE = "t_member"
 
 type MemberRow struct {
-	id string `gorm:"column:id;primaryKey"`
+	Id string `gorm:"column:id;primaryKey"`
 
 	UserId string   `gorm:"column:user_id"`
 	User   *UserRow `gorm:"foreignKey:UserId"`
@@ -51,7 +51,7 @@ func (r *MemberRow) ToMemberAggr() *aggr.Member {
 			AssignedPublisherAt:   r.AssignedPublisherAt,
 			AssignedAdminAt:       r.AssignedAdminAt,
 		},
-		Id:        r.id,
+		Id:        r.Id,
 		UserId:    r.UserId,
 		User:      r.User.ToUserAggr(),
 		TeamId:    r.TeamId,

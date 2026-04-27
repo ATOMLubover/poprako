@@ -10,7 +10,8 @@ import (
 
 // `GetUserInfo` godoc
 // @Summary Get User Info
-// @Description Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Description Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`.
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
@@ -40,7 +41,8 @@ func GetUserInfo(st *state.AppState) iris.Handler {
 
 // `GetMyUserInfo` godoc
 // @Summary Get My User Info
-// @Description Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Description Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`.
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
@@ -69,7 +71,8 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 
 // `ResvUserAvatar` godoc
 // @Summary Reserve User Avatar Upload
-// @Description Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
+// @Description Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`.
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Accept json
@@ -101,7 +104,8 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 
 // `MarkUserAvatarUploaded` godoc
 // @Summary Confirm User Avatar Uploaded
-// @Description Confirm avatar uploaded after client upload completed and return no JSON body
+// @Description Confirm avatar uploaded after client upload completed and return no JSON body.
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json

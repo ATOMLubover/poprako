@@ -203,18 +203,23 @@ func NewOssMsgResetStuckUpdRow() *ossMsgResetStuckUpdRow {
 	}
 }
 
-// `ossMsgMarkPendingUpdRow` maps update columns for pending reset
+// `ossMsgMarkPendingUpdRow` maps update columns for pending reset,
+// including status, processing_at, visible_at, last_error, and updated_at
 type ossMsgMarkPendingUpdRow struct {
 	Status    string     `gorm:"column:status"`
 	ProcAt    *time.Time `gorm:"column:processing_at"`
+	VisibleAt time.Time  `gorm:"column:visible_at"`
+	LastErr   string     `gorm:"column:last_error"`
 	UpdatedAt time.Time  `gorm:"column:updated_at"`
 }
 
-// `NewOssMsgMarkPendingUpdRow` builds update row for pending reset
-func NewOssMsgMarkPendingUpdRow() *ossMsgMarkPendingUpdRow {
+// `NewOssMsgMarkPendingUpdRow` builds an update row for pending reset with the given retry metadata
+func NewOssMsgMarkPendingUpdRow(errMsg string, nextVisibleAt time.Time, now time.Time) *ossMsgMarkPendingUpdRow {
 	return &ossMsgMarkPendingUpdRow{
 		Status:    string(enum.OssMsgStatePend),
 		ProcAt:    nil,
-		UpdatedAt: time.Now(),
+		VisibleAt: nextVisibleAt,
+		LastErr:   errMsg,
+		UpdatedAt: now,
 	}
 }

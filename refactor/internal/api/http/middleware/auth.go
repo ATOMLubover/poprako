@@ -8,6 +8,8 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+const UtkKey = "user_token"
+
 func Auth() iris.Handler {
 	parser := token_impl.NewJwtParser()
 
@@ -35,7 +37,7 @@ func Auth() iris.Handler {
 			return
 		}
 
-		cx.Values().Set("user_token", utk)
+		cx.Values().Set(UtkKey, utk)
 
 		cx.Next()
 	}

@@ -119,9 +119,21 @@ func (r *memberRepoImpl) Create(cre *aggr.MemberCre) (*aggr.Member, repo_iface.R
 func (r *memberRepoImpl) UpdateRoles(upd *aggr.MemberRoleUpd) repo_iface.RepoErr {
 	updRow := entity.NewMemberRoleUpdRowFromAggr(upd)
 
+	// Explicitly select all role timestamp columns so nil values are written as NULL.
 	err := r.gdb.
 		Table(entity.MEMBER_TABLE).
 		Where("id = ?", updRow.Id).
+		Select(
+			"assigned_raw_provider_at",
+			"assigned_translator_at",
+			"assigned_proofreader_at",
+			"assigned_typesetter_at",
+			"assigned_redrawer_at",
+			"assigned_reviewer_at",
+			"assigned_publisher_at",
+			"assigned_admin_at",
+			"updated_at",
+		).
 		Updates(updRow).Error
 	if err != nil {
 		return err

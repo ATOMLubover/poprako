@@ -5,6 +5,7 @@ import (
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	oss_iface "poprako-s/internal/domain/ext/oss"
 	repo_iface "poprako-s/internal/domain/repo"
@@ -36,7 +37,7 @@ func NewTeamApp(teamRepo repo_iface.TeamRepo, ossSigner oss_iface.Signer) app_if
 
 // `GetInfo` gets team information by id.
 func (a *teamAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.TeamVal] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	team, err := a.teamRepo.GetById(id)
 	if err != nil {
@@ -65,7 +66,7 @@ func (a *teamAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.Team
 
 // `ListUserTeams` lists teams that a user belongs to.
 func (a *teamAppImpl) ListUserTeams(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until member/team list query is introduced.
 	lgr.Warn("[teamAppImpl.ListUserTeams] not implemented", zap.String("user_id", userId))
@@ -75,7 +76,7 @@ func (a *teamAppImpl) ListUserTeams(cx context.Context, userId string) res.AppRe
 
 // `Update` updates one team profile.
 func (a *teamAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) res.AppRes[res.None] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until team update repo capability is introduced.
 	lgr.Warn("[teamAppImpl.Update] not implemented")
@@ -85,7 +86,7 @@ func (a *teamAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) res.AppR
 
 // `ResvAvatar` reserves avatar upload for team.
 func (a *teamAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) res.AppRes[val.ResvTeamAvatarRes] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until team avatar flow is introduced.
 	lgr.Warn("[teamAppImpl.ResvAvatar] not implemented")
@@ -95,7 +96,7 @@ func (a *teamAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArg
 
 // `MarkAvatarUploaded` marks team avatar upload as completed.
 func (a *teamAppImpl) MarkAvatarUploaded(cx context.Context, teamId string) res.AppRes[res.None] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until team avatar flow is introduced.
 	lgr.Warn("[teamAppImpl.MarkAvatarUploaded] not implemented", zap.String("team_id", teamId))

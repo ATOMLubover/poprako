@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS "t_member_invitation" (
     "role_mask" INTEGER NOT NULL DEFAULT 0,
     
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ DEFAULT NOW(),
+    "updated_at" TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS "idx_member_invitation_invitee_qid"

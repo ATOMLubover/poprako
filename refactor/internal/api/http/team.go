@@ -9,7 +9,8 @@ import (
 
 // `GetTeamInfo` godoc
 // @Summary Get Team Info
-// @Description Get team info by team id and return a `res.HttpRes` wrapper with `val.TeamVal`
+// @Description Get team info by team id and return a `res.HttpRes` wrapper with `val.TeamVal`.
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags team
 // @Security ApiKeyAuth
 // @Produce json

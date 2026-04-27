@@ -6,6 +6,7 @@ import (
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	oss_iface "poprako-s/internal/domain/ext/oss"
 	token_iface "poprako-s/internal/domain/ext/token"
@@ -89,7 +90,7 @@ func NewUserApp(
 // context should be recorded in logger wrapper impls.
 
 func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.AppRes[val.UserLoginRes] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	creds, err := a.userRepo.GetCredsByQid(args.Qid)
 	if err != nil {
@@ -108,7 +109,7 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.App
 		return res.Reject[val.UserLoginRes](res.BadRequest, "用户不存在或密码错误")
 	}
 
-	a.evBus.Pub(context.TODO(), creds.PullEv())
+	a.evBus.Pub(context.Background(), creds.PullEv())
 
 	tk, err := a.tknParser.GenToken(&aggr.UserToken{
 		UserId: creds.Id,
@@ -133,12 +134,12 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.App
 }
 
 func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
-	var (
-		isBadRequest bool = false
-		userId       string
-	)
+	var userId string
+
+	isBadRequest := false
+	ev := make([]event_iface.Event, 0)
 
 	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
 		userRepo, err := repo_infra.TxnUserRepo(cx)
@@ -154,10 +155,15 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 			return err
 		}
 
-		inv, err := memberInvRepo.GetByInviteeQid(args.Qid)
+		inv, err := memberInvRepo.GetPendingByInviteeQid(args.Qid)
 		if err != nil {
 			isBadRequest = true
 			return err
+		}
+
+		if inv.InvCode != args.InvCode {
+			isBadRequest = true
+			return fmt.Errorf("wrong invitation code")
 		}
 
 		userReg, err := a.userSvc.NewUserReg(inv, args.Name, args.Pwd)
@@ -170,6 +176,8 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 		if err != nil {
 			return err
 		}
+
+		ev = append(ev, userReg.PullEv()...)
 
 		memberCre := a.memberSvc.NewMemberCre(user.Id, inv.TeamId, inv.RoleMask)
 
@@ -198,6 +206,9 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 		}
 	}
 
+	// If successfully registered, publish all events after transaction is committed.
+	a.evBus.Pub(context.Background(), ev)
+
 	tk, err := a.tknParser.GenToken(&aggr.UserToken{
 		UserId: userId,
 	})
@@ -221,7 +232,7 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 }
 
 func (a *userAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.UserVal] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	user, err := a.userRepo.GetById(id)
 	if err != nil {
@@ -250,7 +261,7 @@ func (a *userAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.User
 // }
 
 func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) res.AppRes[val.ResvUserAvatarRes] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	key := fmt.Sprintf("user_avatar/%s.%s", args.UserId, args.FileExt)
 
@@ -297,7 +308,7 @@ func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArg
 }
 
 func (a *userAppImpl) MarkAvatarUploaded(cx context.Context, uid string) res.AppRes[res.None] {
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 
 	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
 		userRepo, err := repo_infra.TxnUserRepo(cx)

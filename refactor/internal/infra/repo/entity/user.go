@@ -6,8 +6,10 @@ import (
 	"poprako-s/internal/domain/model/aggr"
 )
 
+// `USER_TABLE` is the table name for the user entity
 const USER_TABLE = "t_user"
 
+// `UserRow` maps a full user record for read queries
 type UserRow struct {
 	Id string `gorm:"column:id;primaryKey"`
 
@@ -25,10 +27,12 @@ type UserRow struct {
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
+// `TableName` returns the table name of `UserRow`
 func (*UserRow) TableName() string {
 	return USER_TABLE
 }
 
+// `ToUserAggr` converts a `UserRow` into a `User` aggregate
 func (r *UserRow) ToUserAggr() *aggr.User {
 	if r == nil {
 		// Do not treat nil as an error, as it may be used in includes.
@@ -53,16 +57,19 @@ func (r *UserRow) ToUserAggr() *aggr.User {
 	}
 }
 
+// `UserCredsRow` maps only the credential columns needed for password verification
 type UserCredsRow struct {
 	Id string `gorm:"column:id;primaryKey"`
 
 	PwdHash string `gorm:"column:password_hash"`
 }
 
+// `TableName` returns the table name of `UserCredsRow`
 func (r *UserCredsRow) TableName() string {
-	return "t_user_creds"
+	return USER_TABLE
 }
 
+// `ToUserCredsAggr` converts a `UserCredsRow` into a `UserCreds` aggregate
 func (r *UserCredsRow) ToUserCredsAggr() *aggr.UserCreds {
 	if r == nil {
 		// Do not treat nil as an error, as it may be used in includes.
@@ -75,6 +82,7 @@ func (r *UserCredsRow) ToUserCredsAggr() *aggr.UserCreds {
 	}
 }
 
+// `UserRegRow` maps only the columns required for a new user insert
 type UserRegRow struct {
 	Id string `gorm:"column:id;primaryKey"`
 
@@ -84,6 +92,7 @@ type UserRegRow struct {
 	PwdHash string `gorm:"column:password_hash"`
 }
 
+// `NewUserRegRowFromAggr` builds a `UserRegRow` from a `UserReg` aggregate
 func NewUserRegRowFromAggr(reg *aggr.UserReg) *UserRegRow {
 	return &UserRegRow{
 		Id:       reg.Id,
@@ -93,6 +102,7 @@ func NewUserRegRowFromAggr(reg *aggr.UserReg) *UserRegRow {
 	}
 }
 
+// `TableName` returns the table name of `UserRegRow`
 func (r *UserRegRow) TableName() string {
 	return USER_TABLE
 }

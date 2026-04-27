@@ -5,6 +5,7 @@ import (
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 
 	"go.uber.org/zap"
@@ -30,14 +31,14 @@ func (a *teamLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.T
 		cx = context.Background()
 	}
 
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	lgr = lgr.With(zap.String("team_id", id))
 
-	cx = saveLgr(cx, lgr)
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.GetInfo(cx, id)
 }
@@ -48,14 +49,14 @@ func (a *teamLogAppImpl) ListUserTeams(cx context.Context, userId string) res.Ap
 		cx = context.Background()
 	}
 
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	lgr = lgr.With(zap.String("user_id", userId))
 
-	cx = saveLgr(cx, lgr)
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.ListUserTeams(cx, userId)
 }
@@ -70,14 +71,14 @@ func (a *teamLogAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) res.A
 		return res.Reject[res.None](res.ServerError, "更新团队功能暂未实现")
 	}
 
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	lgr = lgr.With(zap.String("team_id", args.Id))
 
-	cx = saveLgr(cx, lgr)
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.Update(cx, args)
 }
@@ -92,14 +93,14 @@ func (a *teamLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatar
 		return res.Reject[val.ResvTeamAvatarRes](res.ServerError, "团队头像预留功能暂未实现")
 	}
 
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	lgr = lgr.With(zap.String("team_id", args.TeamId), zap.String("file_ext", args.FileExt))
 
-	cx = saveLgr(cx, lgr)
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.ResvAvatar(cx, args)
 }
@@ -110,14 +111,14 @@ func (a *teamLogAppImpl) MarkAvatarUploaded(cx context.Context, teamId string) r
 		cx = context.Background()
 	}
 
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	lgr = lgr.With(zap.String("team_id", teamId))
 
-	cx = saveLgr(cx, lgr)
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.MarkAvatarUploaded(cx, teamId)
 }

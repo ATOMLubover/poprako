@@ -27,4 +27,4 @@ CREATE INDEX IF NOT EXISTS "idx_oss_message_created_at" ON "t_oss_message" ("cre
 -- Prevent multiple pending messages for the same resource and operation.
 CREATE UNIQUE INDEX IF NOT EXISTS "uidx_oss_message_active_res_op"
     ON "t_oss_message" ("resource_type", "resource_id", "operation")
-    WHERE "status" <> 'oss_messsage_status:completed';
+    WHERE "status" <> 'oss_message_status:completed';

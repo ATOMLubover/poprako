@@ -10,17 +10,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// `UserToken` holds the minimal claim set used when generating or parsing
+// a signed token for a user
 type UserToken struct {
+	// `UserId` is the unique identifier of the token owner
 	UserId string
 }
 
+// `User` represents a registered application user
 type User struct {
 	Id string
 
 	Nickname string
 	Qid      string
 
-	AvatarKey      string
+	// `AvatarKey` holds the OSS object key for the user avatar
+	AvatarKey string
+	// `AvatarUploaded` is true when the avatar has been confirmed uploaded by the client
 	AvatarUploaded bool
 
 	IsSuperAdmin bool
@@ -36,10 +42,12 @@ func (u *User) GenToken() UserToken {
 	return UserToken{UserId: u.Id}
 }
 
+// `GenAvatarKey` returns the OSS object key for the user avatar with the given file extension
 func (u *User) GenAvatarKey(ext string) string {
 	return fmt.Sprintf("user_avatar/%s.%s", u.Id, ext)
 }
 
+// `UserCreds` holds the minimal credential data needed for password-based authentication
 type UserCreds struct {
 	// Embedded for domain events:
 	// - UserLoginEv: update LastActiveAt
@@ -49,6 +57,7 @@ type UserCreds struct {
 	PwdHash string
 }
 
+// `VerifyPwd` verifies the raw password against the stored hash and emits a login event on success
 func (c *UserCreds) VerifyPwd(pwd string) error {
 	// Compare password hash and raw password.
 	if err := bcrypt.CompareHashAndPassword(
@@ -63,6 +72,7 @@ func (c *UserCreds) VerifyPwd(pwd string) error {
 	return nil
 }
 
+// `UserReg` represents the input required to register a new user
 type UserReg struct {
 	// Embedded for domain events:
 	// - UserRegEv: notify invitor

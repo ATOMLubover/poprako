@@ -20,15 +20,13 @@ CREATE INDEX IF NOT EXISTS "idx_user_qid"
   ON "t_user" ("qid");
 CREATE INDEX IF NOT EXISTS "trgm_idx_user_nickname"
   ON "t_user" USING gin ("nickname" gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS "idx_user_qid"
-  ON "t_user" ("qid");
 
 -- Create super admin directly in database.
 INSERT INTO "t_user" (
     "id", 
     "qid", 
     "nickname", 
-    "password",
+    "password_hash",
     "is_super_admin"
 ) VALUES (
     'user-00000000-0000-0000-0000-000000000001',

@@ -187,28 +187,20 @@ func (r *ossMsgRepoImpl) ClaimPending(op enum.OssOp) (*aggr.OssMsg, repo_iface.R
 
 // `MarkPending` resets one processing message to pending and bumps attempt count.
 func (r *ossMsgRepoImpl) MarkPending(id string, errMsg string, nextVisibleAt time.Time) repo_iface.RepoErr {
-	upd := entity.NewOssMsgMarkPendingUpdRow()
-	upgErr := r.gdb.
-		Table(entity.OSS_MSG_TABLE).
-		Where("id = ?", id).
-		Select("status", "processing_at", "updated_at").
-		Updates(upd).Error
-	if upgErr != nil {
-		return upgErr
-	}
+	now := time.Now()
+	upd := entity.NewOssMsgMarkPendingUpdRow(errMsg, nextVisibleAt, now)
 
+	// Reset all pending fields in a single update to reduce partial-failure window.
 	err := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
 		Where("id = ?", id).
-		Updates(&entity.OssMsgRow{
-			VisibleAt: nextVisibleAt,
-			LastErr:   errMsg,
-			UpdatedAt: time.Now(),
-		}).Error
+		Select("status", "processing_at", "visible_at", "last_error", "updated_at").
+		Updates(upd).Error
 	if err != nil {
 		return err
 	}
 
+	// Increment attempt_count atomically with a column expression.
 	err = r.gdb.
 		Table(entity.OSS_MSG_TABLE).
 		Where("id = ?", id).

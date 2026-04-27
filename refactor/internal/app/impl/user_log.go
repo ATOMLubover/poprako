@@ -5,6 +5,7 @@ import (
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 
 	"go.uber.org/zap"
@@ -34,14 +35,15 @@ func (a *userLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.U
 	}
 
 	// Resolve logger from context and fallback to global logger.
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	// Attach stable input fields and save logger back to context.
 	lgr = lgr.With(zap.String("id", id))
-	cx = saveLgr(cx, lgr)
+
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.GetInfo(cx, id)
 }
@@ -59,14 +61,15 @@ func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.
 	}
 
 	// Resolve logger from context and fallback to global logger.
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	// Only log non-sensitive fields and save logger back to context.
 	lgr = lgr.With(zap.String("args.qid", args.Qid))
-	cx = saveLgr(cx, lgr)
+
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.Login(cx, args)
 }
@@ -84,14 +87,15 @@ func (a *userLogAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppR
 	}
 
 	// Resolve logger from context and fallback to global logger.
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	// Only log non-sensitive fields and save logger back to context.
 	lgr = lgr.With(zap.String("args.qid", args.Qid))
-	cx = saveLgr(cx, lgr)
+
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.Reg(cx, args)
 }
@@ -109,14 +113,15 @@ func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatar
 	}
 
 	// Resolve logger from context and fallback to global logger.
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	// Attach stable input fields and save logger back to context.
 	lgr = lgr.With(zap.String("args.user_id", args.UserId), zap.String("args.file_ext", args.FileExt))
-	cx = saveLgr(cx, lgr)
+
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.ResvAvatar(cx, args)
 }
@@ -129,14 +134,15 @@ func (a *userLogAppImpl) MarkAvatarUploaded(cx context.Context, currUid string) 
 	}
 
 	// Resolve logger from context and fallback to global logger.
-	lgr := takeLgr(cx)
+	lgr := app_util.TakeLgr(cx)
 	if lgr == nil {
 		lgr = zap.L()
 	}
 
 	// Attach stable input fields and save logger back to context.
 	lgr = lgr.With(zap.String("curr_uid", currUid))
-	cx = saveLgr(cx, lgr)
+
+	cx = app_util.SaveLgr(cx, lgr)
 
 	return a.inner.MarkAvatarUploaded(cx, currUid)
 }

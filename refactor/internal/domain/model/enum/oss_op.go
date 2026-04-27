@@ -19,7 +19,7 @@ const (
 type OssMsgStatus string
 
 const (
-	OssMsgStatePend OssMsgStatus = "oss_messsage_status:pending"
-	OssMsgStateProc OssMsgStatus = "oss_messsage_status:processing"
-	OssMsgStateCmpl OssMsgStatus = "oss_messsage_status:completed"
+	OssMsgStatePend OssMsgStatus = "oss_message_status:pending"
+	OssMsgStateProc OssMsgStatus = "oss_message_status:processing"
+	OssMsgStateCmpl OssMsgStatus = "oss_message_status:completed"
 )

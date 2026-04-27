@@ -2,6 +2,7 @@ package aggr
 
 import "time"
 
+// `Team` represents a translation team that owns worksets and members
 type Team struct {
 	Id string
 

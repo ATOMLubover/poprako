@@ -3,7 +3,8 @@ package http
 import (
 	"context"
 
-	app_impl "poprako-s/internal/app/impl"
+	"poprako-s/internal/api/http/middleware"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/pkg/util"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func takeCurrUid(cx iris.Context) (string, bool) {
-	utk, ok := cx.Values().Get("").(*aggr.UserToken)
+	utk, ok := cx.Values().Get(middleware.UtkKey).(*aggr.UserToken)
 	if !ok || utk == nil {
 		return "", false
 	}
@@ -29,5 +30,5 @@ func newReqCx(cx iris.Context) context.Context {
 
 	lgr := zap.L().With(zap.String("request_id", reqId))
 
-	return context.WithValue(context.Background(), app_impl.LgrKey, lgr)
+	return app_util.SaveLgr(cx.Request().Context(), lgr)
 }

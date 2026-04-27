@@ -33,13 +33,13 @@ func NewMemberInvRepo(gdb *gorm.DB) repo_iface.MemberInvRepo {
 	return &memberInvRepoImpl{gdb: gdb}
 }
 
-// `GetByInviteeQid` returns the latest invitation by invitee qid
-func (r *memberInvRepoImpl) GetByInviteeQid(qid string) (*aggr.MemberInv, repo_iface.RepoErr) {
+// `GetPendingByInviteeQid` returns the latest invitation by invitee qid
+func (r *memberInvRepoImpl) GetPendingByInviteeQid(qid string) (*aggr.MemberInv, repo_iface.RepoErr) {
 	var row entity.MemberInvRow
 
 	err := r.gdb.
 		Table(entity.MEMBER_INV_TABLE).
-		Where("invitee_qid = ?", qid).
+		Where("invitee_qid = ? AND pending = true", qid).
 		Order("created_at DESC").
 		First(&row).Error
 	if err != nil {
