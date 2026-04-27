@@ -72,7 +72,7 @@ func (r *teamRepoImpl) Create(c *model.TeamCreation) (*model.TeamInfo, error) {
 	row := map[string]any{
 		"id":                 c.ID,
 		"name":               c.Name,
-		"description":        c.Description,
+		"description":        c.Desc,
 		"avatar_oss_key":     "",
 		"is_avatar_uploaded": false,
 		"created_at":         now,
@@ -91,7 +91,7 @@ func (r *teamRepoImpl) Update(u *model.TeamUpdate) error {
 		Where("id = ? AND deleted_at IS NULL", u.ID).
 		Updates(map[string]any{
 			"name":        u.Name,
-			"description": u.Description,
+			"description": u.Desc,
 			"updated_at":  time.Now(),
 		}).Error
 }

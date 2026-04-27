@@ -54,6 +54,14 @@ func NewApp(st *state.AppState) *iris.Application {
 			{
 				team.Get("/{team_id}", GetTeamInfo(st))
 			}
+
+			workset := authorized.Party("/workset")
+			{
+				workset.Get("/team/{team_id}", ListWorksets(st))
+				workset.Post("", CreateWorkset(st))
+				workset.Put("/{workset_id}", UpdateWorkset(st))
+				workset.Delete("/{workset_id}", RemoveWorkset(st))
+			}
 		}
 	}
 

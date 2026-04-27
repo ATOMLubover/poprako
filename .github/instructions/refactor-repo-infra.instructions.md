@@ -50,6 +50,13 @@ applyTo:
 - 如果多个 repo 共享同一类 preload 或查询片段 优先抽成 repo 内可复用的强类型 helper 而不是复制粘贴 switch
 - preload 需要自定义列选择 排序 或子条件时 也应收敛为 typed helper 不在业务方法中铺开重复细节
 
+## 强制个人约定
+
+- 若聚合有 belongs to 关联字段（例如 `Workset.Team`）repo 必须实现 typed include 到 preload 的映射 不能声明字段但不支持 include
+- `PUT` 语义更新时 可空字段即使为 `nil` 也要被显式 `Select` 并写入 `NULL` 禁止把 `nil` 当作“跳过列更新”
+- 删除命名固定：`Delete` 只能实现硬删除 `Remove` 只能实现软删除
+- 已有常见缩写必须统一使用 例如 `Desc`/`desc` 禁止回退到 `Description`/`description`（SQL 字符串除外）
+
 ## util 与复用规则
 
 - repo infra 已有的 util 与 helper 应优先复用 例如事务提取 重复错误判断 公共查询片段 与 include 装配

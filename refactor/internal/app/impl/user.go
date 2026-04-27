@@ -136,39 +136,41 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.App
 func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
 	lgr := app_util.TakeLgr(cx)
 
-	var userId string
+	var (
+		userId  string
+		errCode = res.BadRequest
+	)
 
-	isBadRequest := false
 	ev := make([]event_iface.Event, 0)
 
 	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
 		userRepo, err := repo_infra.TxnUserRepo(cx)
 		if err != nil {
+			errCode = res.ServerError
 			return err
 		}
 		memberRepo, err := repo_infra.TxnMemberRepo(cx)
 		if err != nil {
+			errCode = res.ServerError
 			return err
 		}
 		memberInvRepo, err := repo_infra.TxnMemberInvRepo(cx)
 		if err != nil {
+			errCode = res.ServerError
 			return err
 		}
 
 		inv, err := memberInvRepo.GetPendingByInviteeQid(args.Qid)
 		if err != nil {
-			isBadRequest = true
 			return err
 		}
 
 		if inv.InvCode != args.InvCode {
-			isBadRequest = true
 			return fmt.Errorf("wrong invitation code")
 		}
 
 		userReg, err := a.userSvc.NewUserReg(inv, args.Name, args.Pwd)
 		if err != nil {
-			isBadRequest = true
 			return err
 		}
 
@@ -199,10 +201,11 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 			zap.Error(err),
 		)
 
-		if isBadRequest {
-			return res.Reject[val.UserRegRes](res.BadRequest, "邀请码无效")
-		} else {
+		switch errCode {
+		case res.ServerError:
 			return res.Reject[val.UserRegRes](res.ServerError, "注册失败")
+		default:
+			return res.Reject[val.UserRegRes](res.BadRequest, err.Error())
 		}
 	}
 

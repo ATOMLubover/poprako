@@ -53,6 +53,11 @@ applyTo:
 - middleware 与 util 之间共享的上下文键必须集中定义 不能在多个文件里散落 magic string
 - 运行时若 cookie 优先于 header 这类行为存在 必须在文档或注释中明确 让接口使用方知道真实优先级
 
+## 强制个人约定
+
+- 当前用户 id 局部变量统一命名为 `currUid` 并原样传给 app 层 禁止使用 `currUserId` 等其他命名
+- 对 `List` 接口必须显式接收分页输入（例如 `offset` `limit`）并传递到 app 的 `val.ListXxxArgs`
+
 ## 文件与组织规则
 
 - 按资源主题拆文件 例如 `auth.go` `user.go` `team.go`

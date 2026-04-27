@@ -259,6 +259,21 @@ Never use `self`, `this`, or the full type name as a receiver.
 
 ---
 
+## 11. Common Abbreviations Are Mandatory
+
+When a common abbreviation is already established in this repository, you must
+use the abbreviated identifier consistently across all Go code.
+
+- Use `Desc` / `desc` instead of `Description` / `description`.
+- Use `Id` instead of `ID`.
+- Use repository-established short forms consistently once they exist.
+
+This rule applies to type fields, local variables, function parameters,
+constructor inputs, and helper names. SQL column names and SQL string literals
+are excluded from this rule.
+
+---
+
 ## 11. Constructor Conventions
 
 Constructors are named `NewXxx` and **always return the interface type**, never

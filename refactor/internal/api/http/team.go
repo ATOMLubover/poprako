@@ -9,8 +9,10 @@ import (
 
 // `GetTeamInfo` godoc
 // @Summary Get Team Info
-// @Description Get team info by team id and return a `res.HttpRes` wrapper with `val.TeamVal`.
-// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+//	Get team info by team id and return a `res.HttpRes` wrapper with `val.TeamVal`.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
 // @Tags team
 // @Security ApiKeyAuth
 // @Produce json
@@ -30,7 +32,7 @@ func GetTeamInfo(st *state.AppState) iris.Handler {
 
 		re := teamApp.GetInfo(newReqCx(cx), teamId)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "获取团队信息失败")
+			res.Reject(cx, int(re.Code()), "获取团队信息失败")
 			return
 		}
 

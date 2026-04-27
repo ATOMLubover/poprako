@@ -81,13 +81,13 @@ func (r *WorksetRepo) Create(c *model.WorksetCreation) (*model.WorksetInfo, erro
 	r.ensure()
 	now := time.Now()
 	info := model.WorksetInfo{
-		ID:          c.ID,
-		TeamID:      c.TeamID,
-		Index:       c.Index,
-		Name:        c.Name,
-		Description: c.Description,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:        c.ID,
+		TeamID:    c.TeamID,
+		Index:     c.Index,
+		Name:      c.Name,
+		Desc:      c.Desc,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	r.Infos[info.ID] = info
 	copy := info
@@ -101,8 +101,8 @@ func (r *WorksetRepo) Update(u *model.WorksetUpdate) error {
 		return errNotFound
 	}
 	info.Name = u.Name
-	if u.Description != nil {
-		info.Description = *u.Description
+	if u.Desc != nil {
+		info.Desc = *u.Desc
 	}
 	info.UpdatedAt = time.Now()
 	r.Infos[u.ID] = info

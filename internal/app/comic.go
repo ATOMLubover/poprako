@@ -306,7 +306,7 @@ func (a *comicAppImpl) Create(
 			int(count),
 			args.Title,
 			args.Author,
-			args.Description,
+			args.Desc,
 			currUserID,
 		)
 		if err != nil {
@@ -394,10 +394,10 @@ func (a *comicAppImpl) Update(
 
 	// 构造更新载荷
 	update := &model.ComicUpdate{
-		ID:          args.ID,
-		Title:       args.Title,
-		Author:      args.Author,
-		Description: args.Description,
+		ID:     args.ID,
+		Title:  args.Title,
+		Author: args.Author,
+		Desc:   args.Desc,
 	}
 
 	// 持久化更新
@@ -693,7 +693,7 @@ func assembleComicInfo(
 		Index:           info.Index,
 		Title:           info.Title,
 		Author:          info.Author,
-		Description:     info.Description,
+		Desc:            info.Desc,
 		ChapterCount:    info.ChapterCount,
 		IsCoverUploaded: info.IsCoverUploaded,
 		CreatorID:       info.CreatorID,

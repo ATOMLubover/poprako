@@ -12,6 +12,9 @@ check paths="./...":
 fmt:
     golangci-lint fmt ./...
 
+max-line:
+    find ./internal -type f -exec wc -l {} \; | awk '{print $1, $2}' | sort -nr | head -5
+
 cloc:
     cloc internal/
 

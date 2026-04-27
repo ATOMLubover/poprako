@@ -13,7 +13,7 @@ type TeamService interface {
 	NewCreation(
 		currUser *model.UserInfo,
 		name string,
-		description string,
+		desc string,
 	) (*model.TeamCreation, error)
 	// GenAvatarOSSKey 根据汉化组 ID 生成头像的 OSS Key
 	GenAvatarOSSKey(
@@ -34,7 +34,7 @@ func NewTeamService() TeamService {
 func (s *teamServiceImpl) NewCreation(
 	currUser *model.UserInfo,
 	name string,
-	description string,
+	desc string,
 ) (*model.TeamCreation, error) {
 	// 校验超级管理员权限
 	if !currUser.IsSuperAdmin {
@@ -43,9 +43,9 @@ func (s *teamServiceImpl) NewCreation(
 
 	// 返回创建载荷
 	return &model.TeamCreation{
-		ID:          GenID("team"),
-		Name:        name,
-		Description: description,
+		ID:   GenID("team"),
+		Name: name,
+		Desc: desc,
 	}, nil
 }
 

@@ -7,7 +7,7 @@ type TeamInfo struct {
 	ID string
 
 	Name             string
-	Description      string
+	Desc             string
 	AvatarOSSKey     string
 	IsAvatarUploaded bool
 
@@ -20,16 +20,16 @@ type TeamCreation struct {
 	// ID 由 domain service 生成，外部不提供
 	ID string
 
-	Name        string
-	Description string
+	Name string
+	Desc string
 }
 
 // TeamUpdate 是汉化组更新信息的 view，是 PUT 语义的载荷
 type TeamUpdate struct {
 	ID string
 
-	Name        string
-	Description string
+	Name string
+	Desc string
 }
 
 // TeamQueryOpt 指定汉化组查询的可选筛选条件

@@ -13,9 +13,9 @@ type WorksetInfo struct {
 	// 在汉化组内部的序号
 	Index int
 
-	Name        string
-	Description string
-	ComicCount  int
+	Name       string
+	Desc       string
+	ComicCount int
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -31,8 +31,8 @@ type WorksetCreation struct {
 	// Index 是该作品集在汉化组内的序号
 	Index int
 
-	Name        string
-	Description string
+	Name string
+	Desc string
 }
 
 // WorksetUpdate 是作品集更新信息的 view
@@ -40,8 +40,8 @@ type WorksetUpdate struct {
 	ID string
 
 	Name string
-	// Description 是可空的，nil 表示不修改
-	Description *string
+	// Desc 是可空的，nil 表示不修改
+	Desc *string
 }
 
 // WorksetQueryOpt 指定作品集查询的可选筛选条件

@@ -62,7 +62,7 @@ func TestComicAppCreateUsesMockTxnRepos(t *testing.T) {
 
 	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, txnMgr, mock_repo.NewMockOSSMessageRepo(), eventBus, newMockOSSClient())
 
-	res, err := app.Create(background(), "user-1", &val.CreateComicArgs{WorksetID: "workset-1", Title: "Title", Author: "Author", Description: "Desc"})
+	res, err := app.Create(background(), "user-1", &val.CreateComicArgs{WorksetID: "workset-1", Title: "Title", Author: "Author", Desc: "Desc"})
 	requireNoErr(t, err)
 
 	created := comicRepo.Infos[res.ID]
@@ -149,11 +149,11 @@ func TestComicAppUpdateSuccess(t *testing.T) {
 	comicRepo.Infos["comic-1"] = model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", Title: "Old", Author: "A"}
 
 	app := NewComicApp(service.NewComicService(), memberRepo, worksetRepo, comicRepo, mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockEventBus(), newMockOSSClient())
-	err := app.Update(background(), "user-1", &val.UpdateComicArgs{ID: "comic-1", Title: "New", Author: "B", Description: "Desc"})
+	err := app.Update(background(), "user-1", &val.UpdateComicArgs{ID: "comic-1", Title: "New", Author: "B", Desc: "Desc"})
 	requireNoErr(t, err)
 
 	updated := comicRepo.Infos["comic-1"]
-	if updated.Title != "New" || updated.Author != "B" || updated.Description != "Desc" {
+	if updated.Title != "New" || updated.Author != "B" || updated.Desc != "Desc" {
 		t.Fatalf("unexpected comic update: %#v", updated)
 	}
 }

@@ -15,8 +15,8 @@ type WorksetInfo struct {
 
 	// Name 是作品集名称
 	Name string `json:"name"`
-	// Description 是作品集描述
-	Description string `json:"description"`
+	// Desc 是作品集描述
+	Desc string `json:"description"`
 	// ComicCount 是作品集中漫画数量
 	ComicCount int `json:"comic_count"`
 
@@ -40,8 +40,8 @@ type CreateWorksetArgs struct {
 	TeamID string `json:"team_id" validate:"required"`
 	// Name 是作品集名称
 	Name string `json:"name" validate:"required"`
-	// Description 是作品集描述（可选）
-	Description *string `json:"description"`
+	// Desc 是作品集描述（可选）
+	Desc *string `json:"description"`
 }
 
 // CreateWorksetRes 表示创建作品集成功后的响应数据
@@ -56,6 +56,6 @@ type UpdateWorksetArgs struct {
 	ID string `json:"id" validate:"required"`
 	// Name 是更新后的名称
 	Name string `json:"name" validate:"required"`
-	// Description 是更新后的描述（可选）
-	Description *string `json:"description"`
+	// Desc 是更新后的描述（可选）
+	Desc *string `json:"description"`
 }

@@ -8,6 +8,7 @@ import (
 
 type MemberRepo interface {
 	GetById(id string, inc ...enum.MemberIncl) (*aggr.Member, RepoErr)
+	GetByUserTeamId(userId string, teamId string, inc ...enum.MemberIncl) (*aggr.Member, RepoErr)
 	List(opt *query.ListMemberOpt, inc ...enum.MemberIncl) ([]*aggr.Member, RepoErr)
 	ExistByUserTeamId(userId string, teamId string) (bool, RepoErr)
 

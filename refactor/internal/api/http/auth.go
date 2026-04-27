@@ -10,7 +10,9 @@ import (
 
 // `LoginUser` godoc
 // @Summary User Login
-// @Description Login by qid and password and return a `res.HttpRes` wrapper with `val.UserLoginRes`
+//
+//	Login by qid and password and return a `res.HttpRes` wrapper with `val.UserLoginRes`
+//
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -31,7 +33,7 @@ func LoginUser(st *state.AppState) iris.Handler {
 
 		re := userApp.Login(newReqCx(cx), &args)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "登录失败")
+			res.Reject(cx, int(re.Code()), "登录失败")
 			return
 		}
 
@@ -41,7 +43,9 @@ func LoginUser(st *state.AppState) iris.Handler {
 
 // `RegUser` godoc
 // @Summary User Registration
-// @Description Register by invitation code and return a `res.HttpRes` wrapper with `val.UserRegRes`
+//
+//	Register by invitation code and return a `res.HttpRes` wrapper with `val.UserRegRes`
+//
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -62,7 +66,7 @@ func RegUser(st *state.AppState) iris.Handler {
 
 		re := userApp.Reg(newReqCx(cx), &args)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "注册失败")
+			res.Reject(cx, int(re.Code()), "注册失败")
 			return
 		}
 

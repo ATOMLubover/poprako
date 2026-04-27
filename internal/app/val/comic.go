@@ -19,8 +19,8 @@ type ComicInfo struct {
 	Title string `json:"title"`
 	// Author 是漫画作者
 	Author string `json:"author"`
-	// Description 是漫画描述
-	Description string `json:"description"`
+	// Desc 是漫画描述
+	Desc string `json:"description"`
 
 	// ChapterCount 是漫画下章节数量
 	ChapterCount int `json:"chapter_count"`
@@ -73,8 +73,8 @@ type CreateComicArgs struct {
 	Title string `json:"title" validate:"required"`
 	// Author 是漫画作者
 	Author string `json:"author" validate:"required"`
-	// Description 是漫画描述
-	Description string `json:"description"`
+	// Desc 是漫画描述
+	Desc string `json:"description"`
 }
 
 // CreateComicRes 表示创建漫画成功后的响应数据
@@ -91,8 +91,8 @@ type UpdateComicArgs struct {
 	Title string `json:"title" validate:"required"`
 	// Author 是更新后的作者
 	Author string `json:"author" validate:"required"`
-	// Description 是更新后的描述
-	Description string `json:"description"`
+	// Desc 是更新后的描述
+	Desc string `json:"description"`
 }
 
 // ReserveComicCoverArgs 表示预留漫画封面上传接口的请求参数

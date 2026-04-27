@@ -128,7 +128,7 @@ func (c *r2Client) DelBatch(keys []string) error {
 			},
 		})
 
-		if err != nil && errors.As(err, NoSuchKey()) {
+		if IsNoSuchKey(err) {
 			// Keep silent if a object is already deleted or does not exist,
 			// as the end state is the same (the object is not present in the bucket).
 			return nil

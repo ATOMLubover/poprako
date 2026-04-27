@@ -10,8 +10,10 @@ import (
 
 // `GetUserInfo` godoc
 // @Summary Get User Info
-// @Description Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`.
-// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+//	Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
@@ -31,7 +33,7 @@ func GetUserInfo(st *state.AppState) iris.Handler {
 
 		re := userApp.GetInfo(newReqCx(cx), uid)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "获取用户信息失败")
+			res.Reject(cx, int(re.Code()), "获取用户信息失败")
 			return
 		}
 
@@ -41,8 +43,10 @@ func GetUserInfo(st *state.AppState) iris.Handler {
 
 // `GetMyUserInfo` godoc
 // @Summary Get My User Info
-// @Description Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`.
-// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+//	Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
@@ -61,7 +65,7 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 
 		re := userApp.GetInfo(newReqCx(cx), uid)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "获取用户信息失败")
+			res.Reject(cx, int(re.Code()), "获取用户信息失败")
 			return
 		}
 
@@ -71,8 +75,10 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 
 // `ResvUserAvatar` godoc
 // @Summary Reserve User Avatar Upload
-// @Description Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`.
-// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+//	Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
 // @Tags user
 // @Security ApiKeyAuth
 // @Accept json
@@ -94,7 +100,7 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 
 		re := userApp.ResvAvatar(newReqCx(cx), &args)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "预留头像失败")
+			res.Reject(cx, int(re.Code()), "预留头像失败")
 			return
 		}
 
@@ -104,8 +110,10 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 
 // `MarkUserAvatarUploaded` godoc
 // @Summary Confirm User Avatar Uploaded
-// @Description Confirm avatar uploaded after client upload completed and return no JSON body.
-// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+//	Confirm avatar uploaded after client upload completed and return no JSON body.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
@@ -124,7 +132,7 @@ func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 
 		re := userApp.MarkAvatarUploaded(newReqCx(cx), uid)
 		if re.IsReject() {
-			res.Reject(cx, re.Code(), "标记头像上传失败")
+			res.Reject(cx, int(re.Code()), "标记头像上传失败")
 			return
 		}
 

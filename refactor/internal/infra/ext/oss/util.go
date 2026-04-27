@@ -1,6 +1,7 @@
 package oss_infra
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 	"time"
@@ -34,11 +35,9 @@ func detectImgContTyp(key string) string {
 	}
 }
 
-// `NoSchKey` returns a non-nil pointer to `types.NoSuchKey` error,
-// which is used to indicate that a specified key does not exist in the S3 bucket. This function can be used in scenarios where you want to simulate or handle the case of a missing NoSuchKey
-// without actually performing an S3 operation that would trigger this error.
-func NoSuchKey() *types.NoSuchKey {
-	return &types.NoSuchKey{}
+func IsNoSuchKey(err error) bool {
+	var nsk *types.NoSuchKey
+	return err != nil && errors.As(err, &nsk)
 }
 
 func maySleep(att, max int, dur time.Duration) {

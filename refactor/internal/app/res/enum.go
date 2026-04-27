@@ -1,6 +1,9 @@
 package res
 
+type ErrCode int
+
 const (
-	BadRequest  = 400
-	ServerError = 500
+	BadRequest  ErrCode = 400
+	Forbidden   ErrCode = 403
+	ServerError ErrCode = 500
 )

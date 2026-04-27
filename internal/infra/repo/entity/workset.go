@@ -14,9 +14,9 @@ type WorksetInfoRow struct {
 	TeamID string `gorm:"column:team_id"`
 	Index  int    `gorm:"column:index"`
 
-	Name        string  `gorm:"column:name"`
-	Description *string `gorm:"column:description"`
-	ComicCount  int     `gorm:"column:comic_count"`
+	Name       string  `gorm:"column:name"`
+	Desc       *string `gorm:"column:description"`
+	ComicCount int     `gorm:"column:comic_count"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
@@ -33,8 +33,8 @@ func ToWorksetInfo(row WorksetInfoRow) model.WorksetInfo {
 		UpdatedAt:  row.UpdatedAt,
 	}
 
-	if row.Description != nil {
-		info.Description = *row.Description
+	if row.Desc != nil {
+		info.Desc = *row.Desc
 	}
 
 	return info

@@ -54,6 +54,31 @@ func (r *memberRepoImpl) GetById(id string, inc ...enum.MemberIncl) (*aggr.Membe
 	return row.ToMemberAggr(), nil
 }
 
+// `GetByUserTeamId` retrieves one member record by `userId` and `teamId`.
+func (r *memberRepoImpl) GetByUserTeamId(userId string, teamId string, inc ...enum.MemberIncl) (*aggr.Member, repo_iface.RepoErr) {
+	var row entity.MemberRow
+
+	query := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("user_id = ? AND team_id = ?", userId, teamId)
+
+	for _, i := range inc {
+		switch i {
+		case enum.MemberInclUser:
+			query = query.Preload("User")
+		case enum.MemberInclTeam:
+			query = query.Preload("Team")
+		}
+	}
+
+	err := query.First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return row.ToMemberAggr(), nil
+}
+
 func (r *memberRepoImpl) List(opt *query.ListMemberOpt, inc ...enum.MemberIncl) ([]*aggr.Member, repo_iface.RepoErr) {
 	var rows []entity.MemberRow
 

@@ -7,10 +7,10 @@ type AppRes[T any] struct {
 	data    *T
 }
 
-func Reject[T any](code int, msg string) AppRes[T] {
+func Reject[T any](code ErrCode, msg string) AppRes[T] {
 	return AppRes[T]{
 		success: false,
-		code:    code,
+		code:    int(code),
 		msg:     msg,
 	}
 }
@@ -22,8 +22,8 @@ func Accept[T any](data *T) AppRes[T] {
 	}
 }
 
-func (r *AppRes[T]) Code() int {
-	return r.code
+func (r *AppRes[T]) Code() ErrCode {
+	return ErrCode(r.code)
 }
 
 func (r *AppRes[T]) Msg() string {
@@ -42,8 +42,8 @@ func (r *AppRes[T]) IsReject() bool {
 	return !r.success
 }
 
-func (r *AppRes[T]) WithCode(code int) *AppRes[T] {
-	r.code = code
+func (r *AppRes[T]) WithCode(code ErrCode) *AppRes[T] {
+	r.code = int(code)
 	return r
 }
 

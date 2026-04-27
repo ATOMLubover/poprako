@@ -62,12 +62,14 @@ func main() {
 	memberInvRepo := repo_infra.NewMemberInvRepo(gdb)
 	memberRepo := repo_infra.NewMemberRepo(gdb)
 	ossMsgRepo := repo_infra.NewOssMsgRepo(gdb)
+	worksetRepo := repo_infra.NewWorksetRepo(gdb)
 	// sysMailRepo := repo_infra.NewSysMailRepo(gdb)
 
 	// Construct all services.
 	userSvc := svc.NewUserSvc()
 	memberSvc := svc.NewMemberSvc()
 	ossMsgSvc := svc.NewOssMsgSvc()
+	worksetSvc := svc.NewWorksetSvc()
 
 	// Construct all external services.
 	ossClient := oss_infra.NewOssClient()
@@ -86,11 +88,15 @@ func main() {
 		teamRepo,
 		ossClient,
 	)
+	worksetApp := app_impl.NewWorksetLogApp(
+		app_impl.NewWorksetApp(txnCtrl, worksetSvc, memberRepo, worksetRepo),
+	)
 
 	appSt := state.NewAppState(
 		appCfg,
 		userApp,
 		teamApp,
+		worksetApp,
 	)
 
 	// Start HTTP server.

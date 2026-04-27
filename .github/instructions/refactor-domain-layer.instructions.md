@@ -56,6 +56,15 @@ applyTo:
 - `txn` 相关抽象可以存在于 domain repo 中 但只保留调用语义 例如 `TxnCtrl` `TxnFn` 不泄露底层事务实现方式
 - repo 文件按概念一文件一接口组织 共享类型单独放在 `err.go` `txn_ctrl.go`
 
+## 强制个人约定
+
+- 如果聚合声明了可 include 的关联字段（例如 `Workset.Team`）对应 repo 接口必须暴露 typed include 参数 例如 `inc ...enum.WorksetIncl`
+- 对应 migration 为可空的字段在 `aggr` 中保持指针可空语义 禁止用空字符串或零值掩盖 `NULL`
+- `Put` 语义的更新输入必须按“全量覆盖”建模 可空字段传 `nil` 的语义是写入 `NULL` 而不是“不更新”
+- 方法命名语义固定：`Delete` 保留给硬删除 `Remove` 表示软删除
+- 已有常见缩写必须统一使用 例如 `Desc`/`desc` 禁止回退到 `Description`/`description`（SQL 字符串除外）
+- 所有 `List` 契约必须显式支持分页 参数通过 `query.PagiOpt` 或等价 query object 传递
+
 ## `svc` 规则
 
 - domain service 必须保持无内禀状态 不保存 repo db cfg client logger 等字段

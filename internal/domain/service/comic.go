@@ -21,7 +21,7 @@ type ComicService interface {
 		index int,
 		title string,
 		author string,
-		description string,
+		desc string,
 		creatorID string,
 	) (*model.ComicCreation, error)
 
@@ -56,7 +56,7 @@ func (s *comicServiceImpl) NewCreation(
 	index int,
 	title string,
 	author string,
-	description string,
+	desc string,
 	creatorID string,
 ) (*model.ComicCreation, error) {
 	// 查询作品集 解析所属汉化组
@@ -78,13 +78,13 @@ func (s *comicServiceImpl) NewCreation(
 
 	// 返回创建载荷
 	c := &model.ComicCreation{
-		ID:          GenID("comic"),
-		WorksetID:   worksetID,
-		Index:       index,
-		Title:       title,
-		Author:      author,
-		Description: description,
-		CreatorID:   creatorID,
+		ID:        GenID("comic"),
+		WorksetID: worksetID,
+		Index:     index,
+		Title:     title,
+		Author:    author,
+		Desc:      desc,
+		CreatorID: creatorID,
 	}
 
 	// 漫画创建时推送同步统计事件
