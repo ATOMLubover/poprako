@@ -57,7 +57,7 @@ func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.
 
 	// Reject nil args early to prevent nil dereference in `inner`.
 	if args == nil {
-		return res.Reject[val.UserLoginRes](res.ServerError, "登陆异常失败，请联系管理员")
+		return res.Reject[val.UserLoginRes](res.BadRequest, "请求参数不能为空")
 	}
 
 	// Resolve logger from context and fallback to global logger.
@@ -74,8 +74,8 @@ func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.
 	return a.inner.Login(cx, args)
 }
 
-// `Reg` validates args, enriches logger context, and forwards the call.
-func (a *userLogAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
+// `Register` validates args, enriches logger context, and forwards the call.
+func (a *userLogAppImpl) Register(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
@@ -83,7 +83,7 @@ func (a *userLogAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppR
 
 	// Reject nil args early to prevent nil dereference in `inner`.
 	if args == nil {
-		return res.Reject[val.UserRegRes](res.ServerError, "注册异常失败，请联系管理员")
+		return res.Reject[val.UserRegRes](res.BadRequest, "请求参数不能为空")
 	}
 
 	// Resolve logger from context and fallback to global logger.
@@ -97,7 +97,7 @@ func (a *userLogAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppR
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.Reg(cx, args)
+	return a.inner.Register(cx, args)
 }
 
 // `ResvAvatar` validates args, enriches logger context, and forwards the call.
@@ -109,7 +109,7 @@ func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatar
 
 	// Reject nil args early to prevent nil dereference in `inner`.
 	if args == nil {
-		return res.Reject[val.ResvUserAvatarRes](res.ServerError, "头像上传申请异常失败，请联系管理员")
+		return res.Reject[val.ResvUserAvatarRes](res.BadRequest, "请求参数不能为空")
 	}
 
 	// Resolve logger from context and fallback to global logger.

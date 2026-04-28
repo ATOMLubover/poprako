@@ -13,7 +13,7 @@ type UserApp interface {
 	GetInfo(cx context.Context, id string) res.AppRes[val.UserVal]
 
 	Login(cx context.Context, args *val.UserLoginArgs) res.AppRes[val.UserLoginRes]
-	Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes]
+	Register(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes]
 
 	// Update(cx context.Context, args *val.UserUpdateArgs) res.AppRes[res.None]
 

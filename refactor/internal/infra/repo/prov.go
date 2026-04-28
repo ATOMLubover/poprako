@@ -42,6 +42,18 @@ func (p *provImpl) ChapterRepo() repo_iface.ChapterRepo {
 	return NewChapterRepo(p.gdb)
 }
 
+func (p *provImpl) AssignmentInvRepo() repo_iface.AssignmentInvRepo {
+	return NewAssignmentInvRepo(p.gdb)
+}
+
+func (p *provImpl) AssignmentRepo() repo_iface.AssignmentRepo {
+	return NewAssignmentRepo(p.gdb)
+}
+
+func (p *provImpl) UserStatsRepo() repo_iface.UserStatsRepo {
+	return NewUserStatsRepo(p.gdb)
+}
+
 func (p *provImpl) OssMsgRepo() repo_iface.OssMsgRepo {
 	return NewOssMsgRepo(p.gdb)
 }

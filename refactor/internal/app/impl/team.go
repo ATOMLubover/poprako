@@ -64,8 +64,8 @@ func (a *teamAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.Team
 	return res.Accept(teamVal)
 }
 
-// `ListUserTeams` lists teams that a user belongs to.
-func (a *teamAppImpl) ListUserTeams(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
+// `ListByUser` lists teams that a user belongs to.
+func (a *teamAppImpl) ListByUser(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until member/team list query is introduced.

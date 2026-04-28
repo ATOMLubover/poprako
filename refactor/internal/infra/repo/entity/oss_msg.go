@@ -157,15 +157,15 @@ func (*OssDelMsgCreRow) TableName() string {
 	return OSS_MSG_TABLE
 }
 
-// `ossMsgMarkCmplUpdRow` maps update columns for completion mark
-type ossMsgMarkCmplUpdRow struct {
+// `ossMsgMarkCompletedUpdRow` maps update columns for completion mark
+type ossMsgMarkCompletedUpdRow struct {
 	Status    string    `gorm:"column:status"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
 // `NewOssMsgMarkCompletedUpdRow` builds update row for completion mark
-func NewOssMsgMarkCompletedUpdRow() *ossMsgMarkCmplUpdRow {
-	return &ossMsgMarkCmplUpdRow{
+func NewOssMsgMarkCompletedUpdRow() *ossMsgMarkCompletedUpdRow {
+	return &ossMsgMarkCompletedUpdRow{
 		Status:    string(enum.OssMsgStateCompleted),
 		UpdatedAt: time.Now(),
 	}

@@ -2,6 +2,7 @@ package repo_infra
 
 import (
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/infra/repo/entity"
 
@@ -32,17 +33,56 @@ func (r *sysMailRepoImpl) Send(cre *aggr.SysMailCre) repo_iface.RepoErr {
 	return nil
 }
 
-// `MarkRead` marks one system mail record as read.
-func (r *sysMailRepoImpl) MarkRead(id string) repo_iface.RepoErr {
+// `ListUnreadByRcvId` lists unread system mails by receiver with pagination.
+func (r *sysMailRepoImpl) ListUnreadByRcvId(rcvId string, pagi query.PagiOpt) ([]aggr.SysMail, repo_iface.RepoErr) {
+	rows := []entity.SysMailRow{}
+
+	qry := r.gdb.
+		Table(entity.SYS_MAIL_TABLE).
+		Where("receiver_id = ? AND read = FALSE", rcvId)
+
+	if pagi.Offset > 0 {
+		qry = qry.Offset(pagi.Offset)
+	}
+
+	if pagi.Limit > 0 {
+		qry = qry.Limit(pagi.Limit)
+	}
+
+	err := qry.
+		Order("created_at DESC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]aggr.SysMail, len(rows))
+
+	for i := range rows {
+		item := rows[i].ToSysMailAggr()
+		if item != nil {
+			items[i] = *item
+		}
+	}
+
+	return items, nil
+}
+
+// `MarkReadByRcvId` marks one system mail record as read by id and receiver id.
+func (r *sysMailRepoImpl) MarkReadByRcvId(id string, rcvId string) repo_iface.RepoErr {
 	upd := entity.NewSysMailMarkReadUpdRow()
 
-	err := r.gdb.
+	res := r.gdb.
 		Table(entity.SYS_MAIL_TABLE).
-		Where("id = ?", id).
+		Where("id = ? AND receiver_id = ?", id, rcvId).
 		Select("read").
-		Updates(upd).Error
-	if err != nil {
-		return err
+		Updates(upd)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 
 	return nil

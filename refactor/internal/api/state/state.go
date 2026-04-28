@@ -24,6 +24,18 @@ type AppState struct {
 
 	// `ChapterApp` handles chapter-related use-cases.
 	ChapterApp app_iface.ChapterApp
+
+	// `UserStatsApp` handles user stats related use-cases.
+	UserStatsApp app_iface.UserStatsApp
+
+	// `SysMailApp` handles system mail related use-cases.
+	SysMailApp app_iface.SysMailApp
+
+	// `AssignmentInvApp` handles assignment invitation use-cases.
+	AssignmentInvApp app_iface.AssignmentInvApp
+
+	// `AssignmentApp` handles assignment use-cases.
+	AssignmentApp app_iface.AssignmentApp
 }
 
 // `NewAppState` constructs an `AppState` from its dependencies.
@@ -34,13 +46,21 @@ func NewAppState(
 	worksetApp app_iface.WorksetApp,
 	comicApp app_iface.ComicApp,
 	chapterApp app_iface.ChapterApp,
+	userStatsApp app_iface.UserStatsApp,
+	sysMailApp app_iface.SysMailApp,
+	assignmentInvApp app_iface.AssignmentInvApp,
+	assignmentApp app_iface.AssignmentApp,
 ) *AppState {
 	return &AppState{
-		Cfg:        appCfg,
-		UserApp:    userApp,
-		TeamApp:    teamApp,
-		WorksetApp: worksetApp,
-		ComicApp:   comicApp,
-		ChapterApp: chapterApp,
+		Cfg:              appCfg,
+		UserApp:          userApp,
+		TeamApp:          teamApp,
+		WorksetApp:       worksetApp,
+		ComicApp:         comicApp,
+		ChapterApp:       chapterApp,
+		UserStatsApp:     userStatsApp,
+		SysMailApp:       sysMailApp,
+		AssignmentInvApp: assignmentInvApp,
+		AssignmentApp:    assignmentApp,
 	}
 }

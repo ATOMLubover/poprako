@@ -65,6 +65,9 @@ func main() {
 	worksetRepo := repo_infra.NewWorksetRepo(gdb)
 	comicRepo := repo_infra.NewComicRepo(gdb)
 	chapterRepo := repo_infra.NewChapterRepo(gdb)
+	assignmentInvRepo := repo_infra.NewAssignmentInvRepo(gdb)
+	assignmentRepo := repo_infra.NewAssignmentRepo(gdb)
+	userStatsRepo := repo_infra.NewUserStatsRepo(gdb)
 	sysMailRepo := repo_infra.NewSysMailRepo(gdb)
 
 	// Construct all services.
@@ -74,6 +77,8 @@ func main() {
 	worksetSvc := svc.NewWorksetSvc()
 	comicSvc := svc.NewComicSvc()
 	chapterSvc := svc.NewChapterSvc()
+	assignmentInvSvc := svc.NewAssignmentInvSvc()
+	assignmentSvc := svc.NewAssignmentSvc()
 
 	// Construct all external services.
 	ossClient := oss_infra.NewOssClient()
@@ -87,6 +92,12 @@ func main() {
 
 	evBus.Sub(event_infra.NewNotifyInvitorHandler(teamRepo, sysMailRepo))
 	evBus.Sub(event_infra.NewUpdateUserActiveHandler(userRepo))
+	evBus.Sub(event_infra.NewUpdateUserStatsOnAssignmentCreatedHandler(userStatsRepo))
+	evBus.Sub(event_infra.NewUpdateUserStatsOnAssignmentRemovedHandler(userStatsRepo))
+	evBus.Sub(event_infra.NewUpdateUserStatsOnChapterPublishedHandler(userStatsRepo))
+	evBus.Sub(event_infra.NewUpdateUserStatsOnChapterRemovedHandler(userStatsRepo))
+
+	evBus.Run()
 
 	// Construct all applications with repositories and services.
 	// DI deps are listed in order of repo, service, external service.
@@ -106,7 +117,40 @@ func main() {
 		app_impl.NewComicApp(txnCtrl, comicSvc, memberRepo, worksetRepo, comicRepo),
 	)
 	chapterApp := app_impl.NewChapterLogApp(
-		app_impl.NewChapterApp(txnCtrl, chapterSvc, memberRepo, worksetRepo, comicRepo, chapterRepo),
+		app_impl.NewChapterApp(txnCtrl, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, evBus),
+	)
+	userStatsApp := app_impl.NewUserStatsLogApp(
+		app_impl.NewUserStatsApp(userStatsRepo),
+	)
+	sysMailApp := app_impl.NewSysMailLogApp(
+		app_impl.NewSysMailApp(sysMailRepo),
+	)
+	assignmentInvApp := app_impl.NewAssignmentInvLogApp(
+		app_impl.NewAssignmentInvApp(
+			txnCtrl,
+			assignmentInvSvc,
+			assignmentSvc,
+			userRepo,
+			memberRepo,
+			worksetRepo,
+			comicRepo,
+			chapterRepo,
+			assignmentInvRepo,
+			assignmentRepo,
+			evBus,
+		),
+	)
+	assignmentApp := app_impl.NewAssignmentLogApp(
+		app_impl.NewAssignmentApp(
+			txnCtrl,
+			assignmentSvc,
+			memberRepo,
+			worksetRepo,
+			comicRepo,
+			chapterRepo,
+			assignmentRepo,
+			evBus,
+		),
 	)
 
 	appSt := state.NewAppState(
@@ -116,6 +160,10 @@ func main() {
 		worksetApp,
 		comicApp,
 		chapterApp,
+		userStatsApp,
+		sysMailApp,
+		assignmentInvApp,
+		assignmentApp,
 	)
 
 	// Start HTTP server.

@@ -12,8 +12,8 @@ type TeamApp interface {
 	// `GetInfo` returns team details by team id.
 	GetInfo(cx context.Context, id string) res.AppRes[val.TeamVal]
 
-	// NOTE: `ListUserTeams` can also be used as ListMyTeams.
-	ListUserTeams(cx context.Context, userId string) res.AppRes[[]val.TeamVal]
+	// NOTE: `ListByUser` can also be used as ListMyTeams.
+	ListByUser(cx context.Context, userId string) res.AppRes[[]val.TeamVal]
 
 	Update(cx context.Context, args *val.TeamUpdArgs) res.AppRes[res.None]
 

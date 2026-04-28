@@ -73,8 +73,8 @@ func (r *userRepoImpl) GetCredsByQid(qid string) (*aggr.UserCreds, repo_iface.Re
 	return row.ToUserCredsAggr(), nil
 }
 
-// `Reg` inserts a new user row from `UserReg` and returns the created aggregate
-func (r *userRepoImpl) Reg(reg *aggr.UserReg) (*aggr.User, repo_iface.RepoErr) {
+// `Register` inserts a new user row from `UserReg` and returns the created aggregate
+func (r *userRepoImpl) Register(reg *aggr.UserReg) (*aggr.User, repo_iface.RepoErr) {
 	regRow := entity.NewUserRegRowFromAggr(reg)
 
 	err := r.gdb.

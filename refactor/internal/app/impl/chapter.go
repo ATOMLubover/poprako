@@ -7,10 +7,13 @@ import (
 	"poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/event"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
+	event_iface "poprako-s/internal/event"
 
 	"go.uber.org/zap"
 )
@@ -19,28 +22,37 @@ import (
 type chapterAppImpl struct {
 	txnCtrl repo_iface.TxnCtrl
 
-	chapterSvc svc.ChapterSvc
+	chapterSvc    svc.ChapterSvc
+	assignmentSvc svc.AssignmentSvc
 
-	memberRepo  repo_iface.MemberRepo
-	worksetRepo repo_iface.WorksetRepo
-	comicRepo   repo_iface.ComicRepo
-	chapterRepo repo_iface.ChapterRepo
+	memberRepo     repo_iface.MemberRepo
+	worksetRepo    repo_iface.WorksetRepo
+	comicRepo      repo_iface.ComicRepo
+	chapterRepo    repo_iface.ChapterRepo
+	assignmentRepo repo_iface.AssignmentRepo
+
+	evBus event_iface.EvBus
 }
 
 // `NewChapterApp` creates one `ChapterApp` implementation.
 func NewChapterApp(
 	txnCtrl repo_iface.TxnCtrl,
 	chapterSvc svc.ChapterSvc,
+	assignmentSvc svc.AssignmentSvc,
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
 	chapterRepo repo_iface.ChapterRepo,
+	assignmentRepo repo_iface.AssignmentRepo,
+	evBus event_iface.EvBus,
 ) app_iface.ChapterApp {
 	if txnCtrl == nil ||
 		memberRepo == nil ||
 		worksetRepo == nil ||
 		comicRepo == nil ||
-		chapterRepo == nil {
+		chapterRepo == nil ||
+		assignmentRepo == nil ||
+		evBus == nil {
 		zap.L().Panic(
 			"[NewChapterApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
@@ -48,16 +60,21 @@ func NewChapterApp(
 			zap.Bool("worksetRepo", worksetRepo == nil),
 			zap.Bool("comicRepo", comicRepo == nil),
 			zap.Bool("chapterRepo", chapterRepo == nil),
+			zap.Bool("assignmentRepo", assignmentRepo == nil),
+			zap.Bool("evBus", evBus == nil),
 		)
 	}
 
 	return &chapterAppImpl{
-		txnCtrl:     txnCtrl,
-		chapterSvc:  chapterSvc,
-		memberRepo:  memberRepo,
-		worksetRepo: worksetRepo,
-		comicRepo:   comicRepo,
-		chapterRepo: chapterRepo,
+		txnCtrl:        txnCtrl,
+		chapterSvc:     chapterSvc,
+		assignmentSvc:  assignmentSvc,
+		memberRepo:     memberRepo,
+		worksetRepo:    worksetRepo,
+		comicRepo:      comicRepo,
+		chapterRepo:    chapterRepo,
+		assignmentRepo: assignmentRepo,
+		evBus:          evBus,
 	}
 }
 
@@ -150,11 +167,14 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 		return res.Reject[val.ChapterCreatedRes](code, msg)
 	}
 
+	ev := make([]event_iface.Event, 0)
+
 	re, err := repo_iface.RunWithTxn[res.AppRes[val.ChapterCreatedRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.ChapterCreatedRes], error) {
 		memberRepo := prov.MemberRepo()
 		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
+		assignmentRepo := prov.AssignmentRepo()
 
 		cm, err := comicRepo.GetById(args.ComicId)
 		if err != nil {
@@ -194,6 +214,13 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败"), err
 		}
 
+		reviewerCre := a.assignmentSvc.NewAssignmentCre(ch.Id, currUid, aggr.RoleMask(enum.RoleReviewer))
+		if _, err := assignmentRepo.Create(reviewerCre); err != nil {
+			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败"), err
+		}
+
+		ev = append(ev, event.NewAssignmentCreatedEv(currUid, ch.Id))
+
 		return res.Accept(&val.ChapterCreatedRes{Id: ch.Id}), nil
 	})
 
@@ -202,6 +229,8 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 
 		return re
 	}
+
+	a.evBus.Pub(context.Background(), ev)
 
 	return re
 }
@@ -214,11 +243,14 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		return res.Reject[res.None](code, msg)
 	}
 
+	ev := make([]event_iface.Event, 0)
+
 	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
 		memberRepo := prov.MemberRepo()
 		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
+		assignmentRepo := prov.AssignmentRepo()
 
 		ch, err := chapterRepo.GetById(args.Id)
 		if err != nil {
@@ -245,8 +277,24 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		}
 
 		if args.WorkflowTransition != nil {
+			wasPublished := ch.PublishedAt != nil
+
 			if err := ch.TransiteWorkflow(*args.WorkflowTransition); err != nil {
 				return res.Reject[res.None](res.BadRequest, "无效的工作流状态转换"), res.DefErr()
+			}
+
+			if !wasPublished && ch.PublishedAt != nil {
+				assignments, lerr := assignmentRepo.List(&query.ListAssignmentOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: 500}})
+				if lerr != nil {
+					return res.Reject[res.None](res.ServerError, "更新章节失败"), lerr
+				}
+
+				assignedUserIds := make([]string, 0, len(assignments))
+				for i := range assignments {
+					assignedUserIds = append(assignedUserIds, assignments[i].UserId)
+				}
+
+				ev = append(ev, event.NewChapterPublishedEv(ch.Id, assignedUserIds))
 			}
 		}
 
@@ -268,6 +316,8 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		return re
 	}
 
+	a.evBus.Pub(context.Background(), ev)
+
 	return re
 }
 
@@ -279,11 +329,14 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 		return res.Reject[res.None](code, msg)
 	}
 
+	ev := make([]event_iface.Event, 0)
+
 	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
 		memberRepo := prov.MemberRepo()
 		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
+		assignmentRepo := prov.AssignmentRepo()
 
 		ch, err := chapterRepo.GetById(chapterId)
 		if err != nil {
@@ -309,6 +362,20 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节"), res.DefErr()
 		}
 
+		assignments, err := assignmentRepo.List(&query.ListAssignmentOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: 500}})
+		if err != nil {
+			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
+		}
+
+		assignedUserIds := make([]string, 0, len(assignments))
+		for i := range assignments {
+			assignedUserIds = append(assignedUserIds, assignments[i].UserId)
+		}
+
+		if err := assignmentRepo.DeleteByChapterId(ch.Id); err != nil {
+			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
+		}
+
 		if err := chapterRepo.Remove(chapterId); err != nil {
 			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
 		}
@@ -321,6 +388,8 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
 		}
 
+		ev = append(ev, event.NewChapterRemovedEv(ch.Id, ch.PublishedAt != nil, assignedUserIds))
+
 		return res.Accept(&res.None{}), nil
 	})
 
@@ -329,6 +398,8 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 
 		return re
 	}
+
+	a.evBus.Pub(context.Background(), ev)
 
 	return re
 }

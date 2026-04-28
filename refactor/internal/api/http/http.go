@@ -45,6 +45,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			{
 				user.Get("/{user_id}", GetUserInfo(st))
 				user.Get("/me", GetMyUserInfo(st))
+				user.Get("/me/stats", GetMyUserStats(st))
 
 				user.Post("/avatar", ResvUserAvatar(st))
 				user.Post("/avatar/confirm", MarkUserAvatarUploaded(st))
@@ -79,6 +80,28 @@ func NewApp(st *state.AppState) *iris.Application {
 				chapter.Put("/{chapter_id}", UpdateChapter(st))
 				chapter.Delete("/{chapter_id}", RemoveChapter(st))
 			}
+
+			sysMail := authorized.Party("/sys-mail")
+			{
+				sysMail.Get("", ListSysMail(st))
+				sysMail.Post("/{sys_mail_id}/read", MarkSysMailRead(st))
+			}
+
+			assignmentInv := authorized.Party("/assignment-invitation")
+			{
+				assignmentInv.Get("/chapter/{chapter_id}", ListAssignmentInvitations(st))
+				assignmentInv.Post("", CreateAssignmentInvitation(st))
+				assignmentInv.Delete("/{invitation_id}", DeleteAssignmentInvitation(st))
+				assignmentInv.Post("/join", JoinByAssignmentInvitation(st))
+			}
+
+			assignment := authorized.Party("/assignment")
+			{
+				assignment.Get("/chapter/{chapter_id}", ListAssignmentsByChapter(st))
+				assignment.Get("/mine", ListMyAssignments(st))
+				assignment.Put("", UpsertAssignment(st))
+				assignment.Delete("/{assignment_id}", DeleteAssignment(st))
+			}
 		}
 	}
 
@@ -96,9 +119,11 @@ func RunServer(app *iris.Application, st *state.AppState) {
 func enableSwag(app *iris.Application) {
 	app.Get(
 		"/swagger/{any:path}",
-		swagger.WrapHandler(swaggerFiles.Handler,
+		swagger.WrapHandler(
+			swaggerFiles.Handler,
 			func(c *swagger.Config) {
 				c.URL = "/swagger/doc.json"
-			}),
+			},
+		),
 	)
 }

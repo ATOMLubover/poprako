@@ -20,9 +20,12 @@ CREATE TABLE IF NOT EXISTS "t_oss_message" (
     "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS "idx_oss_message_status_operation_visible" ON "t_oss_message" ("status", "operation", "visible_at");
-CREATE INDEX IF NOT EXISTS "idx_oss_message_res_id_res_type_operation" ON "t_oss_message" ("resource_id", "resource_type", "operation");
-CREATE INDEX IF NOT EXISTS "idx_oss_message_created_at" ON "t_oss_message" ("created_at");
+CREATE INDEX IF NOT EXISTS "idx_oss_message_status_operation_visible" 
+    ON "t_oss_message" ("status", "operation", "visible_at");
+CREATE INDEX IF NOT EXISTS "idx_oss_message_res_id_res_type_operation" 
+    ON "t_oss_message" ("resource_id", "resource_type", "operation");
+CREATE INDEX IF NOT EXISTS "idx_oss_message_created_at" 
+    ON "t_oss_message" ("created_at");
 
 -- Prevent multiple pending messages for the same resource and operation.
 CREATE UNIQUE INDEX IF NOT EXISTS "uidx_oss_message_active_res_op"

@@ -15,8 +15,10 @@ type evBusImpl struct {
 }
 
 func NewEvBus() event_iface.EvBus {
+	const TX_SIZE = 1024
+
 	evHdl := make(map[event_iface.EvTyp][]event_iface.EvHandler)
-	tx := make(chan *workUnit, 100) // Buffer size can be adjusted based on expected load.
+	tx := make(chan *workUnit, TX_SIZE) // Buffer size can be adjusted based on expected load.
 	done := make(chan struct{})
 
 	return &evBusImpl{
@@ -67,27 +69,31 @@ func (b *evBusImpl) Run() {
 	rx := b.tx
 	done := b.done
 
+	onWu := func(wu *workUnit) {
+		for _, ev := range wu.ev {
+			handlers, exists := b.evHdl[ev.EvTyp()]
+			if !exists {
+				zap.L().Warn(
+					"[evBusImpl.Run] no handlers for event type",
+					zap.Any("event_type", ev.EvTyp()),
+				)
+				continue
+			}
+
+			for _, h := range handlers {
+				go h.Handle(wu.cx, ev)
+			}
+		}
+	}
+
 	go func() {
 		for {
 			select {
 			case wu := <-rx:
-				for _, ev := range wu.ev {
-					handlers, exists := b.evHdl[ev.EvTyp()]
-					if !exists {
-						zap.L().Warn(
-							"[evBusImpl.Run] no handlers for event type",
-							zap.Any("event_type", ev.EvTyp()),
-						)
-						continue
-					}
-
-					for _, h := range handlers {
-						go h.Handle(wu.cx, ev)
-					}
-				}
+				onWu(wu)
 			case <-done:
 				zap.L().Info("[evBusImpl.Run] event bus is closing")
-				break
+				return
 			}
 		}
 	}()

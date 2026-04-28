@@ -133,7 +133,7 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.App
 	})
 }
 
-func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
+func (a *userAppImpl) Register(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
 	lgr := app_util.TakeLgr(cx)
 
 	var userId string
@@ -167,7 +167,7 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}
 
-		user, err := userRepo.Reg(userReg)
+		user, err := userRepo.Register(userReg)
 		if err != nil {
 			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}

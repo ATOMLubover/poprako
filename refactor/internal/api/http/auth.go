@@ -64,7 +64,7 @@ func RegUser(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := userApp.Reg(newReqCx(cx), &args)
+		re := userApp.Register(newReqCx(cx), &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), "注册失败")
 			return

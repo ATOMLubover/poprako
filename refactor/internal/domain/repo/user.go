@@ -15,8 +15,8 @@ type UserRepo interface {
 
 	// TODO: DO NOT add List API now.
 
-	// `Reg` creates a new user,
-	Reg(reg *aggr.UserReg) (*aggr.User, RepoErr)
+	// `Register` creates a new user,
+	Register(reg *aggr.UserReg) (*aggr.User, RepoErr)
 
 	// Update(upd *aggr.UserUpd) RepoErr
 

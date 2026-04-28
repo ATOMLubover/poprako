@@ -43,8 +43,8 @@ func (a *teamLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.T
 	return a.inner.GetInfo(cx, id)
 }
 
-// `ListUserTeams` enriches logger context then forwards the call.
-func (a *teamLogAppImpl) ListUserTeams(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
+// `ListByUser` enriches logger context then forwards the call.
+func (a *teamLogAppImpl) ListByUser(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -58,7 +58,7 @@ func (a *teamLogAppImpl) ListUserTeams(cx context.Context, userId string) res.Ap
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.ListUserTeams(cx, userId)
+	return a.inner.ListByUser(cx, userId)
 }
 
 // `Update` enriches logger context then forwards the call.

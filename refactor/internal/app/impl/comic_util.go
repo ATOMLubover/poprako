@@ -4,15 +4,12 @@ import (
 	"strings"
 
 	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
 )
 
-const (
-	comicListDefLimit = 20
-	comicListMaxLimit = 200
-)
 
 // `asmComicVal` converts a `Comic` aggregate to app-facing `ComicVal`
 func asmComicVal(cm *aggr.Comic) val.ComicVal {
@@ -42,16 +39,8 @@ func vfyListComicArgs(args *val.ListComicArgs) (res.ErrCode, string, bool) {
 		return res.BadRequest, "workset_id 不能为空", true
 	}
 
-	if args.Offset < 0 {
-		return res.BadRequest, "offset 不能小于 0", true
-	}
-
-	if args.Limit <= 0 {
-		args.Limit = comicListDefLimit
-	}
-
-	if args.Limit > comicListMaxLimit {
-		args.Limit = comicListMaxLimit
+	if code, msg, reject := app_util.ClampOffsetLimit(args.Offset, &args.Limit); reject {
+		return code, msg, true
 	}
 
 	args.FuzzyTitle = strings.TrimSpace(args.FuzzyTitle)

@@ -57,6 +57,7 @@ applyTo:
 
 - 当前用户 id 局部变量统一命名为 `currUid` 并原样传给 app 层 禁止使用 `currUserId` 等其他命名
 - 对 `List` 接口必须显式接收分页输入（例如 `offset` `limit`）并传递到 app 的 `val.ListXxxArgs`
+- 当需求被明确要求为“闭环”或“全链路”时 实现范围必须覆盖到 HTTP 层 至少包含 route 注册 handler godoc `AppState` 注入与 `main` 中的 app 构造接线 仅完成 domain app repo 不算完成
 
 ## 文件与组织规则
 

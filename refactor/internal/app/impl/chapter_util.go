@@ -5,15 +5,12 @@ import (
 	"time"
 
 	"poprako-s/internal/app/res"
+	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
 )
 
-const (
-	chapterListDefLimit = 20
-	chapterListMaxLimit = 200
-)
 
 // `asmChapterVal` converts chapter aggregate to app value object.
 func asmChapterVal(ch *aggr.Chapter) val.ChapterVal {
@@ -63,16 +60,8 @@ func vfyListChapterArgs(args *val.ListChapterArgs) (res.ErrCode, string, bool) {
 		return res.BadRequest, "comic_id 不能为空", true
 	}
 
-	if args.Offset < 0 {
-		return res.BadRequest, "offset 不能小于 0", true
-	}
-
-	if args.Limit <= 0 {
-		args.Limit = chapterListDefLimit
-	}
-
-	if args.Limit > chapterListMaxLimit {
-		args.Limit = chapterListMaxLimit
+	if code, msg, reject := app_util.ClampOffsetLimit(args.Offset, &args.Limit); reject {
+		return code, msg, true
 	}
 
 	return 0, "", false

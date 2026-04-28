@@ -11,5 +11,8 @@ type Prov interface {
 	WorksetRepo() WorksetRepo
 	ComicRepo() ComicRepo
 	ChapterRepo() ChapterRepo
+	AssignmentInvRepo() AssignmentInvRepo
+	AssignmentRepo() AssignmentRepo
+	UserStatsRepo() UserStatsRepo
 	OssMsgRepo() OssMsgRepo
 }

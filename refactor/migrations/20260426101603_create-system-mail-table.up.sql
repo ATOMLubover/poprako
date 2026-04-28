@@ -11,3 +11,7 @@ CREATE TABLE IF NOT EXISTS "t_system_mail" (
 );
 
 CREATE INDEX IF NOT EXISTS "idx_system_mail_receiver" ON "t_system_mail" ("receiver_id");
+
+CREATE INDEX IF NOT EXISTS "idx_system_mail_unread_receiver_created"
+  ON "t_system_mail" ("receiver_id", "created_at" DESC)
+  WHERE "read" = FALSE;

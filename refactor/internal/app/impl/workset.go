@@ -54,20 +54,8 @@ func NewWorksetApp(
 func (a *worksetAppImpl) List(cx context.Context, currUid string, args *val.ListWorksetArgs) res.AppRes[[]val.WorksetVal] {
 	lgr := app_util.TakeLgr(cx)
 
-	if args == nil {
-		return res.Reject[[]val.WorksetVal](res.BadRequest, "分页参数不能为空")
-	}
-
-	if args.Offset < 0 {
-		return res.Reject[[]val.WorksetVal](res.BadRequest, "offset 不能小于 0")
-	}
-
-	if args.Limit <= 0 {
-		args.Limit = 20
-	}
-
-	if args.Limit > 200 {
-		args.Limit = 200
+	if code, msg, reject := vfyListWorksetArgs(args); reject {
+		return res.Reject[[]val.WorksetVal](code, msg)
 	}
 
 	// Verify that the caller is a member of the team.
