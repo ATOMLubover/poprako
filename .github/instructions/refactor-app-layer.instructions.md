@@ -45,14 +45,15 @@ applyTo:
 - `inner app impl` 只处理业务流程与依赖协作 不负责给 logger 增加请求参数等调用上下文
 - `inner app impl` 获取 logger 的唯一入口是 `takeLgr(cx)`
 - 除 `err` 或极少数必要诊断字段外 不要在 `inner app impl` 内继续向 logger 注入大段上下文 调用级上下文由 `log app impl` 提前写入
-- 需要事务时 在 app 层开启事务 并在事务闭包内部通过 `repo_infra.TxnXxxRepo(cx)` 取到事务态 repo
+- 需要事务时 在 app 层统一使用 `repo_iface.RunWithTxn[T]` 范型函数 并在事务闭包内部通过 `prov.XxxRepo()` 获取事务态 repo
+- 严禁在 app impl 中直接调用 `a.txnCtrl.RunWithTxn(...)`
 - app 层负责决定 BadRequest 与 ServerError 这类业务响应语义 但不要把底层错误原文直接暴露给最终消息
 - app 层允许组合多个 repo service ext event 完成一个用例 但不要在这里写 domain 规则本身
 
 ## 强制个人约定
 
 - 当前用户 id 参数和变量统一使用 `currUid` 命名 禁止使用 `currUserId`
-- 事务编排风格统一对齐 `userAppImpl` 已有写法 使用本地 `errCode` + 直接返回真实错误的流程 禁止构造哨兵业务错误（例如 `errNotAdmin`）
+- 事务编排风格统一对齐 `userAppImpl` 的范型事务写法 事务闭包直接返回 `res.AppRes` 与 `error` 禁止使用本地 `errCode` 分支回传 禁止构造哨兵业务错误（例如 `errNotAdmin`）
 - 在事务闭包里拿到事务态 repo 后 局部变量命名使用业务名本身 例如 `memberRepo` `worksetRepo` 禁止添加 `txn` 前缀
 - 当 use-case 是 `PUT` 语义时 app 层必须构造全量更新输入 不能把 `nil` 可空字段解释为“跳过更新”
 - 删除语义命名固定：`Delete` 表示硬删除 `Remove` 表示软删除

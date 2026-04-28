@@ -65,7 +65,7 @@ func main() {
 	worksetRepo := repo_infra.NewWorksetRepo(gdb)
 	comicRepo := repo_infra.NewComicRepo(gdb)
 	chapterRepo := repo_infra.NewChapterRepo(gdb)
-	// sysMailRepo := repo_infra.NewSysMailRepo(gdb)
+	sysMailRepo := repo_infra.NewSysMailRepo(gdb)
 
 	// Construct all services.
 	userSvc := svc.NewUserSvc()
@@ -79,7 +79,14 @@ func main() {
 	ossClient := oss_infra.NewOssClient()
 	tknParser := token_infra.NewJwtParser()
 
+	// Initialize event bus and register handlers.
+	// in case of unexpected shutdown, ensure event bus is closed to prevent resource leaks.
 	evBus := event_infra.NewEvBus()
+
+	defer evBus.Close()
+
+	evBus.Sub(event_infra.NewNotifyInvitorHandler(teamRepo, sysMailRepo))
+	evBus.Sub(event_infra.NewUpdateUserActiveHandler(userRepo))
 
 	// Construct all applications with repositories and services.
 	// DI deps are listed in order of repo, service, external service.

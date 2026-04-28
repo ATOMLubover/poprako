@@ -55,8 +55,14 @@ type NotifyInvitorHandler struct {
 	sysMailRepo repo_iface.SysMailRepo
 }
 
-func NewNotifyInvitorHandler(sysMailRepo repo_iface.SysMailRepo) *NotifyInvitorHandler {
-	return &NotifyInvitorHandler{sysMailRepo: sysMailRepo}
+func NewNotifyInvitorHandler(
+	teamRepo repo_iface.TeamRepo,
+	sysMailRepo repo_iface.SysMailRepo,
+) *NotifyInvitorHandler {
+	return &NotifyInvitorHandler{
+		teamRepo:    teamRepo,
+		sysMailRepo: sysMailRepo,
+	}
 }
 
 func (h *NotifyInvitorHandler) EvTyp() event_iface.EvTyp {
@@ -70,6 +76,7 @@ func (h *NotifyInvitorHandler) Handle(_ context.Context, ev event_iface.Event) {
 			"[NotifyInvitorHandler.Handle] invalid event payload for NotifyInvitorHandler",
 			zap.Any("payload", ev.Payload()),
 		)
+
 		return
 	}
 
@@ -82,11 +89,12 @@ func (h *NotifyInvitorHandler) Handle(_ context.Context, ev event_iface.Event) {
 			zap.String("team_id", payload.TeamId),
 			zap.Error(err),
 		)
+
 		return
 	}
 
 	cont := fmt.Sprintf(
-		"你的邀请码已被使用，%s 已加入团队 %s",
+		"你的邀请码已被使用，<%s> 已加入汉化组 <%s>",
 		payload.InviteeQid,
 		team.Name,
 	)
@@ -107,6 +115,7 @@ func (h *NotifyInvitorHandler) Handle(_ context.Context, ev event_iface.Event) {
 			zap.String("invitee_qid", payload.InviteeQid),
 			zap.Error(err),
 		)
+
 		return
 	}
 }
