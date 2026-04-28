@@ -1,5 +1,7 @@
 package res
 
+import "errors"
+
 type AppRes[T any] struct {
 	success bool
 	msg     string
@@ -48,3 +50,7 @@ func (r *AppRes[T]) WithCode(code ErrCode) *AppRes[T] {
 }
 
 type None struct{}
+
+func DefErr() error {
+	return errors.New("default app error")
+}

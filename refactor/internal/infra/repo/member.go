@@ -1,9 +1,6 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
-
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
@@ -15,15 +12,6 @@ import (
 
 type memberRepoImpl struct {
 	gdb *gorm.DB
-}
-
-func TxnMemberRepo(cx context.Context) (repo_iface.MemberRepo, error) {
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnMemberRepo] no transaction context found for MemberRepo")
-	}
-
-	return &memberRepoImpl{gdb: gdb}, nil
 }
 
 func NewMemberRepo(gdb *gorm.DB) repo_iface.MemberRepo {

@@ -32,7 +32,7 @@ func (OssMsgSvc) SavePendingCre(
 		Id:        id,
 		ResTyp:    resTyp,
 		ResId:     resId,
-		Status:    enum.OssMsgStatePend,
+		Status:    enum.OssMsgStatePending,
 		ObjKeys:   keys,
 		VisibleAt: now,
 		ExpireAt:  exp,

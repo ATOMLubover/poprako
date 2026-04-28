@@ -163,10 +163,10 @@ type ossMsgMarkCmplUpdRow struct {
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
-// `NewOssMsgMarkCmplUpdRow` builds update row for completion mark
-func NewOssMsgMarkCmplUpdRow() *ossMsgMarkCmplUpdRow {
+// `NewOssMsgMarkCompletedUpdRow` builds update row for completion mark
+func NewOssMsgMarkCompletedUpdRow() *ossMsgMarkCmplUpdRow {
 	return &ossMsgMarkCmplUpdRow{
-		Status:    string(enum.OssMsgStateCmpl),
+		Status:    string(enum.OssMsgStateCompleted),
 		UpdatedAt: time.Now(),
 	}
 }
@@ -181,7 +181,7 @@ type ossMsgMarkProcUpdRow struct {
 // `NewOssMsgMarkProcUpdRow` builds update row for process claim
 func NewOssMsgMarkProcUpdRow(now time.Time) *ossMsgMarkProcUpdRow {
 	return &ossMsgMarkProcUpdRow{
-		Status:    string(enum.OssMsgStateProc),
+		Status:    string(enum.OssMsgStateProcessing),
 		ProcAt:    &now,
 		UpdatedAt: now,
 	}
@@ -197,7 +197,7 @@ type ossMsgResetStuckUpdRow struct {
 // `NewOssMsgResetStuckUpdRow` builds update row for stuck reset
 func NewOssMsgResetStuckUpdRow() *ossMsgResetStuckUpdRow {
 	return &ossMsgResetStuckUpdRow{
-		Status:    string(enum.OssMsgStatePend),
+		Status:    string(enum.OssMsgStatePending),
 		ProcAt:    nil,
 		UpdatedAt: time.Now(),
 	}
@@ -216,7 +216,7 @@ type ossMsgMarkPendingUpdRow struct {
 // `NewOssMsgMarkPendingUpdRow` builds an update row for pending reset with the given retry metadata
 func NewOssMsgMarkPendingUpdRow(errMsg string, nextVisibleAt time.Time, now time.Time) *ossMsgMarkPendingUpdRow {
 	return &ossMsgMarkPendingUpdRow{
-		Status:    string(enum.OssMsgStatePend),
+		Status:    string(enum.OssMsgStatePending),
 		ProcAt:    nil,
 		VisibleAt: nextVisibleAt,
 		LastErr:   errMsg,

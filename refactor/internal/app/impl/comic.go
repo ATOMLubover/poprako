@@ -2,7 +2,6 @@ package app_impl
 
 import (
 	"context"
-	"fmt"
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
@@ -13,7 +12,6 @@ import (
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
-	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -129,48 +127,28 @@ func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.Crea
 		return res.Reject[val.ComicCreatedRes](code, msg)
 	}
 
-	var (
-		createdId string
-		errCode   = res.BadRequest
-	)
-
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		memberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		comicRepo, err := repo_infra.TxnComicRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	re, err := repo_iface.RunWithTxn[res.AppRes[val.ComicCreatedRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.ComicCreatedRes], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
 
 		ws, err := worksetRepo.GetById(args.WorksetId)
 		if err != nil {
-			return err
+			return res.Reject[val.ComicCreatedRes](res.Forbidden, "仅汉化组管理员可创建漫画"), res.DefErr()
 		}
 
 		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
 		if err != nil {
-			return err
+			return res.Reject[val.ComicCreatedRes](res.Forbidden, "仅汉化组管理员可创建漫画"), res.DefErr()
 		}
 
 		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return fmt.Errorf("only team admin can create comic")
+			return res.Reject[val.ComicCreatedRes](res.Forbidden, "仅汉化组管理员可创建漫画"), res.DefErr()
 		}
 
 		count, err := comicRepo.Count(&query.ListComicOpt{WorksetId: &args.WorksetId})
 		if err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[val.ComicCreatedRes](res.ServerError, "创建漫画失败"), err
 		}
 
 		cre := a.comicSvc.NewComicCre(
@@ -184,32 +162,26 @@ func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.Crea
 
 		cm, err := comicRepo.Create(cre)
 		if err != nil {
-			return err
+			return res.Reject[val.ComicCreatedRes](res.ServerError, "创建漫画失败"), err
 		}
 
 		if err := worksetRepo.UpdateComicCount(args.WorksetId, 1); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[val.ComicCreatedRes](res.ServerError, "创建漫画失败"), err
 		}
 
-		createdId = cm.Id
+		return res.Accept(&val.ComicCreatedRes{Id: cm.Id}), nil
+	})
 
-		return nil
-	}); err != nil {
+	if err != nil {
 		lgr.Error(
 			"[comicAppImpl.Create] failed to run create comic transaction",
 			zap.Error(err),
 		)
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[val.ComicCreatedRes](res.ServerError, "创建漫画失败")
-		default:
-			return res.Reject[val.ComicCreatedRes](res.Forbidden, "仅汉化组管理员可创建漫画")
-		}
+		return re
 	}
 
-	return res.Accept(&val.ComicCreatedRes{Id: createdId})
+	return re
 }
 
 // `Update` updates title author and description of a comic
@@ -269,70 +241,49 @@ func (a *comicAppImpl) Remove(cx context.Context, currUid string, comicId string
 		return res.Reject[res.None](code, msg)
 	}
 
-	var errCode = res.BadRequest
-
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		memberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		comicRepo, err := repo_infra.TxnComicRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
 
 		cm, err := comicRepo.GetById(comicId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除漫画"), res.DefErr()
 		}
 
 		ws, err := worksetRepo.GetById(cm.WorksetId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除漫画"), res.DefErr()
 		}
 
 		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除漫画"), res.DefErr()
 		}
 
 		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return fmt.Errorf("only team admin can remove comic")
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除漫画"), res.DefErr()
 		}
 
 		if err := comicRepo.Remove(comicId); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "删除漫画失败"), err
 		}
 
 		if err := worksetRepo.UpdateComicCount(ws.Id, -1); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "删除漫画失败"), err
 		}
 
-		return nil
-	}); err != nil {
+		return res.Accept(&res.None{}), nil
+	})
+
+	if err != nil {
 		lgr.Error(
 			"[comicAppImpl.Remove] failed to run remove comic transaction",
 			zap.Error(err),
 		)
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[res.None](res.ServerError, "删除漫画失败")
-		default:
-			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除漫画")
-		}
+		return re
 	}
 
-	return res.Accept(&res.None{})
+	return re
 }

@@ -11,3 +11,7 @@ import (
 func IsDupKey(err repo_iface.RepoErr) bool {
 	return errors.Is(err, gorm.ErrDuplicatedKey)
 }
+
+func IsNotFound(err repo_iface.RepoErr) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
+}

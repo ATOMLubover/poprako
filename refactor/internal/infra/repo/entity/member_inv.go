@@ -91,15 +91,15 @@ func (*MemberInvCreRow) TableName() string {
 	return MEMBER_INV_TABLE
 }
 
-// `memberInvMarkCmplUpdRow` maps update columns for completion mark
-type memberInvMarkCmplUpdRow struct {
+// `memberInvMarkCompletedUpdRow` maps update columns for completion mark
+type memberInvMarkCompletedUpdRow struct {
 	Pending   bool      `gorm:"column:pending"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
-// `NewMemberInvMarkCmplUpdRow` builds update row for `MarkCmpl`
-func NewMemberInvMarkCmplUpdRow() *memberInvMarkCmplUpdRow {
-	return &memberInvMarkCmplUpdRow{
+// `NewMemberInvMarkCompletedUpdRow` builds update row for `MarkCompleted`
+func NewMemberInvMarkCompletedUpdRow() *memberInvMarkCompletedUpdRow {
+	return &memberInvMarkCompletedUpdRow{
 		Pending:   false,
 		UpdatedAt: time.Now(),
 	}

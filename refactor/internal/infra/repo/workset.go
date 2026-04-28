@@ -1,8 +1,6 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -18,16 +16,6 @@ import (
 type worksetRepoImpl struct {
 	// `gdb` is the underlying GORM database handle.
 	gdb *gorm.DB
-}
-
-// `TxnWorksetRepo` creates a transaction-scoped `WorksetRepo` extracted from `cx`.
-func TxnWorksetRepo(cx context.Context) (repo_iface.WorksetRepo, repo_iface.RepoErr) {
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnWorksetRepo] no transaction context found for WorksetRepo")
-	}
-
-	return &worksetRepoImpl{gdb: gdb}, nil
 }
 
 // `NewWorksetRepo` creates a non-transaction-scoped `WorksetRepo`.

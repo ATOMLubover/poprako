@@ -2,7 +2,6 @@ package app_impl
 
 import (
 	"context"
-	"fmt"
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
@@ -13,7 +12,6 @@ import (
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
-	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -120,69 +118,49 @@ func (a *worksetAppImpl) List(cx context.Context, currUid string, args *val.List
 func (a *worksetAppImpl) Create(cx context.Context, currUid string, args *val.CreateWorksetArgs) res.AppRes[val.WorksetCreatedRes] {
 	lgr := app_util.TakeLgr(cx)
 
-	var (
-		createdId string
-		errCode   = res.BadRequest
-	)
-
 	// Open a transaction to atomically verify permission, count active rows,
 	// and create the new workset.
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		txnMemberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		txnWorksetRepo, err := repo_infra.TxnWorksetRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	re, err := repo_iface.RunWithTxn[res.AppRes[val.WorksetCreatedRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.WorksetCreatedRes], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
 
 		// Verify admin role in the target team.
-		member, err := txnMemberRepo.GetByUserTeamId(currUid, args.TeamId)
+		member, err := memberRepo.GetByUserTeamId(currUid, args.TeamId)
 		if err != nil {
-			return err
+			return res.Reject[val.WorksetCreatedRes](res.Forbidden, "仅汉化组管理员可创建作品集"), res.DefErr()
 		}
 		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return fmt.Errorf("only team admin can create workset")
+			return res.Reject[val.WorksetCreatedRes](res.Forbidden, "仅汉化组管理员可创建作品集"), res.DefErr()
 		}
 
 		// Count active worksets to determine the next index.
-		count, err := txnWorksetRepo.Count(&query.ListWorksetOpt{TeamId: &args.TeamId})
+		count, err := worksetRepo.Count(&query.ListWorksetOpt{TeamId: &args.TeamId})
 		if err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[val.WorksetCreatedRes](res.ServerError, "创建作品集失败"), err
 		}
 
 		// Build the creation input via the domain service.
 		cre := a.worksetSvc.NewWorksetCre(args.TeamId, int(count), args.Name, args.Desc)
 
 		// Persist the new workset.
-		ws, err := txnWorksetRepo.Create(cre)
+		ws, err := worksetRepo.Create(cre)
 		if err != nil {
-			return err
+			return res.Reject[val.WorksetCreatedRes](res.ServerError, "创建作品集失败"), err
 		}
 
-		createdId = ws.Id
+		return res.Accept(&val.WorksetCreatedRes{Id: ws.Id}), nil
+	})
 
-		return nil
-	}); err != nil {
+	if err != nil {
 		lgr.Error(
 			"[worksetAppImpl.Create] failed to run create workset transaction",
 			zap.Error(err),
 		)
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[val.WorksetCreatedRes](res.ServerError, "创建作品集失败")
-		default:
-			return res.Reject[val.WorksetCreatedRes](res.Forbidden, "仅汉化组管理员可创建作品集")
-		}
+		return re
 	}
 
-	return res.Accept(&val.WorksetCreatedRes{Id: createdId})
+	return re
 }
 
 // `Update` updates the name and/or description of an existing workset.

@@ -33,6 +33,7 @@ func (h *UpdateUserActiveHandler) Handle(_ context.Context, ev event_iface.Event
 			"[UpdateUserActiveHandler.Handle] invalid event payload for UpdateUserActiveHandler",
 			zap.Any("payload", ev.Payload()),
 		)
+
 		return
 	}
 
@@ -44,6 +45,7 @@ func (h *UpdateUserActiveHandler) Handle(_ context.Context, ev event_iface.Event
 			zap.String("user_id", payload.UserId),
 			zap.Error(err),
 		)
+
 		return
 	}
 }

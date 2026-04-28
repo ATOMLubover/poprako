@@ -136,47 +136,40 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.App
 func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
 	lgr := app_util.TakeLgr(cx)
 
-	var (
-		userId  string
-		errCode = res.BadRequest
-	)
+	var userId string
 
 	ev := make([]event_iface.Event, 0)
 
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		userRepo, err := repo_infra.TxnUserRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-		memberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-		memberInvRepo, err := repo_infra.TxnMemberInvRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	if re, err := repo_iface.RunWithTxn[res.AppRes[val.UserRegRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.UserRegRes], error) {
+		userRepo := prov.UserRepo()
+		memberRepo := prov.MemberRepo()
+		memberInvRepo := prov.MemberInvRepo()
 
 		inv, err := memberInvRepo.GetPendingByInviteeQid(args.Qid)
 		if err != nil {
-			return err
+			if repo_infra.IsNotFound(err) {
+				return res.Reject[val.UserRegRes](res.BadRequest, "无效的邀请码"), res.DefErr()
+			}
+
+			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}
 
 		if inv.InvCode != args.InvCode {
-			return fmt.Errorf("wrong invitation code")
+			return res.Reject[val.UserRegRes](res.BadRequest, "无效的邀请码"), res.DefErr()
 		}
 
 		userReg, err := a.userSvc.NewUserReg(inv, args.Name, args.Pwd)
 		if err != nil {
-			return err
+			if repo_infra.IsNotFound(err) || repo_infra.IsDupKey(err) {
+				return res.Reject[val.UserRegRes](res.BadRequest, "无效的邀请码"), res.DefErr()
+			}
+
+			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}
 
 		user, err := userRepo.Reg(userReg)
 		if err != nil {
-			return err
+			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}
 
 		ev = append(ev, userReg.PullEv()...)
@@ -185,28 +178,25 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 
 		_, err = memberRepo.Create(memberCre)
 		if err != nil {
-			return err
+			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}
 
-		if err = memberInvRepo.MarkCmpl(inv.Id); err != nil {
-			return err
+		if err = memberInvRepo.MarkCompleted(inv.Id); err != nil {
+			return res.Reject[val.UserRegRes](res.ServerError, "注册失败"), err
 		}
 
 		userId = user.Id
 
-		return nil
+		return res.Accept(&val.UserRegRes{
+			UserId: user.Id,
+		}), nil
 	}); err != nil {
 		lgr.Error(
 			"[userAppImpl.Reg] failed to run registration transaction",
 			zap.Error(err),
 		)
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[val.UserRegRes](res.ServerError, "注册失败")
-		default:
-			return res.Reject[val.UserRegRes](res.BadRequest, err.Error())
-		}
+		return re
 	}
 
 	// If successfully registered, publish all events after transaction is committed.
@@ -220,6 +210,7 @@ func (a *userAppImpl) Reg(cx context.Context, args *val.UserRegArgs) res.AppRes[
 			"[userAppImpl.Reg] failed to generate user token",
 			zap.Error(err),
 		)
+
 		return res.Reject[val.UserRegRes](res.ServerError, "生成用户令牌失败")
 	}
 
@@ -254,6 +245,7 @@ func (a *userAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.User
 			zap.String("user_id", id),
 			zap.Error(err),
 		)
+
 		return res.Reject[val.UserVal](res.ServerError, "获取用户信息失败")
 	}
 
@@ -268,27 +260,30 @@ func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArg
 
 	key := fmt.Sprintf("user_avatar/%s.%s", args.UserId, args.FileExt)
 
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		userRepo, err := repo_infra.TxnUserRepo(cx)
-		if err != nil {
-			return err
-		}
-		ossMsgRepo, err := repo_infra.TxnOssMsgRepo(cx)
-		if err != nil {
-			return err
+	if re, err := repo_iface.RunWithTxn[res.AppRes[val.ResvUserAvatarRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.ResvUserAvatarRes], error) {
+		userRepo := prov.UserRepo()
+		ossMsgRepo := prov.OssMsgRepo()
+
+		if err := userRepo.PrefillAvatarKey(args.UserId, key); err != nil {
+			if repo_infra.IsNotFound(err) {
+				return res.Reject[val.ResvUserAvatarRes](res.BadRequest, "用户不存在"), res.DefErr()
+			}
+
+			return res.Reject[val.ResvUserAvatarRes](res.ServerError, "生成头像上传信息失败"), err
 		}
 
-		if err = userRepo.PrefillAvatarKey(args.UserId, key); err != nil {
-			return err
+		if err := a.ossMsgSvc.SavePendingCre(ossMsgRepo, enum.OssResUserAvatar, args.UserId, []string{key}); err != nil {
+			return res.Reject[val.ResvUserAvatarRes](res.ServerError, "生成头像上传信息失败"), err
 		}
 
-		if err = a.ossMsgSvc.SavePendingCre(ossMsgRepo, enum.OssResUserAvatar, args.UserId, []string{key}); err != nil {
-			return err
-		}
-
-		return nil
+		return res.Accept(&val.ResvUserAvatarRes{}), nil
 	}); err != nil {
-		return res.Reject[val.ResvUserAvatarRes](res.ServerError, "生成头像上传信息失败")
+		lgr.Error(
+			"[userAppImpl.ResvAvatar] failed to run avatar reservation transaction",
+			zap.Error(err),
+		)
+
+		return re
 	}
 
 	// NOTE: as a pending creation message will be recycled after a certain period of time,
@@ -313,31 +308,34 @@ func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArg
 func (a *userAppImpl) MarkAvatarUploaded(cx context.Context, uid string) res.AppRes[res.None] {
 	lgr := app_util.TakeLgr(cx)
 
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		userRepo, err := repo_infra.TxnUserRepo(cx)
-		if err != nil {
-			return err
-		}
-		ossMsgRepo, err := repo_infra.TxnOssMsgRepo(cx)
-		if err != nil {
-			return err
+	if re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
+		userRepo := prov.UserRepo()
+		ossMsgRepo := prov.OssMsgRepo()
+
+		if err := userRepo.MarkAvatarUploaded(uid); err != nil {
+			if repo_infra.IsNotFound(err) {
+				return res.Reject[res.None](res.BadRequest, "用户不存在"), res.DefErr()
+			}
+
+			return res.Reject[res.None](res.ServerError, "标记头像上传状态失败"), err
 		}
 
-		if err = userRepo.MarkAvatarUploaded(uid); err != nil {
-			return err
+		if err := ossMsgRepo.MarkCompletedByRes(enum.OssResUserAvatar, uid); err != nil {
+			if repo_infra.IsNotFound(err) {
+				return res.Reject[res.None](res.BadRequest, "无效的头像上传状态"), res.DefErr()
+			}
+
+			return res.Reject[res.None](res.ServerError, "标记头像上传状态失败"), err
 		}
 
-		if err = ossMsgRepo.MarkCmplByRes(enum.OssResUserAvatar, uid); err != nil {
-			return err
-		}
-
-		return nil
+		return res.Accept(&res.None{}), nil
 	}); err != nil {
 		lgr.Error(
 			"[userAppImpl.MarkAvatarUploaded] failed to run transaction",
 			zap.Error(err),
 		)
-		return res.Reject[res.None](res.ServerError, "标记头像上传状态失败")
+
+		return re
 	}
 
 	return res.Accept(&res.None{})

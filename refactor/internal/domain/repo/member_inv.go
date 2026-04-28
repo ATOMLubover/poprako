@@ -14,6 +14,6 @@ type MemberInvRepo interface {
 	// `Delete` executes a **hard** delete on given member invitation id.
 	Delete(id string) RepoErr
 
-	// `MarkCmpl` marks the member invitation as completed without removing it from the database.
-	MarkCmpl(id string) RepoErr
+	// `MarkCompleted` marks the member invitation as completed without removing it from the database.
+	MarkCompleted(id string) RepoErr
 }

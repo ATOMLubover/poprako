@@ -1,8 +1,6 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -22,16 +20,6 @@ const chapterPinAlias = "pch"
 type comicRepoImpl struct {
 	// `gdb` is the underlying GORM handle
 	gdb *gorm.DB
-}
-
-// `TxnComicRepo` creates a transaction-scoped `ComicRepo` extracted from `cx`
-func TxnComicRepo(cx context.Context) (repo_iface.ComicRepo, repo_iface.RepoErr) {
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnComicRepo] no transaction context found for ComicRepo")
-	}
-
-	return &comicRepoImpl{gdb: gdb}, nil
 }
 
 // `NewComicRepo` creates a non-transaction-scoped `ComicRepo`

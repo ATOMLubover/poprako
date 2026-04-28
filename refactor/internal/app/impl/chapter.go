@@ -2,7 +2,6 @@ package app_impl
 
 import (
 	"context"
-	"fmt"
 
 	app_iface "poprako-s/internal/app"
 	"poprako-s/internal/app/res"
@@ -12,7 +11,6 @@ import (
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
-	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -152,88 +150,60 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 		return res.Reject[val.ChapterCreatedRes](code, msg)
 	}
 
-	var (
-		createdId string
-		errCode   = res.BadRequest
-	)
-
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		memberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-		comicRepo, err := repo_infra.TxnComicRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-		chapterRepo, err := repo_infra.TxnChapterRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	re, err := repo_iface.RunWithTxn[res.AppRes[val.ChapterCreatedRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.ChapterCreatedRes], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
+		chapterRepo := prov.ChapterRepo()
 
 		cm, err := comicRepo.GetById(args.ComicId)
 		if err != nil {
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.Forbidden, "仅汉化组管理员可创建章节"), res.DefErr()
 		}
 
 		ws, err := worksetRepo.GetById(cm.WorksetId)
 		if err != nil {
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.Forbidden, "仅汉化组管理员可创建章节"), res.DefErr()
 		}
 
 		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
 		if err != nil {
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.Forbidden, "仅汉化组管理员可创建章节"), res.DefErr()
 		}
 
 		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return fmt.Errorf("only team admin can create chapter")
+			return res.Reject[val.ChapterCreatedRes](res.Forbidden, "仅汉化组管理员可创建章节"), res.DefErr()
 		}
 
 		count, err := chapterRepo.Count(&query.ListChapterOpt{ComicId: &args.ComicId})
 		if err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败"), err
 		}
 
 		cre := a.chapterSvc.NewChapterCre(args.ComicId, int(count), args.Subtitle, currUid)
 		ch, err := chapterRepo.Create(cre)
 		if err != nil {
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败"), err
 		}
 
 		if err := comicRepo.UpdateChapterCount(args.ComicId, 1); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败"), err
 		}
 
 		if err := comicRepo.TouchLastActive(args.ComicId); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败"), err
 		}
 
-		createdId = ch.Id
-		return nil
-	}); err != nil {
+		return res.Accept(&val.ChapterCreatedRes{Id: ch.Id}), nil
+	})
+
+	if err != nil {
 		lgr.Error("[chapterAppImpl.Create] failed to run create chapter transaction", zap.Error(err))
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[val.ChapterCreatedRes](res.ServerError, "创建章节失败")
-		default:
-			return res.Reject[val.ChapterCreatedRes](res.Forbidden, "仅汉化组管理员可创建章节")
-		}
+		return re
 	}
 
-	return res.Accept(&val.ChapterCreatedRes{Id: createdId})
+	return re
 }
 
 // `Update` updates one chapter.
@@ -244,87 +214,61 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		return res.Reject[res.None](code, msg)
 	}
 
-	var errCode = res.BadRequest
-
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		memberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		comicRepo, err := repo_infra.TxnComicRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		chapterRepo, err := repo_infra.TxnChapterRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
+		chapterRepo := prov.ChapterRepo()
 
 		ch, err := chapterRepo.GetById(args.Id)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节"), res.DefErr()
 		}
 
 		cm, err := comicRepo.GetById(ch.ComicId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节"), res.DefErr()
 		}
 
 		ws, err := worksetRepo.GetById(cm.WorksetId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节"), res.DefErr()
 		}
 
 		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节"), res.DefErr()
 		}
 
 		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return fmt.Errorf("only team admin can update chapter")
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节"), res.DefErr()
 		}
 
 		if args.WorkflowTransition != nil {
 			if err := ch.TransiteWorkflow(*args.WorkflowTransition); err != nil {
-				return err
+				return res.Reject[res.None](res.BadRequest, "无效的工作流状态转换"), res.DefErr()
 			}
 		}
 
 		upd := mkChapterUpd(args, ch)
 		if err := chapterRepo.Update(upd); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "更新章节失败"), err
 		}
 
 		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "更新章节失败"), err
 		}
 
-		return nil
-	}); err != nil {
+		return res.Accept(&res.None{}), nil
+	})
+
+	if err != nil {
 		lgr.Error("[chapterAppImpl.Update] failed to run update chapter transaction", zap.Error(err))
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[res.None](res.ServerError, "更新章节失败")
-		default:
-			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新章节")
-		}
+		return re
 	}
 
-	return res.Accept(&res.None{})
+	return re
 }
 
 // `Remove` soft-deletes one chapter.
@@ -335,83 +279,56 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 		return res.Reject[res.None](code, msg)
 	}
 
-	var errCode = res.BadRequest
-
-	if err := a.txnCtrl.RunWithTxn(func(cx context.Context) error {
-		memberRepo, err := repo_infra.TxnMemberRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		worksetRepo, err := repo_infra.TxnWorksetRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		comicRepo, err := repo_infra.TxnComicRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
-
-		chapterRepo, err := repo_infra.TxnChapterRepo(cx)
-		if err != nil {
-			errCode = res.ServerError
-			return err
-		}
+	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
+		chapterRepo := prov.ChapterRepo()
 
 		ch, err := chapterRepo.GetById(chapterId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节"), res.DefErr()
 		}
 
 		cm, err := comicRepo.GetById(ch.ComicId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节"), res.DefErr()
 		}
 
 		ws, err := worksetRepo.GetById(cm.WorksetId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节"), res.DefErr()
 		}
 
 		member, err := memberRepo.GetByUserTeamId(currUid, ws.TeamId)
 		if err != nil {
-			return err
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节"), res.DefErr()
 		}
 
 		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return fmt.Errorf("only team admin can remove chapter")
+			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节"), res.DefErr()
 		}
 
 		if err := chapterRepo.Remove(chapterId); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
 		}
 
 		if err := comicRepo.UpdateChapterCount(ch.ComicId, -1); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
 		}
 
 		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
-			errCode = res.ServerError
-			return err
+			return res.Reject[res.None](res.ServerError, "删除章节失败"), err
 		}
 
-		return nil
-	}); err != nil {
+		return res.Accept(&res.None{}), nil
+	})
+
+	if err != nil {
 		lgr.Error("[chapterAppImpl.Remove] failed to run remove chapter transaction", zap.Error(err))
 
-		switch errCode {
-		case res.ServerError:
-			return res.Reject[res.None](res.ServerError, "删除章节失败")
-		default:
-			return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除章节")
-		}
+		return re
 	}
 
-	return res.Accept(&res.None{})
+	return re
 }

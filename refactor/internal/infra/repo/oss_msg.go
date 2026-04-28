@@ -1,8 +1,6 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -18,17 +16,6 @@ type ossMsgRepoImpl struct {
 	gdb *gorm.DB
 }
 
-// `TxnOssMsgRepo` creates a transaction-scoped `OssMsgRepo` from `cx`.
-func TxnOssMsgRepo(cx context.Context) (repo_iface.OssMsgRepo, error) {
-	// Ensure `cx` carries a transaction-scoped `gdb`.
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnOssMsgRepo] no transaction context found for OssMsgRepo")
-	}
-
-	return &ossMsgRepoImpl{gdb: gdb}, nil
-}
-
 // `NewOssMsgRepo` creates a non transaction-scoped `OssMsgRepo`
 func NewOssMsgRepo(gdb *gorm.DB) repo_iface.OssMsgRepo {
 	return &ossMsgRepoImpl{gdb: gdb}
@@ -41,7 +28,7 @@ func (r *ossMsgRepoImpl) SavePendingCre(msg *aggr.OssCreMsg) repo_iface.RepoErr 
 	upd := &entity.OssMsgRow{
 		Id:         creRow.Id,
 		Op:         creRow.Op,
-		Status:     string(enum.OssMsgStatePend),
+		Status:     string(enum.OssMsgStatePending),
 		ObjKeys:    creRow.ObjKeys,
 		VisibleAt:  creRow.VisibleAt,
 		ExpireAt:   creRow.ExpireAt,
@@ -58,7 +45,7 @@ func (r *ossMsgRepoImpl) SavePendingCre(msg *aggr.OssCreMsg) repo_iface.RepoErr 
 			creRow.ResTyp,
 			creRow.ResId,
 			creRow.Op,
-			string(enum.OssMsgStateCmpl),
+			string(enum.OssMsgStateCompleted),
 		).
 		Select("id", "operation", "status", "object_keys", "visible_at", "expire_at", "processing_at", "attempt_count", "last_error", "updated_at").
 		Updates(upd)
@@ -94,9 +81,9 @@ func (r *ossMsgRepoImpl) SavePendingDel(msg *aggr.OssDelMsg) repo_iface.RepoErr 
 	return nil
 }
 
-// `MarkCmpl` marks one message completed by id
-func (r *ossMsgRepoImpl) MarkCmpl(id string) repo_iface.RepoErr {
-	upd := entity.NewOssMsgMarkCmplUpdRow()
+// `MarkCompleted` marks one message completed by id
+func (r *ossMsgRepoImpl) MarkCompleted(id string) repo_iface.RepoErr {
+	upd := entity.NewOssMsgMarkCompletedUpdRow()
 
 	err := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
@@ -110,8 +97,8 @@ func (r *ossMsgRepoImpl) MarkCmpl(id string) repo_iface.RepoErr {
 	return nil
 }
 
-// `MarkCmplByRes` marks one pending create message completed by resource identity
-func (r *ossMsgRepoImpl) MarkCmplByRes(ty enum.OssResTyp, resId string) repo_iface.RepoErr {
+// `MarkCompletedByRes` marks one pending create message completed by resource identity
+func (r *ossMsgRepoImpl) MarkCompletedByRes(ty enum.OssResTyp, resId string) repo_iface.RepoErr {
 	var row entity.OssMsgRow
 
 	err := r.gdb.
@@ -121,7 +108,7 @@ func (r *ossMsgRepoImpl) MarkCmplByRes(ty enum.OssResTyp, resId string) repo_ifa
 			string(ty),
 			resId,
 			string(enum.OssOpCre),
-			string(enum.OssMsgStatePend),
+			string(enum.OssMsgStatePending),
 		).
 		Order("created_at DESC").
 		First(&row).Error
@@ -129,7 +116,7 @@ func (r *ossMsgRepoImpl) MarkCmplByRes(ty enum.OssResTyp, resId string) repo_ifa
 		return err
 	}
 
-	upd := entity.NewOssMsgMarkCmplUpdRow()
+	upd := entity.NewOssMsgMarkCompletedUpdRow()
 
 	err = r.gdb.
 		Table(entity.OSS_MSG_TABLE).
@@ -151,7 +138,7 @@ func (r *ossMsgRepoImpl) ClaimPending(op enum.OssOp) (*aggr.OssMsg, repo_iface.R
 
 	res := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
-		Where("status = ? AND operation = ? AND visible_at <= ?", string(enum.OssMsgStatePend), string(op), now).
+		Where("status = ? AND operation = ? AND visible_at <= ?", string(enum.OssMsgStatePending), string(op), now).
 		Order("visible_at ASC").
 		Limit(1).
 		Find(&row)
@@ -167,7 +154,7 @@ func (r *ossMsgRepoImpl) ClaimPending(op enum.OssOp) (*aggr.OssMsg, repo_iface.R
 
 	res = r.gdb.
 		Table(entity.OSS_MSG_TABLE).
-		Where("id = ? AND status = ?", row.Id, string(enum.OssMsgStatePend)).
+		Where("id = ? AND status = ?", row.Id, string(enum.OssMsgStatePending)).
 		Select("status", "processing_at", "updated_at").
 		Updates(upd)
 	if res.Error != nil {
@@ -179,7 +166,7 @@ func (r *ossMsgRepoImpl) ClaimPending(op enum.OssOp) (*aggr.OssMsg, repo_iface.R
 		return nil, nil
 	}
 
-	row.Status = string(enum.OssMsgStateProc)
+	row.Status = string(enum.OssMsgStateProcessing)
 	row.ProcAt = &now
 
 	return row.ToOssMsgAggr(), nil
@@ -220,7 +207,7 @@ func (r *ossMsgRepoImpl) ResetStuck(bef time.Time) repo_iface.RepoErr {
 		Table(entity.OSS_MSG_TABLE).
 		Where(
 			"status = ? AND processing_at IS NOT NULL AND processing_at <= ?",
-			string(enum.OssMsgStateProc),
+			string(enum.OssMsgStateProcessing),
 			bef,
 		).
 		Select("status", "processing_at", "updated_at").
@@ -232,11 +219,11 @@ func (r *ossMsgRepoImpl) ResetStuck(bef time.Time) repo_iface.RepoErr {
 	return nil
 }
 
-// `CleanCmpl` deletes completed messages created before cutoff time
-func (r *ossMsgRepoImpl) CleanCmpl(bef time.Time) repo_iface.RepoErr {
+// `CleanCompleted` deletes completed messages created before cutoff time
+func (r *ossMsgRepoImpl) CleanCompleted(bef time.Time) repo_iface.RepoErr {
 	err := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
-		Where("status = ? AND created_at <= ?", string(enum.OssMsgStateCmpl), bef).
+		Where("status = ? AND created_at <= ?", string(enum.OssMsgStateCompleted), bef).
 		Delete(&entity.OssMsgRow{}).Error
 	if err != nil {
 		return err

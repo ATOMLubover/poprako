@@ -1,9 +1,6 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
-
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
@@ -15,17 +12,6 @@ import (
 // `memberInvRepoImpl` is the gorm implementation of `MemberInvRepo`
 type memberInvRepoImpl struct {
 	gdb *gorm.DB
-}
-
-// `TxnMemberInvRepo` creates a transaction-scoped `MemberInvRepo` from `cx`.
-func TxnMemberInvRepo(cx context.Context) (repo_iface.MemberInvRepo, error) {
-	// Ensure `cx` carries a transaction-scoped `gdb`.
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnMemberInvRepo] no transaction context found for MemberInvRepo")
-	}
-
-	return &memberInvRepoImpl{gdb: gdb}, nil
 }
 
 // `NewMemberInvRepo` creates a non transaction-scoped `MemberInvRepo`
@@ -123,9 +109,9 @@ func (r *memberInvRepoImpl) Delete(id string) repo_iface.RepoErr {
 	return nil
 }
 
-// `MarkCmpl` marks one invitation record as completed
-func (r *memberInvRepoImpl) MarkCmpl(id string) repo_iface.RepoErr {
-	upd := entity.NewMemberInvMarkCmplUpdRow()
+// `MarkCompleted` marks one invitation record as completed
+func (r *memberInvRepoImpl) MarkCompleted(id string) repo_iface.RepoErr {
+	upd := entity.NewMemberInvMarkCompletedUpdRow()
 
 	err := r.gdb.
 		Table(entity.MEMBER_INV_TABLE).

@@ -1,8 +1,6 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -13,24 +11,13 @@ import (
 )
 
 // NOTE:
-// - any repo impl should have its corresponding `Txn*Repo` function
-//   and `New*Repo` constructor. No literal struct constructor.
+// - any repo impl should have its `New*Repo` constructor. No literal struct constructor.
 // - must execute query with strongly typed structs, and select necessary
 // 	 fields only.
 
 // `userRepoImpl` is the GORM-backed implementation of `repo_iface.UserRepo`
 type userRepoImpl struct {
 	gdb *gorm.DB
-}
-
-// `TxnUserRepo` creates a transaction-scoped `UserRepo` extracted from `cx`
-func TxnUserRepo(cx context.Context) (repo_iface.UserRepo, repo_iface.RepoErr) {
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnUserRepo] no transaction context found for UserRepo")
-	}
-
-	return &userRepoImpl{gdb: gdb}, nil
 }
 
 // `NewUserRepo` creates a non-transaction-scoped `UserRepo`

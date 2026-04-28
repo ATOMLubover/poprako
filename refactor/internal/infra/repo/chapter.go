@@ -1,7 +1,6 @@
 package repo_infra
 
 import (
-	"context"
 	"errors"
 	"strconv"
 	"time"
@@ -19,16 +18,6 @@ import (
 type chapterRepoImpl struct {
 	// `gdb` is underlying GORM database handle.
 	gdb *gorm.DB
-}
-
-// `TxnChapterRepo` returns transaction-scoped chapter repo from `cx`.
-func TxnChapterRepo(cx context.Context) (repo_iface.ChapterRepo, repo_iface.RepoErr) {
-	gdb := takeTxnGdb(cx)
-	if gdb == nil {
-		return nil, errors.New("[TxnChapterRepo] no transaction context found for ChapterRepo")
-	}
-
-	return &chapterRepoImpl{gdb: gdb}, nil
 }
 
 // `NewChapterRepo` creates non-transaction chapter repo.
