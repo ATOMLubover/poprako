@@ -74,6 +74,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Prod: one-shot migration runner (incremental) ───────────────────────────
+  prod-db-migrate:
+    image: postgres:18-alpine
+    pull_policy: if_not_present
+    profiles: ["prod"]
+    depends_on:
+      prod-postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: prod-postgres
+      PGUSER: poprako
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: poprako
+    volumes:
+      - ./migrations:/migrations:ro
+      - ./docker/prod-database-migrate.sh:/usr/local/bin/prod-database-migrate.sh:ro
+    command: ["sh", "/usr/local/bin/prod-database-migrate.sh"]
+    restart: "no"
+
   # ── Prod: app ─────────────────────────────────────────────────────────────────
   prod-main-server:
     build:

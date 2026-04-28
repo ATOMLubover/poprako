@@ -1,0 +1,130 @@
+name: Deploy Prod
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+      DEPLOY_ROOT: /opt/poprako-s
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production images
+        run: |
+          docker build -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${IMAGE_TAG} .
+          docker build -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${IMAGE_TAG} .
+
+      - name: Package images and migration bundle
+        run: |
+          mkdir -p dist
+          docker save poprako-s-main:${IMAGE_TAG} | gzip > dist/poprako-s-main-${IMAGE_TAG}.tar.gz
+          docker save poprako-s-database:${IMAGE_TAG} | gzip > dist/poprako-s-database-${IMAGE_TAG}.tar.gz
+          tar -czf dist/poprako-s-migrations-${IMAGE_TAG}.tar.gz migrations docker/prod-database-migrate.sh docker/compose.prod.yml
+
+      - name: Configure SSH host key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload release artifacts
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh "$SERVER_USER@$SERVER_HOST" "mkdir -p ${DEPLOY_ROOT}/releases/${IMAGE_TAG} ${DEPLOY_ROOT}/shared"
+          scp dist/poprako-s-main-${IMAGE_TAG}.tar.gz "$SERVER_USER@$SERVER_HOST:${DEPLOY_ROOT}/releases/${IMAGE_TAG}/"
+          scp dist/poprako-s-database-${IMAGE_TAG}.tar.gz "$SERVER_USER@$SERVER_HOST:${DEPLOY_ROOT}/releases/${IMAGE_TAG}/"
+          scp dist/poprako-s-migrations-${IMAGE_TAG}.tar.gz "$SERVER_USER@$SERVER_HOST:${DEPLOY_ROOT}/releases/${IMAGE_TAG}/"
+
+      - name: Deploy on server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          OSS_PLATFORM: ${{ secrets.OSS_PLATFORM }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_REGION: ${{ secrets.R2_REGION }}
+          R2_CUSTOM_DOMAIN: ${{ secrets.R2_CUSTOM_DOMAIN }}
+          ALIYUN_OSS_ACCESS_KEY_ID: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_ID }}
+          ALIYUN_OSS_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_OSS_ACCESS_KEY_SECRET }}
+          ALIYUN_OSS_REGION: ${{ secrets.ALIYUN_OSS_REGION }}
+          ALIYUN_OSS_BUCKET_NAME: ${{ secrets.ALIYUN_OSS_BUCKET_NAME }}
+          ALIYUN_OSS_ENDPOINT: ${{ secrets.ALIYUN_OSS_ENDPOINT }}
+          ALIYUN_OSS_CUSTOM_DOMAIN: ${{ secrets.ALIYUN_OSS_CUSTOM_DOMAIN }}
+        run: |
+          ssh "$SERVER_USER@$SERVER_HOST" "bash -s" <<EOF
+          set -euo pipefail
+
+          DEPLOY_ROOT="${DEPLOY_ROOT}"
+          IMAGE_TAG="${IMAGE_TAG}"
+          RELEASE_DIR="${DEPLOY_ROOT}/releases/${IMAGE_TAG}"
+          SHARED_DIR="${DEPLOY_ROOT}/shared"
+
+          mkdir -p "${DEPLOY_ROOT}" "${SHARED_DIR}"
+
+          docker load -i "${RELEASE_DIR}/poprako-s-database-${IMAGE_TAG}.tar.gz"
+          docker load -i "${RELEASE_DIR}/poprako-s-main-${IMAGE_TAG}.tar.gz"
+
+          tar -xzf "${RELEASE_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz" -C "${SHARED_DIR}"
+
+          cat > "${SHARED_DIR}/.env" <<ENVFILE
+          IMAGE_TAG=${IMAGE_TAG}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          JWT_SECRET_KEY=${JWT_SECRET_KEY}
+          OSS_PLATFORM=${OSS_PLATFORM}
+          R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+          R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+          R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+          R2_BUCKET_NAME=${R2_BUCKET_NAME}
+          R2_REGION=${R2_REGION}
+          R2_CUSTOM_DOMAIN=${R2_CUSTOM_DOMAIN}
+          ALIYUN_OSS_ACCESS_KEY_ID=${ALIYUN_OSS_ACCESS_KEY_ID}
+          ALIYUN_OSS_ACCESS_KEY_SECRET=${ALIYUN_OSS_ACCESS_KEY_SECRET}
+          ALIYUN_OSS_REGION=${ALIYUN_OSS_REGION}
+          ALIYUN_OSS_BUCKET_NAME=${ALIYUN_OSS_BUCKET_NAME}
+          ALIYUN_OSS_ENDPOINT=${ALIYUN_OSS_ENDPOINT}
+          ALIYUN_OSS_CUSTOM_DOMAIN=${ALIYUN_OSS_CUSTOM_DOMAIN}
+          ENVFILE
+
+          chmod 600 "${SHARED_DIR}/.env"
+
+          docker compose \\
+            -f "${SHARED_DIR}/docker/compose.prod.yml" \\
+            --env-file "${SHARED_DIR}/.env" \\
+            up -d --wait prod-postgres
+
+          docker compose \\
+            -f "${SHARED_DIR}/docker/compose.prod.yml" \\
+            --env-file "${SHARED_DIR}/.env" \\
+            run --rm prod-db-migrate
+
+          docker compose \\
+            -f "${SHARED_DIR}/docker/compose.prod.yml" \\
+            --env-file "${SHARED_DIR}/.env" \\
+            up -d --force-recreate prod-main-server
+
+          docker compose \\
+            -f "${SHARED_DIR}/docker/compose.prod.yml" \\
+            --env-file "${SHARED_DIR}/.env" \\
+            ps
+          EOF

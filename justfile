@@ -35,6 +35,12 @@ seed:
 build:
     GOOS=linux GOARCH=amd64 go build -o output/poprako-s
 
+package-release:
+    sh scripts/package-release.sh
+
+switch-release:
+    sh scripts/remote-switch-release.sh
+
 mgr-add script-name:
     sqlx migrate add -r {{script-name}}
 
@@ -50,3 +56,18 @@ mgr-rvt mode="step":
 
 psql:
   psql -U devuser -d poprako_s_db
+
+build-main image-tag="latest":
+    docker build -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${image-tag} .
+
+build-database image-tag="latest":
+    docker build -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${image-tag} .
+    
+save-main image-tag="latest":
+    mkdir -p dist
+    docker save poprako-s-main:${image-tag} | gzip > dist/poprako-s-main-${image-tag}.tar.gz
+
+save-database image-tag="latest":
+    mkdir -p dist
+    docker save poprako-s-database:${image-tag} | gzip > dist/poprako-s-database-${image-tag}.tar.gz
+
