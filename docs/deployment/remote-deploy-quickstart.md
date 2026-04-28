@@ -34,6 +34,7 @@ export SERVER_USER=youruser
 export SERVER_HOST=your.host.example
 export DEPLOY_ROOT=/opt/poprako-s
 export IMAGE_TAG=$(git rev-parse --short=12 HEAD)
+export TARGET_PLATFORM=linux/amd64
 ```
 
 然后执行任一方式：
@@ -50,6 +51,7 @@ just package-release
 
 - 构建 `poprako-s-main:${IMAGE_TAG}`
 - 构建 `poprako-s-database:${IMAGE_TAG}`
+- 默认按 `TARGET_PLATFORM=linux/amd64` 构建，适配常见 Ubuntu x86_64 服务器
 - 导出两个镜像到 `dist/`
 - 打包迁移文件与生产 compose 文件
 - 上传发布包到 `${DEPLOY_ROOT}/releases/${IMAGE_TAG}`
@@ -75,7 +77,7 @@ IMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} just switch-release
 - 解压迁移包到 `${DEPLOY_ROOT}/shared`
 - 更新 `${DEPLOY_ROOT}/shared/.env` 里的 `IMAGE_TAG`
 - 停止旧的 `prod-main-server`
-- 确保 `prod-postgres` 正常启动
+- 强制重建 `prod-postgres`，避免旧架构容器残留
 - 执行 `prod-db-migrate`
 - 启动新的 `prod-main-server`
 
@@ -86,8 +88,8 @@ IMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} just switch-release
 ```sh
 IMAGE_TAG=$(git rev-parse --short=12 HEAD)
 mkdir -p dist
-docker build -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${IMAGE_TAG} .
-docker build -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${IMAGE_TAG} .
+docker build --platform linux/amd64 -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${IMAGE_TAG} .
+docker build --platform linux/amd64 -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${IMAGE_TAG} .
 docker save poprako-s-main:${IMAGE_TAG} | gzip > dist/poprako-s-main-${IMAGE_TAG}.tar.gz
 docker save poprako-s-database:${IMAGE_TAG} | gzip > dist/poprako-s-database-${IMAGE_TAG}.tar.gz
 tar -czf dist/poprako-s-migrations-${IMAGE_TAG}.tar.gz migrations docker/prod-database-migrate.sh docker/compose.prod.yml

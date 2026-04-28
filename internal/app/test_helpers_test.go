@@ -185,7 +185,39 @@ func (r *erroringAssignmentRepo) Update(u *model.AssignmentUpdate) error {
 	if r.updateErr != nil {
 		return r.updateErr
 	}
-	return r.AssignmentRepo.Update(u)
+	// underlying repo may not implement Update; emulate update via UpsertCreate
+	// by converting AssignmentUpdate to AssignmentCreation
+	// try to find existing assignment to get IDs
+	// this helper is for tests only
+	// fetch existing by ID
+	var existing *model.AssignmentInfo
+	items, err := r.AssignmentRepo.List(model.AssignmentQueryOpt{})
+	if err != nil {
+		return err
+	}
+	for _, info := range items {
+		if info.ID == u.ID {
+			existing = &info
+			break
+		}
+	}
+	if existing == nil {
+		return errors.New("missing assignment")
+	}
+	creation := &model.AssignmentCreation{
+		ID:                    u.ID,
+		ChapterID:             existing.ChapterID,
+		UserID:                existing.UserID,
+		AssignedRawProviderAt: u.AssignedRawProviderAt,
+		AssignedTranslatorAt:  u.AssignedTranslatorAt,
+		AssignedProofreaderAt: u.AssignedProofreaderAt,
+		AssignedTypesetterAt:  u.AssignedTypesetterAt,
+		AssignedRedrawerAt:    u.AssignedRedrawerAt,
+		AssignedReviewerAt:    u.AssignedReviewerAt,
+		AssignedPublisherAt:   u.AssignedPublisherAt,
+	}
+	_, err = r.AssignmentRepo.UpsertCreate(creation)
+	return err
 }
 
 func (r *erroringAssignmentRepo) Delete(id string) error {

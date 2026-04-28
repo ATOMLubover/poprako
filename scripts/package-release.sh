@@ -8,6 +8,7 @@ SERVER_HOST=${SERVER_HOST:?SERVER_HOST is required}
 MAIN_IMAGE=${MAIN_IMAGE:-poprako-s-main}
 DATABASE_IMAGE=${DATABASE_IMAGE:-poprako-s-database}
 DIST_DIR=${DIST_DIR:-dist}
+TARGET_PLATFORM=${TARGET_PLATFORM:-linux/amd64}
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
@@ -18,8 +19,8 @@ cd "$ROOT_DIR"
 
 mkdir -p "$DIST_DIR"
 
-docker build -f docker/poprako-s-main/Dockerfile -t "${MAIN_IMAGE}:${IMAGE_TAG}" .
-docker build -f docker/poprako-s-database/Dockerfile -t "${DATABASE_IMAGE}:${IMAGE_TAG}" .
+docker build --platform "${TARGET_PLATFORM}" -f docker/poprako-s-main/Dockerfile -t "${MAIN_IMAGE}:${IMAGE_TAG}" .
+docker build --platform "${TARGET_PLATFORM}" -f docker/poprako-s-database/Dockerfile -t "${DATABASE_IMAGE}:${IMAGE_TAG}" .
 
 docker save "${MAIN_IMAGE}:${IMAGE_TAG}" | gzip > "${DIST_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz"
 docker save "${DATABASE_IMAGE}:${IMAGE_TAG}" | gzip > "${DIST_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz"
@@ -33,4 +34,5 @@ scp "${SCRIPT_DIR}/remote-switch-release.sh" "${SERVER_USER}@${SERVER_HOST}:${RE
 ssh "${SERVER_USER}@${SERVER_HOST}" "chmod 755 '${REMOTE_BIN_DIR}/remote-switch-release.sh'"
 
 printf '%s\n' "Release ${IMAGE_TAG} uploaded to ${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}"
+printf '%s\n' "Target platform: ${TARGET_PLATFORM}"
 printf '%s\n' "Run on server: IMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh ${REMOTE_BIN_DIR}/remote-switch-release.sh"

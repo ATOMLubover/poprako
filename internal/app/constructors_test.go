@@ -25,7 +25,7 @@ func TestConstructorsRejectNilDependencies(t *testing.T) {
 		NewMemberApp(nil, mock_repo.NewMockUserRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTeamRepo(), mock_repo.NewMockInvitationRepo(), mock_repo.NewMockTxnMgr(nil), newMockOSSClient())
 	})
 	assertPanics(t, func() {
-		NewPageApp(nil, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())
+		NewPageApp(nil, mock_repo.NewMockAssignmentRepo(), mock_repo.NewMockChapterRepo(), mock_repo.NewMockComicRepo(), mock_repo.NewMockWorksetRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockPageRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())
 	})
 	assertPanics(t, func() {
 		NewTeamApp(nil, service.NewMemberService(), mock_repo.NewMockUserRepo(), mock_repo.NewMockTeamRepo(), mock_repo.NewMockMemberRepo(), mock_repo.NewMockTxnMgr(nil), mock_repo.NewMockOSSMessageRepo(), newMockOSSClient())

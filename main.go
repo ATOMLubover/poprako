@@ -163,7 +163,7 @@ func main() {
 	)
 	pageApp := app.NewPageApp(
 		pageSvc,
-		assignmentRepo, chapterRepo, pageRepo,
+		assignmentRepo, chapterRepo, comicRepo, worksetRepo, memberRepo, pageRepo,
 		txnMgr,
 		ossMessageRepo, ossClient,
 	)

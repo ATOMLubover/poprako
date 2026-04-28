@@ -57,11 +57,11 @@ mgr-rvt mode="step":
 psql:
   psql -U devuser -d poprako_s_db
 
-build-main image-tag="latest":
-    docker build -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${image-tag} .
+build-main image-tag="latest" target-platform="linux/amd64":
+    docker build --platform ${target-platform} -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${image-tag} .
 
-build-database image-tag="latest":
-    docker build -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${image-tag} .
+build-database image-tag="latest" target-platform="linux/amd64":
+    docker build --platform ${target-platform} -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${image-tag} .
     
 save-main image-tag="latest":
     mkdir -p dist

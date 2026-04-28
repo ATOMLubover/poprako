@@ -47,7 +47,7 @@ mv "$TMP_ENV" "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" stop prod-main-server || true
-docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --wait prod-postgres
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --wait --force-recreate prod-postgres
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" run --rm prod-db-migrate
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --force-recreate prod-main-server
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps

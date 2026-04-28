@@ -48,6 +48,9 @@ type pageAppImpl struct {
 
 	assignmentRepo repo.AssignmentRepo
 	chapterRepo    repo.ChapterRepo
+	comicRepo      repo.ComicRepo
+	worksetRepo    repo.WorksetRepo
+	memberRepo     repo.MemberRepo
 	pageRepo       repo.PageRepo
 	txnMgr         repo.TxnMgr
 	msgRepo        repo.OSSMessageRepo
@@ -58,6 +61,9 @@ func NewPageApp(
 	pageSvc service.PageService,
 	assignmentRepo repo.AssignmentRepo,
 	chapterRepo repo.ChapterRepo,
+	comicRepo repo.ComicRepo,
+	worksetRepo repo.WorksetRepo,
+	memberRepo repo.MemberRepo,
 	pageRepo repo.PageRepo,
 	txnMgr repo.TxnMgr,
 	msgRepo repo.OSSMessageRepo,
@@ -67,6 +73,9 @@ func NewPageApp(
 	if pageSvc == nil ||
 		assignmentRepo == nil ||
 		chapterRepo == nil ||
+		comicRepo == nil ||
+		worksetRepo == nil ||
+		memberRepo == nil ||
 		pageRepo == nil ||
 		txnMgr == nil ||
 		msgRepo == nil ||
@@ -76,6 +85,9 @@ func NewPageApp(
 			zap.Bool("pageSvc_nil", pageSvc == nil),
 			zap.Bool("assignmentRepo_nil", assignmentRepo == nil),
 			zap.Bool("chapterRepo_nil", chapterRepo == nil),
+			zap.Bool("comicRepo_nil", comicRepo == nil),
+			zap.Bool("worksetRepo_nil", worksetRepo == nil),
+			zap.Bool("memberRepo_nil", memberRepo == nil),
 			zap.Bool("pageRepo_nil", pageRepo == nil),
 			zap.Bool("txnMgr_nil", txnMgr == nil),
 			zap.Bool("msgRepo_nil", msgRepo == nil),
@@ -88,6 +100,9 @@ func NewPageApp(
 		pageSvc:        pageSvc,
 		assignmentRepo: assignmentRepo,
 		chapterRepo:    chapterRepo,
+		comicRepo:      comicRepo,
+		worksetRepo:    worksetRepo,
+		memberRepo:     memberRepo,
 		pageRepo:       pageRepo,
 		txnMgr:         txnMgr,
 		msgRepo:        msgRepo,
@@ -215,21 +230,74 @@ func (a *pageAppImpl) List(
 	// 获取上下文中的日志记录器
 	lgr := retrieveLgr(cx)
 
-	// 鉴权：检查当前用户是否为该章节的分配人员
-	_, err := a.assignmentRepo.Get(model.AssignmentQueryOpt{
-		ChapterID: &args.ChapterID,
-		UserID:    &currUserID,
-	})
+	// 鉴权：检查当前用户是否为章节所属汉化组的成员（按 team 权限）
+	var allowedByAssignment bool
+	targetChapter, err := a.chapterRepo.GetByID(args.ChapterID)
 	if err != nil {
-		// 记录权限校验失败
-		lgr.Warn(
-			"获取页面列表失败：权限不足",
-			zap.String("curr_user_id", currUserID),
-			zap.String("chapter_id", args.ChapterID),
-		)
+		// 回退：若当前用户在该章节已有 assignment，则允许访问（兼容测试/旧逻辑）
+		if _, aerr := a.assignmentRepo.Get(model.AssignmentQueryOpt{ChapterID: &args.ChapterID, UserID: &currUserID}); aerr == nil {
+			allowedByAssignment = true
+		} else {
+			lgr.Error(
+				"获取页面列表失败：获取章节信息失败",
+				zap.String("chapter_id", args.ChapterID),
+				zap.Error(err),
+			)
 
-		// 返回客户端可展示的错误
-		return nil, errors.New("权限不足")
+			return nil, errors.New("无法获取章节信息")
+		}
+	}
+
+	var targetWorkset *model.WorksetInfo
+	if !allowedByAssignment {
+		targetComic, err := a.comicRepo.GetByID(targetChapter.ComicID)
+		if err != nil {
+			lgr.Error(
+				"获取页面列表失败：获取漫画信息失败",
+				zap.String("comic_id", targetChapter.ComicID),
+				zap.Error(err),
+			)
+
+			return nil, errors.New("无法获取漫画信息")
+		}
+
+		tw, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+		if err != nil {
+			lgr.Error(
+				"获取页面列表失败：获取作品集信息失败",
+				zap.String("workset_id", targetComic.WorksetID),
+				zap.Error(err),
+			)
+
+			return nil, errors.New("无法获取作品集信息")
+		}
+
+		targetWorkset = tw
+	}
+
+	if !allowedByAssignment {
+		_, err = a.memberRepo.Get(model.MemberQueryOpt{
+			UserID: &currUserID,
+			TeamID: &targetWorkset.TeamID,
+		})
+
+		if err != nil {
+			// 如果按 team 的成员检查失败，则回退到章节分配检查（兼容旧逻辑）
+			if _, aerr := a.assignmentRepo.Get(model.AssignmentQueryOpt{
+				ChapterID: &args.ChapterID,
+				UserID:    &currUserID,
+			}); aerr != nil {
+				// 记录权限校验失败
+				lgr.Warn(
+					"获取页面列表失败：权限不足",
+					zap.String("curr_user_id", currUserID),
+					zap.String("chapter_id", args.ChapterID),
+				)
+
+				// 返回客户端可展示的错误
+				return nil, errors.New("权限不足")
+			}
+		}
 	}
 
 	// 查询页面列表
