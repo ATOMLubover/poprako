@@ -8,9 +8,17 @@ CREATE TABLE IF NOT EXISTS "t_comic" (
     "author"            TEXT        NOT NULL,
     "fuzzy_title"       TEXT        NOT NULL,
     "description"       TEXT,
+
     "is_completed"      BOOLEAN     NOT NULL DEFAULT FALSE,
 
+    "cover_key"         TEXT,
+    "cover_uploaded"    BOOLEAN     NOT NULL DEFAULT FALSE,
+
+    -- chapter_count is the count of **active** chapters.
     "chapter_count"     INTEGER     NOT NULL DEFAULT 0,
+    -- chapter_next_index is the next index to be assigned to a new chapter, 
+    -- It is calculated every time a new chapter is added, and is not affected by chapter deletions.
+    "chapter_next_index"  INTEGER     NOT NULL DEFAULT 0,
 
     "creator_id"        TEXT        NOT NULL REFERENCES "t_user" ("id"),
 

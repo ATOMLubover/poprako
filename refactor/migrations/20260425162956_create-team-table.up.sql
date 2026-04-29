@@ -7,8 +7,12 @@ CREATE TABLE IF NOT EXISTS "t_team" (
     "avatar_key" TEXT,
     "avatar_uploaded" BOOLEAN DEFAULT FALSE, 
 
+    "workset_next_index" INTEGER NOT NULL DEFAULT 0,
+
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ DEFAULT NOW()
+    "updated_at" TIMESTAMPTZ DEFAULT NOW(),
+
+    "deleted_at" TIMESTAMPTZ
 );
 
 -- Create a default team directly in database.

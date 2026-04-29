@@ -123,8 +123,8 @@ func (a *assignmentInvAppImpl) Create(cx context.Context, currUid string, args *
 		assignmentRepo := prov.AssignmentRepo()
 		assignmentInvRepo := prov.AssignmentInvRepo()
 
-		if rj := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[val.CreateAssignmentInvRes](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.CreateAssignmentInvRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		if args.RoleMask == 0 {
@@ -176,8 +176,8 @@ func (a *assignmentInvAppImpl) Remove(cx context.Context, currUid string, invId 
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除邀请失败"), err
 		}
 
-		if rj := a.assignmentSvc.CanReviewAssignment(currUid, inv.ChapterId, assignmentRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.assignmentSvc.CanReviewAssignment(currUid, inv.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		if err := assignmentInvRepo.Delete(invId); err != nil {
@@ -239,8 +239,8 @@ func (a *assignmentInvAppImpl) JoinByInvCode(cx context.Context, currUid string,
 			return app_res.Reject[app_res.None](app_res.BadRequest, "邀请码无效或已被使用"), app_res.DefErr()
 		}
 
-		if rj := a.assignmentSvc.CanTakeAssignmentRoles(currUid, target.ChapterId, target.RoleMask, memberRepo, chapterRepo, comicRepo, worksetRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.assignmentSvc.CanTakeAssignmentRoles(currUid, target.ChapterId, target.RoleMask, memberRepo, chapterRepo, comicRepo, worksetRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		currAssignment, err := assignmentRepo.GetByChapterUserId(target.ChapterId, currUid)

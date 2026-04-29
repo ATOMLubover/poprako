@@ -8,9 +8,12 @@ import (
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/event"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
+	event_iface "poprako-s/internal/event"
 
 	"go.uber.org/zap"
 )
@@ -19,12 +22,15 @@ import (
 type comicAppImpl struct {
 	txnCtrl repo_iface.TxnCtrl
 
-	comicSvc svc.ComicSvc
+	comicSvc      svc.ComicSvc
+	chapterSvc    svc.ChapterSvc
+	assignmentSvc svc.AssignmentSvc
 
 	memberRepo  repo_iface.MemberRepo
 	worksetRepo repo_iface.WorksetRepo
 	comicRepo   repo_iface.ComicRepo
 
+	evBus  event_iface.EvBus
 	errClsf repo_iface.ErrClsf
 }
 
@@ -32,15 +38,19 @@ type comicAppImpl struct {
 func NewComicApp(
 	txnCtrl repo_iface.TxnCtrl,
 	comicSvc svc.ComicSvc,
+	chapterSvc svc.ChapterSvc,
+	assignmentSvc svc.AssignmentSvc,
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
+	evBus event_iface.EvBus,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.ComicApp {
 	if txnCtrl == nil ||
 		memberRepo == nil ||
 		worksetRepo == nil ||
 		comicRepo == nil ||
+		evBus == nil ||
 		errClsf == nil {
 		zap.L().Panic(
 			"[NewComicApp] nil dependency",
@@ -48,17 +58,21 @@ func NewComicApp(
 			zap.Bool("memberRepo", memberRepo == nil),
 			zap.Bool("worksetRepo", worksetRepo == nil),
 			zap.Bool("comicRepo", comicRepo == nil),
+			zap.Bool("evBus", evBus == nil),
 			zap.Bool("errClsf", errClsf == nil),
 		)
 	}
 
 	return &comicAppImpl{
-		txnCtrl:     txnCtrl,
-		comicSvc:    comicSvc,
-		memberRepo:  memberRepo,
-		worksetRepo: worksetRepo,
-		comicRepo:   comicRepo,
-		errClsf:      errClsf,
+		txnCtrl:       txnCtrl,
+		comicSvc:      comicSvc,
+		chapterSvc:    chapterSvc,
+		assignmentSvc: assignmentSvc,
+		memberRepo:    memberRepo,
+		worksetRepo:   worksetRepo,
+		comicRepo:     comicRepo,
+		evBus:         evBus,
+		errClsf:       errClsf,
 	}
 }
 
@@ -115,13 +129,15 @@ func (a *comicAppImpl) List(cx context.Context, currUid string, args *val.ListCo
 	return app_res.Accept(&vals)
 }
 
-// `Create` creates a comic in target workset
+// `Create` creates a comic in target workset and auto-creates its first chapter.
 func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.CreateComicArgs) app_res.AppRes[val.ComicCreatedRes] {
 	lgr := app_util.TakeLgr(cx)
 
 	if re := vfyCreateComicArgs(args); re.IsReject() {
 		return app_res.Reject[val.ComicCreatedRes](re.Code(), re.Msg())
 	}
+
+	ev := make([]event_iface.Event, 0)
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.ComicCreatedRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.ComicCreatedRes], error) {
 		memberRepo := prov.MemberRepo()
@@ -133,8 +149,8 @@ func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.Crea
 			return app_res.Reject[val.ComicCreatedRes](app_res.Forbidden, "仅汉化组管理员可创建漫画"), app_res.DefErr()
 		}
 
-		if rj := a.comicSvc.CanAdminComic(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[val.ComicCreatedRes](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.comicSvc.CanAdminComic(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.ComicCreatedRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		count, err := comicRepo.Count(&query.ListComicOpt{WorksetId: &args.WorksetId})
@@ -160,6 +176,28 @@ func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.Crea
 			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
 		}
 
+		// Create first chapter with index 0 as default pinned chapter.
+		chCre := a.chapterSvc.NewChapterCre(cm.Id, 0, nil, currUid)
+		ch, err := prov.ChapterRepo().Create(chCre)
+		if err != nil {
+			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
+		}
+
+		if err := comicRepo.UpdateChapterCount(cm.Id, 1); err != nil {
+			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
+		}
+
+		if err := comicRepo.TouchLastActive(cm.Id); err != nil {
+			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
+		}
+
+		reviewerCre := a.assignmentSvc.NewAssignmentCre(ch.Id, currUid, aggr.RoleMask(enum.RoleReviewer))
+		if _, err := prov.AssignmentRepo().Create(reviewerCre); err != nil {
+			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
+		}
+
+		ev = append(ev, event.NewAssignmentCreatedEv(currUid, ch.Id))
+
 		return app_res.Accept(&val.ComicCreatedRes{Id: cm.Id}), nil
 	})
 	if err != nil {
@@ -170,6 +208,8 @@ func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.Crea
 
 		return re
 	}
+
+	a.evBus.Pub(context.Background(), ev)
 
 	return re
 }
@@ -239,8 +279,8 @@ func (a *comicAppImpl) Remove(cx context.Context, currUid string, comicId string
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除漫画"), app_res.DefErr()
 		}
 
-		if rj := a.comicSvc.CanAdminComic(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.comicSvc.CanAdminComic(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		if err := comicRepo.Remove(comicId); err != nil {

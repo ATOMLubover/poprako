@@ -115,7 +115,7 @@ func main() {
 		app_impl.NewWorksetApp(txnCtrl, worksetSvc, memberRepo, worksetRepo, errClsf),
 	)
 	comicApp := app_impl.NewComicLogApp(
-		app_impl.NewComicApp(txnCtrl, comicSvc, memberRepo, worksetRepo, comicRepo, errClsf),
+		app_impl.NewComicApp(txnCtrl, comicSvc, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, evBus, errClsf),
 	)
 	chapterApp := app_impl.NewChapterLogApp(
 		app_impl.NewChapterApp(txnCtrl, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, evBus, errClsf),

@@ -108,8 +108,8 @@ func (a *worksetAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 		worksetRepo := prov.WorksetRepo()
 
 		// Verify admin role via domain service.
-		if rj := a.worksetSvc.CanAdminWorkset(currUid, args.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[val.WorksetCreatedRes](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.worksetSvc.CanAdminWorkset(currUid, args.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.WorksetCreatedRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		// Count active worksets to determine the next index.

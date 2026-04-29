@@ -6,7 +6,12 @@ CREATE TABLE IF NOT EXISTS "t_workset" (
 
     "name"        TEXT        NOT NULL,
     "description" TEXT,
+
+    -- comic_count is the count of **active** comics in the workset.
     "comic_count" INTEGER     NOT NULL DEFAULT 0,
+    -- comic_next_index is the next index to assign to a new comic in the workset.
+    -- It is calculated every time a new comic is added, and is not affected by comic deletions.
+    "comic_next_index" INTEGER     NOT NULL DEFAULT 0,
 
     "created_at"  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updated_at"  TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -180,8 +180,8 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 			return app_res.Reject[val.ChapterCreatedRes](app_res.Forbidden, "仅汉化组管理员可创建章节"), app_res.DefErr()
 		}
 
-		if rj := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[val.ChapterCreatedRes](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.ChapterCreatedRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		count, err := chapterRepo.Count(&query.ListChapterOpt{ComicId: &args.ComicId})
@@ -257,13 +257,13 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 
 		if args.WorkflowTransition != nil {
 			// Workflow transition requires chapter-level role permission.
-			if rj := a.chapterSvc.CanTransiteWorkflow(currUid, args.Id, *args.WorkflowTransition, assignmentRepo, a.errClsf); rj.IsReject() {
-				return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+			if re := a.chapterSvc.CanTransiteWorkflow(currUid, args.Id, *args.WorkflowTransition, assignmentRepo, a.errClsf); re.IsReject() {
+				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 			}
 		} else {
 			// Metadata-only update requires team admin permission.
-			if rj := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-				return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+			if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 			}
 		}
 
@@ -343,8 +343,8 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除章节"), app_res.DefErr()
 		}
 
-		if rj := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		assignments, err := assignmentRepo.List(&query.ListAssignmentOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: 500}})

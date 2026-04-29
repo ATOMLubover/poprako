@@ -111,6 +111,7 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 
 	return app_res.Accept(&vals)
 }
+
 func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal] {
 	lgr := app_util.TakeLgr(cx)
 
@@ -153,12 +154,12 @@ func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val
 		chapterRepo := prov.ChapterRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
-		if rj := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		if rj := a.assignmentSvc.CanTakeAssignmentRoles(args.UserId, args.ChapterId, args.RoleMask, memberRepo, chapterRepo, comicRepo, worksetRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.assignmentSvc.CanTakeAssignmentRoles(args.UserId, args.ChapterId, args.RoleMask, memberRepo, chapterRepo, comicRepo, worksetRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		if args.RoleMask == 0 {
@@ -240,8 +241,8 @@ func (a *assignmentAppImpl) Delete(cx context.Context, currUid string, assignmen
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 		}
 
-		if rj := a.assignmentSvc.CanReviewAssignment(currUid, target.ChapterId, assignmentRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if re := a.assignmentSvc.CanReviewAssignment(currUid, target.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
 		ch, err := chapterRepo.GetById(target.ChapterId)

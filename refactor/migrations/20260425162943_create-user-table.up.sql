@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS "t_user" (
     "last_active_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ DEFAULT NOW()
+    "updated_at" TIMESTAMPTZ DEFAULT NOW(),
+    "deleted_at" TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS "idx_user_qid"
