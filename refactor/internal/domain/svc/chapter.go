@@ -58,6 +58,61 @@ func (ChapterSvc) CanAdminChapter(currUid string, teamId string, memberRepo repo
 	return svc_res.Accept()
 }
 
+// `CanTransiteWorkflow` validates that the current user's chapter-level assignment
+// authorises the requested workflow transition.
+// `RoleReviewer` can execute any transition.
+// Other roles can only execute their corresponding transitions (see `CanTransiteWorkflow` doc in `docs/perm-list.md`).
+func (ChapterSvc) CanTransiteWorkflow(currUid string, chapterId string, t enum.WorkflowTransition, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅章节成员可推进工作流", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if assignment == nil {
+		return svc_res.Reject(svc_res.Forbidden, "仅章节成员可推进工作流")
+	}
+
+	// `RoleReviewer` can execute any workflow transition.
+	if assignment.HasAnyRole(enum.RoleReviewer) {
+		return svc_res.Accept()
+	}
+
+	// Map transition to required chapter-level role.
+	switch t {
+	case enum.WorkflowUploadComplete:
+		if !assignment.HasAnyRole(enum.RoleRawProvider) {
+			return svc_res.Reject(svc_res.Forbidden, "只有图源可以标记上传完成")
+		}
+
+	case enum.WorkflowTranslateStart, enum.WorkflowTranslateComplete:
+		if !assignment.HasAnyRole(enum.RoleTranslator) {
+			return svc_res.Reject(svc_res.Forbidden, "只有翻译可以标记翻译开始或完成")
+		}
+
+	case enum.WorkflowProofreadStart, enum.WorkflowProofreadComplete:
+		if !assignment.HasAnyRole(enum.RoleProofreader) {
+			return svc_res.Reject(svc_res.Forbidden, "只有校对可以标记校对开始或完成")
+		}
+
+	case enum.WorkflowTypesetStart, enum.WorkflowTypesetComplete:
+		if !assignment.HasAnyRole(enum.RoleTypesetter) {
+			return svc_res.Reject(svc_res.Forbidden, "只有嵌字可以标记嵌字开始或完成")
+		}
+
+	case enum.WorkflowReviewComplete:
+		if !assignment.HasAnyRole(enum.RoleReviewer) {
+			return svc_res.Reject(svc_res.Forbidden, "只有监修可以标记监修完成")
+		}
+
+	case enum.WorkflowPublishComplete:
+		if !assignment.HasAnyRole(enum.RolePublisher) {
+			return svc_res.Reject(svc_res.Forbidden, "只有发布可以标记发布完成")
+		}
+	}
+
+	return svc_res.Accept()
+}
+
 // `NewChapterCre` builds a chapter creation payload with generated id.
 func (ChapterSvc) NewChapterCre(
 	comicId string,

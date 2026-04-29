@@ -4,7 +4,7 @@ import (
 	"context"
 
 	app_iface "poprako-s/internal/app"
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 
@@ -48,7 +48,7 @@ func (a *assignmentLogAppImpl) ListByChapter(cx context.Context, currUid string,
 }
 
 // `ListByUser` enriches logger context and forwards call.
-func (a *assignmentLogAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) app_res.AppRes[[]val.AssignmentVal] {
+func (a *assignmentLogAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal] {
 	if cx == nil {
 		cx = context.Background()
 	}

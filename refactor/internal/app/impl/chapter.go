@@ -255,8 +255,16 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
 		}
 
-		if rj := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
-			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+		if args.WorkflowTransition != nil {
+			// Workflow transition requires chapter-level role permission.
+			if rj := a.chapterSvc.CanTransiteWorkflow(currUid, args.Id, *args.WorkflowTransition, assignmentRepo, a.errClsf); rj.IsReject() {
+				return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+			}
+		} else {
+			// Metadata-only update requires team admin permission.
+			if rj := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); rj.IsReject() {
+				return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
+			}
 		}
 
 		if args.WorkflowTransition != nil {

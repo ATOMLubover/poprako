@@ -102,7 +102,7 @@ func ListMyAssignments(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := app.ListByUser(newReqCx(cx), currUid, &val.ListMyAssignmentArgs{Offset: offset, Limit: limit})
+		re := app.ListByUser(newReqCx(cx), currUid, &val.ListAssignmentByUserArgs{Offset: offset, Limit: limit})
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

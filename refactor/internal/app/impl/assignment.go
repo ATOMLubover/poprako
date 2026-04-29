@@ -58,7 +58,7 @@ func NewAssignmentApp(txnCtrl repo_iface.TxnCtrl, assignmentSvc svc.AssignmentSv
 		chapterRepo:    chapterRepo,
 		assignmentRepo: assignmentRepo,
 		evBus:          evBus,
-		errClsf:         errClsf,
+		errClsf:        errClsf,
 	}
 }
 
@@ -74,8 +74,28 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
-	if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, a.assignmentRepo, a.errClsf); re.IsReject() {
-		return app_res.Reject[[]val.AssignmentVal](app_res.ErrCode(re.Code()), re.Msg())
+	ch, err := a.chapterRepo.GetById(args.ChapterId)
+	if err != nil {
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
+	}
+
+	cm, err := a.comicRepo.GetById(ch.ComicId)
+	if err != nil {
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
+	}
+
+	ws, err := a.worksetRepo.GetById(cm.WorksetId)
+	if err != nil {
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
+	}
+
+	ok, err := a.memberRepo.ExistByUserTeamId(ws.TeamId, currUid)
+	if err != nil {
+		lgr.Error("[assignmentAppImpl.ListByChapter] failed to verify team membership", zap.Error(err))
+		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
+	}
+	if !ok {
+		return app_res.Reject[[]val.AssignmentVal](app_res.Forbidden, "无权查看该章节的分配列表")
 	}
 
 	items, err := a.assignmentRepo.List(mkListAssignmentOptByChapter(args.ChapterId, args.Offset, args.Limit))
@@ -91,9 +111,7 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 
 	return app_res.Accept(&vals)
 }
-
-// `ListByUser` lists all assignments of current user.
-func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) app_res.AppRes[[]val.AssignmentVal] {
+func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal] {
 	lgr := app_util.TakeLgr(cx)
 
 	if args == nil {

@@ -3,7 +3,7 @@ package app_iface
 import (
 	"context"
 
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	"poprako-s/internal/app/val"
 )
 
@@ -13,7 +13,7 @@ type AssignmentApp interface {
 	ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentByChapterArgs) app_res.AppRes[[]val.AssignmentVal]
 
 	// `ListByUser` lists all assignments of current user.
-	ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) app_res.AppRes[[]val.AssignmentVal]
+	ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal]
 
 	// `Upsert` executes put-semantics upsert for assignment roles.
 	// If role mask is zero, this use-case redirects to delete semantics.

@@ -31,8 +31,8 @@ type ListAssignmentByChapterArgs struct {
 	Limit  int `url:"limit"`
 }
 
-// `ListMyAssignmentArgs` carries my list args for assignment.
-type ListMyAssignmentArgs struct {
+// `ListAssignmentByUserArgs` carries my list args for assignment.
+type ListAssignmentByUserArgs struct {
 	Offset int `url:"offset"`
 	Limit  int `url:"limit"`
 }
