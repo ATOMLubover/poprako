@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
@@ -51,30 +51,30 @@ func toUnixMilliPtr(t *time.Time) *int64 {
 }
 
 // `vfyListChapterArgs` validates and normalizes chapter list arguments.
-func vfyListChapterArgs(args *val.ListChapterArgs) (res.ErrCode, string, bool) {
+func vfyListChapterArgs(args *val.ListChapterArgs) app_res.AppRes[app_res.None] {
 	if args == nil {
-		return res.BadRequest, "分页参数不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	if args.ComicId == "" {
-		return res.BadRequest, "comic_id 不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "comic_id 不能为空")
 	}
 
-	if code, msg, reject := app_util.ClampOffsetLimit(args.Offset, &args.Limit); reject {
-		return code, msg, true
+	if re := app_util.ClampOffsetLimit(args.Offset, &args.Limit); re.IsReject() {
+		return re
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }
 
 // `vfyCreateChapterArgs` validates chapter create arguments.
-func vfyCreateChapterArgs(args *val.CreateChapterArgs) (res.ErrCode, string, bool) {
+func vfyCreateChapterArgs(args *val.CreateChapterArgs) app_res.AppRes[app_res.None] {
 	if args == nil {
-		return res.BadRequest, "创建参数不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "创建参数不能为空")
 	}
 
 	if args.ComicId == "" {
-		return res.BadRequest, "comic_id 不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "comic_id 不能为空")
 	}
 
 	if args.Subtitle != nil {
@@ -82,17 +82,17 @@ func vfyCreateChapterArgs(args *val.CreateChapterArgs) (res.ErrCode, string, boo
 		args.Subtitle = &subtitle
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }
 
 // `vfyUpdateChapterArgs` validates chapter update arguments.
-func vfyUpdateChapterArgs(args *val.ChapterUpdArgs) (res.ErrCode, string, bool) {
+func vfyUpdateChapterArgs(args *val.ChapterUpdArgs) app_res.AppRes[app_res.None] {
 	if args == nil {
-		return res.BadRequest, "更新参数不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "更新参数不能为空")
 	}
 
 	if args.Id == "" {
-		return res.BadRequest, "chapter_id 不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 不能为空")
 	}
 
 	if args.Subtitle != nil {
@@ -102,20 +102,20 @@ func vfyUpdateChapterArgs(args *val.ChapterUpdArgs) (res.ErrCode, string, bool) 
 
 	if args.WorkflowTransition != nil {
 		if !isWorkflowTransitionValid(*args.WorkflowTransition) {
-			return res.BadRequest, "workflow_transition 参数不合法", true
+			return app_res.Reject[app_res.None](app_res.BadRequest, "workflow_transition 参数不合法")
 		}
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }
 
 // `vfyRemoveChapterId` validates chapter remove id.
-func vfyRemoveChapterId(chapterId string) (res.ErrCode, string, bool) {
+func vfyRemoveChapterId(chapterId string) app_res.AppRes[app_res.None] {
 	if chapterId == "" {
-		return res.BadRequest, "chapter_id 不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 不能为空")
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }
 
 // `isWorkflowTransitionValid` checks transition value in closed set.

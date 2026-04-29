@@ -4,7 +4,7 @@ import (
 	"context"
 
 	app_iface "poprako-s/internal/app"
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
@@ -22,6 +22,7 @@ type worksetAppImpl struct {
 	worksetSvc  svc.WorksetSvc
 	memberRepo  repo_iface.MemberRepo
 	worksetRepo repo_iface.WorksetRepo
+	errClsf      repo_iface.ErrClsf
 }
 
 // `NewWorksetApp` creates a `WorksetApp` implementation.
@@ -30,15 +31,18 @@ func NewWorksetApp(
 	worksetSvc svc.WorksetSvc,
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
+	errClsf repo_iface.ErrClsf,
 ) app_iface.WorksetApp {
 	if txnCtrl == nil ||
 		memberRepo == nil ||
-		worksetRepo == nil {
+		worksetRepo == nil ||
+		errClsf == nil {
 		zap.L().Panic(
 			"[NewWorksetApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
 			zap.Bool("memberRepo", memberRepo == nil),
 			zap.Bool("worksetRepo", worksetRepo == nil),
+			zap.Bool("errClsf", errClsf == nil),
 		)
 	}
 
@@ -47,30 +51,21 @@ func NewWorksetApp(
 		worksetSvc:  worksetSvc,
 		memberRepo:  memberRepo,
 		worksetRepo: worksetRepo,
+		errClsf:      errClsf,
 	}
 }
 
 // `List` returns all active worksets for the given team.
-func (a *worksetAppImpl) List(cx context.Context, currUid string, args *val.ListWorksetArgs) res.AppRes[[]val.WorksetVal] {
+func (a *worksetAppImpl) List(cx context.Context, currUid string, args *val.ListWorksetArgs) app_res.AppRes[[]val.WorksetVal] {
 	lgr := app_util.TakeLgr(cx)
 
-	if code, msg, reject := vfyListWorksetArgs(args); reject {
-		return res.Reject[[]val.WorksetVal](code, msg)
+	if re := vfyListWorksetArgs(args); re.IsReject() {
+		return app_res.Reject[[]val.WorksetVal](re.Code(), re.Msg())
 	}
 
-	// Verify that the caller is a member of the team.
-	ok, err := a.memberRepo.ExistByUserTeamId(currUid, args.TeamId)
-	if err != nil {
-		lgr.Error(
-			"[worksetAppImpl.List] failed to verify team membership",
-			zap.Error(err),
-		)
-
-		return res.Reject[[]val.WorksetVal](res.ServerError, "获取作品集列表失败")
-	}
-
-	if !ok {
-		return res.Reject[[]val.WorksetVal](res.Forbidden, "无权访问该汉化组的作品集")
+	/// Permission check: only team members can list the team's worksets.
+	if re := a.worksetSvc.CanListWorkset(currUid, args.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[[]val.WorksetVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
 	// Retrieve all active worksets for the team.
@@ -82,49 +77,45 @@ func (a *worksetAppImpl) List(cx context.Context, currUid string, args *val.List
 				Limit:  args.Limit,
 			},
 		},
-		enum.WorksetInclTeam)
+		enum.WorksetInclTeam,
+	)
 	if err != nil {
 		lgr.Error(
 			"[worksetAppImpl.List] failed to list worksets",
 			zap.Error(err),
 		)
 
-		return res.Reject[[]val.WorksetVal](res.ServerError, "获取作品集列表失败")
+		return app_res.Reject[[]val.WorksetVal](app_res.ServerError, "获取作品集列表失败")
 	}
 
 	// Assemble the value-object slice.
 	vals := make([]val.WorksetVal, len(worksets))
-
 	for i, ws := range worksets {
 		vals[i] = asmWorksetVal(ws)
 	}
 
-	return res.Accept(&vals)
+	return app_res.Accept(&vals)
 }
 
 // `Create` creates a new workset inside a team.
-func (a *worksetAppImpl) Create(cx context.Context, currUid string, args *val.CreateWorksetArgs) res.AppRes[val.WorksetCreatedRes] {
+func (a *worksetAppImpl) Create(cx context.Context, currUid string, args *val.CreateWorksetArgs) app_res.AppRes[val.WorksetCreatedRes] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Open a transaction to atomically verify permission, count active rows,
 	// and create the new workset.
-	re, err := repo_iface.RunWithTxn[res.AppRes[val.WorksetCreatedRes]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[val.WorksetCreatedRes], error) {
+	re, err := repo_iface.RunWithTxn(a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.WorksetCreatedRes], error) {
 		memberRepo := prov.MemberRepo()
 		worksetRepo := prov.WorksetRepo()
 
-		// Verify admin role in the target team.
-		member, err := memberRepo.GetByUserTeamId(currUid, args.TeamId)
-		if err != nil {
-			return res.Reject[val.WorksetCreatedRes](res.Forbidden, "仅汉化组管理员可创建作品集"), res.DefErr()
-		}
-		if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-			return res.Reject[val.WorksetCreatedRes](res.Forbidden, "仅汉化组管理员可创建作品集"), res.DefErr()
+		// Verify admin role via domain service.
+		if rj := a.worksetSvc.CanAdminWorkset(currUid, args.TeamId, memberRepo, a.errClsf); rj.IsReject() {
+			return app_res.Reject[val.WorksetCreatedRes](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
 		}
 
 		// Count active worksets to determine the next index.
 		count, err := worksetRepo.Count(&query.ListWorksetOpt{TeamId: &args.TeamId})
 		if err != nil {
-			return res.Reject[val.WorksetCreatedRes](res.ServerError, "创建作品集失败"), err
+			return app_res.Reject[val.WorksetCreatedRes](app_res.ServerError, "创建作品集失败"), err
 		}
 
 		// Build the creation input via the domain service.
@@ -133,12 +124,11 @@ func (a *worksetAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 		// Persist the new workset.
 		ws, err := worksetRepo.Create(cre)
 		if err != nil {
-			return res.Reject[val.WorksetCreatedRes](res.ServerError, "创建作品集失败"), err
+			return app_res.Reject[val.WorksetCreatedRes](app_res.ServerError, "创建作品集失败"), err
 		}
 
-		return res.Accept(&val.WorksetCreatedRes{Id: ws.Id}), nil
+		return app_res.Accept(&val.WorksetCreatedRes{Id: ws.Id}), nil
 	})
-
 	if err != nil {
 		lgr.Error(
 			"[worksetAppImpl.Create] failed to run create workset transaction",
@@ -152,7 +142,7 @@ func (a *worksetAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 }
 
 // `Update` updates the name and/or description of an existing workset.
-func (a *worksetAppImpl) Update(cx context.Context, currUid string, args *val.WorksetUpdArgs) res.AppRes[res.None] {
+func (a *worksetAppImpl) Update(cx context.Context, currUid string, args *val.WorksetUpdArgs) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Load the target workset first.
@@ -160,17 +150,12 @@ func (a *worksetAppImpl) Update(cx context.Context, currUid string, args *val.Wo
 	if err != nil {
 		lgr.Error("[worksetAppImpl.Update] failed to get workset", zap.Error(err))
 
-		return res.Reject[res.None](res.BadRequest, "作品集不存在")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "作品集不存在")
 	}
 
-	// Verify the caller membership and admin role in the owning team.
-	member, err := a.memberRepo.GetByUserTeamId(currUid, ws.TeamId)
-	if err != nil {
-		return res.Reject[res.None](res.BadRequest, "无权限访问该作品集")
-	}
-
-	if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-		return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可更新作品集")
+	// Verify admin role via domain service.
+	if re := a.worksetSvc.CanAdminWorkset(currUid, ws.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
 	// Apply the `PUT` update.
@@ -179,14 +164,14 @@ func (a *worksetAppImpl) Update(cx context.Context, currUid string, args *val.Wo
 	if err := a.worksetRepo.Update(upd); err != nil {
 		lgr.Error("[worksetAppImpl.Update] failed to update workset", zap.Error(err))
 
-		return res.Reject[res.None](res.ServerError, "更新作品集失败")
+		return app_res.Reject[app_res.None](app_res.ServerError, "更新作品集失败")
 	}
 
-	return res.Accept(&res.None{})
+	return app_res.Accept(&app_res.None{})
 }
 
 // `Remove` soft-deletes a workset by id.
-func (a *worksetAppImpl) Remove(cx context.Context, currUid string, worksetId string) res.AppRes[res.None] {
+func (a *worksetAppImpl) Remove(cx context.Context, currUid string, worksetId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Load the target workset first.
@@ -194,25 +179,20 @@ func (a *worksetAppImpl) Remove(cx context.Context, currUid string, worksetId st
 	if err != nil {
 		lgr.Error("[worksetAppImpl.Remove] failed to get workset", zap.Error(err))
 
-		return res.Reject[res.None](res.BadRequest, "作品集不存在")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "作品集不存在")
 	}
 
-	// Verify the caller membership and admin role in the owning team.
-	member, err := a.memberRepo.GetByUserTeamId(currUid, ws.TeamId)
-	if err != nil {
-		return res.Reject[res.None](res.BadRequest, "无权限访问该作品集")
-	}
-
-	if member == nil || !member.HasAnyRole(enum.RoleAdmin) {
-		return res.Reject[res.None](res.Forbidden, "仅汉化组管理员可删除作品集")
+	// Verify admin role via domain service.
+	if re := a.worksetSvc.CanAdminWorkset(currUid, ws.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
 	// Soft-delete the workset.
 	if err := a.worksetRepo.Remove(worksetId); err != nil {
 		lgr.Error("[worksetAppImpl.Remove] failed to soft-delete workset", zap.Error(err))
 
-		return res.Reject[res.None](res.ServerError, "删除作品集失败")
+		return app_res.Reject[app_res.None](app_res.ServerError, "删除作品集失败")
 	}
 
-	return res.Accept(&res.None{})
+	return app_res.Accept(&app_res.None{})
 }

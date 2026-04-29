@@ -26,7 +26,7 @@ func NewTeamLogApp(inner app_iface.TeamApp) app_iface.TeamApp {
 }
 
 // `GetInfo` enriches logger context then forwards the call.
-func (a *teamLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.TeamVal] {
+func (a *teamLogAppImpl) GetInfo(cx context.Context, id string) app_res.AppRes[val.TeamVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -44,7 +44,7 @@ func (a *teamLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.T
 }
 
 // `ListByUser` enriches logger context then forwards the call.
-func (a *teamLogAppImpl) ListByUser(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
+func (a *teamLogAppImpl) ListByUser(cx context.Context, userId string) app_res.AppRes[[]val.TeamVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -62,13 +62,13 @@ func (a *teamLogAppImpl) ListByUser(cx context.Context, userId string) res.AppRe
 }
 
 // `Update` enriches logger context then forwards the call.
-func (a *teamLogAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) res.AppRes[res.None] {
+func (a *teamLogAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[res.None](res.ServerError, "更新团队功能暂未实现")
+		return app_res.Reject[app_res.None](app_res.ServerError, "更新团队功能暂未实现")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -84,13 +84,13 @@ func (a *teamLogAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) res.A
 }
 
 // `ResvAvatar` enriches logger context then forwards the call.
-func (a *teamLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) res.AppRes[val.ResvTeamAvatarRes] {
+func (a *teamLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) app_res.AppRes[val.ResvTeamAvatarRes] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[val.ResvTeamAvatarRes](res.ServerError, "团队头像预留功能暂未实现")
+		return app_res.Reject[val.ResvTeamAvatarRes](app_res.ServerError, "团队头像预留功能暂未实现")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -106,7 +106,7 @@ func (a *teamLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatar
 }
 
 // `MarkAvatarUploaded` enriches logger context then forwards the call.
-func (a *teamLogAppImpl) MarkAvatarUploaded(cx context.Context, teamId string) res.AppRes[res.None] {
+func (a *teamLogAppImpl) MarkAvatarUploaded(cx context.Context, teamId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}

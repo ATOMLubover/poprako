@@ -26,13 +26,13 @@ func NewAssignmentInvLogApp(inner app_iface.AssignmentInvApp) app_iface.Assignme
 }
 
 // `ListByChapter` enriches logger context and forwards call.
-func (a *assignmentInvLogAppImpl) ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentInvArgs) res.AppRes[[]val.AssignmentInvVal] {
+func (a *assignmentInvLogAppImpl) ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentInvArgs) app_res.AppRes[[]val.AssignmentInvVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.AssignmentInvVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.AssignmentInvVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(
@@ -48,13 +48,13 @@ func (a *assignmentInvLogAppImpl) ListByChapter(cx context.Context, currUid stri
 }
 
 // `Create` enriches logger context and forwards call.
-func (a *assignmentInvLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateAssignmentInvArgs) res.AppRes[val.CreateAssignmentInvRes] {
+func (a *assignmentInvLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateAssignmentInvArgs) app_res.AppRes[val.CreateAssignmentInvRes] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[val.CreateAssignmentInvRes](res.BadRequest, "创建参数不能为空")
+		return app_res.Reject[val.CreateAssignmentInvRes](app_res.BadRequest, "创建参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(
@@ -70,7 +70,7 @@ func (a *assignmentInvLogAppImpl) Create(cx context.Context, currUid string, arg
 }
 
 // `Remove` enriches logger context and forwards call.
-func (a *assignmentInvLogAppImpl) Remove(cx context.Context, currUid string, invId string) res.AppRes[res.None] {
+func (a *assignmentInvLogAppImpl) Remove(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -86,13 +86,13 @@ func (a *assignmentInvLogAppImpl) Remove(cx context.Context, currUid string, inv
 }
 
 // `JoinByInvCode` enriches logger context and forwards call.
-func (a *assignmentInvLogAppImpl) JoinByInvCode(cx context.Context, currUid string, args *val.JoinAssignmentInvArgs) res.AppRes[res.None] {
+func (a *assignmentInvLogAppImpl) JoinByInvCode(cx context.Context, currUid string, args *val.JoinAssignmentInvArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[res.None](res.BadRequest, "请求参数不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "请求参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(

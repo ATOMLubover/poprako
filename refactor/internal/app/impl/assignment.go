@@ -4,7 +4,7 @@ import (
 	"context"
 
 	app_iface "poprako-s/internal/app"
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/event"
@@ -29,11 +29,13 @@ type assignmentAppImpl struct {
 	assignmentRepo repo_iface.AssignmentRepo
 
 	evBus event_iface.EvBus
+
+	errClsf repo_iface.ErrClsf
 }
 
 // `NewAssignmentApp` creates one `AssignmentApp` implementation.
-func NewAssignmentApp(txnCtrl repo_iface.TxnCtrl, assignmentSvc svc.AssignmentSvc, memberRepo repo_iface.MemberRepo, worksetRepo repo_iface.WorksetRepo, comicRepo repo_iface.ComicRepo, chapterRepo repo_iface.ChapterRepo, assignmentRepo repo_iface.AssignmentRepo, evBus event_iface.EvBus) app_iface.AssignmentApp {
-	if txnCtrl == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || assignmentRepo == nil || evBus == nil {
+func NewAssignmentApp(txnCtrl repo_iface.TxnCtrl, assignmentSvc svc.AssignmentSvc, memberRepo repo_iface.MemberRepo, worksetRepo repo_iface.WorksetRepo, comicRepo repo_iface.ComicRepo, chapterRepo repo_iface.ChapterRepo, assignmentRepo repo_iface.AssignmentRepo, evBus event_iface.EvBus, errClsf repo_iface.ErrClsf) app_iface.AssignmentApp {
+	if txnCtrl == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || assignmentRepo == nil || evBus == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewAssignmentApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
@@ -43,6 +45,7 @@ func NewAssignmentApp(txnCtrl repo_iface.TxnCtrl, assignmentSvc svc.AssignmentSv
 			zap.Bool("chapterRepo", chapterRepo == nil),
 			zap.Bool("assignmentRepo", assignmentRepo == nil),
 			zap.Bool("evBus", evBus == nil),
+			zap.Bool("errClsf", errClsf == nil),
 		)
 	}
 
@@ -55,29 +58,30 @@ func NewAssignmentApp(txnCtrl repo_iface.TxnCtrl, assignmentSvc svc.AssignmentSv
 		chapterRepo:    chapterRepo,
 		assignmentRepo: assignmentRepo,
 		evBus:          evBus,
+		errClsf:         errClsf,
 	}
 }
 
 // `ListByChapter` lists assignments under one chapter.
-func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentByChapterArgs) res.AppRes[[]val.AssignmentVal] {
+func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentByChapterArgs) app_res.AppRes[[]val.AssignmentVal] {
 	lgr := app_util.TakeLgr(cx)
 
 	if args == nil || args.ChapterId == "" {
-		return res.Reject[[]val.AssignmentVal](res.BadRequest, "chapter_id 不能为空")
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "chapter_id 不能为空")
 	}
 
-	if code, msg, reject := vfyAssignmentListArgs(args.Offset, &args.Limit); reject {
-		return res.Reject[[]val.AssignmentVal](code, msg)
+	if re := vfyAssignmentListArgs(args.Offset, &args.Limit); re.IsReject() {
+		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
-	if code, msg, reject := ensureReviewerPermission(a.assignmentRepo, args.ChapterId, currUid); reject {
-		return res.Reject[[]val.AssignmentVal](code, msg)
+	if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, a.assignmentRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[[]val.AssignmentVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
 	items, err := a.assignmentRepo.List(mkListAssignmentOptByChapter(args.ChapterId, args.Offset, args.Limit))
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.ListByChapter] failed to list assignments", zap.Error(err))
-		return res.Reject[[]val.AssignmentVal](res.ServerError, "获取分配列表失败")
+		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
 	}
 
 	vals := make([]val.AssignmentVal, len(items))
@@ -85,25 +89,25 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 		vals[i] = asmAssignmentVal(item)
 	}
 
-	return res.Accept(&vals)
+	return app_res.Accept(&vals)
 }
 
 // `ListByUser` lists all assignments of current user.
-func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) res.AppRes[[]val.AssignmentVal] {
+func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) app_res.AppRes[[]val.AssignmentVal] {
 	lgr := app_util.TakeLgr(cx)
 
 	if args == nil {
-		return res.Reject[[]val.AssignmentVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
-	if code, msg, reject := vfyAssignmentListArgs(args.Offset, &args.Limit); reject {
-		return res.Reject[[]val.AssignmentVal](code, msg)
+	if re := vfyAssignmentListArgs(args.Offset, &args.Limit); re.IsReject() {
+		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
 	items, err := a.assignmentRepo.List(mkListAssignmentOptByUser(currUid, args.Offset, args.Limit))
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.ListMy] failed to list assignments", zap.Error(err))
-		return res.Reject[[]val.AssignmentVal](res.ServerError, "获取分配列表失败")
+		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
 	}
 
 	vals := make([]val.AssignmentVal, len(items))
@@ -111,79 +115,79 @@ func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args 
 		vals[i] = asmAssignmentVal(item)
 	}
 
-	return res.Accept(&vals)
+	return app_res.Accept(&vals)
 }
 
 // `Upsert` executes put-semantics upsert for assignment roles.
-func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val.UpsertAssignmentArgs) res.AppRes[res.None] {
+func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val.UpsertAssignmentArgs) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	if args == nil || args.ChapterId == "" || args.UserId == "" {
-		return res.Reject[res.None](res.BadRequest, "chapter_id 和 user_id 不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 和 user_id 不能为空")
 	}
 
 	ev := make([]event_iface.Event, 0)
 
-	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
+	re, err := repo_iface.RunWithTxn[app_res.AppRes[app_res.None]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[app_res.None], error) {
 		memberRepo := prov.MemberRepo()
 		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
-		if code, msg, reject := ensureReviewerPermission(assignmentRepo, args.ChapterId, currUid); reject {
-			return res.Reject[res.None](code, msg), res.DefErr()
+		if rj := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); rj.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
 		}
 
-		if code, msg, reject := ensureUserCanTakeRoles(memberRepo, chapterRepo, comicRepo, worksetRepo, args.ChapterId, args.UserId, args.RoleMask); reject {
-			return res.Reject[res.None](code, msg), res.DefErr()
+		if rj := a.assignmentSvc.CanTakeAssignmentRoles(args.UserId, args.ChapterId, args.RoleMask, memberRepo, chapterRepo, comicRepo, worksetRepo, a.errClsf); rj.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
 		}
 
 		if args.RoleMask == 0 {
 			_, err := assignmentRepo.GetByChapterUserId(args.ChapterId, args.UserId)
 			if err != nil {
 				if repo_infra.IsNotFound(err) {
-					return res.Accept(&res.None{}), nil
+					return app_res.Accept(&app_res.None{}), nil
 				}
-				return res.Reject[res.None](res.ServerError, "保存分配失败"), err
+				return app_res.Reject[app_res.None](app_res.ServerError, "保存分配失败"), err
 			}
 
 			ch, err := chapterRepo.GetById(args.ChapterId)
 			if err != nil {
-				return res.Reject[res.None](res.ServerError, "删除分配失败"), err
+				return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 			}
 
 			if err := assignmentRepo.DeleteByChapterUserId(args.ChapterId, args.UserId); err != nil {
-				return res.Reject[res.None](res.ServerError, "删除分配失败"), err
+				return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 			}
 
 			ev = append(ev, event.NewAssignmentRemovedEv(args.UserId, args.ChapterId, ch.PublishedAt != nil))
 
-			return res.Accept(&res.None{}), nil
+			return app_res.Accept(&app_res.None{}), nil
 		}
 
 		curr, err := assignmentRepo.GetByChapterUserId(args.ChapterId, args.UserId)
 		if err != nil {
 			if !repo_infra.IsNotFound(err) {
-				return res.Reject[res.None](res.ServerError, "保存分配失败"), err
+				return app_res.Reject[app_res.None](app_res.ServerError, "保存分配失败"), err
 			}
 
 			cre := a.assignmentSvc.NewAssignmentCre(args.ChapterId, args.UserId, args.RoleMask)
 			if _, err := assignmentRepo.Create(cre); err != nil {
-				return res.Reject[res.None](res.ServerError, "保存分配失败"), err
+				return app_res.Reject[app_res.None](app_res.ServerError, "保存分配失败"), err
 			}
 
 			ev = append(ev, event.NewAssignmentCreatedEv(args.UserId, args.ChapterId))
 
-			return res.Accept(&res.None{}), nil
+			return app_res.Accept(&app_res.None{}), nil
 		}
 
 		put := a.assignmentSvc.NewAssignmentPut(curr, args.RoleMask)
 		if err := assignmentRepo.Put(put); err != nil {
-			return res.Reject[res.None](res.ServerError, "保存分配失败"), err
+			return app_res.Reject[app_res.None](app_res.ServerError, "保存分配失败"), err
 		}
 
-		return res.Accept(&res.None{}), nil
+		return app_res.Accept(&app_res.None{}), nil
 	})
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.Upsert] failed to run transaction", zap.Error(err))
@@ -196,44 +200,44 @@ func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val
 }
 
 // `Delete` deletes one assignment by id.
-func (a *assignmentAppImpl) Delete(cx context.Context, currUid string, assignmentId string) res.AppRes[res.None] {
+func (a *assignmentAppImpl) Delete(cx context.Context, currUid string, assignmentId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	if assignmentId == "" {
-		return res.Reject[res.None](res.BadRequest, "assignment_id 不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "assignment_id 不能为空")
 	}
 
 	ev := make([]event_iface.Event, 0)
 
-	re, err := repo_iface.RunWithTxn[res.AppRes[res.None]](a.txnCtrl, func(prov repo_iface.Prov) (res.AppRes[res.None], error) {
+	re, err := repo_iface.RunWithTxn[app_res.AppRes[app_res.None]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[app_res.None], error) {
 		assignmentRepo := prov.AssignmentRepo()
 		chapterRepo := prov.ChapterRepo()
 
 		target, err := assignmentRepo.GetById(assignmentId)
 		if err != nil {
 			if repo_infra.IsNotFound(err) {
-				return res.Reject[res.None](res.NotFound, "分配不存在"), res.DefErr()
+				return app_res.Reject[app_res.None](app_res.NotFound, "分配不存在"), app_res.DefErr()
 			}
 
-			return res.Reject[res.None](res.ServerError, "删除分配失败"), err
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 		}
 
-		if code, msg, reject := ensureReviewerPermission(assignmentRepo, target.ChapterId, currUid); reject {
-			return res.Reject[res.None](code, msg), res.DefErr()
+		if rj := a.assignmentSvc.CanReviewAssignment(currUid, target.ChapterId, assignmentRepo, a.errClsf); rj.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(rj.Code()), rj.Msg()), app_res.DefErr()
 		}
 
 		ch, err := chapterRepo.GetById(target.ChapterId)
 		if err != nil {
-			return res.Reject[res.None](res.ServerError, "删除分配失败"), err
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 		}
 
 		if err := assignmentRepo.Delete(assignmentId); err != nil {
-			return res.Reject[res.None](res.ServerError, "删除分配失败"), err
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 		}
 
 		ev = append(ev, event.NewAssignmentRemovedEv(target.UserId, target.ChapterId, ch.PublishedAt != nil))
 
-		return res.Accept(&res.None{}), nil
+		return app_res.Accept(&app_res.None{}), nil
 	})
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.Delete] failed to run transaction", zap.Error(err))

@@ -36,7 +36,7 @@ func NewTeamApp(teamRepo repo_iface.TeamRepo, ossSigner oss_iface.Signer) app_if
 }
 
 // `GetInfo` gets team information by id.
-func (a *teamAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.TeamVal] {
+func (a *teamAppImpl) GetInfo(cx context.Context, id string) app_res.AppRes[val.TeamVal] {
 	lgr := app_util.TakeLgr(cx)
 
 	team, err := a.teamRepo.GetById(id)
@@ -47,7 +47,7 @@ func (a *teamAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.Team
 			zap.Error(err),
 		)
 
-		return res.Reject[val.TeamVal](res.BadRequest, "团队不存在")
+		return app_res.Reject[val.TeamVal](app_res.BadRequest, "团队不存在")
 	}
 
 	teamVal, err := asmTeamVal(team, a.ossSigner)
@@ -58,48 +58,48 @@ func (a *teamAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.Team
 			zap.Error(err),
 		)
 
-		return res.Reject[val.TeamVal](res.ServerError, "获取团队信息失败")
+		return app_res.Reject[val.TeamVal](app_res.ServerError, "获取团队信息失败")
 	}
 
-	return res.Accept(teamVal)
+	return app_res.Accept(teamVal)
 }
 
 // `ListByUser` lists teams that a user belongs to.
-func (a *teamAppImpl) ListByUser(cx context.Context, userId string) res.AppRes[[]val.TeamVal] {
+func (a *teamAppImpl) ListByUser(cx context.Context, userId string) app_res.AppRes[[]val.TeamVal] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until member/team list query is introduced.
 	lgr.Warn("[teamAppImpl.ListUserTeams] not implemented", zap.String("user_id", userId))
 
-	return res.Reject[[]val.TeamVal](res.ServerError, "团队列表功能暂未实现")
+	return app_res.Reject[[]val.TeamVal](app_res.ServerError, "团队列表功能暂未实现")
 }
 
 // `Update` updates one team profile.
-func (a *teamAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) res.AppRes[res.None] {
+func (a *teamAppImpl) Update(cx context.Context, args *val.TeamUpdArgs) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until team update repo capability is introduced.
 	lgr.Warn("[teamAppImpl.Update] not implemented")
 
-	return res.Reject[res.None](res.ServerError, "更新团队功能暂未实现")
+	return app_res.Reject[app_res.None](app_res.ServerError, "更新团队功能暂未实现")
 }
 
 // `ResvAvatar` reserves avatar upload for team.
-func (a *teamAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) res.AppRes[val.ResvTeamAvatarRes] {
+func (a *teamAppImpl) ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) app_res.AppRes[val.ResvTeamAvatarRes] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until team avatar flow is introduced.
 	lgr.Warn("[teamAppImpl.ResvAvatar] not implemented")
 
-	return res.Reject[val.ResvTeamAvatarRes](res.ServerError, "团队头像预留功能暂未实现")
+	return app_res.Reject[val.ResvTeamAvatarRes](app_res.ServerError, "团队头像预留功能暂未实现")
 }
 
 // `MarkAvatarUploaded` marks team avatar upload as completed.
-func (a *teamAppImpl) MarkAvatarUploaded(cx context.Context, teamId string) res.AppRes[res.None] {
+func (a *teamAppImpl) MarkAvatarUploaded(cx context.Context, teamId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Keep explicit not-implemented feedback until team avatar flow is introduced.
 	lgr.Warn("[teamAppImpl.MarkAvatarUploaded] not implemented", zap.String("team_id", teamId))
 
-	return res.Reject[res.None](res.ServerError, "团队头像确认功能暂未实现")
+	return app_res.Reject[app_res.None](app_res.ServerError, "团队头像确认功能暂未实现")
 }

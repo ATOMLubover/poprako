@@ -1,4 +1,4 @@
-package app_res
+package svc_res
 
 type ErrCode int
 

@@ -26,13 +26,13 @@ func NewAssignmentLogApp(inner app_iface.AssignmentApp) app_iface.AssignmentApp 
 }
 
 // `ListByChapter` enriches logger context and forwards call.
-func (a *assignmentLogAppImpl) ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentByChapterArgs) res.AppRes[[]val.AssignmentVal] {
+func (a *assignmentLogAppImpl) ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentByChapterArgs) app_res.AppRes[[]val.AssignmentVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.AssignmentVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(
@@ -48,13 +48,13 @@ func (a *assignmentLogAppImpl) ListByChapter(cx context.Context, currUid string,
 }
 
 // `ListByUser` enriches logger context and forwards call.
-func (a *assignmentLogAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) res.AppRes[[]val.AssignmentVal] {
+func (a *assignmentLogAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListMyAssignmentArgs) app_res.AppRes[[]val.AssignmentVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.AssignmentVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(
@@ -69,13 +69,13 @@ func (a *assignmentLogAppImpl) ListByUser(cx context.Context, currUid string, ar
 }
 
 // `Upsert` enriches logger context and forwards call.
-func (a *assignmentLogAppImpl) Upsert(cx context.Context, currUid string, args *val.UpsertAssignmentArgs) res.AppRes[res.None] {
+func (a *assignmentLogAppImpl) Upsert(cx context.Context, currUid string, args *val.UpsertAssignmentArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[res.None](res.BadRequest, "更新参数不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "更新参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(
@@ -91,7 +91,7 @@ func (a *assignmentLogAppImpl) Upsert(cx context.Context, currUid string, args *
 }
 
 // `Delete` enriches logger context and forwards call.
-func (a *assignmentLogAppImpl) Delete(cx context.Context, currUid string, assignmentId string) res.AppRes[res.None] {
+func (a *assignmentLogAppImpl) Delete(cx context.Context, currUid string, assignmentId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}

@@ -26,13 +26,13 @@ func NewChapterLogApp(inner app_iface.ChapterApp) app_iface.ChapterApp {
 }
 
 // `List` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) List(cx context.Context, currUid string, args *val.ListChapterArgs) res.AppRes[[]val.ChapterVal] {
+func (a *chapterLogAppImpl) List(cx context.Context, currUid string, args *val.ListChapterArgs) app_res.AppRes[[]val.ChapterVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.ChapterVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.ChapterVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -49,7 +49,7 @@ func (a *chapterLogAppImpl) List(cx context.Context, currUid string, args *val.L
 }
 
 // `GetPinned` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) GetPinned(cx context.Context, currUid string, comicId string) res.AppRes[val.ChapterVal] {
+func (a *chapterLogAppImpl) GetPinned(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ChapterVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -66,13 +66,13 @@ func (a *chapterLogAppImpl) GetPinned(cx context.Context, currUid string, comicI
 }
 
 // `Create` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateChapterArgs) res.AppRes[val.ChapterCreatedRes] {
+func (a *chapterLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateChapterArgs) app_res.AppRes[val.ChapterCreatedRes] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[val.ChapterCreatedRes](res.BadRequest, "创建参数不能为空")
+		return app_res.Reject[val.ChapterCreatedRes](app_res.BadRequest, "创建参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -87,13 +87,13 @@ func (a *chapterLogAppImpl) Create(cx context.Context, currUid string, args *val
 }
 
 // `Update` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) Update(cx context.Context, currUid string, args *val.ChapterUpdArgs) res.AppRes[res.None] {
+func (a *chapterLogAppImpl) Update(cx context.Context, currUid string, args *val.ChapterUpdArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[res.None](res.BadRequest, "更新参数不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "更新参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -108,7 +108,7 @@ func (a *chapterLogAppImpl) Update(cx context.Context, currUid string, args *val
 }
 
 // `Remove` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) Remove(cx context.Context, currUid string, chapterId string) res.AppRes[res.None] {
+func (a *chapterLogAppImpl) Remove(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}

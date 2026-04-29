@@ -5,6 +5,8 @@ import (
 
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
+	repo_iface "poprako-s/internal/domain/repo"
+	svc_res "poprako-s/internal/domain/svc/res"
 	"poprako-s/pkg/util"
 )
 
@@ -14,6 +16,60 @@ type AssignmentSvc struct{}
 // `NewAssignmentSvc` returns a ready-to-use `AssignmentSvc`.
 func NewAssignmentSvc() AssignmentSvc {
 	return AssignmentSvc{}
+}
+
+func (AssignmentSvc) CanReviewAssignment(currUid string, chapterId string, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	currAssignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅章节监修可执行该操作", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+	if currAssignment == nil || !currAssignment.HasAnyRole(enum.RoleReviewer) {
+		return svc_res.Reject(svc_res.Forbidden, "仅章节监修可执行该操作")
+	}
+
+	return svc_res.Accept()
+}
+
+func (AssignmentSvc) CanTakeAssignmentRoles(userId string, chapterId string, roleMask aggr.RoleMask, memberRepo repo_iface.MemberRepo, chapterRepo repo_iface.ChapterRepo, comicRepo repo_iface.ComicRepo, worksetRepo repo_iface.WorksetRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	if roleMask == 0 {
+		return svc_res.Accept()
+	}
+
+	if roleMask.HasAnyRole(enum.RoleAdmin) {
+		return svc_res.Reject(svc_res.BadRequest, "章节分配不支持管理员角色")
+	}
+
+	ch, err := chapterRepo.GetById(chapterId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "章节不存在", "章节信息查询超时", "章节信息服务暂不可用", "章节信息查询失败")
+	}
+
+	cm, err := comicRepo.GetById(ch.ComicId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "章节不存在", "章节信息查询超时", "章节信息服务暂不可用", "章节信息查询失败")
+	}
+
+	ws, err := worksetRepo.GetById(cm.WorksetId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "章节不存在", "章节信息查询超时", "章节信息服务暂不可用", "章节信息查询失败")
+	}
+
+	member, err := memberRepo.GetByUserTeamId(userId, ws.TeamId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "目标成员不在当前汉化组中", "成员信息查询超时", "成员信息服务暂不可用", "成员信息查询失败")
+	}
+
+	if member == nil {
+		return svc_res.Reject(svc_res.BadRequest, "目标成员不在当前汉化组中")
+	}
+
+	for _, role := range roleMask.ToRoleArr() {
+		if !member.HasAnyRole(role) {
+			return svc_res.Reject(svc_res.BadRequest, "目标成员无法承担指定章节角色")
+		}
+	}
+
+	return svc_res.Accept()
 }
 
 // `NewAssignmentCre` builds one assignment create payload from role mask.

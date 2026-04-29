@@ -4,11 +4,12 @@ import (
 	"context"
 
 	app_iface "poprako-s/internal/app"
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
+	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -31,11 +32,11 @@ func NewSysMailApp(sysMailRepo repo_iface.SysMailRepo) app_iface.SysMailApp {
 }
 
 // `List` returns unread system mails for current user with pagination.
-func (a *sysMailAppImpl) List(cx context.Context, currUid string, args *val.ListSysMailArgs) res.AppRes[[]val.SysMailVal] {
+func (a *sysMailAppImpl) List(cx context.Context, currUid string, args *val.ListSysMailArgs) app_res.AppRes[[]val.SysMailVal] {
 	lgr := app_util.TakeLgr(cx)
 
-	if code, msg, reject := vfyListSysMailArgs(args); reject {
-		return res.Reject[[]val.SysMailVal](code, msg)
+	if re := vfyListSysMailArgs(args); re.IsReject() {
+		return app_res.Reject[[]val.SysMailVal](re.Code(), re.Msg())
 	}
 
 	items, err := a.sysMailRepo.ListUnreadByRcvId(
@@ -43,9 +44,8 @@ func (a *sysMailAppImpl) List(cx context.Context, currUid string, args *val.List
 		query.PagiOpt{Offset: args.Offset, Limit: args.Limit},
 	)
 	if err != nil {
-		code, msg, _ := app_util.ClassifyRepoErr(err, 0, "", "获取系统消息超时", "系统消息服务暂不可用", "获取系统消息失败")
 		lgr.Error("[sysMailAppImpl.List] failed to list unread system mails", zap.Error(err))
-		return res.Reject[[]val.SysMailVal](code, msg)
+		return app_res.Reject[[]val.SysMailVal](app_res.ServerError, "获取系统消息失败")
 	}
 
 	vals := make([]val.SysMailVal, len(items))
@@ -54,23 +54,25 @@ func (a *sysMailAppImpl) List(cx context.Context, currUid string, args *val.List
 		vals[i] = asmSysMailVal(&items[i])
 	}
 
-	return res.Accept(&vals)
+	return app_res.Accept(&vals)
 }
 
 // `MarkRead` marks one system mail as read for current user.
-func (a *sysMailAppImpl) MarkRead(cx context.Context, currUid string, id string) res.AppRes[res.None] {
+func (a *sysMailAppImpl) MarkRead(cx context.Context, currUid string, id string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
-	if code, msg, reject := vfyMarkReadSysMailId(id); reject {
-		return res.Reject[res.None](code, msg)
+	if re := vfyMarkReadSysMailId(id); re.IsReject() {
+		return app_res.Reject[app_res.None](re.Code(), re.Msg())
 	}
 
 	err := a.sysMailRepo.MarkReadByRcvId(id, currUid)
 	if err != nil {
-		code, msg, _ := app_util.ClassifyRepoErr(err, res.NotFound, "系统消息不存在", "标记系统消息已读超时", "系统消息服务暂不可用", "标记系统消息已读失败")
+		if repo_infra.IsNotFound(err) {
+			return app_res.Reject[app_res.None](app_res.NotFound, "系统消息不存在")
+		}
 		lgr.Error("[sysMailAppImpl.MarkRead] failed to mark system mail as read", zap.String("sys_mail_id", id), zap.Error(err))
-		return res.Reject[res.None](code, msg)
+		return app_res.Reject[app_res.None](app_res.ServerError, "标记系统消息已读失败")
 	}
 
-	return res.Accept(&res.None{})
+	return app_res.Accept(&app_res.None{})
 }

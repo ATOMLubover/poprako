@@ -4,9 +4,7 @@ import (
 	"context"
 	"time"
 
-	"poprako-s/internal/app/res"
-	repo_iface "poprako-s/internal/domain/repo"
-	repo_infra "poprako-s/internal/infra/repo"
+	app_res "poprako-s/internal/app/res"
 
 	"go.uber.org/zap"
 )
@@ -45,9 +43,9 @@ func ToUnixMilliPtr(t *time.Time) *int64 {
 }
 
 // `ClampOffsetLimit` validates offset and normalizes limit to [defLimit, maxLimit].
-func ClampOffsetLimit(offset int, limit *int) (res.ErrCode, string, bool) {
+func ClampOffsetLimit(offset int, limit *int) app_res.AppRes[app_res.None] {
 	if offset < 0 {
-		return res.BadRequest, "offset 不能小于 0", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "offset 不能小于 0")
 	}
 
 	if *limit <= 0 {
@@ -58,22 +56,6 @@ func ClampOffsetLimit(offset int, limit *int) (res.ErrCode, string, bool) {
 		*limit = listMaxLimit
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }
 
-// `ClassifyRepoErr` maps a repo error to the standard (code, msg, reject) triple.
-func ClassifyRepoErr(err repo_iface.RepoErr, notFoundCode res.ErrCode, notFoundMsg, timeoutMsg, unavailableMsg, serverMsg string) (res.ErrCode, string, bool) {
-	if repo_infra.IsNotFound(err) {
-		return notFoundCode, notFoundMsg, true
-	}
-
-	if repo_infra.IsTimeout(err) {
-		return res.Timeout, timeoutMsg, true
-	}
-
-	if repo_infra.IsUnavailable(err) {
-		return res.Unavailable, unavailableMsg, true
-	}
-
-	return res.ServerError, serverMsg, true
-}

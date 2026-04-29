@@ -10,5 +10,5 @@ import (
 type UserStatsApp interface {
 	// `GetStats` is used to get user stats by user id.
 	// NOTE: it can be used as GetMyStats.
-	GetStats(cx context.Context, currUid string) res.AppRes[val.UserStats]
+	GetStats(cx context.Context, currUid string) app_res.AppRes[val.UserStats]
 }

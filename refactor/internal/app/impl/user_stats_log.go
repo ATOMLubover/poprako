@@ -26,7 +26,7 @@ func NewUserStatsLogApp(inner app_iface.UserStatsApp) app_iface.UserStatsApp {
 }
 
 // `GetStats` enriches logger context and forwards call.
-func (a *userStatsLogAppImpl) GetStats(cx context.Context, currUid string) res.AppRes[val.UserStats] {
+func (a *userStatsLogAppImpl) GetStats(cx context.Context, currUid string) app_res.AppRes[val.UserStats] {
 	if cx == nil {
 		cx = context.Background()
 	}

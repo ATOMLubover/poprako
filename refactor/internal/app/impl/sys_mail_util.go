@@ -1,7 +1,7 @@
 package app_impl
 
 import (
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
@@ -20,23 +20,23 @@ func asmSysMailVal(mail *aggr.SysMail) val.SysMailVal {
 }
 
 // `vfyListSysMailArgs` validates and normalizes list arguments.
-func vfyListSysMailArgs(args *val.ListSysMailArgs) (res.ErrCode, string, bool) {
+func vfyListSysMailArgs(args *val.ListSysMailArgs) app_res.AppRes[app_res.None] {
 	if args == nil {
-		return res.BadRequest, "分页参数不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "分页参数不能为空")
 	}
 
-	if code, msg, reject := app_util.ClampOffsetLimit(args.Offset, &args.Limit); reject {
-		return code, msg, true
+	if re := app_util.ClampOffsetLimit(args.Offset, &args.Limit); re.IsReject() {
+		return re
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }
 
 // `vfyMarkReadSysMailId` validates mark-read message id.
-func vfyMarkReadSysMailId(id string) (res.ErrCode, string, bool) {
+func vfyMarkReadSysMailId(id string) app_res.AppRes[app_res.None] {
 	if id == "" {
-		return res.BadRequest, "id 不能为空", true
+		return app_res.Reject[app_res.None](app_res.BadRequest, "id 不能为空")
 	}
 
-	return 0, "", false
+	return app_res.Accept(&app_res.None{})
 }

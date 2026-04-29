@@ -1,4 +1,4 @@
-package res
+package app_res
 
 import "errors"
 

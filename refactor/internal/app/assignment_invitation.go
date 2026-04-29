@@ -10,14 +10,14 @@ import (
 // `AssignmentInvApp` defines use-cases for assignment invitation.
 type AssignmentInvApp interface {
 	// `ListByChapter` lists invitations under one chapter.
-	ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentInvArgs) res.AppRes[[]val.AssignmentInvVal]
+	ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentInvArgs) app_res.AppRes[[]val.AssignmentInvVal]
 
 	// `Create` creates one invitation for assignment.
-	Create(cx context.Context, currUid string, args *val.CreateAssignmentInvArgs) res.AppRes[val.CreateAssignmentInvRes]
+	Create(cx context.Context, currUid string, args *val.CreateAssignmentInvArgs) app_res.AppRes[val.CreateAssignmentInvRes]
 
 	// `Remove` removes one invitation by id.
-	Remove(cx context.Context, currUid string, invId string) res.AppRes[res.None]
+	Remove(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None]
 
 	// `JoinByInvCode` joins one chapter by invitation code.
-	JoinByInvCode(cx context.Context, currUid string, args *val.JoinAssignmentInvArgs) res.AppRes[res.None]
+	JoinByInvCode(cx context.Context, currUid string, args *val.JoinAssignmentInvArgs) app_res.AppRes[app_res.None]
 }

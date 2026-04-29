@@ -26,13 +26,13 @@ func NewWorksetLogApp(inner app_iface.WorksetApp) app_iface.WorksetApp {
 }
 
 // `List` enriches the logger context then forwards the call.
-func (a *worksetLogAppImpl) List(cx context.Context, currUid string, args *val.ListWorksetArgs) res.AppRes[[]val.WorksetVal] {
+func (a *worksetLogAppImpl) List(cx context.Context, currUid string, args *val.ListWorksetArgs) app_res.AppRes[[]val.WorksetVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.WorksetVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.WorksetVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -50,13 +50,13 @@ func (a *worksetLogAppImpl) List(cx context.Context, currUid string, args *val.L
 }
 
 // `Create` enriches the logger context then forwards the call.
-func (a *worksetLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateWorksetArgs) res.AppRes[val.WorksetCreatedRes] {
+func (a *worksetLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateWorksetArgs) app_res.AppRes[val.WorksetCreatedRes] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[val.WorksetCreatedRes](res.BadRequest, "创建参数不能为空")
+		return app_res.Reject[val.WorksetCreatedRes](app_res.BadRequest, "创建参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -72,13 +72,13 @@ func (a *worksetLogAppImpl) Create(cx context.Context, currUid string, args *val
 }
 
 // `Update` enriches the logger context then forwards the call.
-func (a *worksetLogAppImpl) Update(cx context.Context, currUid string, args *val.WorksetUpdArgs) res.AppRes[res.None] {
+func (a *worksetLogAppImpl) Update(cx context.Context, currUid string, args *val.WorksetUpdArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[res.None](res.BadRequest, "更新参数不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "更新参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -94,7 +94,7 @@ func (a *worksetLogAppImpl) Update(cx context.Context, currUid string, args *val
 }
 
 // `Remove` enriches the logger context then forwards the call.
-func (a *worksetLogAppImpl) Remove(cx context.Context, currUid string, worksetId string) res.AppRes[res.None] {
+func (a *worksetLogAppImpl) Remove(cx context.Context, currUid string, worksetId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}

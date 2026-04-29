@@ -10,8 +10,8 @@ import (
 // `SysMailApp` defines application use-cases for user system mails.
 type SysMailApp interface {
 	// `List` returns unread system mails for current user with pagination.
-	List(cx context.Context, currUid string, args *val.ListSysMailArgs) res.AppRes[[]val.SysMailVal]
+	List(cx context.Context, currUid string, args *val.ListSysMailArgs) app_res.AppRes[[]val.SysMailVal]
 
 	// `MarkRead` marks one system mail as read for current user.
-	MarkRead(cx context.Context, currUid string, id string) res.AppRes[res.None]
+	MarkRead(cx context.Context, currUid string, id string) app_res.AppRes[app_res.None]
 }

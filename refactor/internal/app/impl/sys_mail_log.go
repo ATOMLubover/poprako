@@ -26,13 +26,13 @@ func NewSysMailLogApp(inner app_iface.SysMailApp) app_iface.SysMailApp {
 }
 
 // `List` enriches logger context and forwards call.
-func (a *sysMailLogAppImpl) List(cx context.Context, currUid string, args *val.ListSysMailArgs) res.AppRes[[]val.SysMailVal] {
+func (a *sysMailLogAppImpl) List(cx context.Context, currUid string, args *val.ListSysMailArgs) app_res.AppRes[[]val.SysMailVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.SysMailVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.SysMailVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -48,7 +48,7 @@ func (a *sysMailLogAppImpl) List(cx context.Context, currUid string, args *val.L
 }
 
 // `MarkRead` enriches logger context and forwards call.
-func (a *sysMailLogAppImpl) MarkRead(cx context.Context, currUid string, id string) res.AppRes[res.None] {
+func (a *sysMailLogAppImpl) MarkRead(cx context.Context, currUid string, id string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}

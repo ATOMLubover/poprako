@@ -71,6 +71,7 @@ func main() {
 	sysMailRepo := repo_infra.NewSysMailRepo(gdb)
 
 	// Construct all services.
+	errClsf := repo_infra.NewErrClassifier()
 	userSvc := svc.NewUserSvc()
 	memberSvc := svc.NewMemberSvc()
 	ossMsgSvc := svc.NewOssMsgSvc()
@@ -111,13 +112,13 @@ func main() {
 		ossClient,
 	)
 	worksetApp := app_impl.NewWorksetLogApp(
-		app_impl.NewWorksetApp(txnCtrl, worksetSvc, memberRepo, worksetRepo),
+		app_impl.NewWorksetApp(txnCtrl, worksetSvc, memberRepo, worksetRepo, errClsf),
 	)
 	comicApp := app_impl.NewComicLogApp(
-		app_impl.NewComicApp(txnCtrl, comicSvc, memberRepo, worksetRepo, comicRepo),
+		app_impl.NewComicApp(txnCtrl, comicSvc, memberRepo, worksetRepo, comicRepo, errClsf),
 	)
 	chapterApp := app_impl.NewChapterLogApp(
-		app_impl.NewChapterApp(txnCtrl, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, evBus),
+		app_impl.NewChapterApp(txnCtrl, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, evBus, errClsf),
 	)
 	userStatsApp := app_impl.NewUserStatsLogApp(
 		app_impl.NewUserStatsApp(userStatsRepo),
@@ -138,6 +139,7 @@ func main() {
 			assignmentInvRepo,
 			assignmentRepo,
 			evBus,
+			errClsf,
 		),
 	)
 	assignmentApp := app_impl.NewAssignmentLogApp(
@@ -150,6 +152,7 @@ func main() {
 			chapterRepo,
 			assignmentRepo,
 			evBus,
+			errClsf,
 		),
 	)
 

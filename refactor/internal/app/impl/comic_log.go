@@ -26,13 +26,13 @@ func NewComicLogApp(inner app_iface.ComicApp) app_iface.ComicApp {
 }
 
 // `List` enriches logger context and forwards call
-func (a *comicLogAppImpl) List(cx context.Context, currUid string, args *val.ListComicArgs) res.AppRes[[]val.ComicVal] {
+func (a *comicLogAppImpl) List(cx context.Context, currUid string, args *val.ListComicArgs) app_res.AppRes[[]val.ComicVal] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[[]val.ComicVal](res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.ComicVal](app_res.BadRequest, "分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -51,13 +51,13 @@ func (a *comicLogAppImpl) List(cx context.Context, currUid string, args *val.Lis
 }
 
 // `Create` enriches logger context and forwards call
-func (a *comicLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateComicArgs) res.AppRes[val.ComicCreatedRes] {
+func (a *comicLogAppImpl) Create(cx context.Context, currUid string, args *val.CreateComicArgs) app_res.AppRes[val.ComicCreatedRes] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[val.ComicCreatedRes](res.BadRequest, "创建参数不能为空")
+		return app_res.Reject[val.ComicCreatedRes](app_res.BadRequest, "创建参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -75,13 +75,13 @@ func (a *comicLogAppImpl) Create(cx context.Context, currUid string, args *val.C
 }
 
 // `Update` enriches logger context and forwards call
-func (a *comicLogAppImpl) Update(cx context.Context, currUid string, args *val.ComicUpdArgs) res.AppRes[res.None] {
+func (a *comicLogAppImpl) Update(cx context.Context, currUid string, args *val.ComicUpdArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
 
 	if args == nil {
-		return res.Reject[res.None](res.BadRequest, "更新参数不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "更新参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
@@ -97,7 +97,7 @@ func (a *comicLogAppImpl) Update(cx context.Context, currUid string, args *val.C
 }
 
 // `Remove` enriches logger context and forwards call
-func (a *comicLogAppImpl) Remove(cx context.Context, currUid string, comicId string) res.AppRes[res.None] {
+func (a *comicLogAppImpl) Remove(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}

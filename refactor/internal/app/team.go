@@ -10,14 +10,14 @@ import (
 // `TeamApp` defines application use-cases for `Team`.
 type TeamApp interface {
 	// `GetInfo` returns team details by team id.
-	GetInfo(cx context.Context, id string) res.AppRes[val.TeamVal]
+	GetInfo(cx context.Context, id string) app_res.AppRes[val.TeamVal]
 
 	// NOTE: `ListByUser` can also be used as ListMyTeams.
-	ListByUser(cx context.Context, userId string) res.AppRes[[]val.TeamVal]
+	ListByUser(cx context.Context, userId string) app_res.AppRes[[]val.TeamVal]
 
-	Update(cx context.Context, args *val.TeamUpdArgs) res.AppRes[res.None]
+	Update(cx context.Context, args *val.TeamUpdArgs) app_res.AppRes[app_res.None]
 
-	ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) res.AppRes[val.ResvTeamAvatarRes]
+	ResvAvatar(cx context.Context, args *val.ResvTeamAvatarArgs) app_res.AppRes[val.ResvTeamAvatarRes]
 
-	MarkAvatarUploaded(cx context.Context, teamId string) res.AppRes[res.None]
+	MarkAvatarUploaded(cx context.Context, teamId string) app_res.AppRes[app_res.None]
 }

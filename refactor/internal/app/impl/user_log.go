@@ -28,7 +28,7 @@ func NewUserLogApp(inner app_iface.UserApp) app_iface.UserApp {
 }
 
 // `GetInfo` logs request context and forwards the call to `inner`.
-func (a *userLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.UserVal] {
+func (a *userLogAppImpl) GetInfo(cx context.Context, id string) app_res.AppRes[val.UserVal] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
@@ -49,7 +49,7 @@ func (a *userLogAppImpl) GetInfo(cx context.Context, id string) res.AppRes[val.U
 }
 
 // `Login` validates args, enriches logger context, and forwards the call.
-func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.AppRes[val.UserLoginRes] {
+func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) app_res.AppRes[val.UserLoginRes] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
@@ -57,7 +57,7 @@ func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.
 
 	// Reject nil args early to prevent nil dereference in `inner`.
 	if args == nil {
-		return res.Reject[val.UserLoginRes](res.BadRequest, "请求参数不能为空")
+		return app_res.Reject[val.UserLoginRes](app_res.BadRequest, "请求参数不能为空")
 	}
 
 	// Resolve logger from context and fallback to global logger.
@@ -75,7 +75,7 @@ func (a *userLogAppImpl) Login(cx context.Context, args *val.UserLoginArgs) res.
 }
 
 // `Register` validates args, enriches logger context, and forwards the call.
-func (a *userLogAppImpl) Register(cx context.Context, args *val.UserRegArgs) res.AppRes[val.UserRegRes] {
+func (a *userLogAppImpl) Register(cx context.Context, args *val.UserRegArgs) app_res.AppRes[val.UserRegRes] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
@@ -83,7 +83,7 @@ func (a *userLogAppImpl) Register(cx context.Context, args *val.UserRegArgs) res
 
 	// Reject nil args early to prevent nil dereference in `inner`.
 	if args == nil {
-		return res.Reject[val.UserRegRes](res.BadRequest, "请求参数不能为空")
+		return app_res.Reject[val.UserRegRes](app_res.BadRequest, "请求参数不能为空")
 	}
 
 	// Resolve logger from context and fallback to global logger.
@@ -101,7 +101,7 @@ func (a *userLogAppImpl) Register(cx context.Context, args *val.UserRegArgs) res
 }
 
 // `ResvAvatar` validates args, enriches logger context, and forwards the call.
-func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) res.AppRes[val.ResvUserAvatarRes] {
+func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
@@ -109,7 +109,7 @@ func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatar
 
 	// Reject nil args early to prevent nil dereference in `inner`.
 	if args == nil {
-		return res.Reject[val.ResvUserAvatarRes](res.BadRequest, "请求参数不能为空")
+		return app_res.Reject[val.ResvUserAvatarRes](app_res.BadRequest, "请求参数不能为空")
 	}
 
 	// Resolve logger from context and fallback to global logger.
@@ -127,7 +127,7 @@ func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatar
 }
 
 // `MarkAvatarUploaded` enriches logger context and forwards the call.
-func (a *userLogAppImpl) MarkAvatarUploaded(cx context.Context, currUid string) res.AppRes[res.None] {
+func (a *userLogAppImpl) MarkAvatarUploaded(cx context.Context, currUid string) app_res.AppRes[app_res.None] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
