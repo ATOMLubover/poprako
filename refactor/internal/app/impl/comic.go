@@ -14,6 +14,7 @@ import (
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
 	event_iface "poprako-s/internal/event"
+	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -254,6 +255,41 @@ func (a *comicAppImpl) Update(cx context.Context, currUid string, args *val.Comi
 	}
 
 	return app_res.Accept(&app_res.None{})
+}
+
+// `GetById` returns one comic by id
+func (a *comicAppImpl) GetById(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ComicVal] {
+	lgr := app_util.TakeLgr(cx)
+
+	if re := vfyComicId(comicId); re.IsReject() {
+		return app_res.Reject[val.ComicVal](re.Code(), re.Msg())
+	}
+
+	cm, err := a.comicRepo.GetById(comicId)
+	if err != nil {
+		if repo_infra.IsNotFound(err) {
+			return app_res.Reject[val.ComicVal](app_res.NotFound, "漫画不存在")
+		}
+
+		lgr.Error("[comicAppImpl.GetById] failed to get comic", zap.Error(err))
+
+		return app_res.Reject[val.ComicVal](app_res.ServerError, "获取漫画失败")
+	}
+
+	ws, err := a.worksetRepo.GetById(cm.WorksetId)
+	if err != nil {
+		lgr.Error("[comicAppImpl.GetById] failed to get workset", zap.Error(err))
+
+		return app_res.Reject[val.ComicVal](app_res.ServerError, "获取漫画失败")
+	}
+
+	if re := a.comicSvc.CanListComic(currUid, ws.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[val.ComicVal](app_res.ErrCode(re.Code()), re.Msg())
+	}
+
+	v := asmComicVal(cm)
+
+	return app_res.Accept(&v)
 }
 
 // `Remove` soft-deletes a comic and updates workset comic counter

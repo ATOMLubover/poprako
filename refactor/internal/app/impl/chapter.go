@@ -14,6 +14,7 @@ import (
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
 	event_iface "poprako-s/internal/event"
+	repo_infra "poprako-s/internal/infra/repo"
 
 	"go.uber.org/zap"
 )
@@ -119,6 +120,41 @@ func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.List
 	}
 
 	return app_res.Accept(&vals)
+}
+
+// `GetById` returns one chapter by id.
+func (a *chapterAppImpl) GetById(cx context.Context, currUid string, chapterId string) app_res.AppRes[val.ChapterVal] {
+	lgr := app_util.TakeLgr(cx)
+
+	if re := vfyChapterId(chapterId); re.IsReject() {
+		return app_res.Reject[val.ChapterVal](re.Code(), re.Msg())
+	}
+
+	ch, err := a.chapterRepo.GetById(chapterId)
+	if err != nil {
+		if repo_infra.IsNotFound(err) {
+			return app_res.Reject[val.ChapterVal](app_res.NotFound, "章节不存在")
+		}
+
+		lgr.Error("[chapterAppImpl.GetById] failed to get chapter", zap.Error(err))
+
+		return app_res.Reject[val.ChapterVal](app_res.ServerError, "获取章节失败")
+	}
+
+	cm, err := a.comicRepo.GetById(ch.ComicId, enum.ComicInclWorkset)
+	if err != nil {
+		lgr.Error("[chapterAppImpl.GetById] failed to get comic", zap.Error(err))
+
+		return app_res.Reject[val.ChapterVal](app_res.ServerError, "获取章节失败")
+	}
+
+	if re := a.chapterSvc.CanListChapter(currUid, cm.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[val.ChapterVal](app_res.ErrCode(re.Code()), re.Msg())
+	}
+
+	v := asmChapterVal(ch)
+
+	return app_res.Accept(&v)
 }
 
 // `GetPinned` returns pinned chapter under target comic.

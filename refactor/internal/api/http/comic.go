@@ -143,6 +143,49 @@ func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, 
 	return &phase, nil
 }
 
+// `GetComicById` godoc
+// @Summary Get Comic By Id
+//
+//	Get one comic by id.
+//	The caller must be a member of the owning team.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
+//
+// @Tags comic
+// @Security ApiKeyAuth
+// @Produce json
+// @Param comic_id path string true "comic id"
+// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ComicVal}"
+// @Failure 400 {object} res.HttpRes
+// @Failure 404 {object} res.HttpRes
+// @Failure 401 {object} res.HttpRes
+// @Failure 500 {object} res.HttpRes
+// @Router /comic/{comic_id} [get]
+func GetComicById(st *state.AppState) iris.Handler {
+	comicApp := st.ComicApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		comicId := cx.Params().Get("comic_id")
+		if comicId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 comic_id 参数")
+			return
+		}
+
+		re := comicApp.GetById(newReqCx(cx), currUid, comicId)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
 // `CreateComic` godoc
 // @Summary Create Comic
 //

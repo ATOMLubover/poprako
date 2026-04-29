@@ -1,14 +1,13 @@
 package token_infra
 
 import (
-	"os"
-	"strconv"
 	"time"
 
 	token_iface "poprako-s/internal/domain/ext/token"
 	"poprako-s/internal/domain/model/aggr"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/spf13/viper"
 )
 
 type jwtParser struct {
@@ -17,24 +16,16 @@ type jwtParser struct {
 }
 
 func NewJwtParser() token_iface.Parser {
-	secret := os.Getenv("JWT_SECRET")
+	secret := viper.GetString("JWT_SECRET")
 	if secret == "" {
 		panic("[NewJwtParser] JWT_SECRET env variable is not set")
 	}
 
-	expStr := os.Getenv("JWT_EXPIRATION_HOURS")
-	if expStr == "" {
-		panic("[NewJwtParser] JWT_EXPIRATION_HOURS env variable is not set")
-	}
-
-	expHrs, err := strconv.Atoi(expStr)
-	if err != nil {
-		panic("[NewJwtParser] JWT_EXPIRATION_HOURS env variable must be a valid integer")
-	}
+	exp := viper.GetInt("JWT_EXPIRATION_HOURS")
 
 	return &jwtParser{
 		secret: []byte(secret),
-		exp:    time.Duration(expHrs) * time.Hour,
+		exp:    time.Duration(exp) * time.Hour,
 	}
 }
 

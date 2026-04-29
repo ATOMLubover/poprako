@@ -96,6 +96,24 @@ func (a *comicLogAppImpl) Update(cx context.Context, currUid string, args *val.C
 	return a.inner.Update(cx, currUid, args)
 }
 
+// `GetById` enriches logger context and forwards call
+func (a *comicLogAppImpl) GetById(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ComicVal] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	lgr := app_util.TakeLgr(cx)
+
+	lgr = lgr.With(
+		zap.String("curr_uid", currUid),
+		zap.String("comic_id", comicId),
+	)
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.GetById(cx, currUid, comicId)
+}
+
 // `Remove` enriches logger context and forwards call
 func (a *comicLogAppImpl) Remove(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
 	if cx == nil {

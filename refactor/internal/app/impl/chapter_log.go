@@ -48,6 +48,23 @@ func (a *chapterLogAppImpl) List(cx context.Context, currUid string, args *val.L
 	return a.inner.List(cx, currUid, args)
 }
 
+// `GetById` enriches logger context and forwards call.
+func (a *chapterLogAppImpl) GetById(cx context.Context, currUid string, chapterId string) app_res.AppRes[val.ChapterVal] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	lgr := app_util.TakeLgr(cx)
+	lgr = lgr.With(
+		zap.String("curr_uid", currUid),
+		zap.String("chapter_id", chapterId),
+	)
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.GetById(cx, currUid, chapterId)
+}
+
 // `GetPinned` enriches logger context and forwards call.
 func (a *chapterLogAppImpl) GetPinned(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ChapterVal] {
 	if cx == nil {

@@ -66,6 +66,49 @@ func ListChapters(st *state.AppState) iris.Handler {
 	}
 }
 
+// `GetChapterById` godoc
+// @Summary Get Chapter By Id
+//
+//	Get one chapter by id.
+//	The caller must be a member of the owning team.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
+//
+// @Tags chapter
+// @Security ApiKeyAuth
+// @Produce json
+// @Param chapter_id path string true "chapter id"
+// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ChapterVal}"
+// @Failure 400 {object} res.HttpRes
+// @Failure 404 {object} res.HttpRes
+// @Failure 401 {object} res.HttpRes
+// @Failure 500 {object} res.HttpRes
+// @Router /chapter/{chapter_id} [get]
+func GetChapterById(st *state.AppState) iris.Handler {
+	chapterApp := st.ChapterApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		chapterId := cx.Params().Get("chapter_id")
+		if chapterId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
+			return
+		}
+
+		re := chapterApp.GetById(newReqCx(cx), currUid, chapterId)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
 // `GetPinnedChapter` godoc
 // @Summary Get Pinned Chapter
 //

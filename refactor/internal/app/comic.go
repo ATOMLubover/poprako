@@ -21,6 +21,10 @@ type ComicApp interface {
 	// `currUid` must be an admin of the owning team
 	Update(cx context.Context, currUid string, args *val.ComicUpdArgs) app_res.AppRes[app_res.None]
 
+	// `GetById` returns one comic by id
+	// `currUid` must be a member of the owning team
+	GetById(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ComicVal]
+
 	// `Remove` soft-deletes one comic by id
 	// `currUid` must be an admin of the owning team
 	Remove(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None]

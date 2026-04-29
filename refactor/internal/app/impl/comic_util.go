@@ -111,6 +111,15 @@ func vfyUpdateComicArgs(args *val.ComicUpdArgs) app_res.AppRes[app_res.None] {
 	return app_res.Accept(&app_res.None{})
 }
 
+// `vfyComicId` validates comic id.
+func vfyComicId(comicId string) app_res.AppRes[app_res.None] {
+	if comicId == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "comic_id 不能为空")
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
 // `vfyRemoveComicId` validates remove arguments.
 func vfyRemoveComicId(comicId string) app_res.AppRes[app_res.None] {
 	if comicId == "" {

@@ -7,10 +7,10 @@ import (
 )
 
 type AppCfg struct {
-	Env AppEnv
+	Env AppEnv `mapstructure:"environment"`
 
-	Db   *DbCfg
-	Http *HttpCfg
+	Db   *DbCfg   `mapstructure:"database"`
+	Http *HttpCfg `mapstructure:"http"`
 }
 
 func NewAppCfg() *AppCfg {

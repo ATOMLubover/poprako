@@ -109,6 +109,15 @@ func vfyUpdateChapterArgs(args *val.ChapterUpdArgs) app_res.AppRes[app_res.None]
 	return app_res.Accept(&app_res.None{})
 }
 
+// `vfyChapterId` validates chapter id.
+func vfyChapterId(chapterId string) app_res.AppRes[app_res.None] {
+	if chapterId == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 不能为空")
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
 // `vfyRemoveChapterId` validates chapter remove id.
 func vfyRemoveChapterId(chapterId string) app_res.AppRes[app_res.None] {
 	if chapterId == "" {

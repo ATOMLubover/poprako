@@ -67,6 +67,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			comic := authorized.Party("/comic")
 			{
 				comic.Get("/workset/{workset_id}", ListComics(st))
+				comic.Get("/{comic_id}", GetComicById(st))
 				comic.Post("", CreateComic(st))
 				comic.Put("/{comic_id}", UpdateComic(st))
 				comic.Delete("/{comic_id}", RemoveComic(st))
@@ -75,6 +76,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			chapter := authorized.Party("/chapter")
 			{
 				chapter.Get("/comic/{comic_id}", ListChapters(st))
+				chapter.Get("/{chapter_id}", GetChapterById(st))
 				chapter.Get("/comic/{comic_id}/pinned", GetPinnedChapter(st))
 				chapter.Post("", CreateChapter(st))
 				chapter.Put("/{chapter_id}", UpdateChapter(st))
