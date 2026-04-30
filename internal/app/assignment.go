@@ -17,6 +17,13 @@ import (
 )
 
 type AssignmentApp interface {
+	// Get 获取指定分配详情
+	Get(
+		cx context.Context,
+		currUserID string,
+		assignmentID string,
+	) (*val.AssignmentInfo, error)
+
 	// ListByChapter 获取指定章节的分配列表
 	ListByChapter(
 		cx context.Context,
@@ -276,6 +283,87 @@ func (a *assignmentAppImpl) ListMy(
 
 	// 返回分配列表
 	return result, nil
+}
+
+func (a *assignmentAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	assignmentID string,
+) (*val.AssignmentInfo, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 查询目标分配信息
+	targetAssignment, err := a.assignmentRepo.GetByID(assignmentID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取分配详情失败：获取分配信息失败",
+			zap.String("assignment_id", assignmentID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取分配信息")
+	}
+
+	// 鉴权：检查当前用户是否为该章节的成员（先按 assignment 规则）
+	_, err = a.assignmentRepo.Get(model.AssignmentQueryOpt{
+		ChapterID: &targetAssignment.ChapterID,
+		UserID:    &currUserID,
+	})
+	if err != nil {
+		// 回退到按 team 的成员关系校验
+		targetChapter, chapterErr := a.chapterRepo.GetByID(targetAssignment.ChapterID)
+		if chapterErr != nil {
+			lgr.Error(
+				"获取分配详情失败：获取章节信息失败",
+				zap.String("chapter_id", targetAssignment.ChapterID),
+				zap.Error(chapterErr),
+			)
+
+			return nil, errors.New("无法获取章节信息")
+		}
+
+		targetComic, comicErr := a.comicRepo.GetByID(targetChapter.ComicID)
+		if comicErr != nil {
+			lgr.Error(
+				"获取分配详情失败：获取漫画信息失败",
+				zap.String("comic_id", targetChapter.ComicID),
+				zap.Error(comicErr),
+			)
+
+			return nil, errors.New("无法获取漫画信息")
+		}
+
+		targetWorkset, worksetErr := a.worksetRepo.GetByID(targetComic.WorksetID)
+		if worksetErr != nil {
+			lgr.Error(
+				"获取分配详情失败：获取作品集信息失败",
+				zap.String("workset_id", targetComic.WorksetID),
+				zap.Error(worksetErr),
+			)
+
+			return nil, errors.New("无法获取作品集信息")
+		}
+
+		_, memberErr := a.memberRepo.Get(model.MemberQueryOpt{
+			UserID: &currUserID,
+			TeamID: &targetWorkset.TeamID,
+		})
+		if memberErr != nil {
+			lgr.Warn(
+				"获取分配详情失败：权限不足",
+				zap.String("curr_user_id", currUserID),
+				zap.String("assignment_id", assignmentID),
+			)
+
+			return nil, errors.New("权限不足")
+		}
+	}
+
+	// 返回分配详情
+	return assembleAssignmentInfo(targetAssignment, a.urlSigner), nil
 }
 
 // hasInclude 检查 includes 切片中是否包含指定的 key
@@ -785,6 +873,28 @@ func (a *logAssignmentAppImpl) ListByChapter(
 	lgr.Info("[logAssignmentAppImpl.ListByChapter] CALL")
 
 	return a.app.ListByChapter(cx, currUserID, args)
+}
+
+func (a *logAssignmentAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	assignmentID string,
+) (*val.AssignmentInfo, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("AssignmentApp 不可用")
+	}
+
+	if assignmentID == "" {
+		return nil, errors.New("分配 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "Get"), zap.String("curr_user_id", currUserID), zap.String("assignment_id", assignmentID))
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logAssignmentAppImpl.Get] CALL")
+
+	return a.app.Get(cx, currUserID, assignmentID)
 }
 
 func (a *logAssignmentAppImpl) ListMy(

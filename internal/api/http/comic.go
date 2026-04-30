@@ -7,6 +7,47 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// GetComicByID godoc
+// @Summary 	根据 ID 获取漫画详情
+// @Description 根据漫画 ID 获取单个漫画的详细信息
+//
+// @Tags 		comic
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		comic_id path string true "漫画 ID"
+//
+// @Success 	200 {object} val.ComicInfo
+//
+// @Router 		/comics/{comic_id} [get]
+func GetComicByID(appState *state.AppState) iris.Handler {
+	comicApp := appState.ComicApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		comicID := ctx.Params().Get("comic_id")
+		if comicID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 comic_id 路径参数")
+			return
+		}
+
+		result, err := comicApp.Get(
+			buildReqCx(ctx),
+			currUserID,
+			comicID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取漫画详情成功", result)
+	}
+}
+
 // ListComics godoc
 // @Summary 	获取指定工作集的漫画列表
 // @Description 获取指定工作集的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组

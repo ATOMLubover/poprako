@@ -7,6 +7,47 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// GetAssignmentByID godoc
+// @Summary 	根据 ID 获取分配详情
+// @Description 根据分配 ID 获取单个分配记录的详细信息
+//
+// @Tags 		assignment
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		assignment_id path string true "分配 ID"
+//
+// @Success 	200 {object} val.AssignmentInfo
+//
+// @Router 		/assignments/{assignment_id} [get]
+func GetAssignmentByID(appState *state.AppState) iris.Handler {
+	assignmentApp := appState.AssignmentApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		assignmentID := ctx.Params().Get("assignment_id")
+		if assignmentID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 assignment_id 路径参数")
+			return
+		}
+
+		result, err := assignmentApp.Get(
+			buildReqCx(ctx),
+			currUserID,
+			assignmentID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取分配详情成功", result)
+	}
+}
+
 // ListChapterAssignments godoc
 // @Summary 	获取章节分配列表
 // @Description 获取指定章节的所有分配记录，仅汉化组成员可访问

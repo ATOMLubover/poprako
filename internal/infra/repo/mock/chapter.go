@@ -155,18 +155,26 @@ func (r *ChapterRepo) Remove(id string) error {
 	return nil
 }
 
-func (r *ChapterRepo) UpdateStats(stats *model.ChapterStats) error {
+func (r *ChapterRepo) LockByID(id string) error {
 	r.ensure()
-	info, ok := r.Infos[stats.ChapterID]
+	if _, ok := r.Infos[id]; !ok {
+		return errNotFound
+	}
+	return nil
+}
+
+func (r *ChapterRepo) UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error {
+	r.ensure()
+	info, ok := r.Infos[id]
 	if !ok {
 		return errNotFound
 	}
 
-	info.TotalUnitCount = stats.TotalUnitCount
-	info.TranslatedUnitCount = stats.TranslatedUnitCount
-	info.ProofreadUnitCount = stats.ProofreadUnitCount
+	info.TotalUnitCount += totalDelta
+	info.TranslatedUnitCount += translatedDelta
+	info.ProofreadUnitCount += proofreadDelta
 	info.UpdatedAt = time.Now()
-	r.Infos[stats.ChapterID] = info
+	r.Infos[id] = info
 
 	return nil
 }

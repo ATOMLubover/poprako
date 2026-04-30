@@ -12,8 +12,6 @@ type PageRepo interface {
 	GetByID(id string) (*model.PageInfo, error)
 	// List 根据筛选条件返回页面信息列表
 	List(opt model.PageQueryOpt) ([]model.PageInfo, error)
-	// GetStatsByID 根据页面 ID 获取页面统计数据
-	GetStatsByID(pageID string) (*model.PageStats, error)
 	// LockByID 在当前事务中锁定页面行，用于串行化同一页面的并发修改
 	LockByID(id string) error
 
@@ -21,8 +19,8 @@ type PageRepo interface {
 	CreateBatch(pages []*model.PageCreation) error
 	// Update 更新页面信息
 	Update(u *model.PageUpdate) error
-	// UpdateStats 仅更新页面的统计字段
-	UpdateStats(stats *model.PageStats) error
+	// UpdateStats 使用原子增量更新页面的 unit 统计字段
+	UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error
 	// Delete 删除页面（硬删除）
 	Delete(id string) error
 	// DeleteBatch 批量删除页面

@@ -77,7 +77,7 @@ func (r *comicRepoImpl) List(opt model.ComicQueryOpt) ([]model.ComicInfo, error)
 
 	var rows []entity.ComicInfoRow
 
-	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
+	if err := db.Order("index DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 

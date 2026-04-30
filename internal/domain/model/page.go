@@ -45,20 +45,6 @@ type PageUpdate struct {
 	Index      int
 	OSSKey     string
 	IsUploaded bool
-
-	// 以下字段仅用于 unit save 时同步更新页面的统计数据
-	TotalUnitCount      int
-	TranslatedUnitCount int
-	ProofreadUnitCount  int
-}
-
-// PageStats 聚合一个页面的统计数据
-type PageStats struct {
-	PageID string
-
-	TotalUnitCount      int
-	TranslatedUnitCount int
-	ProofreadUnitCount  int
 }
 
 // PageQueryOpt 指定页面查询的可选筛选条件

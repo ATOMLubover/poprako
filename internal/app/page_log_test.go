@@ -12,17 +12,21 @@ func TestNewLogPageAppRejectsNilDependencies(t *testing.T) {
 func TestLogPageAppForwardsAllMethods(t *testing.T) {
 	stub := &pageAppStub{}
 	app := NewLogPageApp(stub)
+	_, _ = app.Get(background(), "user-1", "page-1")
 	_, _ = app.Reserve(background(), "user-1", &val.ReserveChapterPagesArgs{ChapterID: "chapter-1", PageCount: 1})
 	_, _ = app.List(background(), "user-1", &val.ListChapterPageArgs{ChapterID: "chapter-1"})
 	_ = app.Update(background(), "user-1", &val.UpdatePageArgs{ID: "page-1"})
 	_ = app.Remove(background(), "user-1", "page-1")
-	if !stub.reserveCalled || !stub.listCalled || !stub.updateCalled || !stub.removeCalled {
+	if !stub.getCalled || !stub.reserveCalled || !stub.listCalled || !stub.updateCalled || !stub.removeCalled {
 		t.Fatalf("expected all page wrapper calls to forward: %#v", stub)
 	}
 }
 
 func TestLogPageAppRejectsInvalidArgs(t *testing.T) {
 	app := NewLogPageApp(&pageAppStub{})
+	if _, err := app.Get(background(), "user-1", ""); err == nil {
+		t.Fatal("expected get validation error")
+	}
 	if _, err := app.Reserve(background(), "user-1", &val.ReserveChapterPagesArgs{}); err == nil {
 		t.Fatal("expected reserve validation error")
 	}

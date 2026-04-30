@@ -24,6 +24,13 @@ type ComicApp interface {
 		args *val.ListComicArgs,
 	) ([]*val.ComicInfo, error)
 
+	// Get 获取指定漫画详情
+	Get(
+		cx context.Context,
+		currUserID string,
+		comicID string,
+	) (*val.ComicInfo, error)
+
 	// Create 创建一部新漫画
 	Create(
 		cx context.Context,
@@ -195,6 +202,63 @@ func (a *comicAppImpl) List(
 
 	// 返回漫画列表
 	return result, nil
+}
+
+func (a *comicAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) (*val.ComicInfo, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 查询目标漫画信息
+	targetComic, err := a.comicRepo.GetByID(comicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取漫画详情失败：获取漫画信息失败",
+			zap.String("comic_id", comicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取漫画信息")
+	}
+
+	// 通过作品集获取所属汉化组 ID 用于鉴权
+	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取漫画详情失败：获取作品集信息失败",
+			zap.String("workset_id", targetComic.WorksetID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取作品集信息")
+	}
+
+	// 鉴权：检查当前用户是否为该汉化组成员
+	_, err = a.memberRepo.Get(model.MemberQueryOpt{
+		UserID: &currUserID,
+		TeamID: &targetWorkset.TeamID,
+	})
+	if err != nil {
+		// 记录权限校验失败
+		lgr.Warn(
+			"获取漫画详情失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+			zap.String("comic_id", comicID),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("权限不足")
+	}
+
+	// 返回漫画详情
+	return assembleComicInfo(targetComic, a.urlSigner), nil
 }
 
 func (a *comicAppImpl) Create(
@@ -697,6 +761,28 @@ func (a *logComicAppImpl) List(
 	lgr.Info("[logComicAppImpl.List] CALL")
 
 	return a.app.List(cx, currUserID, args)
+}
+
+func (a *logComicAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	comicID string,
+) (*val.ComicInfo, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ComicApp 不可用")
+	}
+
+	if comicID == "" {
+		return nil, errors.New("漫画 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "Get"), zap.String("curr_user_id", currUserID), zap.String("comic_id", comicID))
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logComicAppImpl.Get] CALL")
+
+	return a.app.Get(cx, currUserID, comicID)
 }
 
 func (a *logComicAppImpl) Create(

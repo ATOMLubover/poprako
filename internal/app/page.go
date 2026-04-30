@@ -14,6 +14,13 @@ import (
 )
 
 type PageApp interface {
+	// Get 获取指定页面详情
+	Get(
+		cx context.Context,
+		currUserID string,
+		pageID string,
+	) (*val.PageInfo, error)
+
 	// Reserve 预留指定数量的页面并返回上传预签名 URL
 	Reserve(
 		cx context.Context,
@@ -327,6 +334,49 @@ func (a *pageAppImpl) List(
 	return result, nil
 }
 
+func (a *pageAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	pageID string,
+) (*val.PageInfo, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 查询目标页面信息
+	targetPage, err := a.pageRepo.GetByID(pageID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取页面详情失败：获取页面信息失败",
+			zap.String("page_id", pageID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取页面信息")
+	}
+
+	// 鉴权：检查当前用户是否为该章节的监修或图源
+	currAssignment, err := a.assignmentRepo.Get(model.AssignmentQueryOpt{
+		ChapterID: &targetPage.ChapterID,
+		UserID:    &currUserID,
+	})
+	if err != nil || !currAssignment.HasAnyRole(model.RoleReviewer, model.RoleRawProvider) {
+		// 记录权限校验失败
+		lgr.Warn(
+			"获取页面详情失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+			zap.String("page_id", pageID),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("权限不足")
+	}
+
+	// 返回页面详情
+	return assemblePageInfo(targetPage, a.urlSigner), nil
+}
+
 func (a *pageAppImpl) Update(
 	cx context.Context,
 	currUserID string,
@@ -378,10 +428,7 @@ func (a *pageAppImpl) Update(
 				Index:               targetPage.Index,
 				OSSKey:              targetPage.OSSKey,
 				IsUploaded:          args.IsUploaded,
-				TotalUnitCount:      targetPage.TotalUnitCount,
-				TranslatedUnitCount: targetPage.TranslatedUnitCount,
-				ProofreadUnitCount:  targetPage.ProofreadUnitCount,
-			}
+				}
 
 			if txErr := pageRepoTxn.Update(update); txErr != nil {
 				return txErr
@@ -403,13 +450,10 @@ func (a *pageAppImpl) Update(
 
 	// 构造更新载荷
 	update := &model.PageUpdate{
-		ID:                  args.ID,
-		Index:               targetPage.Index,
-		OSSKey:              targetPage.OSSKey,
-		IsUploaded:          args.IsUploaded,
-		TotalUnitCount:      targetPage.TotalUnitCount,
-		TranslatedUnitCount: targetPage.TranslatedUnitCount,
-		ProofreadUnitCount:  targetPage.ProofreadUnitCount,
+		ID:         args.ID,
+		Index:      targetPage.Index,
+		OSSKey:     targetPage.OSSKey,
+		IsUploaded: args.IsUploaded,
 	}
 
 	// 持久化更新
@@ -581,6 +625,28 @@ func (a *logPageAppImpl) Reserve(
 	lgr.Info("[logPageAppImpl.Reserve] CALL")
 
 	return a.app.Reserve(cx, currUserID, args)
+}
+
+func (a *logPageAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	pageID string,
+) (*val.PageInfo, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("PageApp 不可用")
+	}
+
+	if pageID == "" {
+		return nil, errors.New("页面 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(zap.String("method", "Get"), zap.String("curr_user_id", currUserID), zap.String("page_id", pageID))
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logPageAppImpl.Get] CALL")
+
+	return a.app.Get(cx, currUserID, pageID)
 }
 
 func (a *logPageAppImpl) List(

@@ -183,15 +183,6 @@ type ChapterCreation struct {
 	event.EventBase
 }
 
-// ChapterStats 聚合一个章节的统计数据
-type ChapterStats struct {
-	ChapterID string
-
-	TotalUnitCount      int
-	TranslatedUnitCount int
-	ProofreadUnitCount  int
-}
-
 // ChapterUpdate 用于 PUT 语义的章节全量替换，保留已有字段的值
 type ChapterUpdate struct {
 	ID string

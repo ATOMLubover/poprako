@@ -13,19 +13,23 @@ func TestNewLogAssignmentAppRejectsNilDependencies(t *testing.T) {
 func TestLogAssignmentAppForwardsAllMethods(t *testing.T) {
 	stub := &assignmentAppStub{}
 	app := NewLogAssignmentApp(stub)
+	_, _ = app.Get(background(), "user-1", "assignment-1")
 	_, _ = app.ListByChapter(background(), "user-1", &val.ListChapterAssignmentArgs{ChapterID: "chapter-1"})
 	_, _ = app.ListMy(background(), "user-1", &val.ListMyAssignmentArgs{})
 	_, _ = app.Create(background(), "user-1", &val.CreateAssignmentArgs{ChapterID: "chapter-1", UserID: "user-2", Roles: model.RoleMask(model.RoleTranslator)})
 	_ = app.Update(background(), "user-1", &val.UpdateAssignmentArgs{ID: "assignment-1", Roles: model.RoleMask(model.RoleReviewer)})
 	_ = app.Remove(background(), "user-1", "assignment-1")
 	_ = app.JoinInvitorChapter(background(), "user-1", &val.JoinInvitorChapterArgs{InvitationCode: "123456"})
-	if !stub.listByChapterCalled || !stub.listMyCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.joinInvitorChapterCalled {
+	if !stub.getCalled || !stub.listByChapterCalled || !stub.listMyCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.joinInvitorChapterCalled {
 		t.Fatalf("expected all assignment wrapper calls to forward: %#v", stub)
 	}
 }
 
 func TestLogAssignmentAppRejectsInvalidArgs(t *testing.T) {
 	app := NewLogAssignmentApp(&assignmentAppStub{})
+	if _, err := app.Get(background(), "user-1", ""); err == nil {
+		t.Fatal("expected get validation error")
+	}
 	if _, err := app.ListByChapter(background(), "user-1", nil); err == nil {
 		t.Fatal("expected list by chapter validation error")
 	}

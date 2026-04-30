@@ -24,8 +24,10 @@ type ChapterRepo interface {
 	// Delete 删除章节（硬删除）
 	Remove(id string) error
 
-	// UpdateStats 仅更新章节的统计字段（unit 数量等）
-	UpdateStats(stats *model.ChapterStats) error
+	// LockByID 在当前事务中锁定章节行，用于串行化同一章节的并发修改
+	LockByID(id string) error
+	// UpdateStats 使用原子增量更新章节的 unit 统计字段
+	UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error
 	// UpdatePageCount 更新章节的页面数量统计
 	UpdatePageCount(id string, delta int) error
 

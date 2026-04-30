@@ -16,6 +16,13 @@ import (
 )
 
 type ChapterApp interface {
+	// Get 获取指定章节详情
+	Get(
+		cx context.Context,
+		currUserID string,
+		chapterID string,
+	) (*val.ChapterInfo, error)
+
 	// List 获取指定漫画的章节列表
 	List(
 		cx context.Context,
@@ -224,6 +231,77 @@ func (a *chapterAppImpl) List(
 
 	// 返回章节列表
 	return result, nil
+}
+
+func (a *chapterAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	chapterID string,
+) (*val.ChapterInfo, error) {
+	// 获取上下文中的日志记录器
+	lgr := retrieveLgr(cx)
+
+	// 查询目标章节信息
+	targetChapter, err := a.chapterRepo.GetByID(chapterID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取章节详情失败：获取章节信息失败",
+			zap.String("chapter_id", chapterID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取章节信息")
+	}
+
+	// 通过漫画获取所属作品集，再获取所属汉化组 ID 用于鉴权
+	targetComic, err := a.comicRepo.GetByID(targetChapter.ComicID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取章节详情失败：获取漫画信息失败",
+			zap.String("comic_id", targetChapter.ComicID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取漫画信息")
+	}
+
+	// 通过作品集获取所属汉化组 ID
+	targetWorkset, err := a.worksetRepo.GetByID(targetComic.WorksetID)
+	if err != nil {
+		// 记录查询失败
+		lgr.Error(
+			"获取章节详情失败：获取作品集信息失败",
+			zap.String("workset_id", targetComic.WorksetID),
+			zap.Error(err),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("无法获取作品集信息")
+	}
+
+	// 鉴权：检查当前用户是否为该汉化组成员
+	_, err = a.memberRepo.Get(model.MemberQueryOpt{
+		UserID: &currUserID,
+		TeamID: &targetWorkset.TeamID,
+	})
+	if err != nil {
+		// 记录权限校验失败
+		lgr.Warn(
+			"获取章节详情失败：权限不足",
+			zap.String("curr_user_id", currUserID),
+			zap.String("chapter_id", chapterID),
+		)
+
+		// 返回客户端可展示的错误
+		return nil, errors.New("权限不足")
+	}
+
+	// 返回章节详情
+	return assembleChapterInfo(targetChapter, a.urlSigner), nil
 }
 
 func (a *chapterAppImpl) GetComicPinned(
@@ -903,6 +981,32 @@ func (a *logChapterAppImpl) GetComicPinned(
 	lgr.Info("[logChapterAppImpl.GetComicPinned] CALL")
 
 	return a.app.GetComicPinned(cx, currUserID, comicID)
+}
+
+func (a *logChapterAppImpl) Get(
+	cx context.Context,
+	currUserID string,
+	chapterID string,
+) (*val.ChapterInfo, error) {
+	if a == nil || a.app == nil {
+		return nil, errors.New("ChapterApp 不可用")
+	}
+
+	if chapterID == "" {
+		return nil, errors.New("章节 ID 不能为空")
+	}
+
+	lgr := retrieveLgr(cx).With(
+		zap.String("method", "Get"),
+		zap.String("curr_user_id", currUserID),
+		zap.String("chapter_id", chapterID),
+	)
+
+	cx = injectLgr(cx, lgr)
+
+	lgr.Info("[logChapterAppImpl.Get] CALL")
+
+	return a.app.Get(cx, currUserID, chapterID)
 }
 
 func (a *logChapterAppImpl) List(

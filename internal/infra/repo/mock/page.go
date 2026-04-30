@@ -69,21 +69,6 @@ func (r *PageRepo) List(opt model.PageQueryOpt) ([]model.PageInfo, error) {
 	return items, nil
 }
 
-func (r *PageRepo) GetStatsByID(pageID string) (*model.PageStats, error) {
-	r.ensure()
-	info, ok := r.Infos[pageID]
-	if !ok {
-		return nil, errNotFound
-	}
-	stats := model.PageStats{
-		PageID:              pageID,
-		TotalUnitCount:      info.TotalUnitCount,
-		TranslatedUnitCount: info.TranslatedUnitCount,
-		ProofreadUnitCount:  info.ProofreadUnitCount,
-	}
-	return &stats, nil
-}
-
 func (r *PageRepo) LockByID(id string) error {
 	r.ensure()
 	if _, ok := r.Infos[id]; !ok {
@@ -120,26 +105,23 @@ func (r *PageRepo) Update(u *model.PageUpdate) error {
 	info.Index = u.Index
 	info.OSSKey = u.OSSKey
 	info.IsUploaded = u.IsUploaded
-	info.TotalUnitCount = u.TotalUnitCount
-	info.TranslatedUnitCount = u.TranslatedUnitCount
-	info.ProofreadUnitCount = u.ProofreadUnitCount
 	info.UpdatedAt = time.Now()
 	r.Infos[u.ID] = info
 
 	return nil
 }
 
-func (r *PageRepo) UpdateStats(stats *model.PageStats) error {
+func (r *PageRepo) UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error {
 	r.ensure()
-	info, ok := r.Infos[stats.PageID]
+	info, ok := r.Infos[id]
 	if !ok {
 		return errNotFound
 	}
-	info.TotalUnitCount = stats.TotalUnitCount
-	info.TranslatedUnitCount = stats.TranslatedUnitCount
-	info.ProofreadUnitCount = stats.ProofreadUnitCount
+	info.TotalUnitCount += totalDelta
+	info.TranslatedUnitCount += translatedDelta
+	info.ProofreadUnitCount += proofreadDelta
 	info.UpdatedAt = time.Now()
-	r.Infos[stats.PageID] = info
+	r.Infos[id] = info
 	return nil
 }
 

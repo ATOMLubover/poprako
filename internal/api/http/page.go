@@ -7,6 +7,47 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// GetPageByID godoc
+// @Summary 	根据 ID 获取页面详情
+// @Description 根据页面 ID 获取单个页面的详细信息
+//
+// @Tags 		page
+// @Security 	ApiKeyAuth
+// @Produce 	json
+// @Param 		page_id path string true "页面 ID"
+//
+// @Success 	200 {object} val.PageInfo
+//
+// @Router 		/pages/{page_id} [get]
+func GetPageByID(appState *state.AppState) iris.Handler {
+	pageApp := appState.PageApp
+
+	return func(ctx iris.Context) {
+		currUserID, ok := extractCurrUserID(ctx)
+		if !ok {
+			return
+		}
+
+		pageID := ctx.Params().Get("page_id")
+		if pageID == "" {
+			reject(ctx, iris.StatusBadRequest, "缺少 page_id 路径参数")
+			return
+		}
+
+		result, err := pageApp.Get(
+			buildReqCx(ctx),
+			currUserID,
+			pageID,
+		)
+		if err != nil {
+			reject(ctx, iris.StatusForbidden, err.Error())
+			return
+		}
+
+		accept(ctx, "获取页面详情成功", result)
+	}
+}
+
 // ListChapterPages godoc
 // @Summary 	获取章节页面列表
 // @Description 获取指定章节的所有页面，注意当列表为空，会返回 null 而不是空数组

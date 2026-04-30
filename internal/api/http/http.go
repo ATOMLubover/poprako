@@ -109,6 +109,7 @@ func initApp(appState *state.AppState) *iris.Application {
 	// 漫画相关路由
 	comicParty := authorizedParty.Party("/comics")
 	{
+		comicParty.Get("/{comic_id}", GetComicByID(appState))
 		comicParty.Get("/", ListComics(appState))
 		comicParty.Post("/", CreateComic(appState))
 		comicParty.Put("/{comic_id}", PatchComic(appState))
@@ -121,6 +122,7 @@ func initApp(appState *state.AppState) *iris.Application {
 	// 章节相关路由
 	chapterParty := authorizedParty.Party("/chapters")
 	{
+		chapterParty.Get("/{chapter_id}", GetChapterByID(appState))
 		chapterParty.Get("/", ListComicChapters(appState))
 		chapterParty.Post("/", CreateComicChapter(appState))
 		chapterParty.Post("/{chapter_id}/invitations", InviteChapterAssignee(appState))
@@ -134,6 +136,7 @@ func initApp(appState *state.AppState) *iris.Application {
 	// 页面相关路由
 	pageParty := authorizedParty.Party("/pages")
 	{
+		pageParty.Get("/{page_id}", GetPageByID(appState))
 		pageParty.Get("/", ListChapterPages(appState))
 		pageParty.Post("/", ReserveChapterPages(appState))
 		pageParty.Put("/{page_id}", UpdatePage(appState))
@@ -147,6 +150,7 @@ func initApp(appState *state.AppState) *iris.Application {
 		assignmentParty.Get("/", ListChapterAssignments(appState))
 		assignmentParty.Post("/join", JoinInvitorChapter(appState))
 		assignmentParty.Post("/", CreateChapterAssignment(appState))
+		assignmentParty.Get("/{assignment_id}", GetAssignmentByID(appState))
 		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))
 	}
 

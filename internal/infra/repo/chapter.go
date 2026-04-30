@@ -11,6 +11,7 @@ import (
 	entity "poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type chapterRepoImpl struct {
@@ -208,13 +209,21 @@ func (r *chapterRepoImpl) Remove(id string) error {
 		}).Error
 }
 
-func (r *chapterRepoImpl) UpdateStats(stats *model.ChapterStats) error {
+func (r *chapterRepoImpl) LockByID(id string) error {
 	return r.gdb.Table(entity.ChapterTable).
-		Where("id = ? AND deleted_at IS NULL", stats.ChapterID).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Select("id").
+		First(&entity.ChapterInfoRow{}).Error
+}
+
+func (r *chapterRepoImpl) UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error {
+	return r.gdb.Table(entity.ChapterTable).
+		Where("id = ? AND deleted_at IS NULL", id).
 		Updates(map[string]any{
-			"total_unit_count":      stats.TotalUnitCount,
-			"translated_unit_count": stats.TranslatedUnitCount,
-			"proofread_unit_count":  stats.ProofreadUnitCount,
+			"total_unit_count":      gorm.Expr("total_unit_count + ?", totalDelta),
+			"translated_unit_count": gorm.Expr("translated_unit_count + ?", translatedDelta),
+			"proofread_unit_count":  gorm.Expr("proofread_unit_count + ?", proofreadDelta),
 			"updated_at":            time.Now(),
 		}).Error
 }

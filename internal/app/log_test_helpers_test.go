@@ -8,6 +8,7 @@ import (
 )
 
 type assignmentAppStub struct {
+	getCalled                bool
 	listByChapterCalled      bool
 	listMyCalled             bool
 	createCalled             bool
@@ -19,6 +20,11 @@ type assignmentAppStub struct {
 func (s *assignmentAppStub) ListByChapter(context.Context, string, *val.ListChapterAssignmentArgs) ([]*val.AssignmentInfo, error) {
 	s.listByChapterCalled = true
 	return []*val.AssignmentInfo{{ID: "assignment-1"}}, nil
+}
+
+func (s *assignmentAppStub) Get(context.Context, string, string) (*val.AssignmentInfo, error) {
+	s.getCalled = true
+	return &val.AssignmentInfo{ID: "assignment-1"}, nil
 }
 
 func (s *assignmentAppStub) ListMy(context.Context, string, *val.ListMyAssignmentArgs) ([]*val.AssignmentInfo, error) {
@@ -47,6 +53,7 @@ func (s *assignmentAppStub) JoinInvitorChapter(context.Context, string, *val.Joi
 }
 
 type chapterAppStub struct {
+	getCalled            bool
 	listCalled           bool
 	getComicPinnedCalled bool
 	createCalled         bool
@@ -58,6 +65,11 @@ type chapterAppStub struct {
 func (s *chapterAppStub) List(context.Context, string, *val.ListChapterArgs) ([]*val.ChapterInfo, error) {
 	s.listCalled = true
 	return []*val.ChapterInfo{{ID: "chapter-1"}}, nil
+}
+
+func (s *chapterAppStub) Get(context.Context, string, string) (*val.ChapterInfo, error) {
+	s.getCalled = true
+	return &val.ChapterInfo{ID: "chapter-1"}, nil
 }
 
 func (s *chapterAppStub) GetComicPinned(context.Context, string, string) (*val.ChapterInfo, error) {
@@ -86,6 +98,7 @@ func (s *chapterAppStub) InviteAssignee(context.Context, string, *val.InviteChap
 }
 
 type comicAppStub struct {
+	getCalled          bool
 	listCalled         bool
 	createCalled       bool
 	updateCalled       bool
@@ -97,6 +110,11 @@ type comicAppStub struct {
 func (s *comicAppStub) List(context.Context, string, *val.ListComicArgs) ([]*val.ComicInfo, error) {
 	s.listCalled = true
 	return []*val.ComicInfo{{ID: "comic-1"}}, nil
+}
+
+func (s *comicAppStub) Get(context.Context, string, string) (*val.ComicInfo, error) {
+	s.getCalled = true
+	return &val.ComicInfo{ID: "comic-1"}, nil
 }
 
 func (s *comicAppStub) Create(context.Context, string, *val.CreateComicArgs) (*val.CreateComicRes, error) {
@@ -191,10 +209,16 @@ func (s *memberAppStub) JoinTeam(context.Context, string, *val.JoinTeamArgs) err
 }
 
 type pageAppStub struct {
+	getCalled     bool
 	reserveCalled bool
 	listCalled    bool
 	updateCalled  bool
 	removeCalled  bool
+}
+
+func (s *pageAppStub) Get(context.Context, string, string) (*val.PageInfo, error) {
+	s.getCalled = true
+	return &val.PageInfo{ID: "page-1"}, nil
 }
 
 func (s *pageAppStub) Reserve(context.Context, string, *val.ReserveChapterPagesArgs) (*val.ReserveChapterPagesRes, error) {

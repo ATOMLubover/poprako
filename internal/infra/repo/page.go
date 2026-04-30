@@ -71,26 +71,6 @@ func (r *pageRepoImpl) List(opt model.PageQueryOpt) ([]model.PageInfo, error) {
 	return items, nil
 }
 
-func (r *pageRepoImpl) GetStatsByID(pageID string) (*model.PageStats, error) {
-
-	var row entity.PageInfoRow
-
-	err := r.gdb.Table(entity.PageTable).
-		Select("id", "total_unit_count", "translated_unit_count", "proofread_unit_count").
-		Where("id = ?", pageID).
-		First(&row).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.PageStats{
-		PageID:              row.ID,
-		TotalUnitCount:      row.TotalUnitCount,
-		TranslatedUnitCount: row.TranslatedUnitCount,
-		ProofreadUnitCount:  row.ProofreadUnitCount,
-	}, nil
-}
-
 func (r *pageRepoImpl) LockByID(id string) error {
 	return r.gdb.Table(entity.PageTable).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -129,23 +109,20 @@ func (r *pageRepoImpl) Update(u *model.PageUpdate) error {
 	return r.gdb.Table(entity.PageTable).
 		Where("id = ?", u.ID).
 		Updates(map[string]any{
-			"index":                 u.Index,
-			"oss_key":               u.OSSKey,
-			"uploaded":              u.IsUploaded,
-			"total_unit_count":      u.TotalUnitCount,
-			"translated_unit_count": u.TranslatedUnitCount,
-			"proofread_unit_count":  u.ProofreadUnitCount,
-			"updated_at":            time.Now(),
+			"index":      u.Index,
+			"oss_key":    u.OSSKey,
+			"uploaded":   u.IsUploaded,
+			"updated_at": time.Now(),
 		}).Error
 }
 
-func (r *pageRepoImpl) UpdateStats(stats *model.PageStats) error {
+func (r *pageRepoImpl) UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error {
 	return r.gdb.Table(entity.PageTable).
-		Where("id = ?", stats.PageID).
+		Where("id = ?", id).
 		Updates(map[string]any{
-			"total_unit_count":      stats.TotalUnitCount,
-			"translated_unit_count": stats.TranslatedUnitCount,
-			"proofread_unit_count":  stats.ProofreadUnitCount,
+			"total_unit_count":      gorm.Expr("total_unit_count + ?", totalDelta),
+			"translated_unit_count": gorm.Expr("translated_unit_count + ?", translatedDelta),
+			"proofread_unit_count":  gorm.Expr("proofread_unit_count + ?", proofreadDelta),
 			"updated_at":            time.Now(),
 		}).Error
 }

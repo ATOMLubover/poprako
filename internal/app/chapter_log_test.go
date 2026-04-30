@@ -12,18 +12,22 @@ func TestNewLogChapterAppRejectsNilDependencies(t *testing.T) {
 func TestLogChapterAppForwardsAllMethods(t *testing.T) {
 	stub := &chapterAppStub{}
 	app := NewLogChapterApp(stub)
+	_, _ = app.Get(background(), "user-1", "chapter-1")
 	_, _ = app.List(background(), "user-1", &val.ListChapterArgs{ComicID: "comic-1"})
 	_, _ = app.Create(background(), "user-1", &val.CreateChapterArgs{ComicID: "comic-1"})
 	_ = app.Update(background(), "user-1", &val.UpdateChapterArgs{ChapterID: "chapter-1"})
 	_ = app.Remove(background(), "user-1", "chapter-1")
 	_, _ = app.InviteAssignee(background(), "user-1", &val.InviteChapterAssigneeArgs{ChapterID: "chapter-1", InviteeQQ: "10001"})
-	if !stub.listCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.inviteCalled {
+	if !stub.getCalled || !stub.listCalled || !stub.createCalled || !stub.updateCalled || !stub.removeCalled || !stub.inviteCalled {
 		t.Fatalf("expected all chapter wrapper calls to forward: %#v", stub)
 	}
 }
 
 func TestLogChapterAppRejectsInvalidArgs(t *testing.T) {
 	app := NewLogChapterApp(&chapterAppStub{})
+	if _, err := app.Get(background(), "user-1", ""); err == nil {
+		t.Fatal("expected get validation error")
+	}
 	if _, err := app.List(background(), "user-1", nil); err == nil {
 		t.Fatal("expected list validation error")
 	}
