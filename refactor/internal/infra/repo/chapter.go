@@ -233,6 +233,20 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 		Updates(updRow).Error
 }
 
+// `SetPageCount` overwrites the page count of one chapter.
+func (r *chapterRepoImpl) SetPageCount(id string, count int) repo_iface.RepoErr {
+	updRow := &entity.ChapterPageCountUpdRow{
+		PageCount: count,
+		UpdatedAt: time.Now(),
+	}
+
+	return r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Select("page_count", "updated_at").
+		Updates(updRow).Error
+}
+
 // `Remove` soft-deletes one chapter.
 func (r *chapterRepoImpl) Remove(id string) repo_iface.RepoErr {
 	now := time.Now()

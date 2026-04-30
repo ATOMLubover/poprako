@@ -26,6 +26,9 @@ type ChapterRepo interface {
 	// `Update` applies mutable fields to one chapter.
 	Update(upd *aggr.ChapterUpd) RepoErr
 
+	// `SetPageCount` overwrites the page count of one chapter.
+	SetPageCount(id string, count int) RepoErr
+
 	// `Remove` soft-deletes one chapter.
 	Remove(id string) RepoErr
 }

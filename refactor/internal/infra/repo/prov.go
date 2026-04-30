@@ -42,6 +42,10 @@ func (p *provImpl) ChapterRepo() repo_iface.ChapterRepo {
 	return NewChapterRepo(p.gdb)
 }
 
+func (p *provImpl) PageRepo() repo_iface.PageRepo {
+	return NewPageRepo(p.gdb)
+}
+
 func (p *provImpl) AssignmentInvRepo() repo_iface.AssignmentInvRepo {
 	return NewAssignmentInvRepo(p.gdb)
 }

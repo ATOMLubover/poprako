@@ -199,3 +199,17 @@ type ChapterRemoveUpdRow struct {
 func (*ChapterRemoveUpdRow) TableName() string {
 	return CHAPTER_TABLE
 }
+
+// `ChapterPageCountUpdRow` is write model for page count overwrite.
+type ChapterPageCountUpdRow struct {
+	// `PageCount` is the new page count value.
+	PageCount int `gorm:"column:page_count"`
+
+	// `UpdatedAt` is the row update timestamp.
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+// `TableName` returns table name for `ChapterPageCountUpdRow`.
+func (*ChapterPageCountUpdRow) TableName() string {
+	return CHAPTER_TABLE
+}

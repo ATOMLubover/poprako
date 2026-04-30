@@ -76,11 +76,19 @@ func NewApp(st *state.AppState) *iris.Application {
 			chapter := authorized.Party("/chapter")
 			{
 				chapter.Get("/comic/{comic_id}", ListChapters(st))
+				chapter.Get("/{chapter_id}/pages", ListChapterPages(st))
 				chapter.Get("/{chapter_id}", GetChapterById(st))
 				chapter.Get("/comic/{comic_id}/pinned", GetPinnedChapter(st))
 				chapter.Post("", CreateChapter(st))
+				chapter.Post("/{chapter_id}/pages/reserve", ResvChapterPages(st))
 				chapter.Put("/{chapter_id}", UpdateChapter(st))
+				chapter.Delete("/{chapter_id}/pages", RemoveChapterPages(st))
 				chapter.Delete("/{chapter_id}", RemoveChapter(st))
+			}
+
+			page := authorized.Party("/page")
+			{
+				page.Post("/{page_id}/image/uploaded", MarkPageImageUploaded(st))
 			}
 
 			sysMail := authorized.Party("/sys-mail")

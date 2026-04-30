@@ -2,6 +2,7 @@ package app_impl
 
 import (
 	"context"
+	"time"
 
 	app_iface "poprako-s/internal/app"
 	app_res "poprako-s/internal/app/res"
@@ -15,6 +16,7 @@ import (
 	"poprako-s/internal/domain/svc"
 	event_iface "poprako-s/internal/event"
 	repo_infra "poprako-s/internal/infra/repo"
+	"poprako-s/pkg/util"
 
 	"go.uber.org/zap"
 )
@@ -81,7 +83,7 @@ func NewChapterApp(
 		chapterRepo:    chapterRepo,
 		assignmentRepo: assignmentRepo,
 		evBus:          evBus,
-		errClsf:         errClsf,
+		errClsf:        errClsf,
 	}
 }
 
@@ -362,6 +364,8 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
+		pageRepo := prov.PageRepo()
+		ossMsgRepo := prov.OssMsgRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
 		ch, err := chapterRepo.GetById(chapterId)
@@ -391,6 +395,32 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 		assignedUserIds := make([]string, 0, len(assignments))
 		for i := range assignments {
 			assignedUserIds = append(assignedUserIds, assignments[i].UserId)
+		}
+
+		// Enqueue page image cleanup and clear page count before removing the chapter.
+		limit := ch.PageCount
+		if limit <= 0 {
+			limit = 10000
+		}
+		pages, err := pageRepo.List(&query.ListPageOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: limit}})
+		if err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+		}
+		now := time.Now()
+		expireAt := now.Add(30 * time.Minute)
+		for i := range pages {
+			if pages[i].ImageKey == nil || *pages[i].ImageKey == "" {
+				continue
+			}
+			if err := ossMsgRepo.SavePendingDel(&aggr.OssDelMsg{Id: util.GenId("oss_msg"), ResTyp: enum.OssResPageImage, ResId: pages[i].Id, Status: enum.OssMsgStatePending, ObjKeys: []string{*pages[i].ImageKey}, VisibleAt: now, ExpireAt: expireAt}); err != nil {
+				return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+			}
+		}
+		if err := pageRepo.DeleteByChapterId(ch.Id); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+		}
+		if err := chapterRepo.SetPageCount(ch.Id, 0); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
 		if err := assignmentRepo.DeleteByChapterId(ch.Id); err != nil {

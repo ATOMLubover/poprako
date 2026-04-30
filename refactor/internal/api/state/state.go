@@ -25,6 +25,9 @@ type AppState struct {
 	// `ChapterApp` handles chapter-related use-cases.
 	ChapterApp app_iface.ChapterApp
 
+	// `PageApp` handles page-related use-cases.
+	PageApp app_iface.PageApp
+
 	// `UserStatsApp` handles user stats related use-cases.
 	UserStatsApp app_iface.UserStatsApp
 
@@ -46,6 +49,7 @@ func NewAppState(
 	worksetApp app_iface.WorksetApp,
 	comicApp app_iface.ComicApp,
 	chapterApp app_iface.ChapterApp,
+	pageApp app_iface.PageApp,
 	userStatsApp app_iface.UserStatsApp,
 	sysMailApp app_iface.SysMailApp,
 	assignmentInvApp app_iface.AssignmentInvApp,
@@ -58,6 +62,7 @@ func NewAppState(
 		WorksetApp:       worksetApp,
 		ComicApp:         comicApp,
 		ChapterApp:       chapterApp,
+		PageApp:          pageApp,
 		UserStatsApp:     userStatsApp,
 		SysMailApp:       sysMailApp,
 		AssignmentInvApp: assignmentInvApp,
