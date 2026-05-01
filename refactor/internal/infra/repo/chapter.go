@@ -247,6 +247,19 @@ func (r *chapterRepoImpl) SetPageCount(id string, count int) repo_iface.RepoErr 
 		Updates(updRow).Error
 }
 
+// `AdjustUnitCounts` atomically applies unit count delta to one chapter.
+func (r *chapterRepoImpl) AdjustUnitCounts(id string, deltaTotal int, deltaTranslated int, deltaProofread int) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("id = ? AND deleted_at IS NULL", id).
+		Updates(map[string]any{
+			"total_unit_count":      gorm.Expr("total_unit_count + ?", deltaTotal),
+			"translated_unit_count": gorm.Expr("translated_unit_count + ?", deltaTranslated),
+			"proofread_unit_count":  gorm.Expr("proofread_unit_count + ?", deltaProofread),
+			"updated_at":            time.Now(),
+		}).Error
+}
+
 // `Remove` soft-deletes one chapter.
 func (r *chapterRepoImpl) Remove(id string) repo_iface.RepoErr {
 	now := time.Now()

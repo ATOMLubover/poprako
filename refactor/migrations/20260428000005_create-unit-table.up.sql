@@ -18,9 +18,7 @@ CREATE TABLE IF NOT EXISTS "t_unit" (
     "last_proofreader_id" TEXT REFERENCES "t_user" ("id") ON DELETE SET NULL,
 
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ DEFAULT NOW(),
-
-    UNIQUE ("page_id", "index")
+    "updated_at" TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS "idx_unit_page_id" ON "t_unit" ("page_id");

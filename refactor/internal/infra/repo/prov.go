@@ -46,6 +46,10 @@ func (p *provImpl) PageRepo() repo_iface.PageRepo {
 	return NewPageRepo(p.gdb)
 }
 
+func (p *provImpl) UnitRepo() repo_iface.UnitRepo {
+	return NewUnitRepo(p.gdb)
+}
+
 func (p *provImpl) AssignmentInvRepo() repo_iface.AssignmentInvRepo {
 	return NewAssignmentInvRepo(p.gdb)
 }

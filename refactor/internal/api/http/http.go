@@ -88,6 +88,8 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			page := authorized.Party("/page")
 			{
+				page.Get("/{page_id}/units", ListPageUnits(st))
+				page.Post("/{page_id}/units", SavePageUnits(st))
 				page.Post("/{page_id}/image/uploaded", MarkPageImageUploaded(st))
 			}
 

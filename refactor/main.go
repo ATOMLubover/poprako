@@ -66,6 +66,7 @@ func main() {
 	comicRepo := repo_infra.NewComicRepo(gdb)
 	chapterRepo := repo_infra.NewChapterRepo(gdb)
 	pageRepo := repo_infra.NewPageRepo(gdb)
+	unitRepo := repo_infra.NewUnitRepo(gdb)
 	assignmentInvRepo := repo_infra.NewAssignmentInvRepo(gdb)
 	assignmentRepo := repo_infra.NewAssignmentRepo(gdb)
 	userStatsRepo := repo_infra.NewUserStatsRepo(gdb)
@@ -80,6 +81,7 @@ func main() {
 	comicSvc := svc.NewComicSvc()
 	chapterSvc := svc.NewChapterSvc()
 	pageSvc := svc.NewPageSvc()
+	unitSvc := svc.UnitSvc{}
 	assignmentInvSvc := svc.NewAssignmentInvSvc()
 	assignmentSvc := svc.NewAssignmentSvc()
 
@@ -125,6 +127,9 @@ func main() {
 	pageApp := app_impl.NewPageLogApp(
 		app_impl.NewPageApp(txnCtrl, pageSvc, chapterSvc, ossMsgSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo, ossClient, errClsf),
 	)
+	unitApp := app_impl.NewUnitLogApp(
+		app_impl.NewUnitApp(txnCtrl, unitSvc, comicRepo, chapterRepo, pageRepo, unitRepo, assignmentRepo, errClsf),
+	)
 	userStatsApp := app_impl.NewUserStatsLogApp(
 		app_impl.NewUserStatsApp(userStatsRepo),
 	)
@@ -169,6 +174,7 @@ func main() {
 		comicApp,
 		chapterApp,
 		pageApp,
+		unitApp,
 		userStatsApp,
 		sysMailApp,
 		assignmentInvApp,

@@ -7,9 +7,9 @@ import (
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/infra/repo/entity"
-)
 
-import "gorm.io/gorm"
+	"gorm.io/gorm"
+)
 
 // `pageRepoImpl` is the GORM-backed implementation of `PageRepo`.
 type pageRepoImpl struct {
@@ -111,6 +111,22 @@ func (r *pageRepoImpl) MarkImageUploaded(id string) repo_iface.RepoErr {
 	}
 
 	return r.gdb.Table(entity.PAGE_TABLE).Where("id = ?", id).Select("image_uploaded", "updated_at").Updates(upRow).Error
+}
+
+// `SetUnitCounts` overwrites unit count fields of one page.
+func (r *pageRepoImpl) SetUnitCounts(id string, total int, translated int, proofread int) repo_iface.RepoErr {
+	updRow := &entity.PageUnitCountsUpdRow{
+		TotalUnitCount:      total,
+		TranslatedUnitCount: translated,
+		ProofreadUnitCount:  proofread,
+		UpdatedAt:           time.Now(),
+	}
+
+	return r.gdb.
+		Table(entity.PAGE_TABLE).
+		Where("id = ?", id).
+		Select("total_unit_count", "translated_unit_count", "proofread_unit_count", "updated_at").
+		Updates(updRow).Error
 }
 
 // `DeleteByChapterId` hard-deletes all pages under one chapter.

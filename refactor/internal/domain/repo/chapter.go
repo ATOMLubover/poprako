@@ -29,6 +29,9 @@ type ChapterRepo interface {
 	// `SetPageCount` overwrites the page count of one chapter.
 	SetPageCount(id string, count int) RepoErr
 
+	// `AdjustUnitCounts` atomically applies page-level unit count delta to one chapter.
+	AdjustUnitCounts(id string, deltaTotal int, deltaTranslated int, deltaProofread int) RepoErr
+
 	// `Remove` soft-deletes one chapter.
 	Remove(id string) RepoErr
 }

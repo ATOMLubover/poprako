@@ -126,3 +126,23 @@ type PageImageUploadedUpdRow struct {
 func (*PageImageUploadedUpdRow) TableName() string {
 	return PAGE_TABLE
 }
+
+// `PageUnitCountsUpdRow` is the write model for page unit count overwrite.
+type PageUnitCountsUpdRow struct {
+	// `TotalUnitCount` is the new total unit count.
+	TotalUnitCount int `gorm:"column:total_unit_count"`
+
+	// `TranslatedUnitCount` is the new translated unit count.
+	TranslatedUnitCount int `gorm:"column:translated_unit_count"`
+
+	// `ProofreadUnitCount` is the new proofread unit count.
+	ProofreadUnitCount int `gorm:"column:proofread_unit_count"`
+
+	// `UpdatedAt` is the row update timestamp.
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+// `TableName` returns the table name for `PageUnitCountsUpdRow`.
+func (*PageUnitCountsUpdRow) TableName() string {
+	return PAGE_TABLE
+}

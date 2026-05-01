@@ -22,6 +22,9 @@ type PageRepo interface {
 	// `MarkImageUploaded` marks one page image as uploaded.
 	MarkImageUploaded(id string) RepoErr
 
+	// `SetUnitCounts` overwrites unit count fields of one page.
+	SetUnitCounts(id string, total int, translated int, proofread int) RepoErr
+
 	// `DeleteByChapterId` hard-deletes all pages under one chapter.
 	DeleteByChapterId(chapterId string) RepoErr
 }

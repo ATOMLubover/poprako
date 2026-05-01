@@ -12,6 +12,7 @@ type Prov interface {
 	ComicRepo() ComicRepo
 	ChapterRepo() ChapterRepo
 	PageRepo() PageRepo
+	UnitRepo() UnitRepo
 	AssignmentInvRepo() AssignmentInvRepo
 	AssignmentRepo() AssignmentRepo
 	UserStatsRepo() UserStatsRepo
