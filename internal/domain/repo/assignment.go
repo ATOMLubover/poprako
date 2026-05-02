@@ -1,27 +1,33 @@
-package repo
+package repo_iface
 
 import (
-	"context"
-
-	"poprako-s/internal/domain/model"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/query"
 )
 
-// AssignmentRepo 是分配记录仓库的接口
+// `AssignmentRepo` defines persistence contract for assignment.
 type AssignmentRepo interface {
-	// GetByID 根据分配记录 ID 获取分配信息；若不存在返回 error
-	GetByID(id string) (*model.AssignmentInfo, error)
-	// Get 根据筛选条件获取单条分配信息；若不存在返回 error
-	Get(opt model.AssignmentQueryOpt) (*model.AssignmentInfo, error)
-	// List 根据筛选条件返回分配信息列表
-	List(opt model.AssignmentQueryOpt) ([]model.AssignmentInfo, error)
-	// Exist 根据筛选条件判断是否存在匹配的分配记录
-	Exist(opt model.AssignmentQueryOpt) (bool, error)
+	// `GetById` returns one assignment by id.
+	GetById(id string) (*aggr.Assignment, RepoErr)
 
-	// UpsertCreate UPSERT 语义：若 (chapter_id, user_id) 已存在则更新，不存在则创建
-	UpsertCreate(c *model.AssignmentCreation) (*model.AssignmentInfo, error)
-	// Delete 删除分配记录（硬删除）
-	Delete(id string) error
+	// `GetByChapterUserId` returns one assignment by chapter and user.
+	GetByChapterUserId(chapterId string, userId string) (*aggr.Assignment, RepoErr)
 
-	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 AssignmentRepo 实例
-	FromTxnCx(cx context.Context) (AssignmentRepo, error)
+	// `List` returns assignment list by query options.
+	List(opt *query.ListAssignmentOpt) ([]*aggr.Assignment, RepoErr)
+
+	// `Create` inserts one assignment.
+	Create(cre *aggr.AssignmentCre) (*aggr.Assignment, RepoErr)
+
+	// `Put` overwrites all role timestamp fields.
+	Put(put *aggr.AssignmentPut) RepoErr
+
+	// `Delete` executes hard delete on one assignment by id.
+	Delete(id string) RepoErr
+
+	// `DeleteByChapterUserId` executes hard delete by chapter and user.
+	DeleteByChapterUserId(chapterId string, userId string) RepoErr
+
+	// `DeleteByChapterId` executes hard delete by chapter.
+	DeleteByChapterId(chapterId string) RepoErr
 }

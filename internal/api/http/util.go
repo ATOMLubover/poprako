@@ -3,58 +3,39 @@ package http
 import (
 	"context"
 
+	"poprako-s/internal/api/http/middleware"
+	app_util "poprako-s/internal/app/util"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/pkg/util"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/requestid"
 	"go.uber.org/zap"
 )
 
-func reject(
-	ctx iris.Context,
-	code int,
-	message string,
-) {
-	ctx.StatusCode(code)
-
-	_ = ctx.JSON(FormatResponse{
-		Code:    code,
-		Message: message,
-	})
-}
-
-func accept(
-	ctx iris.Context,
-	message string,
-	data any,
-) {
-	// 考虑到兼容性（如中间件挤占 status code）
-	// 统一使用 200 状态码，错误信息通过 code 字段传递
-	ctx.StatusCode(iris.StatusOK)
-
-	_ = ctx.JSON(FormatResponse{
-		// 暂时使用统一的 200 HTTP status code，不携带具体业务状态码
-		Code:    iris.StatusOK,
-		Message: message,
-		Data:    data,
-	})
-}
-
-// buildReqCx 从 HTTP 请求上下文构建一个新的 context.Context，并注入请求 ID 以供后续处理使用
-func buildReqCx(ctx iris.Context) context.Context {
-	requestID := requestid.Get(ctx)
-
-	lgr := zap.L().With(zap.String("request_id", requestID))
-
-	return context.WithValue(context.Background(), "lgr", lgr)
-}
-
-// extractCurrUserID 从请求上下文中取出认证用户 ID
-// 若未找到则直接返回 401，并返回 false，调用方应立即 return
-func extractCurrUserID(ctx iris.Context) (string, bool) {
-	userID := ctx.Values().GetString("user_id")
-	if userID == "" {
-		reject(ctx, iris.StatusUnauthorized, "未授权，请先登录")
+// `takeCurrUid` extracts the current user id from the Iris context
+// It reads the `UserToken` stored by `Auth` middleware under `UtkKey`
+// Returns the user id and `true` on success, or an empty string and `false`
+// when the token is missing or invalid
+func takeCurrUid(cx iris.Context) (string, bool) {
+	utk, ok := cx.Values().Get(middleware.UtkKey).(*aggr.UserToken)
+	if !ok || utk == nil {
 		return "", false
 	}
 
-	return userID, true
+	return utk.UserId, true
+}
+
+// `newReqCx` creates a request-scoped `context.Context` from an Iris context
+// It injects the request id (from middleware or a newly generated one) into
+// a zap logger attachment, which `app` layer constructors consume via `app_util`
+func newReqCx(cx iris.Context) context.Context {
+	reqId := requestid.Get(cx)
+	if reqId == "" {
+		reqId = util.GenId("request")
+	}
+
+	lgr := zap.L().With(zap.String("request_id", reqId))
+
+	return app_util.SaveLgr(cx.Request().Context(), lgr)
 }

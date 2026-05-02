@@ -1,189 +1,162 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
-	"time"
+	"strings"
 
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
+// `unitRepoImpl` is the GORM-backed implementation of `UnitRepo`.
 type unitRepoImpl struct {
+	// `gdb` is the underlying GORM handle.
 	gdb *gorm.DB
 }
 
-func NewUnitRepo(gdb *gorm.DB) iface.UnitRepo {
+// `unitCountRow` maps one page count query result.
+type unitCountRow struct {
+	// `Total` is total unit count.
+	Total int `gorm:"column:total"`
+
+	// `Translated` is translated unit count.
+	Translated int `gorm:"column:translated"`
+
+	// `Proofread` is proofread unit count.
+	Proofread int `gorm:"column:proofread"`
+}
+
+// `NewUnitRepo` creates a non-transaction-scoped `UnitRepo`.
+func NewUnitRepo(gdb *gorm.DB) repo_iface.UnitRepo {
 	return &unitRepoImpl{gdb: gdb}
 }
 
-func NewUnitRepoFromCx(cx context.Context) (iface.UnitRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewUnitRepoFromCx]: 无法从上下文中获取事务数据库连接")
-	}
+// `ListByPage` returns units under one page ordered by `Index` ascending.
+func (r *unitRepoImpl) ListByPage(pageId string) ([]*aggr.Unit, repo_iface.RepoErr) {
+	var rows []entity.UnitRow
 
-	return &unitRepoImpl{gdb: gdb}, nil
-}
-
-func (r *unitRepoImpl) FromTxnCx(cx context.Context) (iface.UnitRepo, error) {
-	return NewUnitRepoFromCx(cx)
-}
-
-func (r *unitRepoImpl) List(opt model.UnitQueryOpt) ([]model.UnitInfo, error) {
-	db := r.gdb.Table(entity.UnitTable)
-	if opt.PageID != "" {
-		db = db.Where("page_id = ?", opt.PageID)
-	}
-
-	var rows []entity.UnitInfoRow
-
-	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
+	err := r.gdb.
+		Table(entity.UNIT_TABLE).
+		Where("page_id = ?", pageId).
+		Order("index ASC").
+		Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 
-	items := make([]model.UnitInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToUnitInfo(row))
+	result := make([]*aggr.Unit, len(rows))
+	for i := range rows {
+		result[i] = rows[i].ToUnitAggr()
 	}
 
-	return items, nil
+	return result, nil
 }
 
-func (r *unitRepoImpl) CreateBatch(units []*model.UnitCreation) error {
-	if len(units) == 0 {
+// `ListIndicesByPage` returns page unit ids and indices.
+func (r *unitRepoImpl) ListIndicesByPage(pageId string) ([]*aggr.UnitIndex, repo_iface.RepoErr) {
+	var rows []entity.UnitRow
+
+	err := r.gdb.
+		Table(entity.UNIT_TABLE).
+		Select("id", "index").
+		Where("page_id = ?", pageId).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*aggr.UnitIndex, len(rows))
+	for i := range rows {
+		result[i] = &aggr.UnitIndex{Id: rows[i].Id, Index: rows[i].Index}
+	}
+
+	return result, nil
+}
+
+// `CountByPage` returns total, translated, and proofread counts of one page.
+func (r *unitRepoImpl) CountByPage(pageId string) (int, int, int, repo_iface.RepoErr) {
+	var row unitCountRow
+
+	err := r.gdb.Raw(`
+		SELECT
+			COUNT(*) AS total,
+			COUNT(CASE WHEN translated_text IS NOT NULL THEN 1 END) AS translated,
+			COUNT(CASE WHEN proofread_text IS NOT NULL THEN 1 END) AS proofread
+		FROM t_unit
+		WHERE page_id = ?
+	`, pageId).Scan(&row).Error
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	return row.Total, row.Translated, row.Proofread, nil
+}
+
+// `Create` inserts one unit.
+func (r *unitRepoImpl) Create(cre *aggr.UnitCre) repo_iface.RepoErr {
+	row := entity.NewUnitCreRowFromAggr(cre)
+
+	return r.gdb.Table(entity.UNIT_TABLE).Create(row).Error
+}
+
+// `Save` executes one unit upsert.
+func (r *unitRepoImpl) Save(sv *aggr.UnitSave) repo_iface.RepoErr {
+	row := entity.NewUnitUpdRowFromAggr(sv)
+
+	return r.gdb.
+		Table(entity.UNIT_TABLE).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			UpdateAll: true,
+		}).
+		Create(row).Error
+}
+
+// `Reindex` applies batch index update to page units.
+func (r *unitRepoImpl) Reindex(indices []*aggr.UnitIndex) repo_iface.RepoErr {
+	if len(indices) == 0 {
 		return nil
 	}
 
-	now := time.Now()
-	rows := make([]map[string]any, 0, len(units))
-	for _, unit := range units {
-		rows = append(rows, map[string]any{
-			"id":                  unit.ID,
-			"page_id":             unit.PageID,
-			"x_coord":             unit.XCoord,
-			"y_coord":             unit.YCoord,
-			"index":               unit.Index,
-			"in_bubble":           unit.IsBubble,
-			"is_proofread":        unit.IsProofread,
-			"translated_text":     unit.TranslatedText,
-			"translator_id":       unit.TranslatorID,
-			"translator_comment":  unit.TranslatorComment,
-			"proofreader_text":    unit.ProofreadText,
-			"proofreader_id":      unit.ProofreaderID,
-			"proofreader_comment": unit.ProofreaderComment,
-			"created_at":          now,
-			"updated_at":          now,
-		})
-	}
+	sql, args := mkUnitReindexStmt(indices)
 
-	return r.gdb.Table(entity.UnitTable).Create(rows).Error
+	return r.gdb.Exec(sql, args...).Error
 }
 
-func (r *unitRepoImpl) UpsertBatch(units []*model.UnitCreation) error {
-	if len(units) == 0 {
-		return nil
-	}
-
-	now := time.Now()
-
-	rows := make([]map[string]any, 0, len(units))
-	for _, unit := range units {
-		rows = append(rows, map[string]any{
-			"id":                  unit.ID,
-			"page_id":             unit.PageID,
-			"x_coord":             unit.XCoord,
-			"y_coord":             unit.YCoord,
-			"index":               unit.Index,
-			"in_bubble":           unit.IsBubble,
-			"is_proofread":        unit.IsProofread,
-			"translated_text":     unit.TranslatedText,
-			"translator_id":       unit.TranslatorID,
-			"translator_comment":  unit.TranslatorComment,
-			"proofreader_text":    unit.ProofreadText,
-			"proofreader_id":      unit.ProofreaderID,
-			"proofreader_comment": unit.ProofreaderComment,
-			"created_at":          now,
-			"updated_at":          now,
-		})
-	}
-
-	return r.gdb.Table(entity.UnitTable).Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"page_id",
-			"x_coord",
-			"y_coord",
-			"index",
-			"in_bubble",
-			"is_proofread",
-			"translated_text",
-			"translator_id",
-			"translator_comment",
-			"proofreader_text",
-			"proofreader_id",
-			"proofreader_comment",
-			"updated_at",
-		}),
-	}).Create(rows).Error
+// `Delete` hard-deletes one unit.
+func (r *unitRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.Table(entity.UNIT_TABLE).Where("id = ?", id).Delete(nil).Error
 }
 
-func (r *unitRepoImpl) PatchBatch(patches []*model.UnitPatch) error {
-	for _, patch := range patches {
-		updates := map[string]any{
-			"updated_at": time.Now(),
-		}
+// `mkUnitReindexStmt` builds the batch reindex SQL and bind arguments.
+func mkUnitReindexStmt(indices []*aggr.UnitIndex) (string, []any) {
+	args := make([]any, 0, len(indices)*3+1)
+	b := &strings.Builder{}
 
-		if patch.Index != nil {
-			updates["index"] = *patch.Index
-		}
-		if patch.XCoord != nil {
-			updates["x_coord"] = *patch.XCoord
-		}
-		if patch.YCoord != nil {
-			updates["y_coord"] = *patch.YCoord
-		}
-		if patch.IsBubble != nil {
-			updates["in_bubble"] = *patch.IsBubble
-		}
-		if patch.TranslatedText != nil {
-			updates["translated_text"] = *patch.TranslatedText
-		}
-		if patch.TranslatorID != nil {
-			updates["translator_id"] = *patch.TranslatorID
-		}
-		if patch.TranslatorComment != nil {
-			updates["translator_comment"] = *patch.TranslatorComment
-		}
-		if patch.IsProofread != nil {
-			updates["is_proofread"] = *patch.IsProofread
-		}
-		if patch.ProofreadText != nil {
-			updates["proofreader_text"] = *patch.ProofreadText
-		}
-		if patch.ProofreaderID != nil {
-			updates["proofreader_id"] = *patch.ProofreaderID
-		}
-		if patch.ProofreaderComment != nil {
-			updates["proofreader_comment"] = *patch.ProofreaderComment
-		}
+	b.WriteString("UPDATE ")
+	b.WriteString(entity.UNIT_TABLE)
+	b.WriteString(" SET \"index\" = CASE id")
 
-		if err := r.gdb.Table(entity.UnitTable).Where("id = ?", patch.ID).Updates(updates).Error; err != nil {
-			return err
-		}
+	for i := range indices {
+		b.WriteString(" WHEN ? THEN ?")
+		args = append(args, indices[i].Id, indices[i].Index)
 	}
 
-	return nil
-}
+	b.WriteString(" ELSE \"index\" END, updated_at = NOW() WHERE id IN (")
 
-func (r *unitRepoImpl) DeleteBatch(unitIDs []string) error {
-	if len(unitIDs) == 0 {
-		return nil
+	for i := range indices {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+
+		b.WriteString("?")
+		args = append(args, indices[i].Id)
 	}
 
-	return r.gdb.Table(entity.UnitTable).Where("id IN ?", unitIDs).Delete(nil).Error
+	b.WriteString(")")
+
+	return b.String(), args
 }

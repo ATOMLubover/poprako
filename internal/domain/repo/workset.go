@@ -1,29 +1,39 @@
-package repo
+package repo_iface
 
 import (
-	"context"
-
-	"poprako-s/internal/domain/model"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/query"
 )
 
-// WorksetRepo 是作品集仓库的接口
+// `WorksetRepo` defines the persistence contract for the `Workset` aggregate.
 type WorksetRepo interface {
-	// GetByID 根据作品集 ID 获取作品集信息；若不存在返回 error
-	GetByID(id string) (*model.WorksetInfo, error)
-	// List 根据筛选条件返回作品集信息列表
-	List(opt model.WorksetQueryOpt) ([]model.WorksetInfo, error)
-	// Count 根据筛选条件返回作品集数量
-	Count(opt model.WorksetQueryOpt) (int64, error)
+	// `GetById` retrieves an active workset by its unique identifier.
+	// Returns an error if the workset does not exist.
+	GetById(id string, inc ...enum.WorksetIncl) (*aggr.Workset, RepoErr)
 
-	// Create 持久化一个新的作品集
-	Create(c *model.WorksetCreation) (*model.WorksetInfo, error)
-	// Update 更新作品集信息
-	Update(u *model.WorksetUpdate) error
-	// UpdateComicCount 按 delta 更新作品集下的漫画数量
-	UpdateComicCount(id string, delta int) error
-	// Delete 删除作品集（硬删除）
-	Delete(id string) error
+	// `List` returns all worksets that match the given options,
+	// ordered by `index` ascending.
+	List(opt *query.ListWorksetOpt, inc ...enum.WorksetIncl) ([]*aggr.Workset, RepoErr)
 
-	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 WorksetRepo 实例
-	FromTxnCx(cx context.Context) (WorksetRepo, error)
+	// `Count` returns the number of worksets matching the given options.
+	Count(opt *query.ListWorksetOpt) (int64, RepoErr)
+
+	// `Create` persists a new workset from the given creation input and returns
+	// the fully populated aggregate.
+	Create(cre *aggr.WorksetCre) (*aggr.Workset, RepoErr)
+
+	// `Update` applies the mutable fields in `upd` to an existing workset.
+	Update(upd *aggr.WorksetUpd) RepoErr
+
+	// `UpdateComicCount` applies delta to one workset comic counter.
+	// The counter update is usually called inside app transaction flows.
+	UpdateComicCount(id string, delta int) RepoErr
+
+	// `IncrementComicNextIndex` allocates one comic index from workset-scoped sequence.
+	// It returns the allocated index value for immediate insert use.
+	IncrementComicNextIndex(id string) (int, RepoErr)
+
+	// `Delete` hard-deletes one workset row by id.
+	Delete(id string) RepoErr
 }

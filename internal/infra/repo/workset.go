@@ -1,134 +1,195 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"time"
 
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
+// `worksetRepoImpl` is the GORM-backed implementation of `repo_iface.WorksetRepo`.
 type worksetRepoImpl struct {
+	// `gdb` is the underlying GORM database handle.
 	gdb *gorm.DB
 }
 
-func NewWorksetRepo(gdb *gorm.DB) iface.WorksetRepo {
+// `NewWorksetRepo` creates a non-transaction-scoped `WorksetRepo`.
+func NewWorksetRepo(gdb *gorm.DB) repo_iface.WorksetRepo {
 	return &worksetRepoImpl{gdb: gdb}
 }
 
-func NewWorksetRepoFromCx(cx context.Context) (iface.WorksetRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewWorksetRepoFromCx]: 无法从上下文中获取事务数据库连接")
-	}
+// `GetById` retrieves a single workset by its primary key.
+func (r *worksetRepoImpl) GetById(id string, inc ...enum.WorksetIncl) (*aggr.Workset, repo_iface.RepoErr) {
+	var row entity.WorksetRow
 
-	return &worksetRepoImpl{gdb: gdb}, nil
-}
+	q := r.gdb.
+		Table(entity.WORKSET_TABLE).
+		Where("id = ?", id)
 
-func (r *worksetRepoImpl) FromTxnCx(cx context.Context) (iface.WorksetRepo, error) {
-	return NewWorksetRepoFromCx(cx)
-}
+	q = withWorksetIncl(q, inc...)
 
-func (r *worksetRepoImpl) GetByID(id string) (*model.WorksetInfo, error) {
-
-	var row entity.WorksetInfoRow
-
-	err := r.gdb.Table(entity.WorksetTable).Where("id = ?", id).First(&row).Error
+	err := q.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToWorksetInfo(row)
-	return &info, nil
+	return row.ToWorksetAggr(), nil
 }
 
-func (r *worksetRepoImpl) List(opt model.WorksetQueryOpt) ([]model.WorksetInfo, error) {
-	db := r.gdb.Table(entity.WorksetTable)
+// `List` returns all worksets matching the given options, ordered by `index` ascending.
+func (r *worksetRepoImpl) List(opt *query.ListWorksetOpt, inc ...enum.WorksetIncl) ([]*aggr.Workset, repo_iface.RepoErr) {
+	var rows []entity.WorksetRow
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
+	q := r.gdb.
+		Table(entity.WORKSET_TABLE)
+
+	// Apply optional filters.
+	if opt != nil && opt.TeamId != nil {
+		q = q.Where("team_id = ?", *opt.TeamId)
 	}
-	if opt.TeamID != nil {
-		db = db.Where("team_id = ?", *opt.TeamID)
+
+	if opt != nil && opt.Pagi.Offset > 0 {
+		q = q.Offset(opt.Pagi.Offset)
 	}
 
-	var rows []entity.WorksetInfoRow
+	if opt != nil && opt.Pagi.Limit > 0 {
+		q = q.Limit(opt.Pagi.Limit)
+	}
 
-	if err := db.Order("index ASC").Find(&rows).Error; err != nil {
+	q = withWorksetIncl(q, inc...)
+
+	err := q.Order("index ASC").Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 
-	items := make([]model.WorksetInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToWorksetInfo(row))
+	// Convert each row to an aggregate.
+	result := make([]*aggr.Workset, len(rows))
+
+	for i := range rows {
+		result[i] = rows[i].ToWorksetAggr()
 	}
 
-	return items, nil
+	return result, nil
 }
 
-func (r *worksetRepoImpl) Count(opt model.WorksetQueryOpt) (int64, error) {
-	db := r.gdb.Table(entity.WorksetTable)
+// `Count` returns the number of worksets matching the given options.
+func (r *worksetRepoImpl) Count(opt *query.ListWorksetOpt) (int64, repo_iface.RepoErr) {
+	var count int64
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
+	q := r.gdb.
+		Table(entity.WORKSET_TABLE)
+
+	// Apply optional filters.
+	if opt != nil && opt.TeamId != nil {
+		q = q.Where("team_id = ?", *opt.TeamId)
 	}
-	if opt.TeamID != nil {
-		db = db.Where("team_id = ?", *opt.TeamID)
+
+	err := q.Count(&count).Error
+	if err != nil {
+		return 0, err
 	}
 
-	var n int64
-
-	err := db.Count(&n).Error
-	return n, err
+	return count, nil
 }
 
-func (r *worksetRepoImpl) Create(c *model.WorksetCreation) (*model.WorksetInfo, error) {
+// `Create` inserts a new workset row and returns the fully populated aggregate.
+func (r *worksetRepoImpl) Create(cre *aggr.WorksetCre) (*aggr.Workset, repo_iface.RepoErr) {
+	row := entity.NewWorksetCreRowFromAggr(cre)
+
+	err := r.gdb.
+		Table(row.TableName()).
+		Create(row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Re-fetch to return the full aggregate including server-side defaults.
+	return r.GetById(row.Id)
+}
+
+// `Update` applies the mutable fields of `upd` to the matching workset row.
+func (r *worksetRepoImpl) Update(upd *aggr.WorksetUpd) repo_iface.RepoErr {
 	now := time.Now()
-	row := map[string]any{
-		"id":          c.ID,
-		"team_id":     c.TeamID,
-		"index":       c.Index,
-		"name":        c.Name,
-		"description": c.Desc,
-		"comic_count": 0,
-		"created_at":  now,
-		"updated_at":  now,
+
+	updRow := &entity.WorksetUpdRow{
+		Name:      upd.Name,
+		Desc:      upd.Desc,
+		UpdatedAt: now,
 	}
 
-	if err := r.gdb.Table(entity.WorksetTable).Create(row).Error; err != nil {
-		return nil, err
-	}
+	err := r.gdb.
+		Table(entity.WORKSET_TABLE).
+		Where("id = ?", upd.Id).
+		Select("name", "description", "updated_at").
+		Updates(updRow).Error
 
-	return r.GetByID(c.ID)
+	return err
 }
 
-func (r *worksetRepoImpl) Update(u *model.WorksetUpdate) error {
-	updates := map[string]any{
-		"name":       u.Name,
-		"updated_at": time.Now(),
-	}
-	if u.Desc != nil {
-		updates["description"] = *u.Desc
-	}
+// `UpdateComicCount` applies delta to `comic_count` and refreshes `updated_at`.
+func (r *worksetRepoImpl) UpdateComicCount(id string, delta int) repo_iface.RepoErr {
+	now := time.Now()
 
-	return r.gdb.Table(entity.WorksetTable).
-		Where("id = ?", u.ID).
-		Updates(updates).Error
-}
-
-func (r *worksetRepoImpl) UpdateComicCount(id string, delta int) error {
-	return r.gdb.Table(entity.WorksetTable).
+	err := r.gdb.
+		Table(entity.WORKSET_TABLE).
 		Where("id = ?", id).
 		Updates(map[string]any{
-			"comic_count": gorm.Expr("comic_count + ?", delta),
-			"updated_at":  time.Now(),
+			"comic_count": gorm.Expr("GREATEST(comic_count + ?, 0)", delta),
+			"updated_at":  now,
 		}).Error
+
+	return err
 }
 
-func (r *worksetRepoImpl) Delete(id string) error {
-	return r.gdb.Table(entity.WorksetTable).Where("id = ?", id).Delete(nil).Error
+// `IncrementComicNextIndex` allocates one next comic index from one workset row.
+func (r *worksetRepoImpl) IncrementComicNextIndex(id string) (int, repo_iface.RepoErr) {
+	type nextIndexRow struct {
+		NextIndex int `gorm:"column:comic_next_index"`
+	}
+
+	var row nextIndexRow
+
+	updRe := r.gdb.
+		Table(entity.WORKSET_TABLE).
+		Where("id = ?", id).
+		Select("comic_next_index").
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "comic_next_index"}}}).
+		Updates(map[string]any{"comic_next_index": gorm.Expr("comic_next_index + 1")}).
+		Scan(&row)
+	if updRe.Error != nil {
+		return 0, updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+
+	return row.NextIndex - 1, nil
+}
+
+// `Delete` hard-deletes one workset row by id.
+func (r *worksetRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.WORKSET_TABLE).
+		Where("id = ?", id).
+		Delete(&entity.WorksetRow{}).Error
+}
+
+// `withWorksetIncl` applies typed include options to the base query.
+func withWorksetIncl(q *gorm.DB, inc ...enum.WorksetIncl) *gorm.DB {
+	for _, i := range inc {
+		switch i {
+		case enum.WorksetInclTeam:
+			q = q.Preload("Team")
+		}
+	}
+
+	return q
 }

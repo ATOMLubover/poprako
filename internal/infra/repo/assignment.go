@@ -1,170 +1,147 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
-	"time"
-
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
+// `assignmentRepoImpl` is gorm implementation of `AssignmentRepo`.
 type assignmentRepoImpl struct {
 	gdb *gorm.DB
 }
 
-func NewAssignmentRepo(gdb *gorm.DB) iface.AssignmentRepo {
+// `NewAssignmentRepo` creates a non transaction-scoped `AssignmentRepo`.
+func NewAssignmentRepo(gdb *gorm.DB) repo_iface.AssignmentRepo {
 	return &assignmentRepoImpl{gdb: gdb}
 }
 
-func NewAssignmentRepoFromCx(cx context.Context) (iface.AssignmentRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewAssignmentRepoFromCx]: 无法从上下文中获取事务数据库连接")
-	}
+// `GetById` returns one assignment by id.
+func (r *assignmentRepoImpl) GetById(id string) (*aggr.Assignment, repo_iface.RepoErr) {
+	var row entity.AssignmentRow
 
-	return &assignmentRepoImpl{gdb: gdb}, nil
-}
-
-func (r *assignmentRepoImpl) FromTxnCx(cx context.Context) (iface.AssignmentRepo, error) {
-	return NewAssignmentRepoFromCx(cx)
-}
-
-func (r *assignmentRepoImpl) GetByID(id string) (*model.AssignmentInfo, error) {
-
-	var row entity.AssignmentInfoRow
-
-	err := r.gdb.Table(entity.AssignmentTable).Where("id = ?", id).First(&row).Error
+	err := r.gdb.
+		Table(entity.ASSIGNMENT_TABLE).
+		Where("id = ?", id).
+		First(&row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToAssignmentInfo(row)
-	return &info, nil
+	return row.ToAssignmentAggr(), nil
 }
 
-func (r *assignmentRepoImpl) Get(opt model.AssignmentQueryOpt) (*model.AssignmentInfo, error) {
-	items, err := r.List(opt)
+// `GetByChapterUserId` returns one assignment by chapter and user.
+func (r *assignmentRepoImpl) GetByChapterUserId(chapterId string, userId string) (*aggr.Assignment, repo_iface.RepoErr) {
+	var row entity.AssignmentRow
+
+	err := r.gdb.
+		Table(entity.ASSIGNMENT_TABLE).
+		Where("chapter_id = ? AND user_id = ?", chapterId, userId).
+		First(&row).Error
 	if err != nil {
 		return nil, err
 	}
-	if len(items) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-	item := items[0]
-	return &item, nil
+
+	return row.ToAssignmentAggr(), nil
 }
 
-func (r *assignmentRepoImpl) List(opt model.AssignmentQueryOpt) ([]model.AssignmentInfo, error) {
-	db := r.gdb.Table(entity.AssignmentTable)
+// `List` returns assignment list by query options.
+func (r *assignmentRepoImpl) List(opt *query.ListAssignmentOpt) ([]*aggr.Assignment, repo_iface.RepoErr) {
+	var rows []entity.AssignmentRow
 
-	if opt.ChapterID != nil {
-		db = db.Where("chapter_id = ?", *opt.ChapterID)
+	qry := r.gdb.Table(entity.ASSIGNMENT_TABLE)
+
+	if opt != nil && opt.ChapterId != nil {
+		qry = qry.Where("chapter_id = ?", *opt.ChapterId)
 	}
-	if opt.UserID != nil {
-		db = db.Where("user_id = ?", *opt.UserID)
+
+	if opt != nil && opt.UserId != nil {
+		qry = qry.Where("user_id = ?", *opt.UserId)
 	}
 
-	var rows []entity.AssignmentInfoRow
+	if opt != nil && opt.Pagi.Offset > 0 {
+		qry = qry.Offset(opt.Pagi.Offset)
+	}
 
-	if err := db.Order("created_at ASC").Find(&rows).Error; err != nil {
+	if opt != nil && opt.Pagi.Limit > 0 {
+		qry = qry.Limit(opt.Pagi.Limit)
+	}
+
+	err := qry.Order("created_at DESC").Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 
-	items := make([]model.AssignmentInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToAssignmentInfo(row))
+	items := make([]*aggr.Assignment, len(rows))
+	for i := range rows {
+		items[i] = rows[i].ToAssignmentAggr()
 	}
 
 	return items, nil
 }
 
-func (r *assignmentRepoImpl) Exist(opt model.AssignmentQueryOpt) (bool, error) {
-	db := r.gdb.Table(entity.AssignmentTable)
+// `Create` inserts one assignment.
+func (r *assignmentRepoImpl) Create(cre *aggr.AssignmentCre) (*aggr.Assignment, repo_iface.RepoErr) {
+	row := entity.NewAssignmentCreRowFromAggr(cre)
 
-	if opt.ChapterID != nil {
-		db = db.Where("chapter_id = ?", *opt.ChapterID)
-	}
-	if opt.UserID != nil {
-		db = db.Where("user_id = ?", *opt.UserID)
-	}
-
-	var n int64
-
-	err := db.Count(&n).Error
-	return n > 0, err
-}
-
-func (r *assignmentRepoImpl) Create(c *model.AssignmentCreation) (*model.AssignmentInfo, error) {
-	now := time.Now()
-	row := map[string]any{
-		"id":                       c.ID,
-		"chapter_id":               c.ChapterID,
-		"user_id":                  c.UserID,
-		"assigned_raw_provider_at": c.AssignedRawProviderAt,
-		"assigned_translator_at":   c.AssignedTranslatorAt,
-		"assigned_proofreader_at":  c.AssignedProofreaderAt,
-		"assigned_typesetter_at":   c.AssignedTypesetterAt,
-		"assigned_redrawer_at":     c.AssignedRedrawerAt,
-		"assigned_reviewer_at":     c.AssignedReviewerAt,
-		"assigned_publisher_at":    c.AssignedPublisherAt,
-		"created_at":               now,
-		"updated_at":               now,
-	}
-
-	if err := r.gdb.Table(entity.AssignmentTable).Create(row).Error; err != nil {
-		return nil, err
-	}
-
-	return r.GetByID(c.ID)
-}
-
-func (r *assignmentRepoImpl) UpsertCreate(c *model.AssignmentCreation) (*model.AssignmentInfo, error) {
-	now := time.Now()
-	row := map[string]any{
-		"id":                       c.ID,
-		"chapter_id":               c.ChapterID,
-		"user_id":                  c.UserID,
-		"assigned_raw_provider_at": c.AssignedRawProviderAt,
-		"assigned_translator_at":   c.AssignedTranslatorAt,
-		"assigned_proofreader_at":  c.AssignedProofreaderAt,
-		"assigned_typesetter_at":   c.AssignedTypesetterAt,
-		"assigned_redrawer_at":     c.AssignedRedrawerAt,
-		"assigned_reviewer_at":     c.AssignedReviewerAt,
-		"assigned_publisher_at":    c.AssignedPublisherAt,
-		"created_at":               now,
-		"updated_at":               now,
-	}
-
-	err := r.gdb.Table(entity.AssignmentTable).
-		Clauses(clause.OnConflict{
-			Columns: []clause.Column{{Name: "chapter_id"}, {Name: "user_id"}},
-			DoUpdates: clause.AssignmentColumns([]string{
-				"assigned_raw_provider_at",
-				"assigned_translator_at",
-				"assigned_proofreader_at",
-				"assigned_typesetter_at",
-				"assigned_redrawer_at",
-				"assigned_reviewer_at",
-				"assigned_publisher_at",
-				"updated_at",
-			}),
-		}).
-		Create(row).Error
+	err := r.gdb.Table(entity.ASSIGNMENT_TABLE).Create(row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return r.Get(model.AssignmentQueryOpt{
-		ChapterID: &c.ChapterID,
-		UserID:    &c.UserID,
-	})
+	var created entity.AssignmentRow
+	err = r.gdb.Table(entity.ASSIGNMENT_TABLE).Where("id = ?", row.Id).First(&created).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return created.ToAssignmentAggr(), nil
 }
 
-func (r *assignmentRepoImpl) Delete(id string) error {
-	return r.gdb.Table(entity.AssignmentTable).Where("id = ?", id).Delete(nil).Error
+// `Put` overwrites all role timestamp fields.
+func (r *assignmentRepoImpl) Put(put *aggr.AssignmentPut) repo_iface.RepoErr {
+	row := entity.NewAssignmentPutRowFromAggr(put)
+
+	return r.gdb.
+		Table(entity.ASSIGNMENT_TABLE).
+		Where("id = ?", put.Id).
+		Select(
+			"assigned_raw_provider_at",
+			"assigned_translator_at",
+			"assigned_proofreader_at",
+			"assigned_typesetter_at",
+			"assigned_redrawer_at",
+			"assigned_reviewer_at",
+			"assigned_publisher_at",
+			"updated_at",
+		).
+		Updates(row).Error
+}
+
+// `Delete` hard deletes one assignment by id.
+func (r *assignmentRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.ASSIGNMENT_TABLE).
+		Where("id = ?", id).
+		Delete(&entity.AssignmentRow{}).Error
+}
+
+// `DeleteByChapterUserId` hard deletes one assignment by chapter and user.
+func (r *assignmentRepoImpl) DeleteByChapterUserId(chapterId string, userId string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.ASSIGNMENT_TABLE).
+		Where("chapter_id = ? AND user_id = ?", chapterId, userId).
+		Delete(&entity.AssignmentRow{}).Error
+}
+
+// `DeleteByChapterId` hard deletes all assignments by chapter.
+func (r *assignmentRepoImpl) DeleteByChapterId(chapterId string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.ASSIGNMENT_TABLE).
+		Where("chapter_id = ?", chapterId).
+		Delete(&entity.AssignmentRow{}).Error
 }

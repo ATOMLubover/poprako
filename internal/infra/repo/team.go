@@ -1,120 +1,202 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"time"
 
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
+// `teamRepoImpl` implements `repo_iface.TeamRepo` with `gorm`.
 type teamRepoImpl struct {
 	gdb *gorm.DB
 }
 
-func NewTeamRepo(gdb *gorm.DB) iface.TeamRepo {
+// `NewTeamRepo` creates a non-transaction-scoped `TeamRepo`.
+func NewTeamRepo(gdb *gorm.DB) repo_iface.TeamRepo {
 	return &teamRepoImpl{gdb: gdb}
 }
 
-func NewTeamRepoFromCx(cx context.Context) (iface.TeamRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewTeamRepoFromCx]: 无法从上下文中获取事务数据库连接")
-	}
+// `GetById` retrieves one `Team` aggregate by its id.
+func (r *teamRepoImpl) GetById(id string) (*aggr.Team, repo_iface.RepoErr) {
+	var row entity.TeamRow
 
-	return &teamRepoImpl{gdb: gdb}, nil
-}
-
-func (r *teamRepoImpl) FromTxnCx(cx context.Context) (iface.TeamRepo, error) {
-	return NewTeamRepoFromCx(cx)
-}
-
-func (r *teamRepoImpl) GetByID(id string) (*model.TeamInfo, error) {
-
-	var row entity.TeamInfoRow
-
-	err := r.gdb.Table(entity.TeamTable).
-		Where("id = ? AND deleted_at IS NULL", id).
+	// Query the team row by id from `t_team`.
+	err := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", id).
 		First(&row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToTeamInfo(row)
-	return &info, nil
+	// Convert the row into `aggr.Team`.
+	return row.ToTeamAggr(), nil
 }
 
-func (r *teamRepoImpl) List(opt model.TeamQueryOpt) ([]model.TeamInfo, error) {
-	db := r.gdb.Table(entity.TeamTable).Where("deleted_at IS NULL")
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
+// `List` returns teams by list options and pagination.
+func (r *teamRepoImpl) List(opt *query.ListTeamOpt) ([]*aggr.Team, repo_iface.RepoErr) {
+	var rows []entity.TeamRow
+
+	qry := r.gdb.
+		Table(entity.TEAM_TABLE)
+
+	if opt != nil && opt.Id != nil {
+		qry = qry.Where("id = ?", *opt.Id)
 	}
 
-	var rows []entity.TeamInfoRow
+	if opt != nil && opt.Pagi.Offset > 0 {
+		qry = qry.Offset(opt.Pagi.Offset)
+	}
 
-	if err := db.Order("created_at DESC").Find(&rows).Error; err != nil {
+	if opt != nil && opt.Pagi.Limit > 0 {
+		qry = qry.Limit(opt.Pagi.Limit)
+	}
+
+	err := qry.
+		Order("created_at DESC").
+		Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 
-	items := make([]model.TeamInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToTeamInfo(row))
+	teams := make([]*aggr.Team, len(rows))
+	for i := range rows {
+		teams[i] = rows[i].ToTeamAggr()
 	}
-	return items, nil
+
+	return teams, nil
 }
 
-func (r *teamRepoImpl) Create(c *model.TeamCreation) (*model.TeamInfo, error) {
+// `Create` inserts one team row and returns created aggregate.
+func (r *teamRepoImpl) Create(cre *aggr.TeamCre) (*aggr.Team, repo_iface.RepoErr) {
+	row := entity.NewTeamCreRowFromAggr(cre)
+
+	err := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Create(row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetById(row.Id)
+}
+
+// `Update` applies put-style update to one team row.
+func (r *teamRepoImpl) Update(upd *aggr.TeamUpd) repo_iface.RepoErr {
 	now := time.Now()
-	row := map[string]any{
-		"id":                 c.ID,
-		"name":               c.Name,
-		"description":        c.Desc,
-		"avatar_oss_key":     "",
-		"is_avatar_uploaded": false,
-		"created_at":         now,
-		"updated_at":         now,
+
+	updRow := &entity.TeamUpdRow{
+		Name:      upd.Name,
+		Desc:      upd.Desc,
+		UpdatedAt: now,
 	}
 
-	if err := r.gdb.Table(entity.TeamTable).Create(row).Error; err != nil {
-		return nil, err
+	updRe := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", upd.Id).
+		Select("name", "description", "updated_at").
+		Updates(updRow)
+	if updRe.Error != nil {
+		return updRe.Error
 	}
 
-	return r.GetByID(c.ID)
+	if updRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
-func (r *teamRepoImpl) Update(u *model.TeamUpdate) error {
-	return r.gdb.Table(entity.TeamTable).
-		Where("id = ? AND deleted_at IS NULL", u.ID).
+// `Delete` executes hard delete on one team row by id.
+func (r *teamRepoImpl) Delete(id string) repo_iface.RepoErr {
+	queryRe := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", id).
+		Delete(&entity.TeamRow{})
+	if queryRe.Error != nil {
+		return queryRe.Error
+	}
+
+	if queryRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+// `PrefillAvatarKey` writes one reserved avatar key before upload starts.
+func (r *teamRepoImpl) PrefillAvatarKey(id string, key string) repo_iface.RepoErr {
+	now := time.Now()
+
+	updRe := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", id).
 		Updates(map[string]any{
-			"name":        u.Name,
-			"description": u.Desc,
-			"updated_at":  time.Now(),
-		}).Error
+			"avatar_key":      key,
+			"avatar_uploaded": false,
+			"updated_at":      now,
+		})
+	if updRe.Error != nil {
+		return updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
-func (r *teamRepoImpl) Delete(id string) error {
-	return r.gdb.Table(entity.TeamTable).Where("id = ?", id).Delete(nil).Error
-}
+// `MarkAvatarUploaded` marks avatar upload status as completed.
+func (r *teamRepoImpl) MarkAvatarUploaded(id string) repo_iface.RepoErr {
+	now := time.Now()
 
-func (r *teamRepoImpl) PreFillAvatarOSSKey(id string, avatarOSSKey string) error {
-	return r.gdb.Table(entity.TeamTable).
-		Where("id = ? AND deleted_at IS NULL", id).
+	updRe := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", id).
 		Updates(map[string]any{
-			"avatar_oss_key":     avatarOSSKey,
-			"is_avatar_uploaded": false,
-			"updated_at":         time.Now(),
-		}).Error
+			"avatar_uploaded": true,
+			"updated_at":      now,
+		})
+	if updRe.Error != nil {
+		return updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }
 
-func (r *teamRepoImpl) ConfirmAvatarUploaded(id string) error {
-	return r.gdb.Table(entity.TeamTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"is_avatar_uploaded": true,
-			"updated_at":         time.Now(),
-		}).Error
+// `IncrementWorksetNextIndex` allocates one next workset index from one team row.
+func (r *teamRepoImpl) IncrementWorksetNextIndex(id string) (int, repo_iface.RepoErr) {
+	type nextIndexRow struct {
+		NextIndex int `gorm:"column:workset_next_index"`
+	}
+
+	var row nextIndexRow
+
+	updRe := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", id).
+		Select("workset_next_index").
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "workset_next_index"}}}).
+		Updates(map[string]any{"workset_next_index": gorm.Expr("workset_next_index + 1")}).
+		Scan(&row)
+	if updRe.Error != nil {
+		return 0, updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+
+	return row.NextIndex - 1, nil
 }

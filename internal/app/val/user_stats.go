@@ -1,9 +1,9 @@
 package val
 
-type UserStatsInfo struct {
-	UserID string `json:"user_id"`
+type UserStats struct {
+	UserId string `json:"user_id"`
 
-	TotalAssignmentCount    int `json:"total_assignment_count"`
-	ActiveAssignmentCount   int `json:"active_assignment_count"`
-	FinishedAssignmentCount int `json:"finished_assignment_count"`
+	TotalAssignmentCnt    int `json:"total_assignment_count"`
+	ActiveAssignmentCnt   int `json:"active_assignment_count"`
+	FinishedAssignmentCnt int `json:"finished_assignment_count"`
 }

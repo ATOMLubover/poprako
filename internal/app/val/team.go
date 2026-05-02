@@ -1,73 +1,51 @@
 package val
 
-// TeamInfo 表示用于在应用层和接口层传递的汉化组信息 VO
-type TeamInfo struct {
-	// ID 是汉化组的唯一标识
-	ID string `json:"id"`
+// `TeamVal` is the app-facing value object for `Team`.
+type TeamVal struct {
+	Id string `json:"id"`
 
-	// Name 是汉化组的名称
 	Name string `json:"name"`
-	// Desc 是汉化组的描述
 	Desc string `json:"description"`
 
-	// AvatarURL 是汉化组头像的可访问地址
-	AvatarURL string `json:"avatar_url"`
-	// IsAvatarUploaded 表示汉化组是否已上传头像
-	IsAvatarUploaded bool `json:"is_avatar_uploaded"`
+	AvatarUrl      string `json:"avatar_url"`
+	AvatarUploaded bool   `json:"avatar_uploaded"`
 
-	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
 	CreatedAt int64 `json:"created_at"`
-	// UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-// CreateTeamArgs 表示创建汉化组请求的参数
-type CreateTeamArgs struct {
-	// Name 是汉化组名称
-	Name string `json:"name" validate:"required"`
-	// Desc 是汉化组描述
+// `TeamCreArgs` holds immutable fields for team creation.
+type TeamCreArgs struct {
+	Name string `json:"name"`
 	Desc string `json:"description"`
 }
 
-// CreateTeamRes 表示创建汉化组成功后的响应数据
-type CreateTeamRes struct {
-	// ID 是新创建汉化组的标识
-	ID string `json:"id"`
+// `TeamCreRes` returns the created team id.
+type TeamCreRes struct {
+	Id string `json:"id"`
 }
 
-// UpdateTeamArgs 表示更新汉化组信息的参数
-type UpdateTeamArgs struct {
-	// ID 是要更新的汉化组标识
-	ID string `json:"id" validate:"required"`
-	// Name 是更新后的汉化组名称
-	Name string `json:"name" validate:"required"`
-	// Desc 是更新后的汉化组描述
+// `TeamUpdArgs` holds mutable fields for team update.
+type TeamUpdArgs struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
 	Desc string `json:"description"`
 }
 
-// ReserveTeamAvatarArgs 表示预留汉化组头像上传接口的请求参数
-type ReserveTeamAvatarArgs struct {
-	// TeamID 是要上传头像的汉化组标识
-	TeamID string `json:"team_id" validate:"required"`
-	// FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名
-	// 需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
-	FileName string `json:"file_name" validate:"required"`
-}
-
-// ReserveTeamAvatarRes 表示预留汉化组头像上传接口的响应数据
-type ReserveTeamAvatarRes struct {
-	// PutURL 是用于上传头像的预签名 URL
-	PutURL string `json:"put_url"`
-}
-
-// ListTeamArgs 表示列出所有汉化组请求的参数
+// `ListTeamArgs` carries list args for listing all teams.
 type ListTeamArgs struct {
-	Offset int `json:"offset" url:"offset"`
-	Limit  int `json:"limit" url:"limit"`
+	Offset int `url:"offset"`
+	Limit  int `url:"limit"`
 }
 
-// ListMyTeamArgs 表示列出当前用户所属汉化组请求的参数
-type ListMyTeamArgs struct {
-	Offset int `json:"offset" url:"offset"`
-	Limit  int `json:"limit" url:"limit"`
+// `ResvTeamAvatarArgs` holds parameters for reserving team avatar upload.
+type ResvTeamAvatarArgs struct {
+	TeamId  string `json:"team_id"`
+	FileExt string `json:"file_extension"`
+}
+
+// `ResvTeamAvatarRes` returns the signed put url for avatar upload.
+type ResvTeamAvatarRes struct {
+	PutUrl string `json:"put_url"`
 }

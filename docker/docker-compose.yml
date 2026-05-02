@@ -4,13 +4,13 @@ services:
       context: ..
       dockerfile: docker/poprako-s-database/Dockerfile
     environment:
-      POSTGRES_DB: poprako
+      POSTGRES_DB: db_poprako_s
       POSTGRES_USER: poprako
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U poprako -d poprako"]
+      test: ["CMD-SHELL", "pg_isready -U poprako -d db_poprako_s"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,9 +22,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      APP_ENVIRONMENT: production
-      DATABASE_URL: postgres://poprako:${POSTGRES_PASSWORD}@db:5432/poprako?sslmode=disable
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      DATABASE_USER: ${DATABASE_USER:-poprako}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-336}
     depends_on:
       db:
         condition: service_healthy

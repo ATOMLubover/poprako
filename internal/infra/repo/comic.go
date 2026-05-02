@@ -1,229 +1,378 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
+const chapterPinAlias = "pch"
+
+// `comicRepoImpl` is the GORM-backed implementation of `ComicRepo`
 type comicRepoImpl struct {
+	// `gdb` is the underlying GORM handle
 	gdb *gorm.DB
 }
 
-func NewComicRepo(gdb *gorm.DB) iface.ComicRepo {
+// `NewComicRepo` creates a non-transaction-scoped `ComicRepo`
+func NewComicRepo(gdb *gorm.DB) repo_iface.ComicRepo {
 	return &comicRepoImpl{gdb: gdb}
 }
 
-func NewComicRepoFromCx(cx context.Context) (iface.ComicRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewComicRepoFromCx]: 无法从上下文中获取事务数据库连接")
-	}
+// `GetById` retrieves one comic by primary key
+func (r *comicRepoImpl) GetById(id string, inc ...enum.ComicIncl) (*aggr.Comic, repo_iface.RepoErr) {
+	var row entity.ComicRow
 
-	return &comicRepoImpl{gdb: gdb}, nil
-}
+	q := r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id)
 
-func (r *comicRepoImpl) FromTxnCx(cx context.Context) (iface.ComicRepo, error) {
-	return NewComicRepoFromCx(cx)
-}
+	q = withComicIncl(q, inc...)
 
-func (r *comicRepoImpl) GetByID(id string) (*model.ComicInfo, error) {
-
-	var row entity.ComicInfoRow
-
-	err := r.gdb.Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		First(&row).Error
+	err := q.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToComicInfo(row)
-	return &info, nil
+	return row.ToComicAggr(), nil
 }
 
-func (r *comicRepoImpl) List(opt model.ComicQueryOpt) ([]model.ComicInfo, error) {
-	db := r.gdb.Table(entity.ComicTable).
-		Where("workset_id = ? AND deleted_at IS NULL", opt.WorksetID)
+// `List` returns comics matching query options and includes
+func (r *comicRepoImpl) List(opt *query.ListComicOpt, inc ...enum.ComicIncl) ([]*aggr.Comic, repo_iface.RepoErr) {
+	var rows []entity.ComicRow
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
+	q := r.gdb.
+		Table(entity.COMIC_TABLE)
+
+	if hasComicSearchFilter(opt) {
+		q = q.Where("t_comic.is_completed = FALSE")
 	}
-	if opt.FuzzyTitle != nil {
-		term := strings.TrimSpace(*opt.FuzzyTitle)
-		if term != "" {
-			db = db.Where("composed_title ILIKE ?", "%"+term+"%")
+
+	if opt != nil && opt.WorksetId != nil {
+		q = q.Where("workset_id = ?", *opt.WorksetId)
+	}
+
+	if opt != nil && opt.FuzzyTitle != nil {
+		fuzzyTitle := strings.TrimSpace(*opt.FuzzyTitle)
+
+		if fuzzyTitle != "" {
+			q = q.Where("t_comic.fuzzy_title ILIKE ?", "%"+fuzzyTitle+"%")
 		}
 	}
 
-	db = applyComicWorkflowFilter(db, opt.UploadStatus, "pinned_uploaded_at", "")
-	db = applyComicWorkflowFilter(db, opt.TranslateStatus, "pinned_transalating_at", "pinned_translated_at")
-	db = applyComicWorkflowFilter(db, opt.ProofreadStatus, "pinned_proofreading_at", "pinned_proofread_at")
-	db = applyComicWorkflowFilter(db, opt.TypesetStatus, "pinned_typesetting_at", "pinned_typeset_at")
-	db = applyComicWorkflowFilter(db, opt.ReviewStatus, "pinned_reviewed_at", "")
-	db = applyComicWorkflowFilter(db, opt.PublishStatus, "pinned_published_at", "")
+	if hasComicWorkflowFilter(opt) {
+		q = withPinnedChapterJoin(q)
 
-	if opt.Limit > 0 {
-		db = db.Offset(opt.Offset).Limit(opt.Limit)
+		q = applyComicWorkflowFilter(q, opt.UploadPhase, "uploaded_at", "")
+		q = applyComicWorkflowFilter(q, opt.TranslatePhase, "transalating_at", "translated_at")
+		q = applyComicWorkflowFilter(q, opt.ProofreadPhase, "proofreading_at", "proofread_at")
+		q = applyComicWorkflowFilter(q, opt.TypesetPhase, "typesetting_at", "typeset_at")
+		q = applyComicWorkflowFilter(q, opt.ReviewPhase, "reviewed_at", "")
+		q = applyComicWorkflowFilter(q, opt.PublishPhase, "published_at", "")
 	}
 
-	var rows []entity.ComicInfoRow
+	if opt != nil && opt.Pagi.Offset > 0 {
+		q = q.Offset(opt.Pagi.Offset)
+	}
 
-	if err := db.Order("index DESC").Find(&rows).Error; err != nil {
+	if opt != nil && opt.Pagi.Limit > 0 {
+		q = q.Limit(opt.Pagi.Limit)
+	}
+
+	q = withComicIncl(q, inc...)
+
+	err := q.Order("last_active_at DESC").Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 
-	items := make([]model.ComicInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToComicInfo(row))
+	result := make([]*aggr.Comic, len(rows))
+
+	for i := range rows {
+		result[i] = rows[i].ToComicAggr()
 	}
 
-	return items, nil
+	return result, nil
 }
 
-func (r *comicRepoImpl) Count(opt model.ComicQueryOpt) (int64, error) {
-	db := r.gdb.Table(entity.ComicTable).
-		Where("workset_id = ? AND deleted_at IS NULL", opt.WorksetID)
+// `Count` returns comic count matching query options
+func (r *comicRepoImpl) Count(opt *query.ListComicOpt) (int64, repo_iface.RepoErr) {
+	var count int64
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
+	q := r.gdb.
+		Table(entity.COMIC_TABLE)
+
+	if hasComicSearchFilter(opt) {
+		q = q.Where("t_comic.is_completed = FALSE")
 	}
-	if opt.FuzzyTitle != nil {
-		term := strings.TrimSpace(*opt.FuzzyTitle)
-		if term != "" {
-			db = db.Where("composed_title ILIKE ?", "%"+term+"%")
+
+	if opt != nil && opt.WorksetId != nil {
+		q = q.Where("workset_id = ?", *opt.WorksetId)
+	}
+
+	if opt != nil && opt.FuzzyTitle != nil {
+		fuzzyTitle := strings.TrimSpace(*opt.FuzzyTitle)
+
+		if fuzzyTitle != "" {
+			q = q.Where("t_comic.fuzzy_title ILIKE ?", "%"+fuzzyTitle+"%")
 		}
 	}
 
-	db = applyComicWorkflowFilter(db, opt.UploadStatus, "pinned_uploaded_at", "")
-	db = applyComicWorkflowFilter(db, opt.TranslateStatus, "pinned_transalating_at", "pinned_translated_at")
-	db = applyComicWorkflowFilter(db, opt.ProofreadStatus, "pinned_proofreading_at", "pinned_proofread_at")
-	db = applyComicWorkflowFilter(db, opt.TypesetStatus, "pinned_typesetting_at", "pinned_typeset_at")
-	db = applyComicWorkflowFilter(db, opt.ReviewStatus, "pinned_reviewed_at", "")
-	db = applyComicWorkflowFilter(db, opt.PublishStatus, "pinned_published_at", "")
+	if hasComicWorkflowFilter(opt) {
+		q = withPinnedChapterJoin(q)
 
-	var n int64
+		q = applyComicWorkflowFilter(q, opt.UploadPhase, "uploaded_at", "")
+		q = applyComicWorkflowFilter(q, opt.TranslatePhase, "transalating_at", "translated_at")
+		q = applyComicWorkflowFilter(q, opt.ProofreadPhase, "proofreading_at", "proofread_at")
+		q = applyComicWorkflowFilter(q, opt.TypesetPhase, "typesetting_at", "typeset_at")
+		q = applyComicWorkflowFilter(q, opt.ReviewPhase, "reviewed_at", "")
+		q = applyComicWorkflowFilter(q, opt.PublishPhase, "published_at", "")
+	}
 
-	err := db.Count(&n).Error
-	return n, err
+	err := q.Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
-func (r *comicRepoImpl) Create(c *model.ComicCreation) (*model.ComicInfo, error) {
+// `Create` inserts one comic row then reloads the created aggregate
+func (r *comicRepoImpl) Create(cre *aggr.ComicCre) (*aggr.Comic, repo_iface.RepoErr) {
+	fuzzyTitle := buildComicFuzzyTitle(cre.Index, cre.Author, cre.Title)
+	row := entity.NewComicCreRowFromAggr(cre, fuzzyTitle)
+
+	err := r.gdb.
+		Table(row.TableName()).
+		Create(row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetById(row.Id)
+}
+
+// `Update` applies put-style mutable fields to matching comic row
+func (r *comicRepoImpl) Update(upd *aggr.ComicUpd) repo_iface.RepoErr {
 	now := time.Now()
-	row := map[string]any{
-		"id":                 c.ID,
-		"workset_id":         c.WorksetID,
-		"index":              c.Index,
-		"title":              c.Title,
-		"author":             c.Author,
-		"composed_title":     fmt.Sprintf("【%d】[%s] %s", c.Index, c.Author, c.Title),
-		"description":        c.Desc,
-		"chapter_count":      0,
-		"has_pinned_chapter": false,
-		"creator_id":         c.CreatorID,
-		"last_active_at":     now,
-		"created_at":         now,
-		"updated_at":         now,
+
+	updRow := &entity.ComicUpdRow{
+		Title:      upd.Title,
+		Author:     upd.Author,
+		FuzzyTitle: "",
+		Desc:       upd.Desc,
+		UpdatedAt:  now,
 	}
 
-	if err := r.gdb.Table(entity.ComicTable).Create(row).Error; err != nil {
-		return nil, err
-	}
-
-	return r.GetByID(c.ID)
-}
-
-func (r *comicRepoImpl) Update(u *model.ComicUpdate) error {
-
-	var row entity.ComicInfoRow
-
-	err := r.gdb.Table(entity.ComicTable).
-		Select("id", "index").
-		Where("id = ? AND deleted_at IS NULL", u.ID).
-		First(&row).Error
+	// Resolve current comic index so fuzzy text always carries index info.
+	comic, err := r.GetById(upd.Id)
 	if err != nil {
 		return err
 	}
 
-	return r.gdb.Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", u.ID).
+	updRow.FuzzyTitle = buildComicFuzzyTitle(comic.Index, upd.Author, upd.Title)
+
+	err = r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", upd.Id).
+		Select("title", "author", "fuzzy_title", "description", "updated_at").
+		Updates(updRow).Error
+
+	return err
+}
+
+// `UpdateChapterCount` applies delta to comic chapter counter.
+func (r *comicRepoImpl) UpdateChapterCount(id string, delta int) repo_iface.RepoErr {
+	now := time.Now()
+
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
 		Updates(map[string]any{
-			"title":          u.Title,
-			"author":         u.Author,
-			"description":    u.Desc,
-			"composed_title": fmt.Sprintf("【%d】[%s] %s", row.Index, u.Author, u.Title),
-			"updated_at":     time.Now(),
+			"chapter_count": gorm.Expr("GREATEST(chapter_count + ?, 0)", delta),
+			"updated_at":    now,
 		}).Error
 }
 
-func (r *comicRepoImpl) UpdateChapterCount(id string, delta int) error {
-	return r.gdb.Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"chapter_count":  gorm.Expr("chapter_count + ?", delta),
-			"last_active_at": time.Now(),
-			"updated_at":     time.Now(),
-		}).Error
-}
+// `TouchLastActive` refreshes comic activity timestamp.
+func (r *comicRepoImpl) TouchLastActive(id string) repo_iface.RepoErr {
+	now := time.Now()
 
-func (r *comicRepoImpl) Delete(id string) error {
-	return r.gdb.Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"deleted_at": time.Now(),
-			"updated_at": time.Now(),
-		}).Error
-}
-
-func (r *comicRepoImpl) PreFillCoverOSSKey(id string, coverOSSKey string) error {
-	return r.gdb.Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"cover_oss_key":     coverOSSKey,
-			"is_cover_uploaded": false,
-			"updated_at":        time.Now(),
-		}).Error
-}
-
-func (r *comicRepoImpl) ConfirmCoverUploaded(id string) error {
-	return r.gdb.Table(entity.ComicTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"is_cover_uploaded": true,
-			"updated_at":        time.Now(),
-		}).Error
-}
-
-func applyComicWorkflowFilter(db *gorm.DB, phase *model.WorkflowPhase, startedColumn string, completedColumn string) *gorm.DB {
-	if phase == nil {
-		return db
+	updRow := &entity.ComicLastActiveUpdRow{
+		LastActiveAt: now,
+		UpdatedAt:    now,
 	}
+
+	err := r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Select("last_active_at", "updated_at").
+		Updates(updRow).Error
+
+	return err
+}
+
+// `PrefillCoverKey` writes one reserved cover key before client upload starts.
+func (r *comicRepoImpl) PrefillCoverKey(id string, key string) repo_iface.RepoErr {
+	now := time.Now()
+
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Updates(map[string]any{
+			"cover_key":      key,
+			"cover_uploaded": false,
+			"updated_at":     now,
+		}).Error
+}
+
+// `MarkCoverUploaded` marks one comic cover upload as completed.
+func (r *comicRepoImpl) MarkCoverUploaded(id string) repo_iface.RepoErr {
+	now := time.Now()
+
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Updates(map[string]any{
+			"cover_uploaded": true,
+			"updated_at":     now,
+		}).Error
+}
+
+// `IncrementChapterNextIndex` allocates one next chapter index from one comic row.
+func (r *comicRepoImpl) IncrementChapterNextIndex(id string) (int, repo_iface.RepoErr) {
+	type nextIndexRow struct {
+		NextIndex int `gorm:"column:chapter_next_index"`
+	}
+
+	var row nextIndexRow
+
+	updRe := r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Select("chapter_next_index").
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "chapter_next_index"}}}).
+		Updates(map[string]any{"chapter_next_index": gorm.Expr("chapter_next_index + 1")}).
+		Scan(&row)
+	if updRe.Error != nil {
+		return 0, updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+
+	return row.NextIndex - 1, nil
+}
+
+// `Delete` hard-deletes one comic row by id.
+func (r *comicRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Delete(&entity.ComicRow{}).Error
+}
+
+// `withComicIncl` maps typed include options to preload actions
+func withComicIncl(q *gorm.DB, inc ...enum.ComicIncl) *gorm.DB {
+	for _, i := range inc {
+		switch i {
+		case enum.ComicInclWorkset:
+			q = q.Preload("Workset")
+		}
+	}
+
+	return q
+}
+
+// `withPinnedChapterJoin` joins pinned chapter row for workflow filtering.
+func withPinnedChapterJoin(q *gorm.DB) *gorm.DB {
+	return q.Joins(
+		"LEFT JOIN t_chapter AS " + chapterPinAlias +
+			" ON " + chapterPinAlias + ".comic_id = t_comic.id" +
+			" AND " + chapterPinAlias + ".pinned = TRUE",
+	)
+}
+
+// `applyComicWorkflowFilter` applies one workflow phase filter against pinned chapter fields.
+func applyComicWorkflowFilter(
+	q *gorm.DB,
+	phase *enum.WorkflowPhase,
+	startedCol string,
+	completedCol string,
+) *gorm.DB {
+	if phase == nil {
+		return q
+	}
+
+	startedExpr := chapterPinAlias + "." + startedCol
+	completedExpr := chapterPinAlias + "." + completedCol
 
 	switch *phase {
-	case model.WorkflowPending:
-		if completedColumn == "" {
-			return db.Where("has_pinned_chapter = FALSE OR " + startedColumn + " IS NULL")
+	case enum.WorkflowPending:
+		return q.Where(
+			"(" + chapterPinAlias + ".id IS NULL OR " + startedExpr + " IS NULL)",
+		)
+
+	case enum.WorkflowOngoing:
+		if completedCol == "" {
+			return q.Where("1 = 0")
 		}
-		return db.Where("has_pinned_chapter = FALSE OR " + startedColumn + " IS NULL")
-	case model.WorkflowOngoing:
-		if completedColumn == "" {
-			return db.Where("1 = 0")
+
+		return q.Where(
+			startedExpr + " IS NOT NULL AND " + completedExpr + " IS NULL",
+		)
+
+	case enum.WorkflowCompleted:
+		if completedCol == "" {
+			return q.Where(startedExpr + " IS NOT NULL")
 		}
-		return db.Where(startedColumn + " IS NOT NULL").Where(completedColumn + " IS NULL")
-	case model.WorkflowCompleted:
-		if completedColumn == "" {
-			return db.Where(startedColumn + " IS NOT NULL")
-		}
-		return db.Where(completedColumn + " IS NOT NULL")
+
+		return q.Where(completedExpr + " IS NOT NULL")
+
 	default:
-		return db
+		return q
 	}
+}
+
+// `hasComicWorkflowFilter` reports whether comic query contains workflow constraints.
+func hasComicWorkflowFilter(opt *query.ListComicOpt) bool {
+	if opt == nil {
+		return false
+	}
+
+	return opt.UploadPhase != nil ||
+		opt.TranslatePhase != nil ||
+		opt.ProofreadPhase != nil ||
+		opt.TypesetPhase != nil ||
+		opt.ReviewPhase != nil ||
+		opt.PublishPhase != nil
+}
+
+// `hasComicSearchFilter` reports whether comic query contains any business filter.
+func hasComicSearchFilter(opt *query.ListComicOpt) bool {
+	return hasComicFuzzyTitleFilter(opt) || hasComicWorkflowFilter(opt)
+}
+
+// `hasComicFuzzyTitleFilter` reports whether comic query contains fuzzy title filter.
+func hasComicFuzzyTitleFilter(opt *query.ListComicOpt) bool {
+	if opt == nil || opt.FuzzyTitle == nil {
+		return false
+	}
+
+	return strings.TrimSpace(*opt.FuzzyTitle) != ""
+}
+
+// `buildComicFuzzyTitle` builds dedicated fuzzy text containing index and title fields.
+func buildComicFuzzyTitle(index int, author string, title string) string {
+	return fmt.Sprintf("【%d】[%s] %s", index+1, author, title)
 }

@@ -1,194 +1,167 @@
-package oss
+package oss_infra
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"time"
+
+	oss_iface "poprako-s/internal/domain/ext/oss"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/spf13/viper"
 )
 
 type r2Client struct {
-	client        *s3.Client
-	presignClient *s3.PresignClient
+	cli    *s3.Client
+	preCli *s3.PresignClient
 
-	bucketName   string
-	customDomain string
+	bucket string
+	domain string
 }
 
-func NewR2Client() *r2Client {
-	accountID := os.Getenv("R2_ACCOUNT_ID")
-	if accountID == "" {
-		panic("未设置 R2_ACCOUNT_ID 环境变量")
+func NewR2Client() oss_iface.Client {
+	accId := viper.GetString("R2_ACCOUNT_ID")
+	if accId == "" {
+		panic("[NewR2Client] env R2_ACCOUNT_ID is not set")
 	}
 
-	accessKeyID := os.Getenv("R2_ACCESS_KEY_ID")
-	if accessKeyID == "" {
-		panic("未设置 R2_ACCESS_KEY_ID 环境变量")
+	acsKeyId := viper.GetString("R2_ACCESS_KEY_ID")
+	if acsKeyId == "" {
+		panic("[NewR2Client] env R2_ACCESS_KEY_ID is not set")
 	}
 
-	secretKeyID := os.Getenv("R2_SECRET_ACCESS_KEY")
-	if secretKeyID == "" {
-		panic("未设置 R2_SECRET_ACCESS_KEY 环境变量")
+	scrKeyId := viper.GetString("R2_SECRET_ACCESS_KEY")
+	if scrKeyId == "" {
+		panic("[NewR2Client] env R2_SECRET_ACCESS_KEY is not set")
 	}
 
-	region := os.Getenv("R2_REGION")
+	region := viper.GetString("R2_REGION")
 	if region == "" {
 		region = "auto"
 	}
 
-	bucketName := os.Getenv("R2_BUCKET_NAME")
-	if bucketName == "" {
-		panic("未设置 R2_BUCKET_NAME 环境变量")
+	bucket := viper.GetString("R2_BUCKET_NAME")
+	if bucket == "" {
+		panic("[NewR2Client] env R2_BUCKET_NAME is not set")
 	}
 
-	customDomain := os.Getenv("R2_CUSTOM_DOMAIN")
-	r2Endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountID)
+	dom := viper.GetString("R2_CUSTOM_DOMAIN")
+	ep := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accId)
 
 	cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
+		context.Background(),
 		config.WithRegion(region),
 		config.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(accessKeyID, secretKeyID, ""),
+			credentials.NewStaticCredentialsProvider(acsKeyId, scrKeyId, ""),
 		),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("加载 SDK 配置失败: %v", err))
 	}
 
-	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String(r2Endpoint)
+	cli := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(ep)
 	})
 
 	return &r2Client{
-		client:        client,
-		presignClient: s3.NewPresignClient(client),
-		bucketName:    bucketName,
-		customDomain:  customDomain,
+		cli:    cli,
+		preCli: s3.NewPresignClient(cli),
+		bucket: bucket,
+		domain: dom,
 	}
 }
 
-func (r2 *r2Client) GeneratePutPresignedURL(objectKey string) (string, error) {
-	const exp = 10 * time.Minute
-
-	input := &s3.PutObjectInput{
-		Bucket: aws.String(r2.bucketName),
-		Key:    aws.String(objectKey),
+func (c *r2Client) GenGetUrl(key string) (string, error) {
+	if c.domain == "" {
+		return "", errors.New("[r2Client.GenGetUrl] Non custom domain implementation is not supported")
 	}
 
-	if contentType := detectImageContentType(objectKey); contentType != "" {
-		input.ContentType = aws.String(contentType)
+	return fmt.Sprintf("%s/%s", c.domain, key), nil
+}
+
+func (c *r2Client) GenPutUrl(key string) (string, error) {
+	const EXP = 10 * time.Minute
+
+	typ := detectImgContTyp(key)
+	if typ == "" {
+		return "", fmt.Errorf("[r2Client.GenPutUrl] unsupported file type for key: %s", key)
 	}
 
-	req, err := r2.presignClient.PresignPutObject(context.TODO(), input, s3.WithPresignExpires(exp))
+	in := &s3.PutObjectInput{
+		Bucket:      aws.String(c.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(typ),
+	}
+
+	req, err := c.preCli.PresignPutObject(context.Background(), in, s3.WithPresignExpires(EXP))
 	if err != nil {
-		return "", fmt.Errorf("生成上传预签名 URL 失败: %w", err)
+		return "", fmt.Errorf("[r2Client.GenPutUrl] failed to generate presigned put url: %v", err)
 	}
 
 	return req.URL, nil
 }
 
-func (r2 *r2Client) GenerateGetPresignedURL(objectKey string) (string, error) {
-	if r2.customDomain != "" {
-		return fmt.Sprintf("https://%s/%s", r2.customDomain, objectKey), nil
+func (c *r2Client) DelBatch(keys []string) error {
+	// At current stage, we do not use a exponential backoff strategy for retrying failed deletions, as the number of keys in a batch is expected to be small (usually less than 10), and the likelihood of transient errors is relatively low. However, if we encounter a failure in deleting a batch of keys, we will log the error and the keys that failed to be deleted for further investigation. If we find that transient errors are common in our use case,
+	// we can consider implementing a retry mechanism with exponential backoff in the future.
+	const MAX_RETRY = 3
+	const RETRY_DELAY = time.Second
+
+	objs := make([]types.ObjectIdentifier, len(keys))
+	for i, key := range keys {
+		objs[i] = types.ObjectIdentifier{Key: aws.String(key)}
 	}
-
-	return "", fmt.Errorf("未配置自定义域名")
-}
-
-func (r2 *r2Client) Delete(objectKey string) error {
-	const maxRetries = 3
-	const retryDelay = 500 * time.Millisecond
-
-	ctx := context.Background()
 
 	var lastErr error
 
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		_, err := r2.client.DeleteObject(ctx, &s3.DeleteObjectInput{
-			Bucket: aws.String(r2.bucketName),
-			Key:    aws.String(objectKey),
-		})
-		if err == nil {
-			return nil
-		}
-
-		var noSuchKey *types.NoSuchKey
-
-		if errors.As(err, &noSuchKey) {
-			return nil
-		}
-
-		lastErr = err
-
-		if attempt < maxRetries {
-			time.Sleep(retryDelay)
-		}
-	}
-
-	return fmt.Errorf("在 %d 次尝试后删除对象失败: %w", maxRetries, lastErr)
-}
-
-func (r2 *r2Client) DeleteBatch(objectKeys []string) error {
-	if len(objectKeys) == 0 {
-		return nil
-	}
-	const maxRetries = 3
-	const retryDelay = 500 * time.Millisecond
-
-	ctx := context.Background()
-	var lastErr error
-
-	objects := make([]types.ObjectIdentifier, 0, len(objectKeys))
-	for _, k := range objectKeys {
-		objects = append(objects, types.ObjectIdentifier{Key: aws.String(k)})
-	}
-
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		out, err := r2.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
-			Bucket: aws.String(r2.bucketName),
+	for att := range MAX_RETRY {
+		out, err := c.cli.DeleteObjects(context.Background(), &s3.DeleteObjectsInput{
+			Bucket: aws.String(c.bucket),
 			Delete: &types.Delete{
-				Objects: objects,
+				Objects: objs,
 				Quiet:   aws.Bool(true),
 			},
 		})
 
-		if err == nil {
-			if len(out.Errors) == 0 {
-				return nil
-			}
+		if IsNoSuchKey(err) {
+			// Keep silent if a object is already deleted or does not exist,
+			// as the end state is the same (the object is not present in the bucket).
+			return nil
+		}
 
-			var nonNotFound []types.Error
-			for _, e := range out.Errors {
-				if e.Code != nil && *e.Code == "NoSuchKey" {
-					continue
-				}
+		if err != nil {
+			lastErr = err
+			maySleep(att, MAX_RETRY, RETRY_DELAY)
+
+			continue
+		}
+
+		// Branch: err == nil.
+		if len(out.Errors) == 0 {
+			return nil
+		}
+
+		// Filter out non-notfound errrors.
+		nonNotFound := make([]types.Error, 0)
+		for _, e := range out.Errors {
+			if e.Code != nil && *e.Code != "NoSuchKey" {
 				nonNotFound = append(nonNotFound, e)
 			}
-
-			if len(nonNotFound) == 0 {
-				return nil
-			}
-
-			lastErr = fmt.Errorf("部分对象删除失败: %v", nonNotFound)
-		} else {
-			var noSuchKey *types.NoSuchKey
-			if errors.As(err, &noSuchKey) {
-				return nil
-			}
-			lastErr = err
 		}
 
-		if attempt < maxRetries {
-			time.Sleep(retryDelay)
+		if len(nonNotFound) == 0 {
+			return nil
 		}
+
+		lastErr = fmt.Errorf("[r2Client.DelBatch] delete batch partially failed: %v", nonNotFound)
+
+		maySleep(att, MAX_RETRY, RETRY_DELAY)
 	}
 
-	return fmt.Errorf("在 %d 次尝试后批量删除对象失败: %w", maxRetries, lastErr)
+	return lastErr
 }

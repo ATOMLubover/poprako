@@ -15,73 +15,14 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/assignments": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取指定章节的所有分配记录，仅汉化组成员可访问",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assignment"
-                ],
-                "summary": "获取章节分配列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "章节 ID",
-                        "name": "chapter_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：user, chapter, chapter.comic, chapter.creator",
-                        "name": "\"includes\"",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.AssignmentInfo"
-                            }
-                        }
-                    }
-                }
-            },
+        "/assignment-invitations": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "为指定章节创建一条分配记录，需要当前用户在该章节中拥有 reviewer 角色",
+                "description": "Create assignment invitation for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -89,17 +30,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "assignment"
+                    "assignment-invitation"
                 ],
-                "summary": "创建章节分配",
+                "summary": "Create Assignment Invitation",
                 "parameters": [
                     {
-                        "description": "创建分配参数",
+                        "description": "create assignment invitation args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.CreateAssignmentArgs"
+                            "$ref": "#/definitions/val.CreateAssignmentInvArgs"
                         }
                     }
                 ],
@@ -107,20 +48,217 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.CreateAssignmentRes"
+                            "$ref": "#/definitions/res.HttpRes-val_CreateAssignmentInvRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/assignments/join": {
+        "/assignment-invitations/chapter/{chapter_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List assignment invitations for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment-invitation"
+                ],
+                "summary": "List Assignment Invitations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "pending filter",
+                        "name": "pending",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentInvVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignment-invitations/join": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "使用章节邀请码加入对应章节协作并授予邀请中的分工",
+                "description": "Join chapter collaboration by assignment invitation code\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment-invitation"
+                ],
+                "summary": "Join Chapter By Invitation",
+                "parameters": [
+                    {
+                        "description": "join args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.JoinAssignmentInvArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignment-invitations/{invitation_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete assignment invitation by id\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment-invitation"
+                ],
+                "summary": "Delete Assignment Invitation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "invitation id",
+                        "name": "invitation_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Upsert assignment by PUT semantics\nIf ` + "`" + `role_mask` + "`" + ` is zero the request will redirect to delete semantics\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -130,21 +268,106 @@ const docTemplate = `{
                 "tags": [
                     "assignment"
                 ],
-                "summary": "通过章节邀请加入协作",
+                "summary": "Upsert Assignment",
                 "parameters": [
                     {
-                        "description": "加入章节协作参数",
+                        "description": "upsert args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.JoinInvitorChapterArgs"
+                            "$ref": "#/definitions/val.UpsertAssignmentArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/assignments/chapter/{chapter_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List assignments for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment"
+                ],
+                "summary": "List Assignments By Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
@@ -156,48 +379,51 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取当前登录用户的所有分配记录，支持分页",
+                "description": "List assignments of current user\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "assignment"
                 ],
-                "summary": "获取我的分配列表",
+                "summary": "List My Assignments",
                 "parameters": [
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：chapter, chapter.comic, chapter.creator",
-                        "name": "\"includes\"",
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
+                        "description": "pagination limit",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.AssignmentInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -210,18 +436,18 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "删除指定分配记录，需要当前用户在该章节中拥有 reviewer 角色",
+                "description": "Delete assignment by id\nThe caller must be reviewer of target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "assignment"
                 ],
-                "summary": "删除分配",
+                "summary": "Delete Assignment",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "分配 ID",
+                        "description": "assignment id",
                         "name": "assignment_id",
                         "in": "path",
                         "required": true
@@ -229,14 +455,35 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
         "/auth/login": {
             "post": {
-                "description": "使用 QQ 和密码进行登录，成功返回访问令牌",
+                "description": "Login by qid and password and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.UserLoginRes` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -246,15 +493,15 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "用户登录",
+                "summary": "User Login",
                 "parameters": [
                     {
-                        "description": "登录参数",
+                        "description": "login args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.LoginUserArgs"
+                            "$ref": "#/definitions/val.UserLoginArgs"
                         }
                     }
                 ],
@@ -262,7 +509,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.LoginUserRes"
+                            "$ref": "#/definitions/res.HttpRes-val_UserLoginRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -270,7 +523,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "使用 QQ、密码、名字和邀请码进行注册，成功返回访问令牌",
+                "description": "Register by invitation code and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.UserRegRes` + "`" + `",
                 "consumes": [
                     "application/json"
                 ],
@@ -280,15 +533,15 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "用户注册",
+                "summary": "User Registration",
                 "parameters": [
                     {
-                        "description": "注册参数",
+                        "description": "registration args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.RegUserArgs"
+                            "$ref": "#/definitions/val.UserRegArgs"
                         }
                     }
                 ],
@@ -296,79 +549,26 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.RegUserRes"
+                            "$ref": "#/definitions/res.HttpRes-val_UserRegRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/chapters": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取指定漫画的章节列表，支持分页和 includes 嵌套信息查询",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "获取漫画章节列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "漫画 ID",
-                        "name": "comic_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：creator",
-                        "name": "\"includes\"",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.ChapterInfo"
-                            }
-                        }
-                    }
-                }
-            },
+        "/chapter": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在指定漫画中创建章节，并写入章节副标题",
+                "description": "Create chapter under one comic\nThe caller must be an admin of the target comic team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -378,10 +578,10 @@ const docTemplate = `{
                 "tags": [
                     "chapter"
                 ],
-                "summary": "创建漫画章节",
+                "summary": "Create Chapter",
                 "parameters": [
                     {
-                        "description": "创建章节参数",
+                        "description": "create chapter args",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -394,103 +594,165 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.CreateChapterRes"
+                            "$ref": "#/definitions/res.HttpRes-val_ChapterCreatedRes"
                         }
-                    }
-                }
-            }
-        },
-        "/chapters/{chapter_id}": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "删除指定章节",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "删除章节",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "章节 ID",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改；除了 reviewer 以外，其他任何角色都只能修改自己对应的 workflow 的状态",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "更新章节",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "章节 ID",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
                     },
-                    {
-                        "description": "更新章节参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateChapterArgs"
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
-        "/chapters/{chapter_id}/export": {
+        "/chapter/comic/{comic_id}": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "导出指定章节的完整数据，包含页面与翻译单元信息",
+                "description": "List chapters for one comic\nThe caller must be a member of the target comic team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "chapter"
                 ],
-                "summary": "导出章节数据（JSON 格式）",
+                "summary": "List Chapters",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "章节 ID",
+                        "description": "comic id",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_ChapterVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapter/comic/{comic_id}/pinned": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get pinned chapter for one comic\nThe caller must be a member of the target comic team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Get Pinned Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "comic id",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ChapterVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapter/{chapter_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get one chapter by id\nThe caller must be a member of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Get Chapter By Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
                         "name": "chapter_id",
                         "in": "path",
                         "required": true
@@ -500,31 +762,225 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.ChapterExport"
+                            "$ref": "#/definitions/res.HttpRes-val_ChapterVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update one chapter with PUT semantics\nThe caller must be an admin of the target chapter team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Update Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "update chapter args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ChapterUpdArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hard-delete one chapter\nThe caller must be an admin of the target chapter team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Delete Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/chapters/{chapter_id}/export/lp": {
+        "/chapter/{chapter_id}/export": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "导出指定章节的 LabelPlus 格式文本文件，可直接用于 LabelPlus 工具导入",
+                "description": "Export one chapter in JSON format\nThe caller must have any assignment on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Export Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ChapterExportVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/chapter/{chapter_id}/export/lp": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Export one chapter in LabelPlus text format\nThe caller must have any assignment on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "text/plain"
                 ],
                 "tags": [
                     "chapter"
                 ],
-                "summary": "导出章节数据（LabelPlus 格式）",
+                "summary": "Export Chapter LabelPlus",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "章节 ID",
+                        "description": "chapter id",
                         "name": "chapter_id",
                         "in": "path",
                         "required": true
@@ -536,18 +992,42 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
-        "/chapters/{chapter_id}/import": {
+        "/chapter/{chapter_id}/import": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "以 Poprako JSON 或 LabelPlus 文本格式导入章节内容",
+                "description": "Import one chapter from Poprako JSON or LabelPlus text content\nThe caller must be translator or proofreader of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -557,22 +1037,22 @@ const docTemplate = `{
                 "tags": [
                     "chapter"
                 ],
-                "summary": "导入章节数据",
+                "summary": "Import Chapter",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "章节 ID",
+                        "description": "chapter id",
                         "name": "chapter_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "导入参数",
+                        "description": "import chapter args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.ImportChapterArgs"
+                            "$ref": "#/definitions/val.ImportChapterBody"
                         }
                     }
                 ],
@@ -580,93 +1060,119 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.ImportChapterRes"
+                            "$ref": "#/definitions/res.HttpRes-val_ImportChapterRes"
                         }
-                    }
-                }
-            }
-        },
-        "/chapters/{chapter_id}/invitations": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "在指定章节下创建协作邀请并返回邀请码",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "创建章节协作邀请",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "章节 ID",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
                     },
-                    {
-                        "description": "邀请参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/val.InviteChapterAssigneeArgs"
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/val.InviteChapterAssigneeRes"
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/comics": {
+        "/chapter/{chapter_id}/pages": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取指定工作集的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组",
+                "description": "List pages under one chapter with pagination\nThe caller must be a member of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "comic"
+                    "chapter"
                 ],
-                "summary": "获取指定工作集的漫画列表",
+                "summary": "List Chapter Pages",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "工作集 ID",
-                        "name": "workset_id",
-                        "in": "query",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "integer",
-                        "description": "偏移量",
+                        "description": "pagination offset",
                         "name": "offset",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "pagination limit",
                         "name": "limit",
-                        "in": "query",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_PageVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hard-delete all pages under one chapter\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Delete Chapter Pages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -674,21 +1180,102 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.ComicInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
-            },
+            }
+        },
+        "/chapter/{chapter_id}/pages/reserve": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在指定工作集中创建漫画",
+                "description": "Reserve signed upload URLs for all pages of one chapter\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Reserve Chapter Pages Upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "reserve chapter pages args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ResvChapterPagesArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ResvChapterPagesRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/comic": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create one comic under a workset\nThe caller must be an admin of the target workset team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -698,10 +1285,10 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "创建漫画",
+                "summary": "Create Comic",
                 "parameters": [
                     {
-                        "description": "创建漫画参数",
+                        "description": "create comic args",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -714,20 +1301,200 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.CreateComicRes"
+                            "$ref": "#/definitions/res.HttpRes-val_ComicCreatedRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/comics/{comic_id}": {
+        "/comic/workset/{workset_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List active comics for one workset\nThe caller must be a member of the target workset team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "List Comics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "workset id",
+                        "name": "workset_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "fuzzy title",
+                        "name": "fuzzy_title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "upload phase 0 pending 1 ongoing 2 completed",
+                        "name": "upload_phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "translate phase 0 pending 1 ongoing 2 completed",
+                        "name": "translate_phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "proofread phase 0 pending 1 ongoing 2 completed",
+                        "name": "proofread_phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "typeset phase 0 pending 1 ongoing 2 completed",
+                        "name": "typeset_phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review phase 0 pending 1 ongoing 2 completed",
+                        "name": "review_phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "publish phase 0 pending 1 ongoing 2 completed",
+                        "name": "publish_phase",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_ComicVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/comic/{comic_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get one comic by id\nThe caller must be a member of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "Get Comic By Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "comic id",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ComicVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "更新指定漫画的信息",
+                "description": "Update comic fields with PUT semantics\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -737,28 +1504,49 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "更新漫画",
+                "summary": "Update Comic",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "漫画 ID",
+                        "description": "comic id",
                         "name": "comic_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新漫画参数",
+                        "description": "update comic args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateComicArgs"
+                            "$ref": "#/definitions/val.ComicUpdArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             },
@@ -768,18 +1556,18 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "删除指定漫画",
+                "description": "Hard-delete one comic by id\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "comic"
                 ],
-                "summary": "删除漫画",
+                "summary": "Delete Comic",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "漫画 ID",
+                        "description": "comic id",
                         "name": "comic_id",
                         "in": "path",
                         "required": true
@@ -787,19 +1575,40 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
-        "/comics/{comic_id}/cover": {
+        "/comic/{comic_id}/cover": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key",
+                "description": "Reserve a signed upload URL for one comic cover\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -809,22 +1618,22 @@ const docTemplate = `{
                 "tags": [
                     "comic"
                 ],
-                "summary": "预留漫画封面上传",
+                "summary": "Reserve Comic Cover Upload",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "漫画 ID",
+                        "description": "comic id",
                         "name": "comic_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "预留漫画封面参数",
+                        "description": "reserve comic cover args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.ReserveComicCoverArgs"
+                            "$ref": "#/definitions/val.ResvComicCoverBody"
                         }
                     }
                 ],
@@ -832,62 +1641,49 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.ReserveComicCoverRes"
+                            "$ref": "#/definitions/res.HttpRes-val_ResvComicCoverRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/comics/{comic_id}/cover/confirm": {
+        "/comic/{comic_id}/cover/confirm": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在客户端上传封面后，确认漫画封面上传状态",
+                "description": "Confirm one comic cover upload after client upload completed\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "comic"
                 ],
-                "summary": "确认漫画封面已上传",
+                "summary": "Confirm Comic Cover Uploaded",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "漫画 ID",
-                        "name": "comic_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/comics/{comic_id}/pinned-chapter": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "获取漫画置顶章节",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "漫画 ID",
+                        "description": "comic id",
                         "name": "comic_id",
                         "in": "path",
                         "required": true
@@ -897,85 +1693,38 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.ChapterInfo"
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/invitations": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "invitation"
-                ],
-                "summary": "获取邀请列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "是否仅返回待处理邀请",
-                        "name": "pending",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：invitor",
-                        "name": "\"includes\"",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.InvitationInfo"
-                            }
-                        }
-                    }
-                }
-            },
+        "/member-invitations": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在指定汉化组中创建一个新的邀请",
+                "description": "Create one invitation under one team\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -983,17 +1732,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "invitation"
+                    "member-invitation"
                 ],
-                "summary": "创建邀请",
+                "summary": "Create Member Invitation",
                 "parameters": [
                     {
-                        "description": "创建邀请参数",
+                        "description": "create invitation args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.CreateInvitationArgs"
+                            "$ref": "#/definitions/val.CreateMemberInvArgs"
                         }
                     }
                 ],
@@ -1001,20 +1750,108 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.InvitationInfo"
+                            "$ref": "#/definitions/res.HttpRes-val_CreateMemberInvRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
             }
         },
-        "/invitations/{invitation_id}": {
+        "/member-invitations/team/{team_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List invitations under one team\nThe caller must be member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member-invitation"
+                ],
+                "summary": "List Member Invitations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "pending filter",
+                        "name": "pending",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_MemberInvVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/member-invitations/{invitation_id}": {
             "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "更新指定待处理邀请的信息，无法更新已被使用或已失效的邀请",
+                "description": "Update invitation role mask by put semantics\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -1022,30 +1859,51 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "invitation"
+                    "member-invitation"
                 ],
-                "summary": "更新未被使用的邀请",
+                "summary": "Update Member Invitation",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "邀请 ID",
+                        "description": "invitation id",
                         "name": "invitation_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新邀请参数",
+                        "description": "update invitation args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateInvitationArgs"
+                            "$ref": "#/definitions/val.MemberInvUpdArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             },
@@ -1055,18 +1913,18 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "删除指定的邀请",
+                "description": "Hard delete one invitation by id\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "invitation"
+                    "member-invitation"
                 ],
-                "summary": "删除邀请",
+                "summary": "Delete Member Invitation",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "邀请 ID",
+                        "description": "invitation id",
                         "name": "invitation_id",
                         "in": "path",
                         "required": true
@@ -1074,78 +1932,40 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
         "/members": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "member"
-                ],
-                "summary": "获取指定汉化组的成员列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：user",
-                        "name": "\"includes\"",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.MemberInfo"
-                            }
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "由超级管理员直接创建成员记录",
+                "description": "Create one member under one team\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -1155,10 +1975,10 @@ const docTemplate = `{
                 "tags": [
                     "member"
                 ],
-                "summary": "创建成员",
+                "summary": "Create Member",
                 "parameters": [
                     {
-                        "description": "创建成员参数",
+                        "description": "create member args",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1171,7 +1991,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.CreateMemberRes"
+                            "$ref": "#/definitions/res.HttpRes-val_CreateMemberRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1184,7 +2022,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "已登录用户使用邀请码加入对应汉化组",
+                "description": "Join one team by member invitation code\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -1194,10 +2032,10 @@ const docTemplate = `{
                 "tags": [
                     "member"
                 ],
-                "summary": "通过邀请码加入汉化组",
+                "summary": "Join Team By Invitation",
                 "parameters": [
                     {
-                        "description": "加入汉化组参数",
+                        "description": "join team args",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1208,7 +2046,28 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
@@ -1220,14 +2079,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取当前用户在各汉化组中的成员信息，注意当列表为空，会返回 null 而不是空数组",
+                "description": "List all memberships of current user\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "member"
                 ],
-                "summary": "获取当前用户的成员身份列表",
+                "summary": "List My Members",
                 "parameters": [
                     {
                         "type": "array",
@@ -1235,33 +2094,120 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：team",
-                        "name": "\"includes\"",
+                        "description": "include related fields, optional: user, team",
+                        "name": "includes",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "偏移量",
+                        "description": "pagination offset",
                         "name": "offset",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "pagination limit",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.MemberInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-array_val_MemberVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/members/team/{team_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List members under one team\nThe caller must be a member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "List Team Members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user, team",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_MemberVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1274,7 +2220,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "更新指定成员的分工角色",
+                "description": "Update one member role mask by put semantics\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -1284,28 +2230,49 @@ const docTemplate = `{
                 "tags": [
                     "member"
                 ],
-                "summary": "更新成员角色",
+                "summary": "Update Member Role",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "成员 ID",
+                        "description": "member id",
                         "name": "member_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新成员角色参数",
+                        "description": "update member role args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateMemberRoleArgs"
+                            "$ref": "#/definitions/val.MemberRoleUpdArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             },
@@ -1315,18 +2282,18 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "从汉化组中移除指定成员",
+                "description": "Hard delete one member by id\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "member"
                 ],
-                "summary": "移除成员",
+                "summary": "Delete Member",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "成员 ID",
+                        "description": "member id",
                         "name": "member_id",
                         "in": "path",
                         "required": true
@@ -1334,67 +2301,137 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
-        "/pages": {
-            "get": {
+        "/page/{page_id}/image/uploaded": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取指定章节的所有页面，注意当列表为空，会返回 null 而不是空数组",
+                "description": "Confirm one page image upload after client upload completed\nThe caller must be assigned to the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "page"
                 ],
-                "summary": "获取章节页面列表",
+                "summary": "Confirm Page Image Uploaded",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "章节 ID",
-                        "name": "chapter_id",
-                        "in": "query",
+                        "description": "page id",
+                        "name": "page_id",
+                        "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：creator",
-                        "name": "\"includes\"",
-                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.PageInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/page/{page_id}/units": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List units for one page\nThe caller must have any assignment on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "unit"
+                ],
+                "summary": "List Page Units",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page id",
+                        "name": "page_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ListPageUnitsRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1405,7 +2442,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "为指定章节批量创建页面，返回每个页面的预签名上传地址",
+                "description": "Apply one page unit diff and synchronize page and chapter counters\nThe caller must be translator or proofreader on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -1413,98 +2450,166 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "page"
+                    "unit"
                 ],
-                "summary": "预留页面记录，并生成每个页面的预签名上传地址",
-                "parameters": [
-                    {
-                        "description": "预留页面参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.ReserveChapterPagesArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/val.ReserveChapterPagesRes"
-                        }
-                    }
-                }
-            }
-        },
-        "/pages/{page_id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "更新指定页面的信息，例如标记页面已上传完成",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "page"
-                ],
-                "summary": "更新页面",
+                "summary": "Save Page Units",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "页面 ID",
+                        "description": "page id",
                         "name": "page_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新页面参数",
+                        "description": "save page units args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdatePageArgs"
+                            "$ref": "#/definitions/val.SavePageUnitsArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_SavePageUnitsRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/sys-mail": {
+            "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "删除指定页面",
+                "description": "List unread system mails for current authorized user with pagination\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "page"
+                    "sys-mail"
                 ],
-                "summary": "删除页面",
+                "summary": "List Unread System Mails",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_SysMailVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/sys-mail/{sys_mail_id}/read": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Mark one system mail as read for current authorized user\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sys-mail"
+                ],
+                "summary": "Mark System Mail Read",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "页面 ID",
-                        "name": "page_id",
+                        "description": "system mail id",
+                        "name": "sys_mail_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
@@ -1516,38 +2621,50 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "team"
                 ],
-                "summary": "获取所有汉化组列表",
+                "summary": "List Teams",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "偏移量",
+                        "description": "pagination offset",
                         "name": "offset",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "pagination limit",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.TeamInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-array_val_TeamVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1558,7 +2675,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "创建一个新的汉化组，仅超级管理员有权限",
                 "consumes": [
                     "application/json"
                 ],
@@ -1568,15 +2684,15 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "创建汉化组",
+                "summary": "Create Team",
                 "parameters": [
                     {
-                        "description": "创建汉化组参数",
+                        "description": "create team args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.CreateTeamArgs"
+                            "$ref": "#/definitions/val.TeamCreArgs"
                         }
                     }
                 ],
@@ -1584,7 +2700,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.CreateTeamRes"
+                            "$ref": "#/definitions/res.HttpRes-val_TeamCreRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1597,27 +2731,75 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "team"
                 ],
-                "summary": "获取当前用户所在的汉化组列表",
+                "summary": "List My Teams",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "偏移量",
+                        "description": "pagination offset",
                         "name": "offset",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "pagination limit",
                         "name": "limit",
-                        "in": "query",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_TeamVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{team_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team"
+                ],
+                "summary": "Get Team Info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -1625,23 +2807,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.TeamInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-val_TeamVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
-            }
-        },
-        "/teams/{team_id}": {
+            },
             "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "更新指定汉化组的信息，超级管理员或汉化组管理员有权限",
                 "consumes": [
                     "application/json"
                 ],
@@ -1651,57 +2833,49 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "更新汉化组信息",
+                "summary": "Update Team",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "汉化组 ID",
+                        "description": "team id",
                         "name": "team_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新汉化组参数",
+                        "description": "update team args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateTeamArgs"
+                            "$ref": "#/definitions/val.TeamUpdArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "删除指定汉化组，超级管理员或汉化组管理员有权限",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "team"
-                ],
-                "summary": "删除汉化组",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
@@ -1713,7 +2887,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key",
                 "consumes": [
                     "application/json"
                 ],
@@ -1723,22 +2896,22 @@ const docTemplate = `{
                 "tags": [
                     "team"
                 ],
-                "summary": "预留汉化组头像上传",
+                "summary": "Reserve Team Avatar Upload",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "汉化组 ID",
+                        "description": "team id",
                         "name": "team_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "预留汉化组头像参数",
+                        "description": "reserve team avatar args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.ReserveTeamAvatarArgs"
+                            "$ref": "#/definitions/val.ResvTeamAvatarArgs"
                         }
                     }
                 ],
@@ -1746,7 +2919,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.ReserveTeamAvatarRes"
+                            "$ref": "#/definitions/res.HttpRes-val_ResvTeamAvatarRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1759,18 +2950,17 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在客户端上传头像后，确认汉化组头像上传状态",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "team"
                 ],
-                "summary": "确认汉化组头像已上传",
+                "summary": "Confirm Team Avatar Uploaded",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "汉化组 ID",
+                        "description": "team id",
                         "name": "team_id",
                         "in": "path",
                         "required": true
@@ -1778,43 +2968,137 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
-        "/units": {
-            "get": {
+        "/users/avatar": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "获取指定页面的所有翻校单元，按 index 升序排列，注意当列表为空时返回 null 而非空数组",
+                "description": "Reserve a signed upload url for user avatar and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.ResvUserAvatarRes` + "`" + `\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "unit"
+                    "user"
                 ],
-                "summary": "获取页面 unit 列表",
+                "summary": "Reserve User Avatar Upload",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "页面 ID",
-                        "name": "page_id",
-                        "in": "query",
-                        "required": true
+                        "description": "reserve avatar args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ResvUserAvatarArgs"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.UnitInfo"
-                            }
+                            "$ref": "#/definitions/res.HttpRes-val_ResvUserAvatarRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/avatar/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Confirm avatar uploaded after client upload completed and return no JSON body\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Confirm User Avatar Uploaded",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get current authorized user info and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.UserVal` + "`" + `\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get My User Info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_UserVal"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -1825,66 +3109,6 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段，注意只有当前用户在当前章节有 translator 或者 proofreader 分配时才允许执行此操作",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "unit"
-                ],
-                "summary": "保存页面 unit diff",
-                "parameters": [
-                    {
-                        "description": "unit diff 参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.SavePageUnitArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/users/mine": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取当前登录用户的详细信息，用于保持登录状态",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "获取当前登录用户信息",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "更新当前登录用户的基本资料",
                 "consumes": [
                     "application/json"
                 ],
@@ -1894,51 +3118,15 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "更新当前用户信息",
+                "summary": "Update My User Info",
                 "parameters": [
                     {
-                        "description": "更新用户参数",
+                        "description": "update user args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateUserArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/users/mine/avatar": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "预留当前用户头像上传",
-                "parameters": [
-                    {
-                        "description": "预留用户头像参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.ReserveUserAvatarArgs"
+                            "$ref": "#/definitions/val.UserUpdArgs"
                         }
                     }
                 ],
@@ -1946,54 +3134,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/val.ReserveUserAvatarRes"
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
-                    }
-                }
-            }
-        },
-        "/users/mine/avatar/confirm": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "在客户端上传头像后，确认当前用户头像上传状态",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "确认当前用户头像已上传",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
-        "/users/mine/stats": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取当前登录用户的任务统计信息",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "获取当前登录用户统计信息",
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/val.UserStatsInfo"
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -2006,18 +3159,18 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "根据用户 ID 获取用户详细信息",
+                "description": "Get user info by user id and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.UserVal` + "`" + `\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "user"
                 ],
-                "summary": "根据 ID 获取用户信息",
+                "summary": "Get User Info",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "用户 ID",
+                        "description": "user id",
                         "name": "user_id",
                         "in": "path",
                         "required": true
@@ -2027,108 +3180,38 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
+                            "$ref": "#/definitions/res.HttpRes-val_UserVal"
                         }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "根据用户 ID 删除用户",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "删除用户",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "用户 ID",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         },
         "/worksets": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取指定汉化组的工作集列表，支持分页，注意当列表为空，会返回 null 而不是空数组",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "workset"
-                ],
-                "summary": "获取指定汉化组的工作集列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "汉化组 ID",
-                        "name": "team_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include 关联信息，可选值：team",
-                        "name": "\"includes\"",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "偏移量",
-                        "name": "offset",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/val.WorksetInfo"
-                            }
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "在指定汉化组中创建工作集",
+                "description": "Create a new workset inside a team\nThe caller must be an admin of the specified team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -2138,10 +3221,10 @@ const docTemplate = `{
                 "tags": [
                     "workset"
                 ],
-                "summary": "创建工作集",
+                "summary": "Create Workset",
                 "parameters": [
                     {
-                        "description": "创建工作集参数",
+                        "description": "create workset args",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2154,7 +3237,89 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/val.CreateWorksetRes"
+                            "$ref": "#/definitions/res.HttpRes-val_WorksetCreatedRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/worksets/team/{team_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all active worksets for a team\nThe caller must be a member of the specified team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workset"
+                ],
+                "summary": "List Worksets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_WorksetVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
                         }
                     }
                 }
@@ -2167,7 +3332,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "更新指定工作集的信息",
+                "description": "Update the name and/or description of an existing workset\nThe caller must be an admin of the workset's owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -2177,28 +3342,49 @@ const docTemplate = `{
                 "tags": [
                     "workset"
                 ],
-                "summary": "更新工作集",
+                "summary": "Update Workset",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "工作集 ID",
+                        "description": "workset id",
                         "name": "workset_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新工作集参数",
+                        "description": "update workset args",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/val.UpdateWorksetArgs"
+                            "$ref": "#/definitions/val.WorksetUpdArgs"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             },
@@ -2208,18 +3394,18 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "删除指定工作集",
+                "description": "Hard-delete a workset by id\nThe caller must be an admin of the workset's owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "workset"
                 ],
-                "summary": "删除工作集",
+                "summary": "Delete Workset",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "工作集 ID",
+                        "description": "workset id",
                         "name": "workset_id",
                         "in": "path",
                         "required": true
@@ -2227,14 +3413,35 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
-        "model.WorkflowTransition": {
+        "enum.WorkflowTransition": {
             "type": "string",
             "enum": [
                 "upload_complete",
@@ -2259,176 +3466,827 @@ const docTemplate = `{
                 "WorkflowPublishComplete"
             ]
         },
-        "poprako-s_internal_app_val.UserInfo": {
+        "res.HttpRes-any": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "description": "AvatarURL 是用户头像的可访问地址",
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned"
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_AssignmentInvVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.AssignmentInvVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_AssignmentVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.AssignmentVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_ChapterVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.ChapterVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_ComicVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.ComicVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_MemberInvVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.MemberInvVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_MemberVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.MemberVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_PageVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.PageVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_SysMailVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.SysMailVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_TeamVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.TeamVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_WorksetVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.WorksetVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ChapterCreatedRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ChapterCreatedRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ChapterExportVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ChapterExportVal"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ChapterVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ChapterVal"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ComicCreatedRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ComicCreatedRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ComicVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ComicVal"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_CreateAssignmentInvRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.CreateAssignmentInvRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_CreateMemberInvRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.CreateMemberInvRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_CreateMemberRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.CreateMemberRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ImportChapterRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ImportChapterRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ListPageUnitsRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ListPageUnitsRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ResvChapterPagesRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ResvChapterPagesRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ResvComicCoverRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ResvComicCoverRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ResvTeamAvatarRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ResvTeamAvatarRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ResvUserAvatarRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ResvUserAvatarRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_SavePageUnitsRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.SavePageUnitsRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_TeamCreRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.TeamCreRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_TeamVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.TeamVal"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_UserLoginRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.UserLoginRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_UserRegRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.UserRegRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_UserVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.UserVal"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_WorksetCreatedRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.WorksetCreatedRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "val.AssignmentInvVal": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
                     "type": "integer"
                 },
                 "id": {
-                    "description": "ID 是用户的唯一标识（例如 UUID 或数据库主键）",
                     "type": "string"
                 },
-                "is_avatar_uploaded": {
-                    "description": "IsAvatarUploaded 表示用户是否已上传头像",
+                "invitation_code": {
+                    "type": "string"
+                },
+                "invitee_qid": {
+                    "type": "string"
+                },
+                "inviter_id": {
+                    "type": "string"
+                },
+                "pending": {
                     "type": "boolean"
                 },
-                "is_super_admin": {
-                    "description": "IsSuperAdmin 表示用户是否具有超级管理员权限",
-                    "type": "boolean"
-                },
-                "last_login_at": {
-                    "description": "LastLoginAt 是一个 Unix 毫秒时间戳，表示用户最后一次登录的时间",
+                "role_mask": {
                     "type": "integer"
                 },
-                "name": {
-                    "description": "Name 是用户的显示名称或昵称",
-                    "type": "string"
-                },
-                "qq": {
-                    "description": "QQ 是用户的 QQ 号，用于登录或联系方式",
-                    "type": "string"
-                },
                 "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
                     "type": "integer"
                 }
             }
         },
-        "val.AssignmentInfo": {
+        "val.AssignmentVal": {
             "type": "object",
             "properties": {
-                "chapter": {
-                    "description": "Chapter 是可选的章节信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/val.ChapterInfo"
-                        }
-                    ]
+                "assigned_proofreader_at": {
+                    "type": "integer"
+                },
+                "assigned_publisher_at": {
+                    "type": "integer"
+                },
+                "assigned_raw_provider_at": {
+                    "type": "integer"
+                },
+                "assigned_redrawer_at": {
+                    "type": "integer"
+                },
+                "assigned_reviewer_at": {
+                    "type": "integer"
+                },
+                "assigned_translator_at": {
+                    "type": "integer"
+                },
+                "assigned_typesetter_at": {
+                    "type": "integer"
                 },
                 "chapter_id": {
-                    "description": "ChapterID 是所属章节 ID",
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
                     "type": "integer"
                 },
                 "id": {
-                    "description": "ID 是分配记录的唯一标识",
                     "type": "string"
                 },
-                "roles": {
-                    "description": "Roles 是该分配包含的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）",
+                "role_mask": {
                     "type": "integer"
                 },
                 "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
                     "type": "integer"
-                },
-                "user": {
-                    "description": "User 是可选的用户信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
-                        }
-                    ]
                 },
                 "user_id": {
-                    "description": "UserID 是被分配用户的 ID",
                     "type": "string"
                 }
             }
         },
-        "val.ChapterExport": {
+        "val.ChapterCreatedRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "` + "`" + `Id` + "`" + ` is created chapter identifier.",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ChapterExportVal": {
             "type": "object",
             "properties": {
                 "chapter_id": {
-                    "description": "ChapterID 表示章节 ID",
                     "type": "string"
                 },
                 "chapter_index": {
-                    "description": "ChapterIndex 表示章节序号",
                     "type": "integer"
                 },
                 "chapter_subtitle": {
-                    "description": "ChapterSubtitle 表示章节副标题",
                     "type": "string"
                 },
                 "comic_id": {
-                    "description": "ComicID 表示漫画 ID",
                     "type": "string"
                 },
                 "comic_title": {
-                    "description": "ComicTitle 表示漫画标题",
                     "type": "string"
                 },
                 "pages": {
-                    "description": "Pages 表示章节中的页面列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/val.PageExport"
+                        "$ref": "#/definitions/val.PageExportVal"
                     }
                 }
             }
         },
-        "val.ChapterInfo": {
+        "val.ChapterUpdArgs": {
             "type": "object",
             "properties": {
-                "comic": {
-                    "description": "TODO",
+                "id": {
+                    "description": "` + "`" + `Id` + "`" + ` identifies target chapter.",
+                    "type": "string"
+                },
+                "is_pinned": {
+                    "description": "` + "`" + `IsPinned` + "`" + ` optionally updates pinned status.",
+                    "type": "boolean"
+                },
+                "subtitle": {
+                    "description": "` + "`" + `Subtitle` + "`" + ` is optional subtitle update.",
+                    "type": "string"
+                },
+                "workflow_transition": {
+                    "description": "` + "`" + `WorkflowTransition` + "`" + ` drives workflow timestamp mutation.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/val.ComicInfo"
+                            "$ref": "#/definitions/enum.WorkflowTransition"
                         }
                     ]
-                },
+                }
+            }
+        },
+        "val.ChapterVal": {
+            "type": "object",
+            "properties": {
                 "comic_id": {
-                    "description": "ComicID 是所属漫画 ID",
                     "type": "string"
                 },
                 "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
                     "type": "integer"
                 },
-                "creator": {
-                    "description": "Creator 是可选的创建者信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
-                        }
-                    ]
-                },
                 "creator_id": {
-                    "description": "CreatorID 是章节创建者 ID",
                     "type": "string"
                 },
                 "id": {
-                    "description": "ID 是章节的唯一标识",
                     "type": "string"
                 },
                 "index": {
-                    "description": "Index 是章节在漫画中的序号",
                     "type": "integer"
                 },
                 "is_pinned": {
-                    "description": "IsPinned 表示章节是否被顶置",
                     "type": "boolean"
                 },
                 "page_count": {
-                    "description": "PageCount 是章节的页面数量",
                     "type": "integer"
                 },
                 "proofread_at": {
                     "type": "integer"
                 },
                 "proofread_unit_count": {
-                    "description": "ProofreadUnitCount 是已校对的单元数量",
                     "type": "integer"
                 },
                 "proofreading_at": {
@@ -2441,21 +4299,18 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "subtitle": {
-                    "description": "Subtitle 是章节副标题",
                     "type": "string"
                 },
                 "total_unit_count": {
-                    "description": "TotalUnitCount 是章节的翻译单元总数",
+                    "type": "integer"
+                },
+                "transalating_at": {
                     "type": "integer"
                 },
                 "translated_at": {
                     "type": "integer"
                 },
                 "translated_unit_count": {
-                    "description": "TranslatedUnitCount 是已翻译的单元数量",
-                    "type": "integer"
-                },
-                "translating_at": {
                     "type": "integer"
                 },
                 "typeset_at": {
@@ -2465,219 +4320,184 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
                     "type": "integer"
                 },
                 "uploaded_at": {
-                    "description": "工作流时间戳（Unix 毫秒），nil 表示尚未触发",
                     "type": "integer"
                 }
             }
         },
-        "val.ComicInfo": {
+        "val.ComicCreatedRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "` + "`" + `Id` + "`" + ` is the generated comic identifier",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ComicUpdArgs": {
             "type": "object",
             "properties": {
                 "author": {
-                    "description": "Author 是漫画作者",
-                    "type": "string"
-                },
-                "chapter_count": {
-                    "description": "ChapterCount 是漫画下章节数量",
-                    "type": "integer"
-                },
-                "cover_url": {
-                    "description": "CoverURL 是漫画封面的可访问地址",
-                    "type": "string"
-                },
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "creator": {
-                    "description": "Creator 是可选的创建者信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
-                        }
-                    ]
-                },
-                "creator_id": {
-                    "description": "CreatorID 是漫画创建者 ID",
+                    "description": "` + "`" + `Author` + "`" + ` is new comic author",
                     "type": "string"
                 },
                 "description": {
-                    "description": "Description 是漫画描述",
+                    "description": "` + "`" + `Desc` + "`" + ` is new optional description",
                     "type": "string"
                 },
                 "id": {
-                    "description": "ID 是漫画的唯一标识",
+                    "description": "` + "`" + `Id` + "`" + ` identifies the target comic",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "` + "`" + `Title` + "`" + ` is new comic title",
+                    "type": "string"
+                }
+            }
+        },
+        "val.ComicVal": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "chapter_count": {
+                    "type": "integer"
+                },
+                "cover_uploaded": {
+                    "type": "boolean"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "creator_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 },
                 "index": {
-                    "description": "Index 是漫画在作品集内的序号",
                     "type": "integer"
                 },
-                "is_cover_uploaded": {
-                    "description": "IsCoverUploaded 表示封面是否已经上传",
+                "is_completed": {
                     "type": "boolean"
                 },
                 "last_active_at": {
-                    "description": "LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳",
                     "type": "integer"
                 },
                 "title": {
-                    "description": "Title 是漫画标题",
                     "type": "string"
                 },
                 "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
                     "type": "integer"
-                },
-                "workset": {
-                    "description": "Workset 是可选的作品集信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/val.WorksetInfo"
-                        }
-                    ]
                 },
                 "workset_id": {
-                    "description": "WorksetID 是所属作品集 ID",
                     "type": "string"
                 }
             }
         },
-        "val.CreateAssignmentArgs": {
+        "val.CreateAssignmentInvArgs": {
             "type": "object",
-            "required": [
-                "chapter_id",
-                "roles",
-                "user_id"
-            ],
             "properties": {
                 "chapter_id": {
-                    "description": "ChapterID 是目标章节 ID",
                     "type": "string"
                 },
-                "roles": {
-                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）",
+                "invitee_qid": {
+                    "type": "string"
+                },
+                "role_mask": {
                     "type": "integer"
-                },
-                "user_id": {
-                    "description": "UserID 是被分配的用户 ID",
-                    "type": "string"
                 }
             }
         },
-        "val.CreateAssignmentRes": {
+        "val.CreateAssignmentInvRes": {
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "ID 是新创建分配记录的标识",
+                    "type": "string"
+                },
+                "invitation_code": {
                     "type": "string"
                 }
             }
         },
         "val.CreateChapterArgs": {
             "type": "object",
-            "required": [
-                "comic_id"
-            ],
             "properties": {
                 "comic_id": {
-                    "description": "ComicID 是目标漫画 ID",
+                    "description": "` + "`" + `ComicId` + "`" + ` is target comic identifier.",
                     "type": "string"
                 },
                 "subtitle": {
-                    "description": "Subtitle 是章节副标题（可选）",
-                    "type": "string"
-                }
-            }
-        },
-        "val.CreateChapterRes": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "ID 是新创建章节的标识",
+                    "description": "` + "`" + `Subtitle` + "`" + ` is optional subtitle.",
                     "type": "string"
                 }
             }
         },
         "val.CreateComicArgs": {
             "type": "object",
-            "required": [
-                "author",
-                "title",
-                "workset_id"
-            ],
             "properties": {
                 "author": {
-                    "description": "Author 是漫画作者",
+                    "description": "` + "`" + `Author` + "`" + ` is the comic author",
                     "type": "string"
                 },
                 "description": {
-                    "description": "Description 是漫画描述",
+                    "description": "` + "`" + `Desc` + "`" + ` is optional description",
                     "type": "string"
                 },
                 "title": {
-                    "description": "Title 是漫画标题",
+                    "description": "` + "`" + `Title` + "`" + ` is the comic title",
                     "type": "string"
                 },
                 "workset_id": {
-                    "description": "WorksetID 是目标作品集 ID",
-                    "type": "string"
-                }
-            }
-        },
-        "val.CreateComicRes": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "ID 是新创建漫画的标识",
-                    "type": "string"
-                }
-            }
-        },
-        "val.CreateInvitationArgs": {
-            "type": "object",
-            "required": [
-                "invitee_qq",
-                "roles",
-                "team_id"
-            ],
-            "properties": {
-                "invitee_qq": {
-                    "description": "InviteeQQ 是被邀请者的 QQ 号",
-                    "type": "string"
-                },
-                "roles": {
-                    "description": "Roles 是邀请中指定的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
-                    "type": "integer"
-                },
-                "team_id": {
-                    "description": "TeamID 是目标汉化组 ID",
+                    "description": "` + "`" + `WorksetId` + "`" + ` is the owning workset id",
                     "type": "string"
                 }
             }
         },
         "val.CreateMemberArgs": {
             "type": "object",
-            "required": [
-                "roles",
-                "team_id",
-                "user_id"
-            ],
             "properties": {
-                "roles": {
-                    "description": "Roles 是分配的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
+                "role_mask": {
                     "type": "integer"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标汉化组 ID",
                     "type": "string"
                 },
                 "user_id": {
-                    "description": "UserID 是要创建成员的用户 ID",
+                    "type": "string"
+                }
+            }
+        },
+        "val.CreateMemberInvArgs": {
+            "type": "object",
+            "properties": {
+                "invitee_qid": {
+                    "type": "string"
+                },
+                "role_mask": {
+                    "type": "integer"
+                },
+                "team_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.CreateMemberInvRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "invitation_code": {
                     "type": "string"
                 }
             }
@@ -2686,84 +4506,34 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "ID 是新创建成员记录的标识",
-                    "type": "string"
-                }
-            }
-        },
-        "val.CreateTeamArgs": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "description": "Description 是汉化组描述",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name 是汉化组名称",
-                    "type": "string"
-                }
-            }
-        },
-        "val.CreateTeamRes": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "ID 是新创建汉化组的标识",
                     "type": "string"
                 }
             }
         },
         "val.CreateWorksetArgs": {
             "type": "object",
-            "required": [
-                "name",
-                "team_id"
-            ],
             "properties": {
                 "description": {
-                    "description": "Description 是作品集描述（可选）",
+                    "description": "` + "`" + `Desc` + "`" + ` is an optional description. nil means use empty string.",
                     "type": "string"
                 },
                 "name": {
-                    "description": "Name 是作品集名称",
+                    "description": "` + "`" + `Name` + "`" + ` is the display title of the new workset.",
                     "type": "string"
                 },
                 "team_id": {
-                    "description": "TeamID 是目标汉化组 ID",
+                    "description": "` + "`" + `TeamId` + "`" + ` is the owning team's identifier.",
                     "type": "string"
                 }
             }
         },
-        "val.CreateWorksetRes": {
+        "val.ImportChapterBody": {
             "type": "object",
             "properties": {
-                "id": {
-                    "description": "ID 是新创建作品集的标识",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ImportChapterArgs": {
-            "type": "object",
-            "required": [
-                "chapter_id",
-                "content",
-                "format"
-            ],
-            "properties": {
-                "chapter_id": {
-                    "description": "ChapterID 表示目标章节 ID",
-                    "type": "string"
-                },
                 "content": {
-                    "description": "Content 表示导入文件内容",
                     "type": "string"
                 },
                 "format": {
-                    "description": "Format 表示导入格式",
                     "type": "string"
                 }
             }
@@ -2772,918 +4542,549 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "imported_page_count": {
-                    "description": "ImportedPageCount 表示成功处理的页面数量",
                     "type": "integer"
                 },
                 "imported_unit_count": {
-                    "description": "ImportedUnitCount 表示成功写入的单元数量",
                     "type": "integer"
                 }
             }
         },
-        "val.InvitationInfo": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "ID 是邀请记录的唯一标识",
-                    "type": "string"
-                },
-                "invitation_code": {
-                    "description": "InvitationCode 是邀请码",
-                    "type": "string"
-                },
-                "invitee_qq": {
-                    "description": "InviteeQQ 是被邀请者的 QQ 号",
-                    "type": "string"
-                },
-                "invitor_id": {
-                    "description": "InvitorID 是邀请发起者的用户 ID",
-                    "type": "string"
-                },
-                "pending": {
-                    "description": "Pending 表示邀请是否仍有效",
-                    "type": "boolean"
-                },
-                "roles": {
-                    "description": "Roles 是邀请中指定的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
-                    "type": "integer"
-                },
-                "team_id": {
-                    "description": "TeamID 是目标汉化组 ID",
-                    "type": "string"
-                }
-            }
-        },
-        "val.InviteChapterAssigneeArgs": {
-            "type": "object",
-            "required": [
-                "chapter_id",
-                "invitee_qq",
-                "role"
-            ],
-            "properties": {
-                "chapter_id": {
-                    "description": "ChapterID 是目标章节 ID",
-                    "type": "string"
-                },
-                "invitee_qq": {
-                    "description": "InviteeQQ 是被邀请者的 QQ 号码\n因为可能有跨组邀请，因此用户只能通过 QQ 指定",
-                    "type": "string"
-                },
-                "role": {
-                    "description": "Roles 是被邀请者的角色",
-                    "type": "integer"
-                }
-            }
-        },
-        "val.InviteChapterAssigneeRes": {
+        "val.JoinAssignmentInvArgs": {
             "type": "object",
             "properties": {
                 "invitation_code": {
-                    "description": "InvCode 是邀请代码，供被邀请者使用",
-                    "type": "string"
-                }
-            }
-        },
-        "val.JoinInvitorChapterArgs": {
-            "type": "object",
-            "required": [
-                "invitation_code"
-            ],
-            "properties": {
-                "invitation_code": {
-                    "description": "InvitationCode 是章节邀请代码",
                     "type": "string"
                 }
             }
         },
         "val.JoinTeamArgs": {
             "type": "object",
-            "required": [
-                "invitation_code"
-            ],
             "properties": {
                 "invitation_code": {
-                    "description": "InvitationCode 是邀请码",
                     "type": "string"
                 }
             }
         },
-        "val.LoginUserArgs": {
-            "type": "object",
-            "required": [
-                "password",
-                "qq"
-            ],
-            "properties": {
-                "password": {
-                    "description": "Pwd 是登录使用的密码",
-                    "type": "string"
-                },
-                "qq": {
-                    "description": "QQ 是登录使用的 QQ 号",
-                    "type": "string"
-                }
-            }
-        },
-        "val.LoginUserRes": {
+        "val.ListPageUnitsRes": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "description": "AccessToken 是用于后续鉴权的访问令牌",
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "UserID 是已登录用户的标识",
-                    "type": "string"
-                }
-            }
-        },
-        "val.MemberInfo": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "id": {
-                    "description": "ID 是成员记录的唯一标识",
-                    "type": "string"
-                },
-                "roles": {
-                    "description": "Roles 是该成员所拥有的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
-                    "type": "integer"
-                },
-                "team": {
-                    "description": "Team 是可选的汉化组信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/val.TeamInfo"
-                        }
-                    ]
-                },
-                "team_id": {
-                    "description": "TeamID 是该成员所属的汉化组 ID",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "user": {
-                    "description": "User 是可选的用户信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
-                        }
-                    ]
-                },
-                "user_id": {
-                    "description": "UserID 是该成员对应的用户 ID",
-                    "type": "string"
-                }
-            }
-        },
-        "val.PageCreationResult": {
-            "type": "object",
-            "properties": {
-                "page_id": {
-                    "description": "PageID 是新创建页面的标识",
-                    "type": "string"
-                },
-                "put_url": {
-                    "description": "PutURL 是用于上传的预签名 URL",
-                    "type": "string"
-                }
-            }
-        },
-        "val.PageExport": {
-            "type": "object",
-            "properties": {
-                "image_url": {
-                    "description": "ImageURL 表示页面图片地址",
-                    "type": "string"
-                },
-                "is_uploaded": {
-                    "description": "IsUploaded 表示页面是否已上传",
-                    "type": "boolean"
-                },
-                "page_id": {
-                    "description": "PageID 表示页面 ID",
-                    "type": "string"
-                },
-                "page_index": {
-                    "description": "PageIndex 表示页面序号",
-                    "type": "integer"
-                },
-                "units": {
-                    "description": "Units 表示页面中的翻译单元列表",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/val.UnitExport"
-                    }
-                }
-            }
-        },
-        "val.PageInfo": {
-            "type": "object",
-            "properties": {
-                "chapter_id": {
-                    "description": "ChapterID 是所属章节 ID",
-                    "type": "string"
-                },
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "creator": {
-                    "description": "Creator 是可选的创建者信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/poprako-s_internal_app_val.UserInfo"
-                        }
-                    ]
-                },
-                "creator_id": {
-                    "description": "CreatorID 是页面创建者 ID",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID 是页面的唯一标识",
-                    "type": "string"
-                },
-                "image_url": {
-                    "description": "ImageURL 是页面图片的可访问地址",
-                    "type": "string"
-                },
-                "index": {
-                    "description": "Index 是页面在章节中的序号",
-                    "type": "integer"
-                },
-                "is_uploaded": {
-                    "description": "IsUploaded 表示图片是否已经上传",
-                    "type": "boolean"
-                },
                 "proofread_unit_count": {
-                    "description": "ProofreadUnitCount 是已校对的单元数量",
                     "type": "integer"
                 },
                 "total_unit_count": {
-                    "description": "TotalUnitCount 是页面的翻译单元总数",
                     "type": "integer"
                 },
                 "translated_unit_count": {
-                    "description": "TranslatedUnitCount 是已翻译的单元数量",
                     "type": "integer"
                 },
-                "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                }
-            }
-        },
-        "val.RegUserArgs": {
-            "type": "object",
-            "required": [
-                "invitation_code",
-                "name",
-                "password",
-                "qq"
-            ],
-            "properties": {
-                "invitation_code": {
-                    "description": "InvCode 是用于注册的邀请代码",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name 是用户注册时设置的显示名称",
-                    "type": "string"
-                },
-                "password": {
-                    "description": "Pwd 是注册使用的密码",
-                    "type": "string"
-                },
-                "qq": {
-                    "description": "QQ 是注册使用的 QQ 号",
-                    "type": "string"
-                }
-            }
-        },
-        "val.RegUserRes": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "description": "AccessToken 是注册后返回的访问令牌",
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "UserID 是新创建用户的标识",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ReserveChapterPagesArgs": {
-            "type": "object",
-            "required": [
-                "chapter_id",
-                "extension",
-                "page_count"
-            ],
-            "properties": {
-                "chapter_id": {
-                    "description": "ChapterID 是目标章节 ID",
-                    "type": "string"
-                },
-                "extension": {
-                    "description": "Extension 是图片文件扩展名",
-                    "type": "string"
-                },
-                "page_count": {
-                    "description": "PageCount 是要预留的页面数量",
-                    "type": "integer"
-                }
-            }
-        },
-        "val.ReserveChapterPagesRes": {
-            "type": "object",
-            "properties": {
-                "creations": {
-                    "description": "Creations 是每个页面的创建结果",
+                "units": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/val.PageCreationResult"
+                        "$ref": "#/definitions/val.UnitVal"
                     }
                 }
             }
         },
-        "val.ReserveComicCoverArgs": {
+        "val.MemberInvUpdArgs": {
             "type": "object",
-            "required": [
-                "comic_id",
-                "file_name"
-            ],
             "properties": {
-                "comic_id": {
-                    "description": "ComicID 是要上传封面的漫画标识",
+                "id": {
                     "type": "string"
                 },
-                "file_name": {
-                    "description": "FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"cover.jpg\"",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ReserveComicCoverRes": {
-            "type": "object",
-            "properties": {
-                "put_url": {
-                    "description": "PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ReserveTeamAvatarArgs": {
-            "type": "object",
-            "required": [
-                "file_name",
-                "team_id"
-            ],
-            "properties": {
-                "file_name": {
-                    "description": "FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"avatar.png\"",
-                    "type": "string"
-                },
-                "team_id": {
-                    "description": "TeamID 是要上传头像的汉化组标识",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ReserveTeamAvatarRes": {
-            "type": "object",
-            "properties": {
-                "put_url": {
-                    "description": "PutURL 是用于上传头像的预签名 URL",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ReserveUserAvatarArgs": {
-            "type": "object",
-            "required": [
-                "file_name"
-            ],
-            "properties": {
-                "file_name": {
-                    "description": "FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名\n需要携带文件扩展名以便 OSS 正确识别文件类型，例如 \"avatar.png\"",
-                    "type": "string"
-                }
-            }
-        },
-        "val.ReserveUserAvatarRes": {
-            "type": "object",
-            "properties": {
-                "put_url": {
-                    "description": "PutURL 是用于上传头像的预签名 URL，客户端可以直接使用该 URL 上传头像文件",
-                    "type": "string"
-                }
-            }
-        },
-        "val.SavePageUnitArgs": {
-            "type": "object",
-            "required": [
-                "page_id",
-                "unit_diff"
-            ],
-            "properties": {
-                "page_id": {
-                    "description": "PageID 是目标页面 ID",
-                    "type": "string"
-                },
-                "unit_diff": {
-                    "description": "UnitDiff 是翻译单元的变更信息",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/val.UnitDiff"
-                        }
-                    ]
-                }
-            }
-        },
-        "val.TeamInfo": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "description": "AvatarURL 是汉化组头像的可访问地址",
-                    "type": "string"
-                },
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
+                "role_mask": {
                     "type": "integer"
                 },
-                "description": {
-                    "description": "Description 是汉化组的描述",
+                "team_id": {
                     "type": "string"
+                }
+            }
+        },
+        "val.MemberInvVal": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
                 },
                 "id": {
-                    "description": "ID 是汉化组的唯一标识",
                     "type": "string"
                 },
-                "is_avatar_uploaded": {
-                    "description": "IsAvatarUploaded 表示汉化组是否已上传头像",
+                "invitation_code": {
+                    "type": "string"
+                },
+                "invitee_qid": {
+                    "type": "string"
+                },
+                "invitor_id": {
+                    "type": "string"
+                },
+                "pending": {
                     "type": "boolean"
                 },
-                "name": {
-                    "description": "Name 是汉化组的名称",
+                "role_mask": {
+                    "type": "integer"
+                },
+                "team_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.MemberRoleUpdArgs": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "role_mask": {
+                    "type": "integer"
+                }
+            }
+        },
+        "val.MemberVal": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role_mask": {
+                    "type": "integer"
+                },
+                "team": {
+                    "$ref": "#/definitions/val.TeamVal"
+                },
+                "team_id": {
                     "type": "string"
                 },
                 "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
                     "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/val.UserVal"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
-        "val.UnitCreation": {
+        "val.PageCreationRes": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
+                "page_id": {
+                    "type": "string"
+                },
+                "put_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.PageExportVal": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string"
+                },
+                "is_uploaded": {
+                    "type": "boolean"
+                },
+                "page_id": {
+                    "type": "string"
+                },
+                "page_index": {
+                    "type": "integer"
+                },
+                "units": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.UnitExportVal"
+                    }
+                }
+            }
+        },
+        "val.PageVal": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
                 "id": {
-                    "description": "ID 是翻译单元的唯一标识",
+                    "type": "string"
+                },
+                "image_uploaded": {
+                    "type": "boolean"
+                },
+                "image_url": {
                     "type": "string"
                 },
                 "index": {
-                    "description": "Index 是翻译单元在页面中的序号",
                     "type": "integer"
                 },
-                "is_bubble": {
-                    "description": "IsBubble 表示该单元是否是气泡框",
-                    "type": "boolean"
+                "proofread_unit_count": {
+                    "type": "integer"
                 },
-                "is_proofread": {
-                    "description": "IsProofread 表示该单元是否已经校对",
-                    "type": "boolean"
+                "total_unit_count": {
+                    "type": "integer"
                 },
-                "proofread_text": {
-                    "description": "ProofreadText 是校对后的文本",
-                    "type": "string"
+                "translated_unit_count": {
+                    "type": "integer"
                 },
-                "proofreader_comment": {
-                    "description": "ProofreaderComment 是校对者的备注",
-                    "type": "string"
-                },
-                "proofreader_id": {
-                    "description": "ProofreaderID 是校对者的用户 ID",
-                    "type": "string"
-                },
-                "translated_text": {
-                    "description": "TranslatedText 是翻译后的文本",
-                    "type": "string"
-                },
-                "translator_comment": {
-                    "description": "TranslatorComment 是翻译者的备注",
-                    "type": "string"
-                },
-                "translator_id": {
-                    "description": "TranslatorID 是翻译者的用户 ID",
-                    "type": "string"
-                },
-                "x_coord": {
-                    "description": "XCoord 是翻译单元的 X 坐标",
-                    "type": "number"
-                },
-                "y_coord": {
-                    "description": "YCoord 是翻译单元的 Y 坐标",
-                    "type": "number"
+                "updated_at": {
+                    "type": "integer"
                 }
             }
         },
-        "val.UnitDiff": {
+        "val.ResvChapterPagesArgs": {
             "type": "object",
             "properties": {
-                "delete": {
-                    "description": "Delete 是要删除的翻译单元 ID 列表",
+                "chapter_id": {
+                    "type": "string"
+                },
+                "file_extension": {
+                    "type": "string"
+                },
+                "page_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "val.ResvChapterPagesRes": {
+            "type": "object",
+            "properties": {
+                "creations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.PageCreationRes"
+                    }
+                }
+            }
+        },
+        "val.ResvComicCoverBody": {
+            "type": "object",
+            "properties": {
+                "file_extension": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.ResvComicCoverRes": {
+            "type": "object",
+            "properties": {
+                "put_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.ResvTeamAvatarArgs": {
+            "type": "object",
+            "properties": {
+                "file_extension": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.ResvTeamAvatarRes": {
+            "type": "object",
+            "properties": {
+                "put_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.ResvUserAvatarArgs": {
+            "type": "object",
+            "properties": {
+                "file_extension": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.ResvUserAvatarRes": {
+            "type": "object",
+            "properties": {
+                "put_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.SavePageUnitsArgs": {
+            "type": "object",
+            "properties": {
+                "diff": {
+                    "$ref": "#/definitions/val.UnitDiffVal"
+                },
+                "page_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.SavePageUnitsRes": {
+            "type": "object",
+            "properties": {
+                "proofread_unit_count": {
+                    "type": "integer"
+                },
+                "total_unit_count": {
+                    "type": "integer"
+                },
+                "translated_unit_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "val.SysMailVal": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "read": {
+                    "type": "boolean"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.TeamCreArgs": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.TeamCreRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.TeamUpdArgs": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.TeamVal": {
+            "type": "object",
+            "properties": {
+                "avatar_uploaded": {
+                    "type": "boolean"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "val.UnitDiffVal": {
+            "type": "object",
+            "properties": {
+                "cand_order": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "insert": {
-                    "description": "Insert 是要新增的翻译单元列表",
+                "ops": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/val.UnitCreation"
+                        "$ref": "#/definitions/val.UnitOpVal"
                     }
                 },
-                "patch": {
-                    "description": "Patch 是要修改的翻译单元列表",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/val.UnitPatch"
-                    }
+                "page_id": {
+                    "type": "string"
                 }
             }
         },
-        "val.UnitExport": {
+        "val.UnitExportVal": {
             "type": "object",
             "properties": {
                 "is_bubble": {
-                    "description": "IsBubble 表示该单元是否是气泡框",
                     "type": "boolean"
                 },
                 "is_proofread": {
-                    "description": "IsProofread 表示该单元是否已经校对",
                     "type": "boolean"
                 },
                 "page_id": {
-                    "description": "PageID 表示所属页面 ID",
                     "type": "string"
                 },
                 "page_index": {
-                    "description": "PageIndex 表示所属页面序号",
                     "type": "integer"
                 },
                 "proofread_text": {
-                    "description": "ProofreadText 表示校对后的文本",
                     "type": "string"
                 },
                 "proofreader_comment": {
-                    "description": "ProofreaderComment 表示校对者的备注",
                     "type": "string"
                 },
                 "proofreader_id": {
-                    "description": "ProofreaderID 表示校对者的用户 ID",
                     "type": "string"
                 },
                 "translated_text": {
-                    "description": "TranslatedText 表示翻译后的文本",
                     "type": "string"
                 },
                 "translator_comment": {
-                    "description": "TranslatorComment 表示翻译者的备注",
                     "type": "string"
                 },
                 "translator_id": {
-                    "description": "TranslatorID 表示翻译者的用户 ID",
                     "type": "string"
                 },
                 "unit_id": {
-                    "description": "UnitID 表示翻译单元 ID",
                     "type": "string"
                 },
                 "unit_index": {
-                    "description": "UnitIndex 表示翻译单元序号",
                     "type": "integer"
                 },
                 "x_coord": {
-                    "description": "XCoord 表示翻译单元的 X 坐标",
                     "type": "number"
                 },
                 "y_coord": {
-                    "description": "YCoord 表示翻译单元的 Y 坐标",
                     "type": "number"
                 }
             }
         },
-        "val.UnitInfo": {
+        "val.UnitOpVal": {
             "type": "object",
             "properties": {
                 "id": {
-                    "description": "ID 是翻译单元的唯一标识",
                     "type": "string"
                 },
-                "index": {
-                    "description": "Index 是翻译单元在页面中的序号",
-                    "type": "integer"
-                },
                 "is_bubble": {
-                    "description": "IsBubble 表示该单元是否是气泡框",
                     "type": "boolean"
                 },
                 "is_proofread": {
-                    "description": "IsProofread 表示该单元是否已经校对",
                     "type": "boolean"
+                },
+                "last_proofreader_id": {
+                    "type": "string"
+                },
+                "last_translator_id": {
+                    "type": "string"
+                },
+                "local_id": {
+                    "type": "string"
+                },
+                "proofread_text": {
+                    "type": "string"
+                },
+                "proofreader_comment": {
+                    "type": "string"
+                },
+                "translated_text": {
+                    "type": "string"
+                },
+                "translator_comment": {
+                    "type": "string"
+                },
+                "x_coord": {
+                    "type": "number"
+                },
+                "y_coord": {
+                    "type": "number"
+                }
+            }
+        },
+        "val.UnitVal": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "is_bubble": {
+                    "type": "boolean"
+                },
+                "is_proofread": {
+                    "type": "boolean"
+                },
+                "last_proofreader_id": {
+                    "type": "string"
+                },
+                "last_translator_id": {
+                    "type": "string"
                 },
                 "page_id": {
-                    "description": "PageID 是所属页面 ID",
                     "type": "string"
                 },
                 "proofread_text": {
-                    "description": "ProofreadText 是校对后的文本",
                     "type": "string"
                 },
                 "proofreader_comment": {
-                    "description": "ProofreaderComment 是校对者的备注",
-                    "type": "string"
-                },
-                "proofreader_id": {
-                    "description": "ProofreaderID 是校对者的用户 ID",
                     "type": "string"
                 },
                 "translated_text": {
-                    "description": "TranslatedText 是翻译后的文本",
                     "type": "string"
                 },
                 "translator_comment": {
-                    "description": "TranslatorComment 是翻译者的备注",
                     "type": "string"
                 },
-                "translator_id": {
-                    "description": "TranslatorID 是翻译者的用户 ID",
-                    "type": "string"
-                },
-                "x_coord": {
-                    "description": "XCoord 是翻译单元的 X 坐标",
-                    "type": "number"
-                },
-                "y_coord": {
-                    "description": "YCoord 是翻译单元的 Y 坐标",
-                    "type": "number"
-                }
-            }
-        },
-        "val.UnitPatch": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID 是要修改的翻译单元标识",
-                    "type": "string"
-                },
-                "index": {
-                    "description": "Index 是翻译单元在页面中的序号",
+                "updated_at": {
                     "type": "integer"
                 },
-                "is_bubble": {
-                    "description": "IsBubble 表示该单元是否是气泡框",
-                    "type": "boolean"
-                },
-                "is_proofread": {
-                    "description": "IsProofread 表示该单元是否已经校对",
-                    "type": "boolean"
-                },
-                "proofread_text": {
-                    "description": "ProofreadText 是校对后的文本",
-                    "type": "string"
-                },
-                "proofreader_comment": {
-                    "description": "ProofreaderComment 是校对者的备注",
-                    "type": "string"
-                },
-                "proofreader_id": {
-                    "description": "ProofreaderID 是校对者的用户 ID",
-                    "type": "string"
-                },
-                "translated_text": {
-                    "description": "TranslatedText 是翻译后的文本",
-                    "type": "string"
-                },
-                "translator_comment": {
-                    "description": "TranslatorComment 是翻译者的备注",
-                    "type": "string"
-                },
-                "translator_id": {
-                    "description": "TranslatorID 是翻译者的用户 ID",
-                    "type": "string"
-                },
                 "x_coord": {
-                    "description": "XCoord 是翻译单元的 X 坐标",
                     "type": "number"
                 },
                 "y_coord": {
-                    "description": "YCoord 是翻译单元的 Y 坐标",
                     "type": "number"
                 }
             }
         },
-        "val.UpdateChapterArgs": {
+        "val.UpsertAssignmentArgs": {
             "type": "object",
-            "required": [
-                "chapter_id"
-            ],
             "properties": {
                 "chapter_id": {
-                    "description": "ChapterID 是要更新的章节标识",
                     "type": "string"
                 },
-                "is_pinned": {
-                    "description": "IsPinned 是更新后的顶置状态（可选）",
-                    "type": "boolean"
-                },
-                "subtitle": {
-                    "description": "Subtitle 是更新后的副标题（可选）",
-                    "type": "string"
-                },
-                "workflow_transition": {
-                    "description": "工作流转换事件（可选）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/model.WorkflowTransition"
-                        }
-                    ]
-                }
-            }
-        },
-        "val.UpdateComicArgs": {
-            "type": "object",
-            "required": [
-                "author",
-                "id",
-                "title"
-            ],
-            "properties": {
-                "author": {
-                    "description": "Author 是更新后的作者",
-                    "type": "string"
-                },
-                "description": {
-                    "description": "Description 是更新后的描述",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID 是要更新的漫画标识",
-                    "type": "string"
-                },
-                "title": {
-                    "description": "Title 是更新后的标题",
-                    "type": "string"
-                }
-            }
-        },
-        "val.UpdateInvitationArgs": {
-            "type": "object",
-            "required": [
-                "id",
-                "roles",
-                "team_id"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID 是要更新的邀请记录 ID",
-                    "type": "string"
-                },
-                "roles": {
-                    "description": "Roles 是更新后的角色位掩码，各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
-                    "type": "integer"
-                },
-                "team_id": {
-                    "description": "TeamID 是目标汉化组 ID，用于鉴权",
-                    "type": "string"
-                }
-            }
-        },
-        "val.UpdateMemberRoleArgs": {
-            "type": "object",
-            "required": [
-                "id",
-                "roles"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID 是目标成员记录 ID",
-                    "type": "string"
-                },
-                "roles": {
-                    "description": "Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：\n  bit 0 (1)  = RawProvider（图源）\n  bit 1 (2)  = Translator（翻译）\n  bit 2 (4)  = Proofreader（校对）\n  bit 3 (8)  = Typesetter（嵌字）\n  bit 4 (16) = Redrawer（美工）\n  bit 5 (32) = Reviewer（监修）\n  bit 6 (64) = Publisher（发布）\n  bit 7 (128)= Admin（管理）",
-                    "type": "integer"
-                }
-            }
-        },
-        "val.UpdatePageArgs": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID 是要更新的页面标识",
-                    "type": "string"
-                },
-                "is_uploaded": {
-                    "description": "IsUploaded 表示是否标记为已上传",
-                    "type": "boolean"
-                }
-            }
-        },
-        "val.UpdateTeamArgs": {
-            "type": "object",
-            "required": [
-                "id",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "description": "Description 是更新后的汉化组描述",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID 是要更新的汉化组标识",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name 是更新后的汉化组名称",
-                    "type": "string"
-                }
-            }
-        },
-        "val.UpdateUserArgs": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "id": {
-                    "description": "ID 是要更新的用户标识",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name 表示更新后的显示名称，PUT 语义下为必填",
-                    "type": "string"
-                },
-                "qq": {
-                    "description": "QQ 表示更新后的 QQ 号，PUT 语义下为必填",
-                    "type": "string"
-                }
-            }
-        },
-        "val.UpdateWorksetArgs": {
-            "type": "object",
-            "required": [
-                "id",
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "description": "Description 是更新后的描述（可选）",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID 是要更新的作品集标识",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name 是更新后的名称",
-                    "type": "string"
-                }
-            }
-        },
-        "val.UserStatsInfo": {
-            "type": "object",
-            "properties": {
-                "active_assignment_count": {
-                    "type": "integer"
-                },
-                "finished_assignment_count": {
-                    "type": "integer"
-                },
-                "total_assignment_count": {
+                "role_mask": {
                     "type": "integer"
                 },
                 "user_id": {
@@ -3691,47 +5092,153 @@ const docTemplate = `{
                 }
             }
         },
-        "val.WorksetInfo": {
+        "val.UserLoginArgs": {
             "type": "object",
             "properties": {
-                "comic_count": {
-                    "description": "ComicCount 是作品集中漫画数量",
-                    "type": "integer"
-                },
-                "created_at": {
-                    "description": "CreatedAt 是记录创建时间的 Unix 毫秒时间戳",
-                    "type": "integer"
-                },
-                "description": {
-                    "description": "Description 是作品集描述",
+                "pwd": {
                     "type": "string"
                 },
-                "id": {
-                    "description": "ID 是作品集的唯一标识",
+                "qq": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.UserLoginRes": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 },
-                "index": {
-                    "description": "Index 是作品集在汉化组内的序号",
-                    "type": "integer"
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.UserRegArgs": {
+            "type": "object",
+            "properties": {
+                "invitation_code": {
+                    "type": "string"
                 },
                 "name": {
-                    "description": "Name 是作品集名称",
                     "type": "string"
                 },
-                "team": {
-                    "description": "Team 是可选的汉化组信息（仅在 includes 时填充）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/val.TeamInfo"
-                        }
-                    ]
+                "password": {
+                    "type": "string"
                 },
-                "team_id": {
-                    "description": "TeamID 是所属汉化组 ID",
+                "qq": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.UserRegRes": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.UserUpdArgs": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "qq": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.UserVal": {
+            "type": "object",
+            "properties": {
+                "avatar_uploaded": {
+                    "type": "boolean"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_super_admin": {
+                    "type": "boolean"
+                },
+                "last_active_at": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "qq": {
                     "type": "string"
                 },
                 "updated_at": {
-                    "description": "UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳",
+                    "type": "integer"
+                }
+            }
+        },
+        "val.WorksetCreatedRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "` + "`" + `Id` + "`" + ` is the generated identifier for the new workset.",
+                    "type": "string"
+                }
+            }
+        },
+        "val.WorksetUpdArgs": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "` + "`" + `Desc` + "`" + ` is the new description for ` + "`" + `PUT` + "`" + ` semantics.\nNil means writing SQL ` + "`" + `NULL` + "`" + `.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "` + "`" + `Id` + "`" + ` identifies the workset to update.",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "` + "`" + `Name` + "`" + ` is the new display title.",
+                    "type": "string"
+                }
+            }
+        },
+        "val.WorksetVal": {
+            "type": "object",
+            "properties": {
+                "comic_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "integer"
                 }
             }
@@ -3748,12 +5255,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "0.0.1",
+	Version:          "0.4.0",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "PopRaKo-S API",
-	Description:      "PopRaKo-S 后端 API 文档",
+	Title:            "Poprako-S Refactor API",
+	Description:      "Poprako-S refactor API documentation",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

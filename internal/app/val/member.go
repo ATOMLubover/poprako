@@ -1,97 +1,65 @@
 package val
 
-import "poprako-s/internal/domain/model"
+import (
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+)
 
-// MemberInfo 表示用于在应用层和接口层传递的成员信息 VO
-type MemberInfo struct {
-	// ID 是成员记录的唯一标识
-	ID string `json:"id"`
+// `MemberVal` is app-facing value object for one team member.
+type MemberVal struct {
+	Id string `json:"id"`
 
-	// UserID 是该成员对应的用户 ID
-	UserID string `json:"user_id"`
-	// TeamID 是该成员所属的汉化组 ID
-	TeamID string `json:"team_id"`
+	UserId string `json:"user_id"`
+	TeamId string `json:"team_id"`
 
-	// Roles 是该成员所拥有的角色位掩码，各位含义如下：
-	//   bit 0 (1)  = RawProvider（图源）
-	//   bit 1 (2)  = Translator（翻译）
-	//   bit 2 (4)  = Proofreader（校对）
-	//   bit 3 (8)  = Typesetter（嵌字）
-	//   bit 4 (16) = Redrawer（美工）
-	//   bit 5 (32) = Reviewer（监修）
-	//   bit 6 (64) = Publisher（发布）
-	//   bit 7 (128)= Admin（管理）
-	Roles model.RoleMask `json:"roles"`
+	RoleMask aggr.RoleMask `json:"role_mask"`
 
-	// User 是可选的用户信息（仅在 includes 时填充）
-	User *UserInfo `json:"user,omitempty"`
-	// Team 是可选的汉化组信息（仅在 includes 时填充）
-	Team *TeamInfo `json:"team,omitempty"`
+	User *UserVal `json:"user,omitempty"`
+	Team *TeamVal `json:"team,omitempty"`
 
-	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
 	CreatedAt int64 `json:"created_at"`
-	// UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-// CreateMemberArgs 表示创建成员请求的参数（超级管理员专用）
+// `CreateMemberArgs` carries create args for member.
 type CreateMemberArgs struct {
-	// UserID 是要创建成员的用户 ID
-	UserID string `json:"user_id" validate:"required"`
-	// TeamID 是目标汉化组 ID
-	TeamID string `json:"team_id" validate:"required"`
-	// Roles 是分配的角色位掩码，各位含义如下：
-	//   bit 0 (1)  = RawProvider（图源）
-	//   bit 1 (2)  = Translator（翻译）
-	//   bit 2 (4)  = Proofreader（校对）
-	//   bit 3 (8)  = Typesetter（嵌字）
-	//   bit 4 (16) = Redrawer（美工）
-	//   bit 5 (32) = Reviewer（监修）
-	//   bit 6 (64) = Publisher（发布）
-	//   bit 7 (128)= Admin（管理）
-	Roles model.RoleMask `json:"roles" validate:"required"`
+	UserId string `json:"user_id"`
+	TeamId string `json:"team_id"`
+
+	RoleMask aggr.RoleMask `json:"role_mask"`
 }
 
-// CreateMemberRes 表示创建成员成功后的响应数据
+// `CreateMemberRes` is member creation response payload.
 type CreateMemberRes struct {
-	// ID 是新创建成员记录的标识
-	ID string `json:"id"`
+	Id string `json:"id"`
 }
 
-// ListTeamMemberArgs 表示列出指定汉化组成员请求的参数
-type ListTeamMemberArgs struct {
-	// TeamID 是目标汉化组 ID
-	TeamID   string   `json:"team_id" url:"team_id" validate:"required"`
-	Includes []string `json:"includes" url:"includes"`
-	Offset   int      `json:"offset" url:"offset"`
-	Limit    int      `json:"limit" url:"limit"`
+// `ListMemberByTeamArgs` carries list args for members under one team.
+type ListMemberByTeamArgs struct {
+	TeamId string `url:"team_id"`
+
+	Includes []enum.MemberIncl `url:"includes"`
+
+	Offset int `url:"offset"`
+	Limit  int `url:"limit"`
 }
 
-// ListMyMemberArgs 表示列出当前用户所有成员记录请求的参数
+// `ListMyMemberArgs` carries list args for current user memberships.
 type ListMyMemberArgs struct {
-	Includes []string `json:"includes" url:"includes"`
-	Offset   int      `json:"offset" url:"offset"`
-	Limit    int      `json:"limit" url:"limit"`
+	Includes []enum.MemberIncl `url:"includes"`
+
+	Offset int `url:"offset"`
+	Limit  int `url:"limit"`
 }
 
-// UpdateMemberRoleArgs 表示更新成员角色请求的参数
-type UpdateMemberRoleArgs struct {
-	// ID 是目标成员记录 ID
-	ID string `json:"id" validate:"required"`
-	// Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：
-	//   bit 0 (1)  = RawProvider（图源）
-	//   bit 1 (2)  = Translator（翻译）
-	//   bit 2 (4)  = Proofreader（校对）
-	//   bit 3 (8)  = Typesetter（嵌字）
-	//   bit 4 (16) = Redrawer（美工）
-	//   bit 5 (32) = Reviewer（监修）
-	//   bit 6 (64) = Publisher（发布）
-	//   bit 7 (128)= Admin（管理）
-	Roles model.RoleMask `json:"roles" validate:"required"`
+// `MemberRoleUpdArgs` carries put-style role update args for one member.
+type MemberRoleUpdArgs struct {
+	Id string `json:"id"`
+
+	RoleMask aggr.RoleMask `json:"role_mask"`
 }
 
-// JoinTeamArgs 表示用户通过邀请码加入汉化组请求的参数
+// `JoinTeamArgs` carries invitation code for joining one team.
 type JoinTeamArgs struct {
-	// InvitationCode 是邀请码
-	InvitationCode string `json:"invitation_code" validate:"required"`
+	InvCode string `json:"invitation_code"`
 }

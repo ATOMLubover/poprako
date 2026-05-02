@@ -12,6 +12,9 @@ check paths="./...":
 fmt:
     golangci-lint fmt ./...
 
+max-line:
+    find ./internal -type f -exec wc -l {} \; | awk '{print $1, $2}' | sort -nr | head -5
+
 cloc:
     cloc internal/
 
@@ -22,7 +25,7 @@ setup:
 
 # Format, regenerate Swagger docs, then build & run dev-main-server
 dev: fmt swag
-    DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose --profile app up --build --pull never dev-main-server
+    docker compose --profile app up --build dev-main-server
 
 # Tear down all containers and volumes (full clean slate)
 reset:
@@ -55,7 +58,7 @@ mgr-rvt mode="step":
     }}}
 
 psql:
-  psql -U devuser -d poprako_s_db
+  psql -U devuser -d db_poprako_s
 
 build-main image-tag="latest" target-platform="linux/amd64":
     docker build --platform ${target-platform} -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${image-tag} .
@@ -70,4 +73,3 @@ save-main image-tag="latest":
 save-database image-tag="latest":
     mkdir -p dist
     docker save poprako-s-database:${image-tag} | gzip > dist/poprako-s-database-${image-tag}.tar.gz
-

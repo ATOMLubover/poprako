@@ -1,1 +1,0 @@
-DROP TABLE "chapter_table";

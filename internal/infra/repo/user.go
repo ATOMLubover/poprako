@@ -1,235 +1,133 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
 	"time"
 
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
+// NOTE:
+// - any repo impl should have its `New*Repo` constructor. No literal struct constructor.
+// - must execute query with strongly typed structs, and select necessary
+// 	 fields only.
+
+// `userRepoImpl` is the GORM-backed implementation of `repo_iface.UserRepo`
 type userRepoImpl struct {
 	gdb *gorm.DB
 }
 
-func NewUserRepo(
-	gdb *gorm.DB,
-) iface.UserRepo {
-	return &userRepoImpl{
-		gdb: gdb,
+// `NewUserRepo` creates a non-transaction-scoped `UserRepo`
+func NewUserRepo(gdb *gorm.DB) repo_iface.UserRepo {
+	return &userRepoImpl{gdb: gdb}
+}
+
+// `GetById` retrieves one `User` aggregate by id
+func (r *userRepoImpl) GetById(id string) (*aggr.User, repo_iface.RepoErr) {
+	var row entity.UserRow
+
+	err := r.gdb.
+		Table(row.TableName()).
+		Where("id = ?", id).
+		First(&row).Error
+	if err != nil {
+		// Treat "record not found" as an error.
+		return nil, err
 	}
+
+	return row.ToUserAggr(), nil
 }
 
-// 用于在事务上下文中获取已开启事务的 gdb
-func NewUserRepoFromCx(cx context.Context) (iface.UserRepo, error) {
-	gdb, err := cx.Value(txnKey).(*gorm.DB)
-	if !err {
-		return nil, errors.New("[NewUserRepoFromCx]: 无法从上下文中获取事务数据库连接")
+// `GetByQid` retrieves one `User` aggregate by QID
+func (r *userRepoImpl) GetByQid(qid string) (*aggr.User, repo_iface.RepoErr) {
+	var row entity.UserRow
+
+	err := r.gdb.
+		Table(row.TableName()).
+		Where("qid = ?", qid).
+		First(&row).Error
+	if err != nil {
+		// Treat "record not found" as an error.
+		return nil, err
 	}
 
-	return &userRepoImpl{
-		gdb: gdb,
-	}, nil
+	return row.ToUserAggr(), nil
 }
 
-func (r *userRepoImpl) FromTxnCx(cx context.Context) (iface.UserRepo, error) {
-	return NewUserRepoFromCx(cx)
-}
-
-func (r *userRepoImpl) GetCredsByQQ(qq string) (*model.UserCreds, error) {
-
+// `GetCredsByQid` retrieves the credential row for the user with the given QID
+func (r *userRepoImpl) GetCredsByQid(qid string) (*aggr.UserCreds, repo_iface.RepoErr) {
 	var row entity.UserCredsRow
 
-	err := r.gdb.Table(entity.UserTable).
-		Select("qq", "password_hash").
-		Where("qq = ? AND deleted_at IS NULL", qq).
+	err := r.gdb.
+		Table(row.TableName()).
+		Where("qid = ?", qid).
 		First(&row).Error
+	if err != nil {
+		// Treat "record not found" as an error.
+		return nil, err
+	}
+
+	return row.ToUserCredsAggr(), nil
+}
+
+// `Register` inserts a new user row from `UserReg` and returns the created aggregate
+func (r *userRepoImpl) Register(reg *aggr.UserReg) (*aggr.User, repo_iface.RepoErr) {
+	regRow := entity.NewUserRegRowFromAggr(reg)
+
+	err := r.gdb.
+		Table(regRow.TableName()).
+		Create(regRow).Error
 	if err != nil {
 		return nil, err
 	}
 
-	creds := entity.ToUserCreds(row)
-	return &creds, nil
+	return r.GetById(regRow.Id)
 }
 
-func (r *userRepoImpl) GetByID(id string) (*model.UserInfo, error) {
-
-	var row entity.UserInfoRow
-
-	err := r.gdb.Table(entity.UserTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		First(&row).Error
-	if err != nil {
-		return nil, err
-	}
-
-	info := entity.ToUserInfo(row)
-	return &info, nil
-}
-
-func (r *userRepoImpl) GetByQQ(qq string) (*model.UserInfo, error) {
-
-	var row entity.UserInfoRow
-
-	err := r.gdb.Table(entity.UserTable).
-		Where("qq = ? AND deleted_at IS NULL", qq).
-		First(&row).Error
-	if err != nil {
-		return nil, err
-	}
-
-	info := entity.ToUserInfo(row)
-	return &info, nil
-}
-
-func (r *userRepoImpl) List(opt model.UserQueryOpt) ([]model.UserInfo, error) {
-	db := r.gdb.Table(entity.UserTable).Where("deleted_at IS NULL")
-
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
-	}
-	if opt.QQ != nil {
-		db = db.Where("qq = ?", *opt.QQ)
-	}
-
-	var rows []entity.UserInfoRow
-
-	if err := db.Order("created_at DESC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	items := make([]model.UserInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToUserInfo(row))
-	}
-
-	return items, nil
-}
-
-func (r *userRepoImpl) Create(c *model.UserCreation) (*model.UserInfo, error) {
-	now := time.Now()
-
-	row := map[string]any{
-		"id":                 c.ID,
-		"name":               c.Name,
-		"qq":                 c.QQ,
-		"avatar_oss_key":     "",
-		"is_avatar_uploaded": false,
-		"password_hash":      c.PwdHash,
-		"is_super_admin":     false,
-		"last_login_at":      now,
-		"created_at":         now,
-		"updated_at":         now,
-	}
-
-	if err := r.gdb.Table(entity.UserTable).Create(row).Error; err != nil {
-		return nil, err
-	}
-
-	return r.GetByID(c.ID)
-}
-
-func (r *userRepoImpl) Update(u *model.UserUpdate) error {
-	return r.gdb.Table(entity.UserTable).
-		Where("id = ? AND deleted_at IS NULL", u.ID).
+// `Update` applies put-style mutable fields to one user row.
+func (r *userRepoImpl) Update(upd *aggr.UserUpd) repo_iface.RepoErr {
+	updRe := r.gdb.
+		Table(entity.USER_TABLE).
+		Where("id = ?", upd.Id).
 		Updates(map[string]any{
-			"name":       u.Name,
-			"qq":         u.QQ,
+			"nickname":   upd.Name,
+			"qid":        upd.Qid,
 			"updated_at": time.Now(),
-		}).Error
-}
-
-func (r *userRepoImpl) Remove(id string) error {
-	return r.gdb.Table(entity.UserTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"deleted_at": time.Now(),
-			"updated_at": time.Now(),
-		}).Error
-}
-
-func (r *userRepoImpl) RefreshLastLogin(qq string, t time.Time) error {
-	return r.gdb.Table(entity.UserTable).
-		Where("qq = ? AND deleted_at IS NULL", qq).
-		Updates(map[string]any{
-			"last_login_at": t,
-			"updated_at":    time.Now(),
-		}).Error
-}
-
-func (r *userRepoImpl) PreFillAvatarOSSKey(id string, avatarOSSKey string) error {
-	return r.gdb.Table(entity.UserTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"avatar_oss_key":     avatarOSSKey,
-			"is_avatar_uploaded": false,
-			"updated_at":         time.Now(),
-		}).Error
-}
-
-func (r *userRepoImpl) ConfirmAvatarUploaded(id string) error {
-	return r.gdb.Table(entity.UserTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"is_avatar_uploaded": true,
-			"updated_at":         time.Now(),
-		}).Error
-}
-
-func (r *userRepoImpl) GetOrCreateStats(userID string) (*model.UserStats, error) {
-
-	var row entity.UserStatsRow
-
-	err := r.gdb.Table(entity.UserStatsTable).
-		Where("user_id = ?", userID).
-		First(&row).Error
-	if err == nil {
-		stats := entity.ToUserStats(row)
-		return &stats, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		})
+	if updRe.Error != nil {
+		return updRe.Error
 	}
 
-	createRow := map[string]any{
-		"id":                        userID,
-		"user_id":                   userID,
-		"total_assignment_count":    0,
-		"active_assignment_count":   0,
-		"finished_assignment_count": 0,
-		"created_at":                time.Now(),
-		"updated_at":                time.Now(),
+	if updRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 
-	if err := r.gdb.Table(entity.UserStatsTable).
-		Clauses(clause.OnConflict{DoNothing: true}).
-		Create(createRow).Error; err != nil {
-		return nil, err
-	}
-
-	err = r.gdb.Table(entity.UserStatsTable).
-		Where("user_id = ?", userID).
-		First(&row).Error
-	if err != nil {
-		return nil, err
-	}
-
-	stats := entity.ToUserStats(row)
-	return &stats, nil
+	return nil
 }
 
-func (r *userRepoImpl) PatchStats(stats *model.UserStatsPatch) error {
-	return r.gdb.Table(entity.UserStatsTable).
-		Where("user_id = ?", stats.UserID).
-		Updates(map[string]any{
-			"total_assignment_count":    gorm.Expr("total_assignment_count + ?", stats.TotalAssignmentCountDelta),
-			"active_assignment_count":   gorm.Expr("active_assignment_count + ?", stats.ActiveAssignmentCountDelta),
-			"finished_assignment_count": gorm.Expr("finished_assignment_count + ?", stats.FinishedAssignmentCountDelta),
-			"updated_at":                time.Now(),
-		}).Error
+// `Refresh` updates the `last_active_at` timestamp for the given user id
+func (r *userRepoImpl) Refresh(id string, activeAt time.Time) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.USER_TABLE).
+		Where("id = ?", id).
+		Update("last_active_at", activeAt).Error
+}
+
+// `PrefillAvatarKey` writes the OSS object key for the user avatar before the upload begins
+func (r *userRepoImpl) PrefillAvatarKey(id string, key string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.USER_TABLE).
+		Where("id = ?", id).
+		Update("avatar_key", key).Error
+}
+
+// `MarkAvatarUploaded` sets `avatar_uploaded` to true for the given user id
+func (r *userRepoImpl) MarkAvatarUploaded(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.USER_TABLE).
+		Where("id = ?", id).
+		Update("avatar_uploaded", true).Error
 }

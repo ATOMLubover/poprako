@@ -128,7 +128,12 @@ tar -xzf ${RELEASE_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz -C ${SHARED_DIR
 ```
 IMAGE_TAG=${IMAGE_TAG}
 POSTGRES_PASSWORD=your_database_password
-JWT_SECRET_KEY=your_jwt_secret
+DATABASE_USER=poprako
+DATABASE_PASSWORD=your_database_password
+DATABASE_HOST=prod-postgres
+DATABASE_PORT=5432
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION_HOURS=336
 OSS_PLATFORM=...（可选）
 # 如果使用 R2/阿里云类 OSS，填入对应的环境变量
 ```

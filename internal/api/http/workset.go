@@ -1,191 +1,203 @@
 package http
 
 import (
+	"poprako-s/internal/api/http/res"
+	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
-	"poprako-s/internal/state"
 
 	"github.com/kataras/iris/v12"
 )
 
-// ListWorksets godoc
-// @Summary 	获取指定汉化组的工作集列表
-// @Description 获取指定汉化组的工作集列表，支持分页，注意当列表为空，会返回 null 而不是空数组
-//
-// @Tags 		workset
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		team_id query string true "汉化组 ID"
-// @Param 		"includes" query []string false "include 关联信息，可选值：team"
-// @Param 		offset query int true "偏移量"
-// @Param 		limit query int true "每页数量"
-//
-// @Success 	200 {object} []val.WorksetInfo
-//
-// @Router 		/worksets [get]
-func ListWorksets(appState *state.AppState) iris.Handler {
-	worksetApp := appState.WorksetApp
+// `ListWorksets` godoc
+// @Summary List Worksets
+// @Description List all active worksets for a team
+// @Description The caller must be a member of the specified team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags workset
+// @Security ApiKeyAuth
+// @Produce json
+// @Param team_id path string true "team id"
+// @Param offset query int false "pagination offset"
+// @Param limit query int false "pagination limit"
+// @Success 200 {object} res.HttpRes[[]val.WorksetVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /worksets/team/{team_id} [get]
+func ListWorksets(st *state.AppState) iris.Handler {
+	worksetApp := st.WorksetApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		var args val.ListWorksetArgs
-
-		if err := ctx.ReadQuery(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
+		teamId := cx.Params().Get("team_id")
+		if teamId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 team_id 参数")
 			return
 		}
 
-		result, err := worksetApp.List(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		)
+		offset, err := cx.URLParamInt("offset")
 		if err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
+			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
 			return
 		}
 
-		accept(ctx, "获取工作集列表成功", result)
+		limit, err := cx.URLParamInt("limit")
+		if err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
+			return
+		}
+
+		args := &val.ListWorksetArgs{
+			TeamId: teamId,
+			Offset: offset,
+			Limit:  limit,
+		}
+
+		re := worksetApp.List(newReqCx(cx), currUid, args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), "获取作品集列表失败")
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// CreateWorkset godoc
-// @Summary 	创建工作集
-// @Description 在指定汉化组中创建工作集
-//
-// @Tags 		workset
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		body body val.CreateWorksetArgs true "创建工作集参数"
-//
-// @Success 	201 {object} val.CreateWorksetRes
-//
-// @Router 		/worksets [post]
-func CreateWorkset(appState *state.AppState) iris.Handler {
-	worksetApp := appState.WorksetApp
+// `CreateWorkset` godoc
+// @Summary Create Workset
+// @Description Create a new workset inside a team
+// @Description The caller must be an admin of the specified team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags workset
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.CreateWorksetArgs true "create workset args"
+// @Success 201 {object} res.HttpRes[val.WorksetCreatedRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /worksets [post]
+func CreateWorkset(st *state.AppState) iris.Handler {
+	worksetApp := st.WorksetApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
 		var args val.CreateWorksetArgs
 
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		result, err := worksetApp.Create(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		)
-		if err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
+		re := worksetApp.Create(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		ctx.StatusCode(iris.StatusCreated)
-		accept(ctx, "创建工作集成功", result)
+		res.Accept(cx, iris.StatusCreated, re.Data())
 	}
 }
 
-// UpdateWorkset godoc
-// @Summary 	更新工作集
-// @Description 更新指定工作集的信息
-//
-// @Tags 		workset
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		workset_id path string true "工作集 ID"
-// @Param 		body body val.UpdateWorksetArgs true "更新工作集参数"
-//
-// @Success 	200
-//
-// @Router 		/worksets/{workset_id} [put]
-func UpdateWorkset(appState *state.AppState) iris.Handler {
-	worksetApp := appState.WorksetApp
+// `UpdateWorkset` godoc
+// @Summary Update Workset
+// @Description Update the name and/or description of an existing workset
+// @Description The caller must be an admin of the workset's owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags workset
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param workset_id path string true "workset id"
+// @Param body body val.WorksetUpdArgs true "update workset args"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /worksets/{workset_id} [put]
+func UpdateWorkset(st *state.AppState) iris.Handler {
+	worksetApp := st.WorksetApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		worksetID := ctx.Params().Get("workset_id")
-		if worksetID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 workset_id 路径参数")
+		worksetId := cx.Params().Get("workset_id")
+		if worksetId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 workset_id 参数")
 			return
 		}
 
-		var args val.UpdateWorksetArgs
+		var args val.WorksetUpdArgs
 
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		if args.ID != worksetID {
-			reject(ctx, iris.StatusBadRequest, "路径参数 workset_id 与请求体中的 ID 不匹配")
+		// Bind path id into args so the inner app only needs one field.
+		args.Id = worksetId
+
+		re := worksetApp.Update(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		if err := worksetApp.Update(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		); err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
-			return
-		}
-
-		accept(ctx, "更新工作集成功", nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// DeleteWorkset godoc
-// @Summary 	删除工作集
-// @Description 删除指定工作集
-//
-// @Tags 		workset
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		workset_id path string true "工作集 ID"
-//
-// @Success 	200
-//
-// @Router 		/worksets/{workset_id} [delete]
-func DeleteWorkset(appState *state.AppState) iris.Handler {
-	worksetApp := appState.WorksetApp
+// `DeleteWorkset` godoc
+// @Summary Delete Workset
+// @Description Hard-delete a workset by id
+// @Description The caller must be an admin of the workset's owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags workset
+// @Security ApiKeyAuth
+// @Produce json
+// @Param workset_id path string true "workset id"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /worksets/{workset_id} [delete]
+func DeleteWorkset(st *state.AppState) iris.Handler {
+	worksetApp := st.WorksetApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		worksetID := ctx.Params().Get("workset_id")
-		if worksetID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 workset_id 路径参数")
+		worksetId := cx.Params().Get("workset_id")
+		if worksetId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 workset_id 参数")
 			return
 		}
 
-		if err := worksetApp.Remove(
-			buildReqCx(ctx),
-			currUserID,
-			worksetID,
-		); err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
+		re := worksetApp.Delete(newReqCx(cx), currUid, worksetId)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		accept(ctx, "删除工作集成功", nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }

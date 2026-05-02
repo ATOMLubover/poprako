@@ -1,25 +1,21 @@
-package repo
+package repo_iface
 
-import (
-	"context"
+import "poprako-s/internal/domain/model/aggr"
 
-	"poprako-s/internal/domain/model"
-)
-
-// UnitRepo 是翻译单元仓库的接口
 type UnitRepo interface {
-	// List 根据筛选条件返回翻译单元列表
-	List(opt model.UnitQueryOpt) ([]model.UnitInfo, error)
+	// `ListByPage` returns units under one page ordered by `Index` ascending.
+	ListByPage(pageId string) ([]*aggr.Unit, RepoErr)
 
-	// CreateBatch 批量创建翻译单元
-	CreateBatch(units []*model.UnitCreation) error
-	// UpsertBatch 按 ID 批量插入或更新翻译单元
-	UpsertBatch(units []*model.UnitCreation) error
-	// PatchBatch 批量部分更新翻译单元；若某行未找到不报错，符合协作场景下的幂等要求
-	PatchBatch(patches []*model.UnitPatch) error
-	// DeleteBatch 批量删除翻译单元；若某行不存在不报错
-	DeleteBatch(unitIDs []string) error
+	ListIndicesByPage(pageId string) ([]*aggr.UnitIndex, RepoErr)
 
-	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 UnitRepo 实例
-	FromTxnCx(cx context.Context) (UnitRepo, error)
+	// `CountByPage` returns total, translated, and proofread unit counts of one page.
+	CountByPage(pageId string) (int, int, int, RepoErr)
+
+	Create(cre *aggr.UnitCre) RepoErr
+
+	Save(sv *aggr.UnitSave) RepoErr
+
+	Reindex(indices []*aggr.UnitIndex) RepoErr
+
+	Delete(id string) RepoErr
 }

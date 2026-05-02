@@ -1,6 +1,6 @@
 basePath: /api/v1
 definitions:
-  model.WorkflowTransition:
+  enum.WorkflowTransition:
     enum:
     - upload_complete
     - translate_start
@@ -22,131 +22,538 @@ definitions:
     - WorkflowTypesetComplete
     - WorkflowReviewComplete
     - WorkflowPublishComplete
-  poprako-s_internal_app_val.UserInfo:
+  res.HttpRes-any:
     properties:
-      avatar_url:
-        description: AvatarURL 是用户头像的可访问地址
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_AssignmentInvVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.AssignmentInvVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_AssignmentVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.AssignmentVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_ChapterVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.ChapterVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_ComicVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.ComicVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_MemberInvVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.MemberInvVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_MemberVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.MemberVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_PageVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.PageVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_SysMailVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.SysMailVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_TeamVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.TeamVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_WorksetVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.WorksetVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ChapterCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ChapterCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ChapterExportVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ChapterExportVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ChapterVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ChapterVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ComicCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ComicCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ComicVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ComicVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_CreateAssignmentInvRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CreateAssignmentInvRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_CreateMemberInvRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CreateMemberInvRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_CreateMemberRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CreateMemberRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ImportChapterRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ImportChapterRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ListPageUnitsRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ListPageUnitsRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvChapterPagesRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvChapterPagesRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvComicCoverRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvComicCoverRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvTeamAvatarRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvTeamAvatarRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvUserAvatarRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvUserAvatarRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_SavePageUnitsRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.SavePageUnitsRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_TeamCreRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.TeamCreRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_TeamVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.TeamVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_UserLoginRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.UserLoginRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_UserRegRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.UserRegRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_UserVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.UserVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_WorksetCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.WorksetCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  val.AssignmentInvVal:
+    properties:
+      chapter_id:
         type: string
       created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
       id:
-        description: ID 是用户的唯一标识（例如 UUID 或数据库主键）
         type: string
-      is_avatar_uploaded:
-        description: IsAvatarUploaded 表示用户是否已上传头像
+      invitation_code:
+        type: string
+      invitee_qid:
+        type: string
+      inviter_id:
+        type: string
+      pending:
         type: boolean
-      is_super_admin:
-        description: IsSuperAdmin 表示用户是否具有超级管理员权限
-        type: boolean
-      last_login_at:
-        description: LastLoginAt 是一个 Unix 毫秒时间戳，表示用户最后一次登录的时间
+      role_mask:
         type: integer
-      name:
-        description: Name 是用户的显示名称或昵称
-        type: string
-      qq:
-        description: QQ 是用户的 QQ 号，用于登录或联系方式
-        type: string
       updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
         type: integer
     type: object
-  val.AssignmentInfo:
+  val.AssignmentVal:
     properties:
-      chapter:
-        allOf:
-        - $ref: '#/definitions/val.ChapterInfo'
-        description: Chapter 是可选的章节信息（仅在 includes 时填充）
+      assigned_proofreader_at:
+        type: integer
+      assigned_publisher_at:
+        type: integer
+      assigned_raw_provider_at:
+        type: integer
+      assigned_redrawer_at:
+        type: integer
+      assigned_reviewer_at:
+        type: integer
+      assigned_translator_at:
+        type: integer
+      assigned_typesetter_at:
+        type: integer
       chapter_id:
-        description: ChapterID 是所属章节 ID
         type: string
       created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
       id:
-        description: ID 是分配记录的唯一标识
         type: string
-      roles:
-        description: |-
-          Roles 是该分配包含的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
+      role_mask:
         type: integer
       updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
         type: integer
-      user:
-        allOf:
-        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
-        description: User 是可选的用户信息（仅在 includes 时填充）
       user_id:
-        description: UserID 是被分配用户的 ID
         type: string
     type: object
-  val.ChapterExport:
+  val.ChapterCreatedRes:
+    properties:
+      id:
+        description: '`Id` is created chapter identifier.'
+        type: string
+    type: object
+  val.ChapterExportVal:
     properties:
       chapter_id:
-        description: ChapterID 表示章节 ID
         type: string
       chapter_index:
-        description: ChapterIndex 表示章节序号
         type: integer
       chapter_subtitle:
-        description: ChapterSubtitle 表示章节副标题
         type: string
       comic_id:
-        description: ComicID 表示漫画 ID
         type: string
       comic_title:
-        description: ComicTitle 表示漫画标题
         type: string
       pages:
-        description: Pages 表示章节中的页面列表
         items:
-          $ref: '#/definitions/val.PageExport'
+          $ref: '#/definitions/val.PageExportVal'
         type: array
     type: object
-  val.ChapterInfo:
+  val.ChapterUpdArgs:
     properties:
-      comic:
+      id:
+        description: '`Id` identifies target chapter.'
+        type: string
+      is_pinned:
+        description: '`IsPinned` optionally updates pinned status.'
+        type: boolean
+      subtitle:
+        description: '`Subtitle` is optional subtitle update.'
+        type: string
+      workflow_transition:
         allOf:
-        - $ref: '#/definitions/val.ComicInfo'
-        description: TODO
+        - $ref: '#/definitions/enum.WorkflowTransition'
+        description: '`WorkflowTransition` drives workflow timestamp mutation.'
+    type: object
+  val.ChapterVal:
+    properties:
       comic_id:
-        description: ComicID 是所属漫画 ID
         type: string
       created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
         type: integer
-      creator:
-        allOf:
-        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
-        description: Creator 是可选的创建者信息（仅在 includes 时填充）
       creator_id:
-        description: CreatorID 是章节创建者 ID
         type: string
       id:
-        description: ID 是章节的唯一标识
         type: string
       index:
-        description: Index 是章节在漫画中的序号
         type: integer
       is_pinned:
-        description: IsPinned 表示章节是否被顶置
         type: boolean
       page_count:
-        description: PageCount 是章节的页面数量
         type: integer
       proofread_at:
         type: integer
       proofread_unit_count:
-        description: ProofreadUnitCount 是已校对的单元数量
         type: integer
       proofreading_at:
         type: integer
@@ -155,1018 +562,729 @@ definitions:
       reviewed_at:
         type: integer
       subtitle:
-        description: Subtitle 是章节副标题
         type: string
       total_unit_count:
-        description: TotalUnitCount 是章节的翻译单元总数
+        type: integer
+      transalating_at:
         type: integer
       translated_at:
         type: integer
       translated_unit_count:
-        description: TranslatedUnitCount 是已翻译的单元数量
-        type: integer
-      translating_at:
         type: integer
       typeset_at:
         type: integer
       typesetting_at:
         type: integer
       updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
         type: integer
       uploaded_at:
-        description: 工作流时间戳（Unix 毫秒），nil 表示尚未触发
         type: integer
     type: object
-  val.ComicInfo:
+  val.ComicCreatedRes:
+    properties:
+      id:
+        description: '`Id` is the generated comic identifier'
+        type: string
+    type: object
+  val.ComicUpdArgs:
     properties:
       author:
-        description: Author 是漫画作者
-        type: string
-      chapter_count:
-        description: ChapterCount 是漫画下章节数量
-        type: integer
-      cover_url:
-        description: CoverURL 是漫画封面的可访问地址
-        type: string
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      creator:
-        allOf:
-        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
-        description: Creator 是可选的创建者信息（仅在 includes 时填充）
-      creator_id:
-        description: CreatorID 是漫画创建者 ID
+        description: '`Author` is new comic author'
         type: string
       description:
-        description: Description 是漫画描述
+        description: '`Desc` is new optional description'
         type: string
       id:
-        description: ID 是漫画的唯一标识
+        description: '`Id` identifies the target comic'
+        type: string
+      title:
+        description: '`Title` is new comic title'
+        type: string
+    type: object
+  val.ComicVal:
+    properties:
+      author:
+        type: string
+      chapter_count:
+        type: integer
+      cover_uploaded:
+        type: boolean
+      cover_url:
+        type: string
+      created_at:
+        type: integer
+      creator_id:
+        type: string
+      description:
+        type: string
+      id:
         type: string
       index:
-        description: Index 是漫画在作品集内的序号
         type: integer
-      is_cover_uploaded:
-        description: IsCoverUploaded 表示封面是否已经上传
+      is_completed:
         type: boolean
       last_active_at:
-        description: LastActiveAt 是最近活跃时间的 Unix 毫秒时间戳
         type: integer
       title:
-        description: Title 是漫画标题
         type: string
       updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
         type: integer
-      workset:
-        allOf:
-        - $ref: '#/definitions/val.WorksetInfo'
-        description: Workset 是可选的作品集信息（仅在 includes 时填充）
       workset_id:
-        description: WorksetID 是所属作品集 ID
         type: string
     type: object
-  val.CreateAssignmentArgs:
+  val.CreateAssignmentInvArgs:
     properties:
       chapter_id:
-        description: ChapterID 是目标章节 ID
         type: string
-      roles:
-        description: |-
-          Roles 是分配的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
+      invitee_qid:
+        type: string
+      role_mask:
         type: integer
-      user_id:
-        description: UserID 是被分配的用户 ID
-        type: string
-    required:
-    - chapter_id
-    - roles
-    - user_id
     type: object
-  val.CreateAssignmentRes:
+  val.CreateAssignmentInvRes:
     properties:
       id:
-        description: ID 是新创建分配记录的标识
+        type: string
+      invitation_code:
         type: string
     type: object
   val.CreateChapterArgs:
     properties:
       comic_id:
-        description: ComicID 是目标漫画 ID
+        description: '`ComicId` is target comic identifier.'
         type: string
       subtitle:
-        description: Subtitle 是章节副标题（可选）
-        type: string
-    required:
-    - comic_id
-    type: object
-  val.CreateChapterRes:
-    properties:
-      id:
-        description: ID 是新创建章节的标识
+        description: '`Subtitle` is optional subtitle.'
         type: string
     type: object
   val.CreateComicArgs:
     properties:
       author:
-        description: Author 是漫画作者
+        description: '`Author` is the comic author'
         type: string
       description:
-        description: Description 是漫画描述
+        description: '`Desc` is optional description'
         type: string
       title:
-        description: Title 是漫画标题
+        description: '`Title` is the comic title'
         type: string
       workset_id:
-        description: WorksetID 是目标作品集 ID
+        description: '`WorksetId` is the owning workset id'
         type: string
-    required:
-    - author
-    - title
-    - workset_id
-    type: object
-  val.CreateComicRes:
-    properties:
-      id:
-        description: ID 是新创建漫画的标识
-        type: string
-    type: object
-  val.CreateInvitationArgs:
-    properties:
-      invitee_qq:
-        description: InviteeQQ 是被邀请者的 QQ 号
-        type: string
-      roles:
-        description: |-
-          Roles 是邀请中指定的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
-            bit 7 (128)= Admin（管理）
-        type: integer
-      team_id:
-        description: TeamID 是目标汉化组 ID
-        type: string
-    required:
-    - invitee_qq
-    - roles
-    - team_id
     type: object
   val.CreateMemberArgs:
     properties:
-      roles:
-        description: |-
-          Roles 是分配的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
-            bit 7 (128)= Admin（管理）
+      role_mask:
         type: integer
       team_id:
-        description: TeamID 是目标汉化组 ID
         type: string
       user_id:
-        description: UserID 是要创建成员的用户 ID
         type: string
-    required:
-    - roles
-    - team_id
-    - user_id
+    type: object
+  val.CreateMemberInvArgs:
+    properties:
+      invitee_qid:
+        type: string
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+    type: object
+  val.CreateMemberInvRes:
+    properties:
+      id:
+        type: string
+      invitation_code:
+        type: string
     type: object
   val.CreateMemberRes:
     properties:
       id:
-        description: ID 是新创建成员记录的标识
-        type: string
-    type: object
-  val.CreateTeamArgs:
-    properties:
-      description:
-        description: Description 是汉化组描述
-        type: string
-      name:
-        description: Name 是汉化组名称
-        type: string
-    required:
-    - name
-    type: object
-  val.CreateTeamRes:
-    properties:
-      id:
-        description: ID 是新创建汉化组的标识
         type: string
     type: object
   val.CreateWorksetArgs:
     properties:
       description:
-        description: Description 是作品集描述（可选）
+        description: '`Desc` is an optional description. nil means use empty string.'
         type: string
       name:
-        description: Name 是作品集名称
+        description: '`Name` is the display title of the new workset.'
         type: string
       team_id:
-        description: TeamID 是目标汉化组 ID
-        type: string
-    required:
-    - name
-    - team_id
-    type: object
-  val.CreateWorksetRes:
-    properties:
-      id:
-        description: ID 是新创建作品集的标识
+        description: '`TeamId` is the owning team''s identifier.'
         type: string
     type: object
-  val.ImportChapterArgs:
+  val.ImportChapterBody:
     properties:
-      chapter_id:
-        description: ChapterID 表示目标章节 ID
-        type: string
       content:
-        description: Content 表示导入文件内容
         type: string
       format:
-        description: Format 表示导入格式
         type: string
-    required:
-    - chapter_id
-    - content
-    - format
     type: object
   val.ImportChapterRes:
     properties:
       imported_page_count:
-        description: ImportedPageCount 表示成功处理的页面数量
         type: integer
       imported_unit_count:
-        description: ImportedUnitCount 表示成功写入的单元数量
         type: integer
     type: object
-  val.InvitationInfo:
-    properties:
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      id:
-        description: ID 是邀请记录的唯一标识
-        type: string
-      invitation_code:
-        description: InvitationCode 是邀请码
-        type: string
-      invitee_qq:
-        description: InviteeQQ 是被邀请者的 QQ 号
-        type: string
-      invitor_id:
-        description: InvitorID 是邀请发起者的用户 ID
-        type: string
-      pending:
-        description: Pending 表示邀请是否仍有效
-        type: boolean
-      roles:
-        description: |-
-          Roles 是邀请中指定的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
-            bit 7 (128)= Admin（管理）
-        type: integer
-      team_id:
-        description: TeamID 是目标汉化组 ID
-        type: string
-    type: object
-  val.InviteChapterAssigneeArgs:
-    properties:
-      chapter_id:
-        description: ChapterID 是目标章节 ID
-        type: string
-      invitee_qq:
-        description: |-
-          InviteeQQ 是被邀请者的 QQ 号码
-          因为可能有跨组邀请，因此用户只能通过 QQ 指定
-        type: string
-      role:
-        description: Roles 是被邀请者的角色
-        type: integer
-    required:
-    - chapter_id
-    - invitee_qq
-    - role
-    type: object
-  val.InviteChapterAssigneeRes:
+  val.JoinAssignmentInvArgs:
     properties:
       invitation_code:
-        description: InvCode 是邀请代码，供被邀请者使用
         type: string
-    type: object
-  val.JoinInvitorChapterArgs:
-    properties:
-      invitation_code:
-        description: InvitationCode 是章节邀请代码
-        type: string
-    required:
-    - invitation_code
     type: object
   val.JoinTeamArgs:
     properties:
       invitation_code:
-        description: InvitationCode 是邀请码
-        type: string
-    required:
-    - invitation_code
-    type: object
-  val.LoginUserArgs:
-    properties:
-      password:
-        description: Pwd 是登录使用的密码
-        type: string
-      qq:
-        description: QQ 是登录使用的 QQ 号
-        type: string
-    required:
-    - password
-    - qq
-    type: object
-  val.LoginUserRes:
-    properties:
-      access_token:
-        description: AccessToken 是用于后续鉴权的访问令牌
-        type: string
-      user_id:
-        description: UserID 是已登录用户的标识
         type: string
     type: object
-  val.MemberInfo:
+  val.ListPageUnitsRes:
     properties:
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      id:
-        description: ID 是成员记录的唯一标识
-        type: string
-      roles:
-        description: |-
-          Roles 是该成员所拥有的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
-            bit 7 (128)= Admin（管理）
-        type: integer
-      team:
-        allOf:
-        - $ref: '#/definitions/val.TeamInfo'
-        description: Team 是可选的汉化组信息（仅在 includes 时填充）
-      team_id:
-        description: TeamID 是该成员所属的汉化组 ID
-        type: string
-      updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
-        type: integer
-      user:
-        allOf:
-        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
-        description: User 是可选的用户信息（仅在 includes 时填充）
-      user_id:
-        description: UserID 是该成员对应的用户 ID
-        type: string
-    type: object
-  val.PageCreationResult:
-    properties:
-      page_id:
-        description: PageID 是新创建页面的标识
-        type: string
-      put_url:
-        description: PutURL 是用于上传的预签名 URL
-        type: string
-    type: object
-  val.PageExport:
-    properties:
-      image_url:
-        description: ImageURL 表示页面图片地址
-        type: string
-      is_uploaded:
-        description: IsUploaded 表示页面是否已上传
-        type: boolean
-      page_id:
-        description: PageID 表示页面 ID
-        type: string
-      page_index:
-        description: PageIndex 表示页面序号
-        type: integer
-      units:
-        description: Units 表示页面中的翻译单元列表
-        items:
-          $ref: '#/definitions/val.UnitExport'
-        type: array
-    type: object
-  val.PageInfo:
-    properties:
-      chapter_id:
-        description: ChapterID 是所属章节 ID
-        type: string
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      creator:
-        allOf:
-        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
-        description: Creator 是可选的创建者信息（仅在 includes 时填充）
-      creator_id:
-        description: CreatorID 是页面创建者 ID
-        type: string
-      id:
-        description: ID 是页面的唯一标识
-        type: string
-      image_url:
-        description: ImageURL 是页面图片的可访问地址
-        type: string
-      index:
-        description: Index 是页面在章节中的序号
-        type: integer
-      is_uploaded:
-        description: IsUploaded 表示图片是否已经上传
-        type: boolean
       proofread_unit_count:
-        description: ProofreadUnitCount 是已校对的单元数量
         type: integer
       total_unit_count:
-        description: TotalUnitCount 是页面的翻译单元总数
         type: integer
       translated_unit_count:
-        description: TranslatedUnitCount 是已翻译的单元数量
         type: integer
-      updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
-        type: integer
-    type: object
-  val.RegUserArgs:
-    properties:
-      invitation_code:
-        description: InvCode 是用于注册的邀请代码
-        type: string
-      name:
-        description: Name 是用户注册时设置的显示名称
-        type: string
-      password:
-        description: Pwd 是注册使用的密码
-        type: string
-      qq:
-        description: QQ 是注册使用的 QQ 号
-        type: string
-    required:
-    - invitation_code
-    - name
-    - password
-    - qq
-    type: object
-  val.RegUserRes:
-    properties:
-      access_token:
-        description: AccessToken 是注册后返回的访问令牌
-        type: string
-      user_id:
-        description: UserID 是新创建用户的标识
-        type: string
-    type: object
-  val.ReserveChapterPagesArgs:
-    properties:
-      chapter_id:
-        description: ChapterID 是目标章节 ID
-        type: string
-      extension:
-        description: Extension 是图片文件扩展名
-        type: string
-      page_count:
-        description: PageCount 是要预留的页面数量
-        type: integer
-    required:
-    - chapter_id
-    - extension
-    - page_count
-    type: object
-  val.ReserveChapterPagesRes:
-    properties:
-      creations:
-        description: Creations 是每个页面的创建结果
+      units:
         items:
-          $ref: '#/definitions/val.PageCreationResult'
+          $ref: '#/definitions/val.UnitVal'
         type: array
     type: object
-  val.ReserveComicCoverArgs:
+  val.MemberInvUpdArgs:
     properties:
-      comic_id:
-        description: ComicID 是要上传封面的漫画标识
-        type: string
-      file_name:
-        description: |-
-          FileName 是封面文件的原始名称，主要用于 OSS 存储时保留扩展名
-          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "cover.jpg"
-        type: string
-    required:
-    - comic_id
-    - file_name
-    type: object
-  val.ReserveComicCoverRes:
-    properties:
-      put_url:
-        description: PutURL 是用于上传封面的预签名 URL，客户端可以直接使用该 URL 上传封面文件
-        type: string
-    type: object
-  val.ReserveTeamAvatarArgs:
-    properties:
-      file_name:
-        description: |-
-          FileName 是汉化组头像文件的原始名称，主要用于 OSS 存储时保留扩展名
-          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
-        type: string
-      team_id:
-        description: TeamID 是要上传头像的汉化组标识
-        type: string
-    required:
-    - file_name
-    - team_id
-    type: object
-  val.ReserveTeamAvatarRes:
-    properties:
-      put_url:
-        description: PutURL 是用于上传头像的预签名 URL
-        type: string
-    type: object
-  val.ReserveUserAvatarArgs:
-    properties:
-      file_name:
-        description: |-
-          FileName 是用户头像文件的原始名称，主要用于 OSS 存储时保留扩展名
-          需要携带文件扩展名以便 OSS 正确识别文件类型，例如 "avatar.png"
-        type: string
-    required:
-    - file_name
-    type: object
-  val.ReserveUserAvatarRes:
-    properties:
-      put_url:
-        description: PutURL 是用于上传头像的预签名 URL，客户端可以直接使用该 URL 上传头像文件
-        type: string
-    type: object
-  val.SavePageUnitArgs:
-    properties:
-      page_id:
-        description: PageID 是目标页面 ID
-        type: string
-      unit_diff:
-        allOf:
-        - $ref: '#/definitions/val.UnitDiff'
-        description: UnitDiff 是翻译单元的变更信息
-    required:
-    - page_id
-    - unit_diff
-    type: object
-  val.TeamInfo:
-    properties:
-      avatar_url:
-        description: AvatarURL 是汉化组头像的可访问地址
-        type: string
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      description:
-        description: Description 是汉化组的描述
-        type: string
       id:
-        description: ID 是汉化组的唯一标识
         type: string
-      is_avatar_uploaded:
-        description: IsAvatarUploaded 表示汉化组是否已上传头像
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+    type: object
+  val.MemberInvVal:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      invitation_code:
+        type: string
+      invitee_qid:
+        type: string
+      invitor_id:
+        type: string
+      pending:
         type: boolean
-      name:
-        description: Name 是汉化组的名称
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+    type: object
+  val.MemberRoleUpdArgs:
+    properties:
+      id:
+        type: string
+      role_mask:
+        type: integer
+    type: object
+  val.MemberVal:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      role_mask:
+        type: integer
+      team:
+        $ref: '#/definitions/val.TeamVal'
+      team_id:
         type: string
       updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
         type: integer
+      user:
+        $ref: '#/definitions/val.UserVal'
+      user_id:
+        type: string
     type: object
-  val.UnitCreation:
+  val.PageCreationRes:
     properties:
+      page_id:
+        type: string
+      put_url:
+        type: string
+    type: object
+  val.PageExportVal:
+    properties:
+      image_url:
+        type: string
+      is_uploaded:
+        type: boolean
+      page_id:
+        type: string
+      page_index:
+        type: integer
+      units:
+        items:
+          $ref: '#/definitions/val.UnitExportVal'
+        type: array
+    type: object
+  val.PageVal:
+    properties:
+      chapter_id:
+        type: string
+      created_at:
+        type: integer
       id:
-        description: ID 是翻译单元的唯一标识
+        type: string
+      image_uploaded:
+        type: boolean
+      image_url:
         type: string
       index:
-        description: Index 是翻译单元在页面中的序号
         type: integer
-      is_bubble:
-        description: IsBubble 表示该单元是否是气泡框
-        type: boolean
-      is_proofread:
-        description: IsProofread 表示该单元是否已经校对
-        type: boolean
-      proofread_text:
-        description: ProofreadText 是校对后的文本
-        type: string
-      proofreader_comment:
-        description: ProofreaderComment 是校对者的备注
-        type: string
-      proofreader_id:
-        description: ProofreaderID 是校对者的用户 ID
-        type: string
-      translated_text:
-        description: TranslatedText 是翻译后的文本
-        type: string
-      translator_comment:
-        description: TranslatorComment 是翻译者的备注
-        type: string
-      translator_id:
-        description: TranslatorID 是翻译者的用户 ID
-        type: string
-      x_coord:
-        description: XCoord 是翻译单元的 X 坐标
-        type: number
-      y_coord:
-        description: YCoord 是翻译单元的 Y 坐标
-        type: number
-    required:
-    - id
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+      updated_at:
+        type: integer
     type: object
-  val.UnitDiff:
+  val.ResvChapterPagesArgs:
     properties:
-      delete:
-        description: Delete 是要删除的翻译单元 ID 列表
+      chapter_id:
+        type: string
+      file_extension:
+        type: string
+      page_count:
+        type: integer
+    type: object
+  val.ResvChapterPagesRes:
+    properties:
+      creations:
+        items:
+          $ref: '#/definitions/val.PageCreationRes'
+        type: array
+    type: object
+  val.ResvComicCoverBody:
+    properties:
+      file_extension:
+        type: string
+    type: object
+  val.ResvComicCoverRes:
+    properties:
+      put_url:
+        type: string
+    type: object
+  val.ResvTeamAvatarArgs:
+    properties:
+      file_extension:
+        type: string
+      team_id:
+        type: string
+    type: object
+  val.ResvTeamAvatarRes:
+    properties:
+      put_url:
+        type: string
+    type: object
+  val.ResvUserAvatarArgs:
+    properties:
+      file_extension:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.ResvUserAvatarRes:
+    properties:
+      put_url:
+        type: string
+    type: object
+  val.SavePageUnitsArgs:
+    properties:
+      diff:
+        $ref: '#/definitions/val.UnitDiffVal'
+      page_id:
+        type: string
+    type: object
+  val.SavePageUnitsRes:
+    properties:
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+    type: object
+  val.SysMailVal:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      read:
+        type: boolean
+      title:
+        type: string
+    type: object
+  val.TeamCreArgs:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  val.TeamCreRes:
+    properties:
+      id:
+        type: string
+    type: object
+  val.TeamUpdArgs:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  val.TeamVal:
+    properties:
+      avatar_uploaded:
+        type: boolean
+      avatar_url:
+        type: string
+      created_at:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  val.UnitDiffVal:
+    properties:
+      cand_order:
         items:
           type: string
         type: array
-      insert:
-        description: Insert 是要新增的翻译单元列表
+      ops:
         items:
-          $ref: '#/definitions/val.UnitCreation'
+          $ref: '#/definitions/val.UnitOpVal'
         type: array
-      patch:
-        description: Patch 是要修改的翻译单元列表
-        items:
-          $ref: '#/definitions/val.UnitPatch'
-        type: array
+      page_id:
+        type: string
     type: object
-  val.UnitExport:
+  val.UnitExportVal:
     properties:
       is_bubble:
-        description: IsBubble 表示该单元是否是气泡框
         type: boolean
       is_proofread:
-        description: IsProofread 表示该单元是否已经校对
         type: boolean
       page_id:
-        description: PageID 表示所属页面 ID
         type: string
       page_index:
-        description: PageIndex 表示所属页面序号
         type: integer
       proofread_text:
-        description: ProofreadText 表示校对后的文本
         type: string
       proofreader_comment:
-        description: ProofreaderComment 表示校对者的备注
         type: string
       proofreader_id:
-        description: ProofreaderID 表示校对者的用户 ID
         type: string
       translated_text:
-        description: TranslatedText 表示翻译后的文本
         type: string
       translator_comment:
-        description: TranslatorComment 表示翻译者的备注
         type: string
       translator_id:
-        description: TranslatorID 表示翻译者的用户 ID
         type: string
       unit_id:
-        description: UnitID 表示翻译单元 ID
         type: string
       unit_index:
-        description: UnitIndex 表示翻译单元序号
         type: integer
       x_coord:
-        description: XCoord 表示翻译单元的 X 坐标
         type: number
       y_coord:
-        description: YCoord 表示翻译单元的 Y 坐标
         type: number
     type: object
-  val.UnitInfo:
+  val.UnitOpVal:
     properties:
       id:
-        description: ID 是翻译单元的唯一标识
         type: string
-      index:
-        description: Index 是翻译单元在页面中的序号
-        type: integer
       is_bubble:
-        description: IsBubble 表示该单元是否是气泡框
         type: boolean
       is_proofread:
-        description: IsProofread 表示该单元是否已经校对
         type: boolean
+      last_proofreader_id:
+        type: string
+      last_translator_id:
+        type: string
+      local_id:
+        type: string
+      proofread_text:
+        type: string
+      proofreader_comment:
+        type: string
+      translated_text:
+        type: string
+      translator_comment:
+        type: string
+      x_coord:
+        type: number
+      y_coord:
+        type: number
+    type: object
+  val.UnitVal:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      index:
+        type: integer
+      is_bubble:
+        type: boolean
+      is_proofread:
+        type: boolean
+      last_proofreader_id:
+        type: string
+      last_translator_id:
+        type: string
       page_id:
-        description: PageID 是所属页面 ID
         type: string
       proofread_text:
-        description: ProofreadText 是校对后的文本
         type: string
       proofreader_comment:
-        description: ProofreaderComment 是校对者的备注
-        type: string
-      proofreader_id:
-        description: ProofreaderID 是校对者的用户 ID
         type: string
       translated_text:
-        description: TranslatedText 是翻译后的文本
         type: string
       translator_comment:
-        description: TranslatorComment 是翻译者的备注
         type: string
-      translator_id:
-        description: TranslatorID 是翻译者的用户 ID
-        type: string
-      x_coord:
-        description: XCoord 是翻译单元的 X 坐标
-        type: number
-      y_coord:
-        description: YCoord 是翻译单元的 Y 坐标
-        type: number
-    type: object
-  val.UnitPatch:
-    properties:
-      id:
-        description: ID 是要修改的翻译单元标识
-        type: string
-      index:
-        description: Index 是翻译单元在页面中的序号
+      updated_at:
         type: integer
-      is_bubble:
-        description: IsBubble 表示该单元是否是气泡框
-        type: boolean
-      is_proofread:
-        description: IsProofread 表示该单元是否已经校对
-        type: boolean
-      proofread_text:
-        description: ProofreadText 是校对后的文本
-        type: string
-      proofreader_comment:
-        description: ProofreaderComment 是校对者的备注
-        type: string
-      proofreader_id:
-        description: ProofreaderID 是校对者的用户 ID
-        type: string
-      translated_text:
-        description: TranslatedText 是翻译后的文本
-        type: string
-      translator_comment:
-        description: TranslatorComment 是翻译者的备注
-        type: string
-      translator_id:
-        description: TranslatorID 是翻译者的用户 ID
-        type: string
       x_coord:
-        description: XCoord 是翻译单元的 X 坐标
         type: number
       y_coord:
-        description: YCoord 是翻译单元的 Y 坐标
         type: number
-    required:
-    - id
     type: object
-  val.UpdateChapterArgs:
+  val.UpsertAssignmentArgs:
     properties:
       chapter_id:
-        description: ChapterID 是要更新的章节标识
         type: string
-      is_pinned:
-        description: IsPinned 是更新后的顶置状态（可选）
-        type: boolean
-      subtitle:
-        description: Subtitle 是更新后的副标题（可选）
-        type: string
-      workflow_transition:
-        allOf:
-        - $ref: '#/definitions/model.WorkflowTransition'
-        description: 工作流转换事件（可选）
-    required:
-    - chapter_id
-    type: object
-  val.UpdateComicArgs:
-    properties:
-      author:
-        description: Author 是更新后的作者
-        type: string
-      description:
-        description: Description 是更新后的描述
-        type: string
-      id:
-        description: ID 是要更新的漫画标识
-        type: string
-      title:
-        description: Title 是更新后的标题
-        type: string
-    required:
-    - author
-    - id
-    - title
-    type: object
-  val.UpdateInvitationArgs:
-    properties:
-      id:
-        description: ID 是要更新的邀请记录 ID
-        type: string
-      roles:
-        description: |-
-          Roles 是更新后的角色位掩码，各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
-            bit 7 (128)= Admin（管理）
-        type: integer
-      team_id:
-        description: TeamID 是目标汉化组 ID，用于鉴权
-        type: string
-    required:
-    - id
-    - roles
-    - team_id
-    type: object
-  val.UpdateMemberRoleArgs:
-    properties:
-      id:
-        description: ID 是目标成员记录 ID
-        type: string
-      roles:
-        description: |-
-          Roles 是目标角色位掩码（PUT 语义全量替换），各位含义如下：
-            bit 0 (1)  = RawProvider（图源）
-            bit 1 (2)  = Translator（翻译）
-            bit 2 (4)  = Proofreader（校对）
-            bit 3 (8)  = Typesetter（嵌字）
-            bit 4 (16) = Redrawer（美工）
-            bit 5 (32) = Reviewer（监修）
-            bit 6 (64) = Publisher（发布）
-            bit 7 (128)= Admin（管理）
-        type: integer
-    required:
-    - id
-    - roles
-    type: object
-  val.UpdatePageArgs:
-    properties:
-      id:
-        description: ID 是要更新的页面标识
-        type: string
-      is_uploaded:
-        description: IsUploaded 表示是否标记为已上传
-        type: boolean
-    required:
-    - id
-    type: object
-  val.UpdateTeamArgs:
-    properties:
-      description:
-        description: Description 是更新后的汉化组描述
-        type: string
-      id:
-        description: ID 是要更新的汉化组标识
-        type: string
-      name:
-        description: Name 是更新后的汉化组名称
-        type: string
-    required:
-    - id
-    - name
-    type: object
-  val.UpdateUserArgs:
-    properties:
-      id:
-        description: ID 是要更新的用户标识
-        type: string
-      name:
-        description: Name 表示更新后的显示名称，PUT 语义下为必填
-        type: string
-      qq:
-        description: QQ 表示更新后的 QQ 号，PUT 语义下为必填
-        type: string
-    required:
-    - id
-    type: object
-  val.UpdateWorksetArgs:
-    properties:
-      description:
-        description: Description 是更新后的描述（可选）
-        type: string
-      id:
-        description: ID 是要更新的作品集标识
-        type: string
-      name:
-        description: Name 是更新后的名称
-        type: string
-    required:
-    - id
-    - name
-    type: object
-  val.UserStatsInfo:
-    properties:
-      active_assignment_count:
-        type: integer
-      finished_assignment_count:
-        type: integer
-      total_assignment_count:
+      role_mask:
         type: integer
       user_id:
         type: string
     type: object
-  val.WorksetInfo:
+  val.UserLoginArgs:
     properties:
-      comic_count:
-        description: ComicCount 是作品集中漫画数量
-        type: integer
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      description:
-        description: Description 是作品集描述
+      pwd:
         type: string
-      id:
-        description: ID 是作品集的唯一标识
+      qq:
         type: string
-      index:
-        description: Index 是作品集在汉化组内的序号
-        type: integer
+    type: object
+  val.UserLoginRes:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.UserRegArgs:
+    properties:
+      invitation_code:
+        type: string
       name:
-        description: Name 是作品集名称
         type: string
-      team:
-        allOf:
-        - $ref: '#/definitions/val.TeamInfo'
-        description: Team 是可选的汉化组信息（仅在 includes 时填充）
-      team_id:
-        description: TeamID 是所属汉化组 ID
+      password:
+        type: string
+      qq:
+        type: string
+    type: object
+  val.UserRegRes:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.UserUpdArgs:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      qq:
+        type: string
+    type: object
+  val.UserVal:
+    properties:
+      avatar_uploaded:
+        type: boolean
+      avatar_url:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      is_super_admin:
+        type: boolean
+      last_active_at:
+        type: integer
+      nickname:
+        type: string
+      qq:
         type: string
       updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
+        type: integer
+    type: object
+  val.WorksetCreatedRes:
+    properties:
+      id:
+        description: '`Id` is the generated identifier for the new workset.'
+        type: string
+    type: object
+  val.WorksetUpdArgs:
+    properties:
+      description:
+        description: |-
+          `Desc` is the new description for `PUT` semantics.
+          Nil means writing SQL `NULL`.
+        type: string
+      id:
+        description: '`Id` identifies the workset to update.'
+        type: string
+      name:
+        description: '`Name` is the new display title.'
+        type: string
+    type: object
+  val.WorksetVal:
+    properties:
+      comic_count:
+        type: integer
+      created_at:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      name:
+        type: string
+      team_id:
+        type: string
+      updated_at:
         type: integer
     type: object
 info:
   contact: {}
-  description: PopRaKo-S 后端 API 文档
-  title: PopRaKo-S API
-  version: 0.0.1
+  description: Poprako-S refactor API documentation
+  title: Poprako-S Refactor API
+  version: 0.4.0
 paths:
-  /assignments:
-    get:
-      description: 获取指定章节的所有分配记录，仅汉化组成员可访问
+  /assignment-invitations:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create assignment invitation for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 章节 ID
-        in: query
+      - description: create assignment invitation args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateAssignmentInvArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_CreateAssignmentInvRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Assignment Invitation
+      tags:
+      - assignment-invitation
+  /assignment-invitations/{invitation_id}:
+    delete:
+      description: |-
+        Delete assignment invitation by id
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: invitation id
+        in: path
+        name: invitation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Assignment Invitation
+      tags:
+      - assignment-invitation
+  /assignment-invitations/chapter/{chapter_id}:
+    get:
+      description: |-
+        List assignment invitations for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
         name: chapter_id
         required: true
         type: string
-      - collectionFormat: csv
-        description: include 关联信息，可选值：user, chapter, chapter.comic, chapter.creator
+      - description: pending filter
         in: query
-        items:
-          type: string
-        name: '"includes"'
-        type: array
-      - description: 偏移量
+        name: pending
+        type: boolean
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -1174,42 +1292,109 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.AssignmentInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentInvVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取章节分配列表
+      summary: List Assignment Invitations
       tags:
-      - assignment
+      - assignment-invitation
+  /assignment-invitations/join:
     post:
       consumes:
       - application/json
-      description: 为指定章节创建一条分配记录，需要当前用户在该章节中拥有 reviewer 角色
+      description: |-
+        Join chapter collaboration by assignment invitation code
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 创建分配参数
+      - description: join args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.CreateAssignmentArgs'
+          $ref: '#/definitions/val.JoinAssignmentInvArgs'
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/val.CreateAssignmentRes'
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建章节分配
+      summary: Join Chapter By Invitation
+      tags:
+      - assignment-invitation
+  /assignments:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Upsert assignment by PUT semantics
+        If `role_mask` is zero the request will redirect to delete semantics
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: upsert args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.UpsertAssignmentArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Upsert Assignment
       tags:
       - assignment
   /assignments/{assignment_id}:
     delete:
-      description: 删除指定分配记录，需要当前用户在该章节中拥有 reviewer 角色
+      description: |-
+        Delete assignment by id
+        The caller must be reviewer of target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 分配 ID
+      - description: assignment id
         in: path
         name: assignment_id
         required: true
@@ -1219,53 +1404,44 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 删除分配
+      summary: Delete Assignment
       tags:
       - assignment
-  /assignments/join:
-    post:
-      consumes:
-      - application/json
-      description: 使用章节邀请码加入对应章节协作并授予邀请中的分工
-      parameters:
-      - description: 加入章节协作参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.JoinInvitorChapterArgs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 通过章节邀请加入协作
-      tags:
-      - assignment
-  /assignments/mine:
+  /assignments/chapter/{chapter_id}:
     get:
-      description: 获取当前登录用户的所有分配记录，支持分页
+      description: |-
+        List assignments for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - collectionFormat: csv
-        description: include 关联信息，可选值：chapter, chapter.comic, chapter.creator
-        in: query
-        items:
-          type: string
-        name: '"includes"'
-        type: array
-      - description: 偏移量
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -1273,104 +1449,126 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.AssignmentInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取我的分配列表
+      summary: List Assignments By Chapter
+      tags:
+      - assignment
+  /assignments/mine:
+    get:
+      description: |-
+        List assignments of current user
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List My Assignments
       tags:
       - assignment
   /auth/login:
     post:
       consumes:
       - application/json
-      description: 使用 QQ 和密码进行登录，成功返回访问令牌
+      description: Login by qid and password and return a `res.HttpRes` wrapper with
+        `val.UserLoginRes`
       parameters:
-      - description: 登录参数
+      - description: login args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.LoginUserArgs'
+          $ref: '#/definitions/val.UserLoginArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.LoginUserRes'
-      summary: 用户登录
+            $ref: '#/definitions/res.HttpRes-val_UserLoginRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      summary: User Login
       tags:
       - auth
   /auth/register:
     post:
       consumes:
       - application/json
-      description: 使用 QQ、密码、名字和邀请码进行注册，成功返回访问令牌
+      description: Register by invitation code and return a `res.HttpRes` wrapper
+        with `val.UserRegRes`
       parameters:
-      - description: 注册参数
+      - description: registration args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.RegUserArgs'
+          $ref: '#/definitions/val.UserRegArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.RegUserRes'
-      summary: 用户注册
+            $ref: '#/definitions/res.HttpRes-val_UserRegRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      summary: User Registration
       tags:
       - auth
-  /chapters:
-    get:
-      description: 获取指定漫画的章节列表，支持分页和 includes 嵌套信息查询
-      parameters:
-      - description: 漫画 ID
-        in: query
-        name: comic_id
-        required: true
-        type: string
-      - description: 偏移量
-        in: query
-        name: offset
-        required: true
-        type: integer
-      - description: 每页数量
-        in: query
-        name: limit
-        required: true
-        type: integer
-      - collectionFormat: csv
-        description: include 关联信息，可选值：creator
-        in: query
-        items:
-          type: string
-        name: '"includes"'
-        type: array
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/val.ChapterInfo'
-            type: array
-      security:
-      - ApiKeyAuth: []
-      summary: 获取漫画章节列表
-      tags:
-      - chapter
+  /chapter:
     post:
       consumes:
       - application/json
-      description: 在指定漫画中创建章节，并写入章节副标题
+      description: |-
+        Create chapter under one comic
+        The caller must be an admin of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 创建章节参数
+      - description: create chapter args
         in: body
         name: body
         required: true
@@ -1382,63 +1580,32 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/val.CreateChapterRes'
+            $ref: '#/definitions/res.HttpRes-val_ChapterCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建漫画章节
+      summary: Create Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}:
+  /chapter/{chapter_id}:
     delete:
-      description: 删除指定章节
+      description: |-
+        Hard-delete one chapter
+        The caller must be an admin of the target chapter team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 章节 ID
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 删除章节
-      tags:
-      - chapter
-    patch:
-      consumes:
-      - application/json
-      description: 局部更新指定章节的信息，包括 subtitle 与工作流状态；未传的字段不会被修改；除了 reviewer 以外，其他任何角色都只能修改自己对应的
-        workflow 的状态
-      parameters:
-      - description: 章节 ID
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      - description: 更新章节参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.UpdateChapterArgs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 更新章节
-      tags:
-      - chapter
-  /chapters/{chapter_id}/export:
-    get:
-      description: 导出指定章节的完整数据，包含页面与翻译单元信息
-      parameters:
-      - description: 章节 ID
+      - description: chapter id
         in: path
         name: chapter_id
         required: true
@@ -1449,17 +1616,154 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.ChapterExport'
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 导出章节数据（JSON 格式）
+      summary: Delete Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}/export/lp:
     get:
-      description: 导出指定章节的 LabelPlus 格式文本文件，可直接用于 LabelPlus 工具导入
+      description: |-
+        Get one chapter by id
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 章节 ID
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Chapter By Id
+      tags:
+      - chapter
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update one chapter with PUT semantics
+        The caller must be an admin of the target chapter team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: update chapter args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ChapterUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Chapter
+      tags:
+      - chapter
+  /chapter/{chapter_id}/export:
+    get:
+      description: |-
+        Export one chapter in JSON format
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterExportVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Export Chapter
+      tags:
+      - chapter
+  /chapter/{chapter_id}/export/lp:
+    get:
+      description: |-
+        Export one chapter in LabelPlus text format
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
         in: path
         name: chapter_id
         required: true
@@ -1471,87 +1775,129 @@ paths:
           description: OK
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 导出章节数据（LabelPlus 格式）
+      summary: Export Chapter LabelPlus
       tags:
       - chapter
-  /chapters/{chapter_id}/import:
+  /chapter/{chapter_id}/import:
     post:
       consumes:
       - application/json
-      description: 以 Poprako JSON 或 LabelPlus 文本格式导入章节内容
+      description: |-
+        Import one chapter from Poprako JSON or LabelPlus text content
+        The caller must be translator or proofreader of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 章节 ID
+      - description: chapter id
         in: path
         name: chapter_id
         required: true
         type: string
-      - description: 导入参数
+      - description: import chapter args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.ImportChapterArgs'
+          $ref: '#/definitions/val.ImportChapterBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.ImportChapterRes'
+            $ref: '#/definitions/res.HttpRes-val_ImportChapterRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 导入章节数据
+      summary: Import Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}/invitations:
-    post:
-      consumes:
-      - application/json
-      description: 在指定章节下创建协作邀请并返回邀请码
+  /chapter/{chapter_id}/pages:
+    delete:
+      description: |-
+        Hard-delete all pages under one chapter
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 章节 ID
+      - description: chapter id
         in: path
         name: chapter_id
         required: true
         type: string
-      - description: 邀请参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.InviteChapterAssigneeArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.InviteChapterAssigneeRes'
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建章节协作邀请
+      summary: Delete Chapter Pages
       tags:
       - chapter
-  /comics:
     get:
-      description: 获取指定工作集的漫画列表，支持分页，注意当列表为空，会返回 null 而不是空数组
+      description: |-
+        List pages under one chapter with pagination
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 工作集 ID
-        in: query
-        name: workset_id
+      - description: chapter id
+        in: path
+        name: chapter_id
         required: true
         type: string
-      - description: 偏移量
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -1559,20 +1905,158 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.ComicInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_PageVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取指定工作集的漫画列表
+      summary: List Chapter Pages
       tags:
-      - comic
+      - chapter
+  /chapter/{chapter_id}/pages/reserve:
     post:
       consumes:
       - application/json
-      description: 在指定工作集中创建漫画
+      description: |-
+        Reserve signed upload URLs for all pages of one chapter
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 创建漫画参数
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: reserve chapter pages args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvChapterPagesArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ResvChapterPagesRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Reserve Chapter Pages Upload
+      tags:
+      - chapter
+  /chapter/comic/{comic_id}:
+    get:
+      description: |-
+        List chapters for one comic
+        The caller must be a member of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Chapters
+      tags:
+      - chapter
+  /chapter/comic/{comic_id}/pinned:
+    get:
+      description: |-
+        Get pinned chapter for one comic
+        The caller must be a member of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Pinned Chapter
+      tags:
+      - chapter
+  /comic:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create one comic under a workset
+        The caller must be an admin of the target workset team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create comic args
         in: body
         name: body
         required: true
@@ -1584,17 +2068,32 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/val.CreateComicRes'
+            $ref: '#/definitions/res.HttpRes-val_ComicCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建漫画
+      summary: Create Comic
       tags:
       - comic
-  /comics/{comic_id}:
+  /comic/{comic_id}:
     delete:
-      description: 删除指定漫画
+      description: |-
+        Hard-delete one comic by id
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 漫画 ID
+      - description: comic id
         in: path
         name: comic_id
         required: true
@@ -1604,90 +2103,159 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 删除漫画
+      summary: Delete Comic
+      tags:
+      - comic
+    get:
+      description: |-
+        Get one comic by id
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ComicVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Comic By Id
       tags:
       - comic
     put:
       consumes:
       - application/json
-      description: 更新指定漫画的信息
+      description: |-
+        Update comic fields with PUT semantics
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 漫画 ID
+      - description: comic id
         in: path
         name: comic_id
         required: true
         type: string
-      - description: 更新漫画参数
+      - description: update comic args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.UpdateComicArgs'
+          $ref: '#/definitions/val.ComicUpdArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 更新漫画
+      summary: Update Comic
       tags:
       - comic
-  /comics/{comic_id}/cover:
+  /comic/{comic_id}/cover:
     post:
       consumes:
       - application/json
-      description: 为指定漫画封面生成预签名 PUT URL，并预留 cover_oss_key
+      description: |-
+        Reserve a signed upload URL for one comic cover
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 漫画 ID
+      - description: comic id
         in: path
         name: comic_id
         required: true
         type: string
-      - description: 预留漫画封面参数
+      - description: reserve comic cover args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.ReserveComicCoverArgs'
+          $ref: '#/definitions/val.ResvComicCoverBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.ReserveComicCoverRes'
+            $ref: '#/definitions/res.HttpRes-val_ResvComicCoverRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 预留漫画封面上传
+      summary: Reserve Comic Cover Upload
       tags:
       - comic
-  /comics/{comic_id}/cover/confirm:
+  /comic/{comic_id}/cover/confirm:
     post:
-      description: 在客户端上传封面后，确认漫画封面上传状态
+      description: |-
+        Confirm one comic cover upload after client upload completed
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 漫画 ID
-        in: path
-        name: comic_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 确认漫画封面已上传
-      tags:
-      - comic
-  /comics/{comic_id}/pinned-chapter:
-    get:
-      description: 获取指定漫画的置顶章节信息；若尚无置顶章节则返回 null
-      parameters:
-      - description: 漫画 ID
+      - description: comic id
         in: path
         name: comic_id
         required: true
@@ -1698,84 +2266,143 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.ChapterInfo'
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取漫画置顶章节
+      summary: Confirm Comic Cover Uploaded
       tags:
-      - chapter
-  /invitations:
+      - comic
+  /comic/workset/{workset_id}:
     get:
-      description: 获取指定汉化组的邀请列表，注意当列表为空，会返回 null 而不是空数组
+      description: |-
+        List active comics for one workset
+        The caller must be a member of the target workset team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 汉化组 ID
-        in: query
-        name: team_id
+      - description: workset id
+        in: path
+        name: workset_id
         required: true
         type: string
-      - description: 是否仅返回待处理邀请
+      - description: fuzzy title
         in: query
-        name: pending
-        type: boolean
-      - description: 偏移量
+        name: fuzzy_title
+        type: string
+      - description: upload phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: upload_phase
+        type: integer
+      - description: translate phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: translate_phase
+        type: integer
+      - description: proofread phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: proofread_phase
+        type: integer
+      - description: typeset phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: typeset_phase
+        type: integer
+      - description: review phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: review_phase
+        type: integer
+      - description: publish phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: publish_phase
+        type: integer
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
-      - collectionFormat: csv
-        description: include 关联信息，可选值：invitor
-        in: query
-        items:
-          type: string
-        name: '"includes"'
-        type: array
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.InvitationInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_ComicVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取邀请列表
+      summary: List Comics
       tags:
-      - invitation
+      - comic
+  /member-invitations:
     post:
       consumes:
       - application/json
-      description: 在指定汉化组中创建一个新的邀请
+      description: |-
+        Create one invitation under one team
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 创建邀请参数
+      - description: create invitation args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.CreateInvitationArgs'
+          $ref: '#/definitions/val.CreateMemberInvArgs'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/val.InvitationInfo'
+            $ref: '#/definitions/res.HttpRes-val_CreateMemberInvRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建邀请
+      summary: Create Member Invitation
       tags:
-      - invitation
-  /invitations/{invitation_id}:
+      - member-invitation
+  /member-invitations/{invitation_id}:
     delete:
-      description: 删除指定的邀请
+      description: |-
+        Hard delete one invitation by id
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 邀请 ID
+      - description: invitation id
         in: path
         name: invitation_id
         required: true
@@ -1785,62 +2412,91 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 删除邀请
+      summary: Delete Member Invitation
       tags:
-      - invitation
+      - member-invitation
     put:
       consumes:
       - application/json
-      description: 更新指定待处理邀请的信息，无法更新已被使用或已失效的邀请
+      description: |-
+        Update invitation role mask by put semantics
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 邀请 ID
+      - description: invitation id
         in: path
         name: invitation_id
         required: true
         type: string
-      - description: 更新邀请参数
+      - description: update invitation args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.UpdateInvitationArgs'
+          $ref: '#/definitions/val.MemberInvUpdArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 更新未被使用的邀请
+      summary: Update Member Invitation
       tags:
-      - invitation
-  /members:
+      - member-invitation
+  /member-invitations/team/{team_id}:
     get:
-      description: 获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组
+      description: |-
+        List invitations under one team
+        The caller must be member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 汉化组 ID
-        in: query
+      - description: team id
+        in: path
         name: team_id
         required: true
         type: string
-      - collectionFormat: csv
-        description: include 关联信息，可选值：user
+      - description: pending filter
         in: query
-        items:
-          type: string
-        name: '"includes"'
-        type: array
-      - description: 偏移量
+        name: pending
+        type: boolean
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -1848,20 +2504,34 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.MemberInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_MemberInvVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取指定汉化组的成员列表
+      summary: List Member Invitations
       tags:
-      - member
+      - member-invitation
+  /members:
     post:
       consumes:
       - application/json
-      description: 由超级管理员直接创建成员记录
+      description: |-
+        Create one member under one team
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 创建成员参数
+      - description: create member args
         in: body
         name: body
         required: true
@@ -1873,17 +2543,32 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/val.CreateMemberRes'
+            $ref: '#/definitions/res.HttpRes-val_CreateMemberRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建成员
+      summary: Create Member
       tags:
       - member
   /members/{member_id}:
     delete:
-      description: 从汉化组中移除指定成员
+      description: |-
+        Hard delete one member by id
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 成员 ID
+      - description: member id
         in: path
         name: member_id
         required: true
@@ -1893,44 +2578,77 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 移除成员
+      summary: Delete Member
       tags:
       - member
     put:
       consumes:
       - application/json
-      description: 更新指定成员的分工角色
+      description: |-
+        Update one member role mask by put semantics
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 成员 ID
+      - description: member id
         in: path
         name: member_id
         required: true
         type: string
-      - description: 更新成员角色参数
+      - description: update member role args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.UpdateMemberRoleArgs'
+          $ref: '#/definitions/val.MemberRoleUpdArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 更新成员角色
+      summary: Update Member Role
       tags:
       - member
   /members/join:
     post:
       consumes:
       - application/json
-      description: 已登录用户使用邀请码加入对应汉化组
+      description: |-
+        Join one team by member invitation code
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 加入汉化组参数
+      - description: join team args
         in: body
         name: body
         required: true
@@ -1941,31 +2659,45 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 通过邀请码加入汉化组
+      summary: Join Team By Invitation
       tags:
       - member
   /members/mine:
     get:
-      description: 获取当前用户在各汉化组中的成员信息，注意当列表为空，会返回 null 而不是空数组
+      description: |-
+        List all memberships of current user
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
       - collectionFormat: csv
-        description: include 关联信息，可选值：team
+        description: 'include related fields, optional: user, team'
         in: query
         items:
           type: string
-        name: '"includes"'
+        name: includes
         type: array
-      - description: 偏移量
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -1973,135 +2705,211 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.MemberInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_MemberVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取当前用户的成员身份列表
+      summary: List My Members
       tags:
       - member
-  /pages:
+  /members/team/{team_id}:
     get:
-      description: 获取指定章节的所有页面，注意当列表为空，会返回 null 而不是空数组
+      description: |-
+        List members under one team
+        The caller must be a member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 章节 ID
-        in: query
-        name: chapter_id
+      - description: team id
+        in: path
+        name: team_id
         required: true
         type: string
-      - description: 偏移量
-        in: query
-        name: offset
-        required: true
-        type: integer
-      - description: 每页数量
-        in: query
-        name: limit
-        required: true
-        type: integer
       - collectionFormat: csv
-        description: include 关联信息，可选值：creator
+        description: 'include related fields, optional: user, team'
         in: query
         items:
           type: string
-        name: '"includes"'
+        name: includes
         type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.PageInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_MemberVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取章节页面列表
+      summary: List Team Members
+      tags:
+      - member
+  /page/{page_id}/image/uploaded:
+    post:
+      description: |-
+        Confirm one page image upload after client upload completed
+        The caller must be assigned to the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Confirm Page Image Uploaded
       tags:
       - page
+  /page/{page_id}/units:
+    get:
+      description: |-
+        List units for one page
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ListPageUnitsRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Page Units
+      tags:
+      - unit
     post:
       consumes:
       - application/json
-      description: 为指定章节批量创建页面，返回每个页面的预签名上传地址
+      description: |-
+        Apply one page unit diff and synchronize page and chapter counters
+        The caller must be translator or proofreader on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 预留页面参数
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      - description: save page units args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.ReserveChapterPagesArgs'
+          $ref: '#/definitions/val.SavePageUnitsArgs'
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/val.ReserveChapterPagesRes'
+            $ref: '#/definitions/res.HttpRes-val_SavePageUnitsRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 预留页面记录，并生成每个页面的预签名上传地址
+      summary: Save Page Units
       tags:
-      - page
-  /pages/{page_id}:
-    delete:
-      description: 删除指定页面
-      parameters:
-      - description: 页面 ID
-        in: path
-        name: page_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 删除页面
-      tags:
-      - page
-    put:
-      consumes:
-      - application/json
-      description: 更新指定页面的信息，例如标记页面已上传完成
-      parameters:
-      - description: 页面 ID
-        in: path
-        name: page_id
-        required: true
-        type: string
-      - description: 更新页面参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.UpdatePageArgs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 更新页面
-      tags:
-      - page
-  /teams:
+      - unit
+  /sys-mail:
     get:
-      description: 获取所有汉化组列表，仅超级管理员有权限，注意当列表为空，会返回 null 而不是空数组
+      description: |-
+        List unread system mails for current authorized user with pagination
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 偏移量
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -2109,42 +2917,132 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.TeamInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_SysMailVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取所有汉化组列表
+      summary: List Unread System Mails
+      tags:
+      - sys-mail
+  /sys-mail/{sys_mail_id}/read:
+    post:
+      description: |-
+        Mark one system mail as read for current authorized user
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: system mail id
+        in: path
+        name: sys_mail_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark System Mail Read
+      tags:
+      - sys-mail
+  /teams:
+    get:
+      parameters:
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_TeamVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Teams
       tags:
       - team
     post:
       consumes:
       - application/json
-      description: 创建一个新的汉化组，仅超级管理员有权限
       parameters:
-      - description: 创建汉化组参数
+      - description: create team args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.CreateTeamArgs'
+          $ref: '#/definitions/val.TeamCreArgs'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/val.CreateTeamRes'
+            $ref: '#/definitions/res.HttpRes-val_TeamCreRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建汉化组
+      summary: Create Team
       tags:
       - team
   /teams/{team_id}:
-    delete:
-      description: 删除指定汉化组，超级管理员或汉化组管理员有权限
+    get:
       parameters:
-      - description: 汉化组 ID
+      - description: team id
         in: path
         name: team_id
         required: true
@@ -2154,71 +3052,100 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_TeamVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 删除汉化组
+      summary: Get Team Info
       tags:
       - team
     put:
       consumes:
       - application/json
-      description: 更新指定汉化组的信息，超级管理员或汉化组管理员有权限
       parameters:
-      - description: 汉化组 ID
+      - description: team id
         in: path
         name: team_id
         required: true
         type: string
-      - description: 更新汉化组参数
+      - description: update team args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.UpdateTeamArgs'
+          $ref: '#/definitions/val.TeamUpdArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 更新汉化组信息
+      summary: Update Team
       tags:
       - team
   /teams/{team_id}/avatar:
     post:
       consumes:
       - application/json
-      description: 为指定汉化组头像生成预签名 PUT URL，并预留 avatar_oss_key
       parameters:
-      - description: 汉化组 ID
+      - description: team id
         in: path
         name: team_id
         required: true
         type: string
-      - description: 预留汉化组头像参数
+      - description: reserve team avatar args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.ReserveTeamAvatarArgs'
+          $ref: '#/definitions/val.ResvTeamAvatarArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.ReserveTeamAvatarRes'
+            $ref: '#/definitions/res.HttpRes-val_ResvTeamAvatarRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 预留汉化组头像上传
+      summary: Reserve Team Avatar Upload
       tags:
       - team
   /teams/{team_id}/avatar/confirm:
     post:
-      description: 在客户端上传头像后，确认汉化组头像上传状态
       parameters:
-      - description: 汉化组 ID
+      - description: team id
         in: path
         name: team_id
         required: true
@@ -2228,24 +3155,35 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 确认汉化组头像已上传
+      summary: Confirm Team Avatar Uploaded
       tags:
       - team
   /teams/mine:
     get:
-      description: 获取当前用户所在的汉化组列表，注意当列表为空，会返回 null 而不是空数组
       parameters:
-      - description: 偏移量
+      - description: pagination offset
         in: query
         name: offset
-        required: true
         type: integer
-      - description: 每页数量
+      - description: pagination limit
         in: query
         name: limit
-        required: true
         type: integer
       produces:
       - application/json
@@ -2253,82 +3191,31 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/val.TeamInfo'
-            type: array
+            $ref: '#/definitions/res.HttpRes-array_val_TeamVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取当前用户所在的汉化组列表
+      summary: List My Teams
       tags:
       - team
-  /units:
-    get:
-      description: 获取指定页面的所有翻校单元，按 index 升序排列，注意当列表为空时返回 null 而非空数组
-      parameters:
-      - description: 页面 ID
-        in: query
-        name: page_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/val.UnitInfo'
-            type: array
-      security:
-      - ApiKeyAuth: []
-      summary: 获取页面 unit 列表
-      tags:
-      - unit
-    put:
-      consumes:
-      - application/json
-      description: 以 diff 语义（insert / patch / delete）保存页面的翻校单元，并同步更新页面和章节的统计字段，注意只有当前用户在当前章节有
-        translator 或者 proofreader 分配时才允许执行此操作
-      parameters:
-      - description: unit diff 参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.SavePageUnitArgs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 保存页面 unit diff
-      tags:
-      - unit
   /users/{user_id}:
-    delete:
-      description: 根据用户 ID 删除用户
-      parameters:
-      - description: 用户 ID
-        in: path
-        name: user_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 删除用户
-      tags:
-      - user
     get:
-      description: 根据用户 ID 获取用户详细信息
+      description: |-
+        Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 用户 ID
+      - description: user id
         in: path
         name: user_id
         required: true
@@ -2339,146 +3226,138 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
+            $ref: '#/definitions/res.HttpRes-val_UserVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 根据 ID 获取用户信息
+      summary: Get User Info
       tags:
       - user
-  /users/mine:
-    get:
-      description: 获取当前登录用户的详细信息，用于保持登录状态
+  /users/avatar:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: reserve avatar args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvUserAvatarArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
+            $ref: '#/definitions/res.HttpRes-val_ResvUserAvatarRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取当前登录用户信息
+      summary: Reserve User Avatar Upload
+      tags:
+      - user
+  /users/avatar/confirm:
+    post:
+      description: |-
+        Confirm avatar uploaded after client upload completed and return no JSON body
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Confirm User Avatar Uploaded
+      tags:
+      - user
+  /users/me:
+    get:
+      description: |-
+        Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_UserVal'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get My User Info
       tags:
       - user
     put:
       consumes:
       - application/json
-      description: 更新当前登录用户的基本资料
       parameters:
-      - description: 更新用户参数
+      - description: update user args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.UpdateUserArgs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 更新当前用户信息
-      tags:
-      - user
-  /users/mine/avatar:
-    post:
-      consumes:
-      - application/json
-      description: 为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key
-      parameters:
-      - description: 预留用户头像参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.ReserveUserAvatarArgs'
+          $ref: '#/definitions/val.UserUpdArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.ReserveUserAvatarRes'
-      security:
-      - ApiKeyAuth: []
-      summary: 预留当前用户头像上传
-      tags:
-      - user
-  /users/mine/avatar/confirm:
-    post:
-      description: 在客户端上传头像后，确认当前用户头像上传状态
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      security:
-      - ApiKeyAuth: []
-      summary: 确认当前用户头像已上传
-      tags:
-      - user
-  /users/mine/stats:
-    get:
-      description: 获取当前登录用户的任务统计信息
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/val.UserStatsInfo'
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 获取当前登录用户统计信息
+      summary: Update My User Info
       tags:
       - user
   /worksets:
-    get:
-      description: 获取指定汉化组的工作集列表，支持分页，注意当列表为空，会返回 null 而不是空数组
-      parameters:
-      - description: 汉化组 ID
-        in: query
-        name: team_id
-        required: true
-        type: string
-      - collectionFormat: csv
-        description: include 关联信息，可选值：team
-        in: query
-        items:
-          type: string
-        name: '"includes"'
-        type: array
-      - description: 偏移量
-        in: query
-        name: offset
-        required: true
-        type: integer
-      - description: 每页数量
-        in: query
-        name: limit
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/val.WorksetInfo'
-            type: array
-      security:
-      - ApiKeyAuth: []
-      summary: 获取指定汉化组的工作集列表
-      tags:
-      - workset
     post:
       consumes:
       - application/json
-      description: 在指定汉化组中创建工作集
+      description: |-
+        Create a new workset inside a team
+        The caller must be an admin of the specified team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 创建工作集参数
+      - description: create workset args
         in: body
         name: body
         required: true
@@ -2490,17 +3369,32 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/val.CreateWorksetRes'
+            $ref: '#/definitions/res.HttpRes-val_WorksetCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 创建工作集
+      summary: Create Workset
       tags:
       - workset
   /worksets/{workset_id}:
     delete:
-      description: 删除指定工作集
+      description: |-
+        Hard-delete a workset by id
+        The caller must be an admin of the workset's owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 工作集 ID
+      - description: workset id
         in: path
         name: workset_id
         required: true
@@ -2510,35 +3404,110 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 删除工作集
+      summary: Delete Workset
       tags:
       - workset
     put:
       consumes:
       - application/json
-      description: 更新指定工作集的信息
+      description: |-
+        Update the name and/or description of an existing workset
+        The caller must be an admin of the workset's owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: 工作集 ID
+      - description: workset id
         in: path
         name: workset_id
         required: true
         type: string
-      - description: 更新工作集参数
+      - description: update workset args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.UpdateWorksetArgs'
+          $ref: '#/definitions/val.WorksetUpdArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: 更新工作集
+      summary: Update Workset
+      tags:
+      - workset
+  /worksets/team/{team_id}:
+    get:
+      description: |-
+        List all active worksets for a team
+        The caller must be a member of the specified team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_WorksetVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Worksets
       tags:
       - workset
 securityDefinitions:

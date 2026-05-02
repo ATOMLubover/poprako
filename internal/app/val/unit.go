@@ -1,119 +1,85 @@
 package val
 
-// UnitInfo 表示用于在应用层和接口层传递的翻译单元信息 VO
-type UnitInfo struct {
-	// ID 是翻译单元的唯一标识
-	ID string `json:"id"`
+// `UnitVal` is the app-facing value object for unit data.
+type UnitVal struct {
+	Id string `json:"id"`
 
-	// PageID 是所属页面 ID
-	PageID string `json:"page_id"`
-	// Index 是翻译单元在页面中的序号
+	PageId string `json:"page_id"`
+
 	Index int `json:"index"`
 
-	// XCoord 是翻译单元的 X 坐标
-	XCoord float64 `json:"x_coord"`
-	// YCoord 是翻译单元的 Y 坐标
-	YCoord float64 `json:"y_coord"`
-
-	// IsBubble 表示该单元是否是气泡框
 	IsBubble bool `json:"is_bubble"`
 
-	// TranslatedText 是翻译后的文本
-	TranslatedText *string `json:"translated_text"`
-	// TranslatorID 是翻译者的用户 ID
-	TranslatorID *string `json:"translator_id"`
-	// TranslatorComment 是翻译者的备注
-	TranslatorComment *string `json:"translator_comment"`
-
-	// IsProofread 表示该单元是否已经校对
 	IsProofread bool `json:"is_proofread"`
-	// ProofreadText 是校对后的文本
-	ProofreadText *string `json:"proofread_text"`
-	// ProofreaderID 是校对者的用户 ID
-	ProofreaderID *string `json:"proofreader_id"`
-	// ProofreaderComment 是校对者的备注
-	ProofreaderComment *string `json:"proofreader_comment"`
-}
 
-// SavePageUnitArgs 表示保存页面翻译单元的参数（diff 语义）
-type SavePageUnitArgs struct {
-	// PageID 是目标页面 ID
-	PageID string `json:"page_id" validate:"required"`
-	// UnitDiff 是翻译单元的变更信息
-	UnitDiff UnitDiff `json:"unit_diff" validate:"required"`
-}
-
-// UnitDiff 表示翻译单元的变更信息
-type UnitDiff struct {
-	// Insert 是要新增的翻译单元列表
-	Insert []UnitCreation `json:"insert"`
-	// Patch 是要修改的翻译单元列表
-	Patch []UnitPatch `json:"patch"`
-	// Delete 是要删除的翻译单元 ID 列表
-	Delete []string `json:"delete"`
-}
-
-// UnitCreation 表示新增翻译单元的数据
-type UnitCreation struct {
-	// ID 是翻译单元的唯一标识
-	ID string `json:"id" validate:"required"`
-	// Index 是翻译单元在页面中的序号
-	Index int `json:"index"`
-
-	// XCoord 是翻译单元的 X 坐标
 	XCoord float64 `json:"x_coord"`
-	// YCoord 是翻译单元的 Y 坐标
 	YCoord float64 `json:"y_coord"`
 
-	// IsBubble 表示该单元是否是气泡框
-	IsBubble bool `json:"is_bubble"`
+	TranslatedText    *string `json:"translated_text,omitempty"`
+	TranslatorComment *string `json:"translator_comment,omitempty"`
+	LastTranslatorId  *string `json:"last_translator_id,omitempty"`
 
-	// TranslatedText 是翻译后的文本
-	TranslatedText *string `json:"translated_text"`
-	// TranslatorID 是翻译者的用户 ID
-	TranslatorID *string `json:"translator_id"`
-	// TranslatorComment 是翻译者的备注
-	TranslatorComment *string `json:"translator_comment"`
+	ProofreadText      *string `json:"proofread_text,omitempty"`
+	ProofreaderComment *string `json:"proofreader_comment,omitempty"`
+	LastProofreaderId  *string `json:"last_proofreader_id,omitempty"`
 
-	// IsProofread 表示该单元是否已经校对
-	IsProofread bool `json:"is_proofread"`
-	// ProofreadText 是校对后的文本
-	ProofreadText *string `json:"proofread_text"`
-	// ProofreaderID 是校对者的用户 ID
-	ProofreaderID *string `json:"proofreader_id"`
-	// ProofreaderComment 是校对者的备注
-	ProofreaderComment *string `json:"proofreader_comment"`
+	CreatedAt int64 `json:"created_at"`
+	UpdatedAt int64 `json:"updated_at"`
 }
 
-// UnitPatch 表示修改翻译单元的数据（PATCH 语义）
-type UnitPatch struct {
-	// ID 是要修改的翻译单元标识
-	ID string `json:"id" validate:"required"`
+// `ListPageUnitsArgs` carries query args for page unit list.
+type ListPageUnitsArgs struct {
+	PageId string `url:"page_id"`
+}
 
-	// Index 是翻译单元在页面中的序号
-	Index *int `json:"index"`
+// `ListPageUnitsRes` is the app response for one page unit list.
+type ListPageUnitsRes struct {
+	Units []UnitVal `json:"units"`
 
-	// XCoord 是翻译单元的 X 坐标
-	XCoord *float64 `json:"x_coord"`
-	// YCoord 是翻译单元的 Y 坐标
-	YCoord *float64 `json:"y_coord"`
+	TotalUnitCount      int `json:"total_unit_count"`
+	TranslatedUnitCount int `json:"translated_unit_count"`
+	ProofreadUnitCount  int `json:"proofread_unit_count"`
+}
 
-	// IsBubble 表示该单元是否是气泡框
-	IsBubble *bool `json:"is_bubble"`
+// `UnitDiffVal` is the transport-safe representation of `UnitDiff`.
+type UnitDiffVal struct {
+	PageId string `json:"page_id"`
 
-	// TranslatedText 是翻译后的文本
-	TranslatedText **string `json:"translated_text"`
-	// TranslatorID 是翻译者的用户 ID
-	TranslatorID **string `json:"translator_id"`
-	// TranslatorComment 是翻译者的备注
-	TranslatorComment **string `json:"translator_comment"`
+	Ops []UnitOpVal `json:"ops"`
 
-	// IsProofread 表示该单元是否已经校对
-	IsProofread *bool `json:"is_proofread"`
-	// ProofreadText 是校对后的文本
-	ProofreadText **string `json:"proofread_text"`
-	// ProofreaderID 是校对者的用户 ID
-	ProofreaderID **string `json:"proofreader_id"`
-	// ProofreaderComment 是校对者的备注
-	ProofreaderComment **string `json:"proofreader_comment"`
+	CandOrder []string `json:"cand_order"`
+}
+
+// `UnitOpVal` is the transport-safe representation of one unit op.
+type UnitOpVal struct {
+	Id      string `json:"id,omitempty"`
+	LocalId string `json:"local_id,omitempty"`
+
+	IsBubble    *bool `json:"is_bubble,omitempty"`
+	IsProofread *bool `json:"is_proofread,omitempty"`
+
+	XCoord *float64 `json:"x_coord,omitempty"`
+	YCoord *float64 `json:"y_coord,omitempty"`
+
+	TranslatedText    *string `json:"translated_text,omitempty"`
+	TranslatorComment *string `json:"translator_comment,omitempty"`
+	LastTranslatorId  *string `json:"last_translator_id,omitempty"`
+
+	ProofreadText      *string `json:"proofread_text,omitempty"`
+	ProofreaderComment *string `json:"proofreader_comment,omitempty"`
+	LastProofreaderId  *string `json:"last_proofreader_id,omitempty"`
+}
+
+// `SavePageUnitsArgs` holds input for saving page units.
+type SavePageUnitsArgs struct {
+	PageId string `json:"page_id"`
+
+	Diff *UnitDiffVal `json:"diff"`
+}
+
+// `SavePageUnitsRes` holds synchronized unit counts after save.
+type SavePageUnitsRes struct {
+	TotalUnitCount      int `json:"total_unit_count"`
+	TranslatedUnitCount int `json:"translated_unit_count"`
+	ProofreadUnitCount  int `json:"proofread_unit_count"`
 }

@@ -60,7 +60,9 @@ Deploy to server:
 - `SERVER_HOST`
 - `SERVER_USER`
 - `POSTGRES_PASSWORD`
-- `JWT_SECRET_KEY`
+- `DATABASE_PASSWORD`
+- `JWT_SECRET`
+- `JWT_EXPIRATION_HOURS`
 - `OSS_PLATFORM`
 - optional OSS provider vars (`R2_*`, `ALIYUN_*`)
 
@@ -69,7 +71,7 @@ Deploy to server:
 - New database (empty volume):
   - `prod-db-migrate` applies all `migrations/*.up.sql` in filename order.
 - Existing database without tracking table:
-  - if `public.chapter_invitation` exists, treat as legacy initialized schema.
+  - if `public.t_assignment_invitation` exists, treat as initialized schema.
   - mark existing migration files as already applied (baseline), then only apply new ones.
 - Existing database with tracking table:
   - apply only unapplied migration files.

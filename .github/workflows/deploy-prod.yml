@@ -57,7 +57,12 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          DATABASE_USER: poprako
+          DATABASE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_HOST: prod-postgres
+          DATABASE_PORT: 5432
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION_HOURS: ${{ secrets.JWT_EXPIRATION_HOURS }}
           OSS_PLATFORM: ${{ secrets.OSS_PLATFORM }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -90,7 +95,12 @@ jobs:
           cat > "${SHARED_DIR}/.env" <<ENVFILE
           IMAGE_TAG=${IMAGE_TAG}
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-          JWT_SECRET_KEY=${JWT_SECRET_KEY}
+          DATABASE_USER=${DATABASE_USER}
+          DATABASE_PASSWORD=${DATABASE_PASSWORD}
+          DATABASE_HOST=${DATABASE_HOST}
+          DATABASE_PORT=${DATABASE_PORT}
+          JWT_SECRET=${JWT_SECRET}
+          JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
           OSS_PLATFORM=${OSS_PLATFORM}
           R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
           R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
