@@ -1,30 +1,35 @@
-package repo
+package repo_iface
 
 import (
-	"context"
-
-	"poprako-s/internal/domain/model"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/query"
 )
 
-// TeamRepo 是汉化组仓库的接口
+// `TeamRepo` defines persistence contract for team aggregate.
 type TeamRepo interface {
-	// GetByID 根据汉化组 ID 获取汉化组信息；若不存在返回 error
-	GetByID(id string) (*model.TeamInfo, error)
-	// List 根据筛选条件返回汉化组信息列表
-	List(opt model.TeamQueryOpt) ([]model.TeamInfo, error)
+	// `GetById` retrieves a team by its unique identifier.
+	// An error is returned if the team does not exist.
+	GetById(id string) (*aggr.Team, RepoErr)
 
-	// Create 持久化一个新的汉化组
-	Create(c *model.TeamCreation) (*model.TeamInfo, error)
-	// Update 更新汉化组信息（PUT 语义）
-	Update(u *model.TeamUpdate) error
-	// Delete 删除汉化组（硬删除）
-	Delete(id string) error
+	// `List` returns teams by list filters and pagination.
+	List(opt *query.ListTeamOpt) ([]*aggr.Team, RepoErr)
 
-	// PreFillAvatarOSSKey 预填充汉化组头像的 OSS Key
-	PreFillAvatarOSSKey(id string, avatarOSSKey string) error
-	// ConfirmAvatarUploaded 确认汉化组头像已上传
-	ConfirmAvatarUploaded(id string) error
+	// `Create` inserts one team row and returns created aggregate.
+	Create(cre *aggr.TeamCre) (*aggr.Team, RepoErr)
 
-	// FromTxnCx 从上下文中获取事务，并分离出一个带事务的 TeamRepo 实例
-	FromTxnCx(cx context.Context) (TeamRepo, error)
+	// `Update` applies put-style team update to one row.
+	Update(upd *aggr.TeamUpd) RepoErr
+
+	// `Delete` executes hard delete on one team row.
+	Delete(id string) RepoErr
+
+	// `PrefillAvatarKey` writes reserved avatar key before client upload.
+	PrefillAvatarKey(id string, key string) RepoErr
+
+	// `MarkAvatarUploaded` marks team avatar upload as completed.
+	MarkAvatarUploaded(id string) RepoErr
+
+	// `IncrementWorksetNextIndex` allocates one workset index from team-scoped sequence.
+	// It returns the allocated index value for immediate insert use.
+	IncrementWorksetNextIndex(id string) (int, RepoErr)
 }

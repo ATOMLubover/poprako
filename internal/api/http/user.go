@@ -1,242 +1,179 @@
 package http
 
 import (
+	"poprako-s/internal/api/http/res"
+	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
-	"poprako-s/internal/state"
 
 	"github.com/kataras/iris/v12"
 )
 
-// GetUserByID godoc
-// @Summary 	根据 ID 获取用户信息
-// @Description 根据用户 ID 获取用户详细信息
-//
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		user_id path string true "用户 ID"
-//
-// @Success 	200 {object} val.UserInfo
-//
-// @Router 		/users/{user_id} [get]
-func GetUserByID(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
+// `GetUserInfo` godoc
+// @Summary Get User Info
+// @Description Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags user
+// @Security ApiKeyAuth
+// @Produce json
+// @Param user_id path string true "user id"
+// @Success 200 {object} res.HttpRes[val.UserVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /users/{user_id} [get]
+func GetUserInfo(st *state.AppState) iris.Handler {
+	userApp := st.UserApp
 
-	return func(ctx iris.Context) {
-		userID := ctx.Params().Get("user_id")
-		if userID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 user_id 路径参数")
+	return func(cx iris.Context) {
+		uid := cx.Params().Get("user_id")
+		if uid == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 user_id 参数")
 			return
 		}
 
-		result, err := userApp.GetInfo(buildReqCx(ctx), userID)
-		if err != nil {
-			reject(ctx, iris.StatusInternalServerError, err.Error())
+		re := userApp.GetInfo(newReqCx(cx), uid)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		accept(ctx, "获取用户信息成功", result)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// GetMyUser godoc
-// @Summary 	获取当前登录用户信息
-// @Description 获取当前登录用户的详细信息，用于保持登录状态
-//
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Produce 	json
-//
-// @Success 	200 {object} val.UserInfo
-//
-// @Router 		/users/mine [get]
-func GetMyUser(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
+// `GetMyUserInfo` godoc
+// @Summary Get My User Info
+// @Description Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags user
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {object} res.HttpRes[val.UserVal]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/me [get]
+func GetMyUserInfo(st *state.AppState) iris.Handler {
+	userApp := st.UserApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		uid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		result, err := userApp.GetMyInfo(buildReqCx(ctx), currUserID)
-		if err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
+		re := userApp.GetInfo(newReqCx(cx), uid)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		accept(ctx, "获取当前用户信息成功", result)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// GetMyUserStats godoc
-// @Summary 	获取当前登录用户统计信息
-// @Description 获取当前登录用户的任务统计信息
-//
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Produce 	json
-//
-// @Success 	200 {object} val.UserStatsInfo
-//
-// @Router 		/users/mine/stats [get]
-func GetMyUserStats(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
+// `ResvUserAvatar` godoc
+// @Summary Reserve User Avatar Upload
+// @Description Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags user
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.ResvUserAvatarArgs true "reserve avatar args"
+// @Success 200 {object} res.HttpRes[val.ResvUserAvatarRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/avatar [post]
+func ResvUserAvatar(st *state.AppState) iris.Handler {
+	userApp := st.UserApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
-		if !ok {
+	return func(cx iris.Context) {
+		var args val.ResvUserAvatarArgs
+
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数错误")
 			return
 		}
 
-		result, err := userApp.GetMyStats(buildReqCx(ctx), currUserID)
-		if err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
+		re := userApp.ResvAvatar(newReqCx(cx), &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		accept(ctx, "获取当前用户统计信息成功", result)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// ReserveMyAvatar godoc
-// @Summary 	预留当前用户头像上传
-// @Description 为当前用户头像生成预签名 PUT URL，并预留 avatar_oss_key
-//
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		body body val.ReserveUserAvatarArgs true "预留用户头像参数"
-//
-// @Success 	200 {object} val.ReserveUserAvatarRes
-//
-// @Router 		/users/mine/avatar [post]
-func ReserveMyAvatar(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
+// `MarkUserAvatarUploaded` godoc
+// @Summary Confirm User Avatar Uploaded
+// @Description Confirm avatar uploaded after client upload completed and return no JSON body
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags user
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/avatar/confirm [post]
+func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
+	userApp := st.UserApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		uid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		var args val.ReserveUserAvatarArgs
-
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+		re := userApp.MarkAvatarUploaded(newReqCx(cx), uid)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		result, err := userApp.ReserveMyAvatar(buildReqCx(ctx), currUserID, &args)
-		if err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
-			return
-		}
-
-		accept(ctx, "预留用户头像成功", result)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// ConfirmMyAvatarUploaded godoc
-// @Summary 	确认当前用户头像已上传
-// @Description 在客户端上传头像后，确认当前用户头像上传状态
+// `UpdateMyUserInfo` godoc
+// @Summary Update My User Info
 //
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Produce 	json
+//	Update current authorized user profile by put semantics.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 //
-// @Success 	200
-//
-// @Router 		/users/mine/avatar/confirm [post]
-func ConfirmMyAvatarUploaded(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
+// @Tags user
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.UserUpdArgs true "update user args"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/me [put]
+func UpdateMyUserInfo(st *state.AppState) iris.Handler {
+	userApp := st.UserApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		if err := userApp.ConfirmMyAvatarUploaded(buildReqCx(ctx), currUserID); err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
+		var args val.UserUpdArgs
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数错误")
 			return
 		}
 
-		accept(ctx, "确认用户头像上传成功", nil)
-	}
-}
+		args.Id = currUid
 
-// UpdateMyUser godoc
-// @Summary 	更新当前用户信息
-// @Description 更新当前登录用户的基本资料
-//
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		body body val.UpdateUserArgs true "更新用户参数"
-//
-// @Success 	200
-//
-// @Router 		/users/mine [put]
-func UpdateMyUser(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
-
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
-		if !ok {
+		re := userApp.Update(newReqCx(cx), &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		var args val.UpdateUserArgs
-
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
-			return
-		}
-
-		if err := userApp.UpdateMyInfo(buildReqCx(ctx), currUserID, &args); err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
-			return
-		}
-
-		accept(ctx, "更新用户成功", nil)
-	}
-}
-
-// RemoveUser godoc
-// @Summary 	删除用户
-// @Description 根据用户 ID 删除用户
-//
-// @Tags 		user
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		user_id path string true "用户 ID"
-//
-// @Success 	200
-//
-// @Router 		/users/{user_id} [delete]
-func RemoveUser(appState *state.AppState) iris.Handler {
-	userApp := appState.UserApp
-
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
-		if !ok {
-			return
-		}
-
-		targetUserID := ctx.Params().Get("user_id")
-		if targetUserID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 user_id 路径参数")
-			return
-		}
-
-		if err := userApp.Remove(buildReqCx(ctx), currUserID, targetUserID); err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
-			return
-		}
-
-		accept(ctx, "删除用户成功", nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }

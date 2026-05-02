@@ -3,7 +3,7 @@ set -eu
 
 MIGRATIONS_DIR="${MIGRATIONS_DIR:-/migrations}"
 TRACK_TABLE="${MIGRATION_TRACK_TABLE:-schema_migration_table}"
-BASELINE_TABLE="${MIGRATION_BASELINE_TABLE:-public.chapter_invitation}"
+BASELINE_TABLE="${MIGRATION_BASELINE_TABLE:-public.t_assignment_invitation}"
 
 set -- "$MIGRATIONS_DIR"/*.up.sql
 if [ ! -e "$1" ]; then

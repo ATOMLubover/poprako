@@ -8,13 +8,13 @@ services:
     environment:
       POSTGRES_USER: devuser
       POSTGRES_PASSWORD: devpassword
-      POSTGRES_DB: poprako_s_db
+      POSTGRES_DB: db_poprako_s
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U devuser -d poprako_s_db"]
+      test: ["CMD-SHELL", "pg_isready -U devuser -d db_poprako_s"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -31,7 +31,7 @@ services:
       PGHOST: dev-postgres
       PGUSER: devuser
       PGPASSWORD: devpassword
-      PGDATABASE: poprako_s_db
+      PGDATABASE: db_poprako_s
     volumes:
       - ./migrations:/migrations
       - ./docker/dev-database-setup.sh:/usr/local/bin/dev-database-setup.sh:ro
@@ -51,8 +51,12 @@ services:
       dev-postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://devuser:devpassword@dev-postgres:5432/poprako_s_db?sslmode=disable
-      JWT_SECRET_KEY: hardcoded_test_key
+      DATABASE_USER: devuser
+      DATABASE_PASSWORD: devpassword
+      DATABASE_HOST: dev-postgres
+      DATABASE_PORT: "5432"
+      JWT_SECRET: hardcoded_test_key
+      JWT_EXPIRATION_HOURS: "336"
     env_file: .env
 
   # ── Prod: postgres ────────────────────────────────────────────────────────────
@@ -63,13 +67,13 @@ services:
     container_name: prod-postgres
     profiles: ["prod"]
     environment:
-      POSTGRES_DB: poprako
+      POSTGRES_DB: db_poprako_s
       POSTGRES_USER: poprako
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - prod_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U poprako -d poprako"]
+      test: ["CMD-SHELL", "pg_isready -U poprako -d db_poprako_s"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -86,7 +90,7 @@ services:
       PGHOST: prod-postgres
       PGUSER: poprako
       PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: poprako
+      PGDATABASE: db_poprako_s
     volumes:
       - ./migrations:/migrations:ro
       - ./docker/prod-database-migrate.sh:/usr/local/bin/prod-database-migrate.sh:ro
@@ -104,9 +108,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      APP_ENVIRONMENT: production
-      DATABASE_URL: postgres://poprako:${POSTGRES_PASSWORD}@prod-postgres:5432/poprako?sslmode=disable
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      DATABASE_USER: poprako
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST:-prod-postgres}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-336}
       OSS_PLATFORM: ${OSS_PLATFORM}
       R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}

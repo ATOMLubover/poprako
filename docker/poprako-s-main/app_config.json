@@ -1,6 +1,13 @@
 {
-  "http_address": "0.0.0.0:8080",
-  "auth": {
-    "expiration_hours": 144
+  "environment": "prod",
+  "database": {
+    "max_open": 24,
+    "max_idle": 4,
+    "max_life": 84600,
+    "max_idle_time": 60
+  },
+  "http": {
+    "host": "0.0.0.0",
+    "port": 8080
   }
 }

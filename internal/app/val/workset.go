@@ -1,61 +1,55 @@
 package val
 
-// WorksetInfo 表示用于在应用层和接口层传递的作品集信息 VO
-type WorksetInfo struct {
-	// ID 是作品集的唯一标识
-	ID string `json:"id"`
+// `WorksetVal` is the app-facing value object for a `Workset`.
+type WorksetVal struct {
+	Id     string `json:"id"`
+	TeamId string `json:"team_id"`
 
-	// TeamID 是所属汉化组 ID
-	TeamID string `json:"team_id"`
-	// Team 是可选的汉化组信息（仅在 includes 时填充）
-	Team *TeamInfo `json:"team,omitempty"`
+	Index int     `json:"index"`
+	Name  string  `json:"name"`
+	Desc  *string `json:"description"`
 
-	// Index 是作品集在汉化组内的序号
-	Index int `json:"index"`
-
-	// Name 是作品集名称
-	Name string `json:"name"`
-	// Desc 是作品集描述
-	Desc string `json:"description"`
-	// ComicCount 是作品集中漫画数量
 	ComicCount int `json:"comic_count"`
 
-	// CreatedAt 是记录创建时间的 Unix 毫秒时间戳
 	CreatedAt int64 `json:"created_at"`
-	// UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
 	UpdatedAt int64 `json:"updated_at"`
 }
 
-// ListWorksetArgs 表示列出作品集列表请求的参数
 type ListWorksetArgs struct {
-	// TeamID 是目标汉化组 ID
-	TeamID string `json:"team_id" url:"team_id" validate:"required"`
-	Offset int    `json:"offset" url:"offset"`
-	Limit  int    `json:"limit" url:"limit"`
+	// `TeamId` is the identifier of the team whose worksets are to be listed.
+	TeamId string `url:"team_id"`
+
+	Offset int `url:"offset"`
+	Limit  int `url:"limit"`
 }
 
-// CreateWorksetArgs 表示创建作品集请求的参数
+// `CreateWorksetArgs` holds the input for creating a new workset.
 type CreateWorksetArgs struct {
-	// TeamID 是目标汉化组 ID
-	TeamID string `json:"team_id" validate:"required"`
-	// Name 是作品集名称
-	Name string `json:"name" validate:"required"`
-	// Desc 是作品集描述（可选）
+	// `TeamId` is the owning team's identifier.
+	TeamId string `json:"team_id"`
+
+	// `Name` is the display title of the new workset.
+	Name string `json:"name"`
+
+	// `Desc` is an optional description. nil means use empty string.
 	Desc *string `json:"description"`
 }
 
-// CreateWorksetRes 表示创建作品集成功后的响应数据
-type CreateWorksetRes struct {
-	// ID 是新创建作品集的标识
-	ID string `json:"id"`
+// `WorksetCreatedRes` is returned after a successful workset creation.
+type WorksetCreatedRes struct {
+	// `Id` is the generated identifier for the new workset.
+	Id string `json:"id"`
 }
 
-// UpdateWorksetArgs 表示更新作品集请求的参数
-type UpdateWorksetArgs struct {
-	// ID 是要更新的作品集标识
-	ID string `json:"id" validate:"required"`
-	// Name 是更新后的名称
-	Name string `json:"name" validate:"required"`
-	// Desc 是更新后的描述（可选）
+// `WorksetUpdArgs` holds the mutable fields for a workset update.
+type WorksetUpdArgs struct {
+	// `Id` identifies the workset to update.
+	Id string `json:"id"`
+
+	// `Name` is the new display title.
+	Name string `json:"name"`
+
+	// `Desc` is the new description for `PUT` semantics.
+	// Nil means writing SQL `NULL`.
 	Desc *string `json:"description"`
 }

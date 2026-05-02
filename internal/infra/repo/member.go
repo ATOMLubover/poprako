@@ -1,13 +1,11 @@
 package repo_infra
 
 import (
-	"context"
-	"errors"
-	"time"
-
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
 )
@@ -16,154 +14,155 @@ type memberRepoImpl struct {
 	gdb *gorm.DB
 }
 
-func NewMemberRepo(gdb *gorm.DB) iface.MemberRepo {
+func NewMemberRepo(gdb *gorm.DB) repo_iface.MemberRepo {
 	return &memberRepoImpl{gdb: gdb}
 }
 
-func NewMemberRepoFromCx(cx context.Context) (iface.MemberRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewMemberRepoFromCx]: 无法从上下文中获取事务数据库连接")
+func (r *memberRepoImpl) GetById(id string, inc ...enum.MemberIncl) (*aggr.Member, repo_iface.RepoErr) {
+	var row entity.MemberRow
+
+	query := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("id = ?", id)
+
+	for _, i := range inc {
+		switch i {
+		case enum.MemberInclUser:
+			query = query.Preload("User")
+		case enum.MemberInclTeam:
+			query = query.Preload("Team")
+		}
 	}
 
-	return &memberRepoImpl{gdb: gdb}, nil
-}
-
-func (r *memberRepoImpl) FromTxnCx(cx context.Context) (iface.MemberRepo, error) {
-	return NewMemberRepoFromCx(cx)
-}
-
-func (r *memberRepoImpl) GetByID(id string) (*model.MemberInfo, error) {
-
-	var row entity.MemberInfoRow
-
-	err := r.gdb.Table(entity.MemberTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		First(&row).Error
+	err := query.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToMemberInfo(row)
-	return &info, nil
+	return row.ToMemberAggr(), nil
 }
 
-func (r *memberRepoImpl) Get(opt model.MemberQueryOpt) (*model.MemberInfo, error) {
-	items, err := r.List(opt)
+// `GetByUserTeamId` retrieves one member record by `userId` and `teamId`.
+func (r *memberRepoImpl) GetByUserTeamId(userId string, teamId string, inc ...enum.MemberIncl) (*aggr.Member, repo_iface.RepoErr) {
+	var row entity.MemberRow
+
+	query := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("user_id = ? AND team_id = ?", userId, teamId)
+
+	for _, i := range inc {
+		switch i {
+		case enum.MemberInclUser:
+			query = query.Preload("User")
+		case enum.MemberInclTeam:
+			query = query.Preload("Team")
+		}
+	}
+
+	err := query.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
-	if len(items) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-	item := items[0]
-	return &item, nil
+
+	return row.ToMemberAggr(), nil
 }
 
-func (r *memberRepoImpl) List(opt model.MemberQueryOpt) ([]model.MemberInfo, error) {
-	db := r.gdb.Table(entity.MemberTable).Where("deleted_at IS NULL")
+func (r *memberRepoImpl) List(opt *query.ListMemberOpt, inc ...enum.MemberIncl) ([]*aggr.Member, repo_iface.RepoErr) {
+	var rows []entity.MemberRow
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
+	query := r.gdb.
+		Table(entity.MEMBER_TABLE)
+
+	if opt.UserId != nil {
+		query = query.Where("user_id = ?", *opt.UserId)
 	}
-	if opt.UserID != nil {
-		db = db.Where("user_id = ?", *opt.UserID)
-	}
-	if opt.TeamID != nil {
-		db = db.Where("team_id = ?", *opt.TeamID)
+	if opt.TeamId != nil {
+		query = query.Where("team_id = ?", *opt.TeamId)
 	}
 
-	var rows []entity.MemberInfoRow
+	for _, i := range inc {
+		switch i {
+		case enum.MemberInclUser:
+			query = query.Preload("User")
+		case enum.MemberInclTeam:
+			query = query.Preload("Team")
+		}
+	}
 
-	if err := db.Order("created_at ASC").Find(&rows).Error; err != nil {
+	err := query.Find(&rows).Error
+	if err != nil {
 		return nil, err
 	}
 
-	items := make([]model.MemberInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToMemberInfo(row))
+	members := make([]*aggr.Member, len(rows))
+	for i, row := range rows {
+		members[i] = row.ToMemberAggr()
 	}
 
-	return items, nil
+	return members, nil
 }
 
-func (r *memberRepoImpl) Exist(opt model.MemberQueryOpt) (bool, error) {
-	db := r.gdb.Table(entity.MemberTable).Where("deleted_at IS NULL")
+func (r *memberRepoImpl) ExistByUserTeamId(userId string, teamId string) (bool, repo_iface.RepoErr) {
+	var count int64
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
-	}
-	if opt.UserID != nil {
-		db = db.Where("user_id = ?", *opt.UserID)
-	}
-	if opt.TeamID != nil {
-		db = db.Where("team_id = ?", *opt.TeamID)
+	err := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("user_id = ? AND team_id = ?", userId, teamId).
+		Count(&count).Error
+	if err != nil {
+		return false, err
 	}
 
-	var n int64
-
-	err := db.Count(&n).Error
-	return n > 0, err
+	return count > 0, nil
 }
 
-func (r *memberRepoImpl) Create(c *model.MemberCreation) (*model.MemberInfo, error) {
-	now := time.Now()
-	row := map[string]any{
-		"id":         c.ID,
-		"user_id":    c.UserID,
-		"team_id":    c.TeamID,
-		"created_at": now,
-		"updated_at": now,
-	}
+func (r *memberRepoImpl) Create(cre *aggr.MemberCre) (*aggr.Member, repo_iface.RepoErr) {
+	creRow := entity.NewMemberCreRowFromAggr(cre)
 
-	if c.ToBeRawProvider {
-		row["assigned_raw_provider_at"] = now
-	}
-	if c.ToBeTranslator {
-		row["assigned_translator_at"] = now
-	}
-	if c.ToBeProofreader {
-		row["assigned_proofreader_at"] = now
-	}
-	if c.ToBeTypesetter {
-		row["assigned_typesetter_at"] = now
-	}
-	if c.ToBeRedrawer {
-		row["assigned_redrawer_at"] = now
-	}
-	if c.ToBeReviewer {
-		row["assigned_reviewer_at"] = now
-	}
-	if c.ToBePublisher {
-		row["assigned_publisher_at"] = now
-	}
-	if c.ToBeAdmin {
-		row["assigned_admin_at"] = now
-	}
-
-	if err := r.gdb.Table(entity.MemberTable).Create(row).Error; err != nil {
+	err := r.gdb.
+		Table(creRow.TableName()).
+		Create(creRow).Error
+	if err != nil {
 		return nil, err
 	}
 
-	return r.GetByID(c.ID)
+	return r.GetById(creRow.Id)
 }
 
-func (r *memberRepoImpl) Update(u *model.MemberUpdate) error {
-	return r.gdb.Table(entity.MemberTable).
-		Where("id = ? AND deleted_at IS NULL", u.ID).
-		Updates(map[string]any{
-			"assigned_raw_provider_at": u.AssignedRawProviderAt,
-			"assigned_translator_at":   u.AssignedTranslatorAt,
-			"assigned_proofreader_at":  u.AssignedProofreaderAt,
-			"assigned_typesetter_at":   u.AssignedTypesetterAt,
-			"assigned_redrawer_at":     u.AssignedRedrawerAt,
-			"assigned_reviewer_at":     u.AssignedReviewerAt,
-			"assigned_publisher_at":    u.AssignedPublisherAt,
-			"assigned_admin_at":        u.AssignedAdminAt,
-			"updated_at":               time.Now(),
-		}).Error
+func (r *memberRepoImpl) UpdateRoles(upd *aggr.MemberRoleUpd) repo_iface.RepoErr {
+	updRow := entity.NewMemberRoleUpdRowFromAggr(upd)
+
+	// Explicitly select all role timestamp columns so nil values are written as NULL.
+	err := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("id = ?", updRow.Id).
+		Select(
+			"assigned_raw_provider_at",
+			"assigned_translator_at",
+			"assigned_proofreader_at",
+			"assigned_typesetter_at",
+			"assigned_redrawer_at",
+			"assigned_reviewer_at",
+			"assigned_publisher_at",
+			"assigned_admin_at",
+			"updated_at",
+		).
+		Updates(updRow).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r *memberRepoImpl) Delete(id string) error {
-	return r.gdb.Table(entity.MemberTable).Where("id = ?", id).Delete(nil).Error
+func (r *memberRepoImpl) Delete(id string) repo_iface.RepoErr {
+	err := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("id = ?", id).
+		Delete(&entity.MemberRow{}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

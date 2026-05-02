@@ -1,41 +1,88 @@
-package repo_entity
+package entity
 
 import (
 	"time"
 
-	"poprako-s/internal/domain/model"
+	"poprako-s/internal/domain/model/aggr"
 )
 
-const TeamTable = "team_table"
+const TEAM_TABLE = "t_team"
 
-type TeamInfoRow struct {
-	ID string `gorm:"column:id"`
+type TeamRow struct {
+	Id string `gorm:"column:id;primaryKey"`
 
-	Name             string  `gorm:"column:name"`
-	Desc             *string `gorm:"column:description"`
-	AvatarOSSKey     *string `gorm:"column:avatar_oss_key"`
-	IsAvatarUploaded bool    `gorm:"column:is_avatar_uploaded"`
+	Name string `gorm:"column:name;unique"`
+	Desc string `gorm:"column:description"`
 
-	CreatedAt time.Time  `gorm:"column:created_at"`
-	UpdatedAt time.Time  `gorm:"column:updated_at"`
-	DeletedAt *time.Time `gorm:"column:deleted_at"`
+	AvatarKey      string `gorm:"column:avatar_key"`
+	AvatarUploaded bool   `gorm:"column:avatar_uploaded"`
+
+	CreatedAt time.Time `gorm:"column:created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
-func ToTeamInfo(row TeamInfoRow) model.TeamInfo {
-	info := model.TeamInfo{
-		ID:               row.ID,
-		Name:             row.Name,
-		IsAvatarUploaded: row.IsAvatarUploaded,
-		CreatedAt:        row.CreatedAt,
-		UpdatedAt:        row.UpdatedAt,
+// `TeamCreRow` maps immutable columns for one team create operation.
+type TeamCreRow struct {
+	Id string `gorm:"column:id;primaryKey"`
+
+	Name string `gorm:"column:name;unique"`
+	Desc string `gorm:"column:description"`
+
+	AvatarKey      string `gorm:"column:avatar_key"`
+	AvatarUploaded bool   `gorm:"column:avatar_uploaded"`
+
+	CreatedAt time.Time `gorm:"column:created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+// `TableName` returns table name for `TeamCreRow`.
+func (*TeamCreRow) TableName() string {
+	return TEAM_TABLE
+}
+
+// `NewTeamCreRowFromAggr` converts one team create aggregate into insert row.
+func NewTeamCreRowFromAggr(cre *aggr.TeamCre) *TeamCreRow {
+	now := time.Now()
+
+	return &TeamCreRow{
+		Id:             cre.Id,
+		Name:           cre.Name,
+		Desc:           cre.Desc,
+		AvatarKey:      "",
+		AvatarUploaded: false,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+}
+
+// `TeamUpdRow` maps mutable columns for one team update operation.
+type TeamUpdRow struct {
+	Name string `gorm:"column:name"`
+	Desc string `gorm:"column:description"`
+
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+func (*TeamRow) TableName() string {
+	return TEAM_TABLE
+}
+
+func (r *TeamRow) ToTeamAggr() *aggr.Team {
+	if r == nil {
+		// Do not treat nil as an error, as it may be used in includes.
+		return nil
 	}
 
-	if row.Desc != nil {
-		info.Desc = *row.Desc
-	}
-	if row.AvatarOSSKey != nil {
-		info.AvatarOSSKey = *row.AvatarOSSKey
-	}
+	return &aggr.Team{
+		Id: r.Id,
 
-	return info
+		Name: r.Name,
+		Desc: r.Desc,
+
+		AvatarKey:      r.AvatarKey,
+		AvatarUploaded: r.AvatarUploaded,
+
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
+	}
 }

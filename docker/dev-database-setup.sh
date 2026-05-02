@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-final_table="public.chapter_invitation_table"
+final_table="public.t_assignment_invitation"
 
 if [ "$(psql -tAqc "SELECT to_regclass('$final_table')")" = "$final_table" ]; then
     echo "Schema already initialized, skipping migrations."

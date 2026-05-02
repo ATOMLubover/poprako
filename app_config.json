@@ -1,6 +1,13 @@
 {
-  "http_address": "127.0.0.1:8080",
-  "auth": {
-    "expiration_hours": 144
+  "environment": "dev",
+  "database": {
+    "max_open": 24,
+    "max_idle": 4,
+    "max_life": 84600,
+    "max_idle_time": 60
+  },
+  "http": {
+    "host": "localhost",
+    "port": 8080
   }
 }

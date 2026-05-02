@@ -1,178 +1,180 @@
 package http
 
 import (
-	_ "poprako-s/docs"
+	// _ "poprako-s/docs"
+	"fmt"
+
+	"poprako-s/internal/api/http/middleware"
+	"poprako-s/internal/api/state"
 	"poprako-s/internal/cfg"
-	"poprako-s/internal/state"
 
 	"github.com/iris-contrib/swagger/swaggerFiles"
 	"github.com/iris-contrib/swagger/v12"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"github.com/kataras/iris/v12/middleware/requestid"
+
+	_ "poprako-s/docs"
 )
 
-// Serve 启动 HTTP 服务器，阻塞直到服务器停止
-func Serve(appState *state.AppState) error {
-	app := initApp(appState)
-
-	if err := app.Listen(appState.Cfg.HTTPAddr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func initApp(appState *state.AppState) *iris.Application {
+// `NewApp` builds the Iris HTTP application with all routes registered
+// It wires middleware (`recover`, `requestid`, `LogLatency`, `Auth`), attaches
+// swagger in dev mode, creates the `/api/v1` party tree, and returns
+// the ready-to-serve `*iris.Application`
+func NewApp(st *state.AppState) *iris.Application {
 	app := iris.Default()
 
-	// 启用 request ID 和 panic 恢复中间件
-	app.Use(requestid.New())
-	// 启用日志记录中间件
-	app.Use(LogMiddleware(appState))
-	// 启用 panic 恢复中间件
+	// Enable(from first to last):
+	// - panic recover
+	// - request id
+	// - log latency
 	app.Use(recover.New())
+	app.Use(requestid.New())
+	app.Use(middleware.LogLatency(st.Cfg))
 
-	// 初始化 Swagger（非生产环境）
-	initSwagger(app, appState.Cfg)
-
-	// 设置路由
-	apiParty := app.Party("/api/v1")
-
-	// 认证相关路由（无需登录）
-	authParty := apiParty.Party("/auth")
-	{
-		authParty.Post("/login", Login(appState))
-		authParty.Post("/register", Register(appState))
+	if st.Cfg.Env == cfg.EnvDev {
+		enableSwag(app)
 	}
 
-	// 以下路由需要登录
-	authorizedParty := apiParty.Party("/", AuthorizeMiddleware(appState))
-
-	// 用户相关路由
-	userParty := authorizedParty.Party("/users")
+	apiV1 := app.Party("/api/v1")
 	{
-		// 兼容历史前端路径 /users/me
-		userParty.Get("/me", GetMyUser(appState))
-		// 兼容历史前端路径 /users/me/stats
-		userParty.Get("/me/stats", GetMyUserStats(appState))
-		userParty.Get("/mine", GetMyUser(appState))
-		userParty.Get("/{user_id}", GetUserByID(appState))
-		userParty.Get("/mine/stats", GetMyUserStats(appState))
-		userParty.Post("/mine/avatar", ReserveMyAvatar(appState))
-		userParty.Post("/mine/avatar/confirm", ConfirmMyAvatarUploaded(appState))
-		userParty.Put("/mine", UpdateMyUser(appState))
-		userParty.Delete("/{user_id}", RemoveUser(appState))
-	}
+		auth := apiV1.Party("/auth")
+		{
+			auth.Post("/login", LoginUser(st))
+			auth.Post("/register", RegUser(st))
+		}
 
-	// 汉化组相关路由
-	teamParty := authorizedParty.Party("/teams")
-	{
-		teamParty.Post("/", CreateTeam(appState))
-		teamParty.Get("/", ListTeams(appState))
-		teamParty.Get("/mine", ListMyTeams(appState))
-		teamParty.Post("/{team_id}/avatar", ReserveTeamAvatar(appState))
-		teamParty.Post("/{team_id}/avatar/confirm", ConfirmTeamAvatarUploaded(appState))
-		teamParty.Put("/{team_id}", UpdateTeam(appState))
-		teamParty.Delete("/{team_id}", DeleteTeam(appState))
-	}
+		// NOTE: all routes below require authorization.
+		authorized := apiV1.Party("/", middleware.Auth())
+		{
+			user := authorized.Party("/users")
+			{
+				user.Get("/{user_id}", GetUserInfo(st))
+				user.Get("/me", GetMyUserInfo(st))
+				user.Put("/me", UpdateMyUserInfo(st))
 
-	// 成员相关路由
-	memberParty := authorizedParty.Party("/members")
-	{
-		memberParty.Post("/", CreateMember(appState))
-		memberParty.Post("/join", JoinTeam(appState))
-		memberParty.Get("/mine", ListMyMembers(appState))
-		memberParty.Get("/", ListMembers(appState))
-		memberParty.Put("/{member_id}", UpdateMemberRole(appState))
-		memberParty.Delete("/{member_id}", RemoveMember(appState))
-	}
+				user.Post("/avatar", ResvUserAvatar(st))
+				user.Post("/avatar/confirm", MarkUserAvatarUploaded(st))
+			}
 
-	// 邀请相关路由
-	invitationParty := authorizedParty.Party("/invitations")
-	{
-		invitationParty.Get("/", ListInvitations(appState))
-		invitationParty.Post("/", CreateInvitation(appState))
-		invitationParty.Put("/{invitation_id}", PatchInvitation(appState))
-		invitationParty.Delete("/{invitation_id}", DeleteInvitation(appState))
-	}
+			team := authorized.Party("/teams")
+			{
+				team.Post("", CreateTeam(st))
+				team.Get("", ListTeams(st))
+				team.Get("/mine", ListMyTeams(st))
+				team.Get("/{team_id}", GetTeamInfo(st))
+				team.Put("/{team_id}", UpdateTeam(st))
+				team.Post("/{team_id}/avatar", ReserveTeamAvatar(st))
+				team.Post("/{team_id}/avatar/confirm", ConfirmTeamAvatarUploaded(st))
+			}
 
-	// 工作集相关路由
-	worksetParty := authorizedParty.Party("/worksets")
-	{
-		worksetParty.Get("/", ListWorksets(appState))
-		worksetParty.Post("/", CreateWorkset(appState))
-		worksetParty.Put("/{workset_id}", UpdateWorkset(appState))
-		worksetParty.Delete("/{workset_id}", DeleteWorkset(appState))
-	}
+			member := authorized.Party("/members")
+			{
+				member.Post("", CreateMember(st))
+				member.Get("/team/{team_id}", ListTeamMembers(st))
+				member.Get("/mine", ListMyMembers(st))
+				member.Put("/{member_id}", UpdateMemberRole(st))
+				member.Delete("/{member_id}", DeleteMember(st))
+				member.Post("/join", JoinTeamByInvitation(st))
+			}
 
-	// 漫画相关路由
-	comicParty := authorizedParty.Party("/comics")
-	{
-		comicParty.Get("/{comic_id}", GetComicByID(appState))
-		comicParty.Get("/", ListComics(appState))
-		comicParty.Post("/", CreateComic(appState))
-		comicParty.Put("/{comic_id}", PatchComic(appState))
-		comicParty.Delete("/{comic_id}", DeleteComic(appState))
-		comicParty.Get("/{comic_id}/pinned-chapter", GetComicPinnedChapter(appState))
-		comicParty.Post("/{comic_id}/cover", ReserveComicCover(appState))
-		comicParty.Post("/{comic_id}/cover/confirm", ConfirmComicCoverUploaded(appState))
-	}
+			memberInvitation := authorized.Party("/member-invitations")
+			{
+				memberInvitation.Get("/teams/{team_id}", ListMemberInvitations(st))
+				memberInvitation.Post("", CreateMemberInvitation(st))
+				memberInvitation.Put("/{invitation_id}", UpdateMemberInvitation(st))
+				memberInvitation.Delete("/{invitation_id}", DeleteMemberInvitation(st))
+			}
 
-	// 章节相关路由
-	chapterParty := authorizedParty.Party("/chapters")
-	{
-		chapterParty.Get("/{chapter_id}", GetChapterByID(appState))
-		chapterParty.Get("/", ListComicChapters(appState))
-		chapterParty.Post("/", CreateComicChapter(appState))
-		chapterParty.Post("/{chapter_id}/invitations", InviteChapterAssignee(appState))
-		chapterParty.Get("/{chapter_id}/export", ExportChapter(appState))
-		chapterParty.Get("/{chapter_id}/export/lp", ExportChapterLp(appState))
-		chapterParty.Post("/{chapter_id}/import", ImportChapter(appState))
-		chapterParty.Patch("/{chapter_id}", UpdateChapter(appState))
-		chapterParty.Delete("/{chapter_id}", DeleteComicChapter(appState))
-	}
+			workset := authorized.Party("/worksets")
+			{
+				workset.Get("/team/{team_id}", ListWorksets(st))
+				workset.Post("", CreateWorkset(st))
+				workset.Put("/{workset_id}", UpdateWorkset(st))
+				workset.Delete("/{workset_id}", DeleteWorkset(st))
+			}
 
-	// 页面相关路由
-	pageParty := authorizedParty.Party("/pages")
-	{
-		pageParty.Get("/{page_id}", GetPageByID(appState))
-		pageParty.Get("/", ListChapterPages(appState))
-		pageParty.Post("/", ReserveChapterPages(appState))
-		pageParty.Put("/{page_id}", UpdatePage(appState))
-		pageParty.Delete("/{page_id}", DeletePage(appState))
-	}
+			comic := authorized.Party("/comics")
+			{
+				comic.Get("/workset/{workset_id}", ListComics(st))
+				comic.Get("/{comic_id}", GetComicById(st))
+				comic.Post("", CreateComic(st))
+				comic.Put("/{comic_id}", UpdateComic(st))
+				comic.Post("/{comic_id}/cover", ResvComicCover(st))
+				comic.Post("/{comic_id}/cover/confirm", MarkComicCoverUploaded(st))
+				comic.Delete("/{comic_id}", DeleteComic(st))
+			}
 
-	// 分配相关路由
-	assignmentParty := authorizedParty.Party("/assignments")
-	{
-		assignmentParty.Get("/mine", ListMyAssignments(appState))
-		assignmentParty.Get("/", ListChapterAssignments(appState))
-		assignmentParty.Post("/join", JoinInvitorChapter(appState))
-		assignmentParty.Post("/", CreateChapterAssignment(appState))
-		assignmentParty.Get("/{assignment_id}", GetAssignmentByID(appState))
-		assignmentParty.Delete("/{assignment_id}", RemoveAssignment(appState))
-	}
+			chapter := authorized.Party("/chapters")
+			{
+				chapter.Get("/comic/{comic_id}", ListChapters(st))
+				chapter.Get("/{chapter_id}/export", ExportChapter(st))
+				chapter.Get("/{chapter_id}/export/lp", ExportChapterLp(st))
+				chapter.Get("/{chapter_id}/pages", ListChapterPages(st))
+				chapter.Get("/{chapter_id}", GetChapterById(st))
+				chapter.Get("/comic/{comic_id}/pinned", GetPinnedChapter(st))
+				chapter.Post("/{chapter_id}/import", ImportChapter(st))
+				chapter.Post("", CreateChapter(st))
+				chapter.Post("/{chapter_id}/pages/reserve", ResvChapterPages(st))
+				chapter.Put("/{chapter_id}", UpdateChapter(st))
+				chapter.Delete("/{chapter_id}/pages", DeleteChapterPages(st))
+				chapter.Delete("/{chapter_id}", DeleteChapter(st))
+			}
 
-	// unit 相关路由
-	unitParty := authorizedParty.Party("/units")
-	{
-		unitParty.Get("/", ListPageUnits(appState))
-		unitParty.Put("/", SavePageUnits(appState))
+			page := authorized.Party("/pages")
+			{
+				page.Get("/{page_id}/units", ListPageUnits(st))
+				page.Post("/{page_id}/units", SavePageUnits(st))
+				page.Post("/{page_id}/image/uploaded", MarkPageImageUploaded(st))
+			}
+
+			sysMail := authorized.Party("/sys-mails")
+			{
+				sysMail.Get("", ListSysMail(st))
+				sysMail.Post("/{sys_mail_id}/read", MarkSysMailRead(st))
+			}
+
+			assignmentInv := authorized.Party("/assignment-invitations")
+			{
+				assignmentInv.Get("/chapter/{chapter_id}", ListAssignmentInvitations(st))
+				assignmentInv.Post("", CreateAssignmentInvitation(st))
+				assignmentInv.Delete("/{invitation_id}", DeleteAssignmentInvitation(st))
+				assignmentInv.Post("/join", JoinByAssignmentInvitation(st))
+			}
+
+			assignment := authorized.Party("/assignments")
+			{
+				assignment.Get("/chapter/{chapter_id}", ListAssignmentsByChapter(st))
+				assignment.Get("/mine", ListMyAssignments(st))
+				assignment.Put("", UpsertAssignment(st))
+				assignment.Delete("/{assignment_id}", DeleteAssignment(st))
+			}
+		}
 	}
 
 	return app
 }
 
-func initSwagger(app *iris.Application, appCfg *cfg.AppCfg) {
-	if appCfg.IsProduction() {
-		return
-	}
+// `RunServer` starts the Iris HTTP server on the configured host:port
+// It panics if the server cannot start, making it suitable for `main.go`
+func RunServer(app *iris.Application, st *state.AppState) {
+	addr := fmt.Sprintf("%s:%d", st.Cfg.Http.Host, st.Cfg.Http.Port)
 
+	if err := app.Run(iris.Addr(addr)); err != nil {
+		panic(fmt.Sprintf("[RunServer] failed to start http server: %v", err))
+	}
+}
+
+// `enableSwag` registers the swagger UI handler on the given app
+// It is only called when the environment is `EnvDev`
+func enableSwag(app *iris.Application) {
 	app.Get(
 		"/swagger/{any:path}",
-		swagger.WrapHandler(swaggerFiles.Handler, func(c *swagger.Config) {
-			c.URL = "/swagger/doc.json"
-		}),
+		swagger.WrapHandler(
+			swaggerFiles.Handler,
+			func(c *swagger.Config) {
+				c.URL = "/swagger/doc.json"
+			},
+		),
 	)
 }

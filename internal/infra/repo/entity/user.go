@@ -1,84 +1,108 @@
-package repo_entity
+package entity
 
 import (
 	"time"
 
-	"poprako-s/internal/domain/model"
+	"poprako-s/internal/domain/model/aggr"
 )
 
-const (
-	UserTable      = "user_table"
-	UserStatsTable = "user_stats_table"
-)
+// `USER_TABLE` is the table name for the user entity
+const USER_TABLE = "t_user"
 
-type UserInfoRow struct {
-	ID string `gorm:"column:id"`
+// `UserRow` maps a full user record for read queries
+type UserRow struct {
+	Id string `gorm:"column:id;primaryKey"`
 
-	Name string `gorm:"column:name"`
-	QQ   string `gorm:"column:qq"`
+	Nickname string `gorm:"column:nickname"`
+	Qid      string `gorm:"column:qid;unique"`
 
-	AvatarOSSKey     string `gorm:"column:avatar_oss_key"`
-	IsAvatarUploaded bool   `gorm:"column:is_avatar_uploaded"`
-
-	PasswordHash string `gorm:"column:password_hash"`
+	AvatarKey      string `gorm:"column:avatar_key"`
+	AvatarUploaded bool   `gorm:"column:avatar_uploaded"`
 
 	IsSuperAdmin bool `gorm:"column:is_super_admin"`
 
-	LastLoginAt *time.Time `gorm:"column:last_login_at"`
-	CreatedAt   time.Time  `gorm:"column:created_at"`
-	UpdatedAt   time.Time  `gorm:"column:updated_at"`
-	DeletedAt   *time.Time `gorm:"column:deleted_at"`
-}
-
-type UserCredsRow struct {
-	QQ           string `gorm:"column:qq"`
-	PasswordHash string `gorm:"column:password_hash"`
-}
-
-type UserStatsRow struct {
-	ID string `gorm:"column:id"`
-
-	UserID string `gorm:"column:user_id"`
-
-	TotalAssignmentCount    int `gorm:"column:total_assignment_count"`
-	ActiveAssignmentCount   int `gorm:"column:active_assignment_count"`
-	FinishedAssignmentCount int `gorm:"column:finished_assignment_count"`
+	LastActiveAt time.Time `gorm:"column:last_active_at"`
 
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
-func ToUserInfo(row UserInfoRow) model.UserInfo {
-	info := model.UserInfo{
-		ID:               row.ID,
-		Name:             row.Name,
-		QQ:               row.QQ,
-		AvatarKey:        row.AvatarOSSKey,
-		IsAvatarUploaded: row.IsAvatarUploaded,
-		IsSuperAdmin:     row.IsSuperAdmin,
-		CreatedAt:        row.CreatedAt,
-		UpdatedAt:        row.UpdatedAt,
-	}
-
-	if row.LastLoginAt != nil {
-		info.LastLoginAt = *row.LastLoginAt
-	}
-
-	return info
+// `TableName` returns the table name of `UserRow`
+func (*UserRow) TableName() string {
+	return USER_TABLE
 }
 
-func ToUserCreds(row UserCredsRow) model.UserCreds {
-	return model.UserCreds{
-		QQ:      row.QQ,
-		PwdHash: row.PasswordHash,
+// `ToUserAggr` converts a `UserRow` into a `User` aggregate
+func (r *UserRow) ToUserAggr() *aggr.User {
+	if r == nil {
+		// Do not treat nil as an error, as it may be used in includes.
+		return nil
+	}
+
+	return &aggr.User{
+		Id: r.Id,
+
+		Nickname: r.Nickname,
+		Qid:      r.Qid,
+
+		AvatarKey:      r.AvatarKey,
+		AvatarUploaded: r.AvatarUploaded,
+
+		IsSuperAdmin: r.IsSuperAdmin,
+
+		LastActiveAt: r.LastActiveAt,
+
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
-func ToUserStats(row UserStatsRow) model.UserStats {
-	return model.UserStats{
-		UserID:                  row.UserID,
-		TotalAssignmentCount:    row.TotalAssignmentCount,
-		ActiveAssignmentCount:   row.ActiveAssignmentCount,
-		FinishedAssignmentCount: row.FinishedAssignmentCount,
+// `UserCredsRow` maps only the credential columns needed for password verification
+type UserCredsRow struct {
+	Id string `gorm:"column:id;primaryKey"`
+
+	PwdHash string `gorm:"column:password_hash"`
+}
+
+// `TableName` returns the table name of `UserCredsRow`
+func (r *UserCredsRow) TableName() string {
+	return USER_TABLE
+}
+
+// `ToUserCredsAggr` converts a `UserCredsRow` into a `UserCreds` aggregate
+func (r *UserCredsRow) ToUserCredsAggr() *aggr.UserCreds {
+	if r == nil {
+		// Do not treat nil as an error, as it may be used in includes.
+		return nil
 	}
+
+	return &aggr.UserCreds{
+		Id:      r.Id,
+		PwdHash: r.PwdHash,
+	}
+}
+
+// `UserRegRow` maps only the columns required for a new user insert
+type UserRegRow struct {
+	Id string `gorm:"column:id;primaryKey"`
+
+	Nickname string `gorm:"column:nickname"`
+	Qid      string `gorm:"column:qid;unique"`
+
+	PwdHash string `gorm:"column:password_hash"`
+}
+
+// `NewUserRegRowFromAggr` builds a `UserRegRow` from a `UserReg` aggregate
+func NewUserRegRowFromAggr(reg *aggr.UserReg) *UserRegRow {
+	return &UserRegRow{
+		Id:       reg.Id,
+		Nickname: reg.Nickname,
+		Qid:      reg.Qid,
+		PwdHash:  reg.PwdHash,
+	}
+}
+
+// `TableName` returns the table name of `UserRegRow`
+func (r *UserRegRow) TableName() string {
+	return USER_TABLE
 }

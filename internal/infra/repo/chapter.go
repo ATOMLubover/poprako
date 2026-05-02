@@ -1,238 +1,286 @@
 package repo_infra
 
 import (
-	"context"
 	"errors"
-	"fmt"
+	"strconv"
 	"time"
 
-	"poprako-s/internal/domain/model"
-	iface "poprako-s/internal/domain/repo"
-	entity "poprako-s/internal/infra/repo/entity"
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
+	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
+// `chapterRepoImpl` is GORM-backed implementation of `ChapterRepo`.
 type chapterRepoImpl struct {
+	// `gdb` is underlying GORM database handle.
 	gdb *gorm.DB
 }
 
-func NewChapterRepo(gdb *gorm.DB) iface.ChapterRepo {
+// `NewChapterRepo` creates non-transaction chapter repo.
+func NewChapterRepo(gdb *gorm.DB) repo_iface.ChapterRepo {
 	return &chapterRepoImpl{gdb: gdb}
 }
 
-func NewChapterRepoFromCx(cx context.Context) (iface.ChapterRepo, error) {
-	gdb, ok := cx.Value(txnKey).(*gorm.DB)
-	if !ok {
-		return nil, errors.New("[NewChapterRepoFromCx]: 无法从上下文中获取事务数据库连接")
-	}
+// `GetById` retrieves one chapter by id.
+func (r *chapterRepoImpl) GetById(id string, inc ...enum.ChapterIncl) (*aggr.Chapter, repo_iface.RepoErr) {
+	var row entity.ChapterRow
 
-	return &chapterRepoImpl{gdb: gdb}, nil
-}
+	q := r.gdb.Table(entity.CHAPTER_TABLE).Where("id = ?", id)
+	q = withChapterIncl(q, inc...)
 
-func (r *chapterRepoImpl) FromTxnCx(cx context.Context) (iface.ChapterRepo, error) {
-	return NewChapterRepoFromCx(cx)
-}
-
-func (r *chapterRepoImpl) GetByID(id string) (*model.ChapterInfo, error) {
-
-	var row entity.ChapterInfoRow
-
-	err := r.gdb.Table(entity.ChapterTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		First(&row).Error
+	err := q.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToChapterInfo(row)
-	return &info, nil
+	return row.ToChapterAggr(), nil
 }
 
-func (r *chapterRepoImpl) FindPinnedByComicID(comicID string) (*model.ChapterInfo, error) {
+// `FindPinnedByComicId` retrieves pinned chapter under comic.
+func (r *chapterRepoImpl) FindPinnedByComicId(comicId string, inc ...enum.ChapterIncl) (*aggr.Chapter, repo_iface.RepoErr) {
+	var row entity.ChapterRow
 
-	var row entity.ChapterInfoRow
+	q := r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("comic_id = ? AND pinned = TRUE", comicId)
+	q = withChapterIncl(q, inc...)
 
-	err := r.gdb.Table(entity.ChapterTable).
-		Where("comic_id = ? AND pinned = TRUE AND deleted_at IS NULL", comicID).
-		Order("index DESC").
-		First(&row).Error
+	err := q.First(&row).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return row.ToChapterAggr(), nil
+}
+
+// `List` lists chapters matching options.
+func (r *chapterRepoImpl) List(opt *query.ListChapterOpt, inc ...enum.ChapterIncl) ([]*aggr.Chapter, repo_iface.RepoErr) {
+	var rows []entity.ChapterRow
+
+	q := r.gdb.Table(entity.CHAPTER_TABLE)
+
+	if opt != nil && opt.ComicId != nil {
+		q = q.Where("comic_id = ?", *opt.ComicId)
+	}
+
+	if opt != nil && opt.Pagi.Offset > 0 {
+		q = q.Offset(opt.Pagi.Offset)
+	}
+
+	if opt != nil && opt.Pagi.Limit > 0 {
+		q = q.Limit(opt.Pagi.Limit)
+	}
+
+	q = withChapterIncl(q, inc...)
+
+	err := q.Order("index DESC").Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 
-	info := entity.ToChapterInfo(row)
-	return &info, nil
+	result := make([]*aggr.Chapter, len(rows))
+	for i := range rows {
+		result[i] = rows[i].ToChapterAggr()
+	}
+
+	return result, nil
 }
 
-func (r *chapterRepoImpl) List(opt model.ChapterQueryOpt) ([]model.ChapterInfo, error) {
-	db := r.gdb.Table(entity.ChapterTable).Where("deleted_at IS NULL")
+// `Count` counts chapters matching options.
+func (r *chapterRepoImpl) Count(opt *query.ListChapterOpt) (int64, repo_iface.RepoErr) {
+	var count int64
 
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
-	}
-	if opt.ComicID != nil {
-		db = db.Where("comic_id = ?", *opt.ComicID)
-	}
-	if opt.CreatorID != nil {
-		db = db.Where("creator_id = ?", *opt.CreatorID)
+	q := r.gdb.Table(entity.CHAPTER_TABLE)
+
+	if opt != nil && opt.ComicId != nil {
+		q = q.Where("comic_id = ?", *opt.ComicId)
 	}
 
-	var rows []entity.ChapterInfoRow
-
-	if err := db.Order("index DESC").Find(&rows).Error; err != nil {
-		return nil, err
+	err := q.Count(&count).Error
+	if err != nil {
+		return 0, err
 	}
 
-	items := make([]model.ChapterInfo, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, entity.ToChapterInfo(row))
-	}
-
-	return items, nil
+	return count, nil
 }
 
-func (r *chapterRepoImpl) Count(opt model.ChapterQueryOpt) (int64, error) {
-	db := r.gdb.Table(entity.ChapterTable).Where("deleted_at IS NULL")
-
-	if opt.ID != nil {
-		db = db.Where("id = ?", *opt.ID)
-	}
-	if opt.ComicID != nil {
-		db = db.Where("comic_id = ?", *opt.ComicID)
-	}
-	if opt.CreatorID != nil {
-		db = db.Where("creator_id = ?", *opt.CreatorID)
-	}
-
-	var n int64
-
-	err := db.Count(&n).Error
-	return n, err
-}
-
-func (r *chapterRepoImpl) Create(c *model.ChapterCreation) (*model.ChapterInfo, error) {
+// `Create` inserts one chapter and keeps pinned uniqueness in comic.
+func (r *chapterRepoImpl) Create(cre *aggr.ChapterCre) (*aggr.Chapter, repo_iface.RepoErr) {
 	now := time.Now()
-	subtitle := fmt.Sprintf("Ch.%d", c.Index)
-	if c.Subtitle != nil {
-		subtitle = *c.Subtitle
+
+	subtitle := ""
+	if cre.Subtitle != nil && *cre.Subtitle != "" {
+		subtitle = *cre.Subtitle
+	} else {
+		subtitle = "Ch." + fmtInt(cre.Index)
 	}
+
+	row := entity.NewChapterCreRowFromAggr(cre, subtitle)
 
 	err := r.gdb.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Table(entity.ChapterTable).
-			Where("comic_id = ? AND deleted_at IS NULL AND pinned = TRUE", c.ComicID).
-			Updates(map[string]any{
-				"pinned":     false,
-				"updated_at": now,
-			}).Error; err != nil {
+		pinClrRow := &entity.ChapterPinUpdRow{IsPinned: false, UpdatedAt: now}
+
+		if err := tx.
+			Table(entity.CHAPTER_TABLE).
+			Where("comic_id = ? AND pinned = TRUE", cre.ComicId).
+			Select("pinned", "updated_at").
+			Updates(pinClrRow).Error; err != nil {
 			return err
 		}
 
-		row := map[string]any{
-			"id":                    c.ID,
-			"comic_id":              c.ComicID,
-			"pinned":                true,
-			"index":                 c.Index,
-			"subtitle":              subtitle,
-			"page_count":            0,
-			"total_unit_count":      0,
-			"translated_unit_count": 0,
-			"proofread_unit_count":  0,
-			"creator_id":            c.CreatorID,
-			"created_at":            now,
-			"updated_at":            now,
+		if err := tx.Table(entity.CHAPTER_TABLE).Create(row).Error; err != nil {
+			return err
 		}
 
-		return tx.Table(entity.ChapterTable).Create(row).Error
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return r.GetByID(c.ID)
+	return r.GetById(row.Id)
 }
 
-func (r *chapterRepoImpl) Update(u *model.ChapterUpdate) error {
-	return r.gdb.Transaction(func(tx *gorm.DB) error {
-		updates := map[string]any{
-			"updated_at":      time.Now(),
-			"uploaded_at":     u.UploadedAt,
-			"transalating_at": u.TransalatingAt,
-			"translated_at":   u.TranslatedAt,
-			"proofreading_at": u.ProofreadingAt,
-			"proofread_at":    u.ProofreadAt,
-			"typesetting_at":  u.TypesettingAt,
-			"typeset_at":      u.TypesetAt,
-			"reviewed_at":     u.ReviewedAt,
-			"published_at":    u.PublishedAt,
-		}
-		if u.Subtitle != nil {
-			updates["subtitle"] = *u.Subtitle
-		}
+// `Update` applies mutable fields to chapter row.
+func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
+	now := time.Now()
+	updRow := &entity.ChapterUpdRow{UpdatedAt: now}
 
-		if u.IsPinned != nil {
-			if *u.IsPinned {
+	selectCols := make([]string, 0, 16)
 
-				var curr entity.ChapterInfoRow
+	if upd.Subtitle != nil {
+		updRow.Subtitle = upd.Subtitle
+		selectCols = append(selectCols, "subtitle")
+	}
 
-				err := tx.Table(entity.ChapterTable).
-					Select("id", "comic_id").
-					Where("id = ? AND deleted_at IS NULL", u.ID).
-					First(&curr).Error
-				if err != nil {
-					return err
-				}
-
-				if err := tx.Table(entity.ChapterTable).
-					Where("comic_id = ? AND id <> ? AND deleted_at IS NULL AND pinned = TRUE", curr.ComicID, u.ID).
-					Updates(map[string]any{"pinned": false, "updated_at": time.Now()}).Error; err != nil {
-					return err
-				}
+	if upd.IsPinned != nil {
+		if *upd.IsPinned {
+			if err := r.gdb.Table(entity.CHAPTER_TABLE).
+				Where("comic_id = (SELECT comic_id FROM t_chapter WHERE id = ?) AND id <> ? AND pinned = TRUE", upd.Id, upd.Id).
+				Select("pinned", "updated_at").
+				Updates(&entity.ChapterPinUpdRow{IsPinned: false, UpdatedAt: now}).Error; err != nil {
+				return err
 			}
-
-			updates["pinned"] = *u.IsPinned
 		}
 
-		return tx.Table(entity.ChapterTable).
-			Where("id = ? AND deleted_at IS NULL", u.ID).
-			Updates(updates).Error
-	})
+		updRow.IsPinned = upd.IsPinned
+		selectCols = append(selectCols, "pinned")
+	}
+
+	if upd.UploadedAt != nil {
+		updRow.UploadedAt = *upd.UploadedAt
+		selectCols = append(selectCols, "uploaded_at")
+	}
+
+	if upd.TransalatingAt != nil {
+		updRow.TransalatingAt = *upd.TransalatingAt
+		selectCols = append(selectCols, "transalating_at")
+	}
+
+	if upd.TranslatedAt != nil {
+		updRow.TranslatedAt = *upd.TranslatedAt
+		selectCols = append(selectCols, "translated_at")
+	}
+
+	if upd.ProofreadingAt != nil {
+		updRow.ProofreadingAt = *upd.ProofreadingAt
+		selectCols = append(selectCols, "proofreading_at")
+	}
+
+	if upd.ProofreadAt != nil {
+		updRow.ProofreadAt = *upd.ProofreadAt
+		selectCols = append(selectCols, "proofread_at")
+	}
+
+	if upd.TypesettingAt != nil {
+		updRow.TypesettingAt = *upd.TypesettingAt
+		selectCols = append(selectCols, "typesetting_at")
+	}
+
+	if upd.TypesetAt != nil {
+		updRow.TypesetAt = *upd.TypesetAt
+		selectCols = append(selectCols, "typeset_at")
+	}
+
+	if upd.ReviewedAt != nil {
+		updRow.ReviewedAt = *upd.ReviewedAt
+		selectCols = append(selectCols, "reviewed_at")
+	}
+
+	if upd.PublishedAt != nil {
+		updRow.PublishedAt = *upd.PublishedAt
+		selectCols = append(selectCols, "published_at")
+	}
+
+	if len(selectCols) == 0 {
+		return nil
+	}
+
+	selectCols = append(selectCols, "updated_at")
+
+	return r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("id = ?", upd.Id).
+		Select(selectCols).
+		Updates(updRow).Error
 }
 
-func (r *chapterRepoImpl) Remove(id string) error {
-	return r.gdb.Table(entity.ChapterTable).
-		Where("id = ? AND deleted_at IS NULL", id).
+// `SetPageCount` overwrites the page count of one chapter.
+func (r *chapterRepoImpl) SetPageCount(id string, count int) repo_iface.RepoErr {
+	updRow := &entity.ChapterPageCountUpdRow{
+		PageCount: count,
+		UpdatedAt: time.Now(),
+	}
+
+	return r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("id = ?", id).
+		Select("page_count", "updated_at").
+		Updates(updRow).Error
+}
+
+// `AdjustUnitCounts` atomically applies unit count delta to one chapter.
+func (r *chapterRepoImpl) AdjustUnitCounts(id string, deltaTotal int, deltaTranslated int, deltaProofread int) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("id = ?", id).
 		Updates(map[string]any{
-			"deleted_at": time.Now(),
-			"updated_at": time.Now(),
-		}).Error
-}
-
-func (r *chapterRepoImpl) LockByID(id string) error {
-	return r.gdb.Table(entity.ChapterTable).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Select("id").
-		First(&entity.ChapterInfoRow{}).Error
-}
-
-func (r *chapterRepoImpl) UpdateStats(id string, totalDelta, translatedDelta, proofreadDelta int) error {
-	return r.gdb.Table(entity.ChapterTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"total_unit_count":      gorm.Expr("total_unit_count + ?", totalDelta),
-			"translated_unit_count": gorm.Expr("translated_unit_count + ?", translatedDelta),
-			"proofread_unit_count":  gorm.Expr("proofread_unit_count + ?", proofreadDelta),
+			"total_unit_count":      gorm.Expr("total_unit_count + ?", deltaTotal),
+			"translated_unit_count": gorm.Expr("translated_unit_count + ?", deltaTranslated),
+			"proofread_unit_count":  gorm.Expr("proofread_unit_count + ?", deltaProofread),
 			"updated_at":            time.Now(),
 		}).Error
 }
 
-func (r *chapterRepoImpl) UpdatePageCount(id string, delta int) error {
-	return r.gdb.Table(entity.ChapterTable).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Updates(map[string]any{
-			"page_count": gorm.Expr("page_count + ?", delta),
-			"updated_at": time.Now(),
-		}).Error
+// `Delete` hard-deletes one chapter.
+func (r *chapterRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("id = ?", id).
+		Delete(&entity.ChapterRow{}).Error
+}
+
+// `withChapterIncl` maps typed include options to preloads.
+func withChapterIncl(q *gorm.DB, inc ...enum.ChapterIncl) *gorm.DB {
+	for _, i := range inc {
+		switch i {
+		case enum.ChapterInclComic:
+			q = q.Preload("Comic")
+		}
+	}
+
+	return q
+}
+
+// `fmtInt` formats index without importing `strconv` in multiple places.
+func fmtInt(n int) string {
+	return strconv.FormatInt(int64(n), 10)
 }

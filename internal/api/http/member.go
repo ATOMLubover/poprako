@@ -1,272 +1,324 @@
 package http
 
 import (
+	"poprako-s/internal/api/http/res"
+	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
-	"poprako-s/internal/state"
+	"poprako-s/internal/domain/model/enum"
 
 	"github.com/kataras/iris/v12"
 )
 
-// CreateMember godoc
-// @Summary 	创建成员
-// @Description 由超级管理员直接创建成员记录
-//
-// @Tags 		member
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		body body val.CreateMemberArgs true "创建成员参数"
-//
-// @Success 	201 {object} val.CreateMemberRes
-//
-// @Router 		/members [post]
-func CreateMember(appState *state.AppState) iris.Handler {
-	memberApp := appState.MemberApp
+// `CreateMember` godoc
+// @Summary Create Member
+// @Description Create one member under one team
+// @Description The caller must be team admin
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.CreateMemberArgs true "create member args"
+// @Success 201 {object} res.HttpRes[val.CreateMemberRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /members [post]
+func CreateMember(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
 		var args val.CreateMemberArgs
-
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		result, err := memberApp.Create(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		)
+		re := memberApp.Create(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusCreated, re.Data())
+	}
+}
+
+// `ListTeamMembers` godoc
+// @Summary List Team Members
+// @Description List members under one team
+// @Description The caller must be a member of the target team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Produce json
+// @Param team_id path string true "team id"
+// @Param includes query []string false "include related fields, optional: user, team"
+// @Param offset query int false "pagination offset"
+// @Param limit query int false "pagination limit"
+// @Success 200 {object} res.HttpRes[[]val.MemberVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /members/team/{team_id} [get]
+func ListTeamMembers(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		teamId := cx.Params().Get("team_id")
+		if teamId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 team_id 参数")
+			return
+		}
+
+		offset, err := cx.URLParamInt("offset")
 		if err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
+			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
 			return
 		}
 
-		accept(ctx, "创建成员成功", result)
-	}
-}
-
-// ListMembers godoc
-// @Summary 	获取指定汉化组的成员列表
-// @Description 获取指定汉化组的成员列表，注意当列表为空，会返回 null 而不是空数组
-//
-// @Tags 		member
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		team_id query string true "汉化组 ID"
-// @Param 		"includes" query []string false "include 关联信息，可选值：user"
-// @Param 		offset query int true "偏移量"
-// @Param 		limit query int true "每页数量"
-//
-// @Success 	200 {object} []val.MemberInfo
-//
-// @Router 		/members [get]
-func ListMembers(appState *state.AppState) iris.Handler {
-	memberApp := appState.MemberApp
-
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
-		if !ok {
-			return
-		}
-
-		var args val.ListTeamMemberArgs
-
-		if err := ctx.ReadQuery(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
-			return
-		}
-
-		result, err := memberApp.ListByTeam(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		)
+		limit, err := cx.URLParamInt("limit")
 		if err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
+			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
 			return
 		}
 
-		accept(ctx, "获取成员列表成功", result)
+		includes, ok := parseMemberIncludes(cx.URLParamSlice("includes"))
+		if !ok {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
+			return
+		}
+
+		re := memberApp.ListByTeam(newReqCx(cx), currUid, &val.ListMemberByTeamArgs{
+			TeamId:   teamId,
+			Includes: includes,
+			Offset:   offset,
+			Limit:    limit,
+		})
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// ListMyMembers godoc
-// @Summary 	获取当前用户的成员身份列表
-// @Description 获取当前用户在各汉化组中的成员信息，注意当列表为空，会返回 null 而不是空数组
-//
-// @Tags 		member
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		"includes" query []string false "include 关联信息，可选值：team"
-// @Param 		offset query int true "偏移量"
-// @Param 		limit query int true "每页数量"
-//
-// @Success 	200 {object} []val.MemberInfo
-//
-// @Router 		/members/mine [get]
-func ListMyMembers(appState *state.AppState) iris.Handler {
-	memberApp := appState.MemberApp
+// `ListMyMembers` godoc
+// @Summary List My Members
+// @Description List all memberships of current user
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Produce json
+// @Param includes query []string false "include related fields, optional: user, team"
+// @Param offset query int false "pagination offset"
+// @Param limit query int false "pagination limit"
+// @Success 200 {object} res.HttpRes[[]val.MemberVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /members/mine [get]
+func ListMyMembers(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		var args val.ListMyMemberArgs
-
-		if err := ctx.ReadQuery(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "查询参数格式错误: "+err.Error())
-			return
-		}
-
-		result, err := memberApp.ListMy(buildReqCx(ctx), currUserID, &args)
+		offset, err := cx.URLParamInt("offset")
 		if err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
+			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
 			return
 		}
 
-		accept(ctx, "获取我的成员身份列表成功", result)
+		limit, err := cx.URLParamInt("limit")
+		if err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
+			return
+		}
+
+		includes, ok := parseMemberIncludes(cx.URLParamSlice("includes"))
+		if !ok {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
+			return
+		}
+
+		re := memberApp.ListMine(newReqCx(cx), currUid, &val.ListMyMemberArgs{
+			Includes: includes,
+			Offset:   offset,
+			Limit:    limit,
+		})
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// UpdateMemberRole godoc
-// @Summary 	更新成员角色
-// @Description 更新指定成员的分工角色
-//
-// @Tags 		member
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		member_id path string true "成员 ID"
-// @Param 		body body val.UpdateMemberRoleArgs true "更新成员角色参数"
-//
-// @Success 	200
-//
-// @Router 		/members/{member_id} [put]
-func UpdateMemberRole(appState *state.AppState) iris.Handler {
-	memberApp := appState.MemberApp
+// `UpdateMemberRole` godoc
+// @Summary Update Member Role
+// @Description Update one member role mask by put semantics
+// @Description The caller must be team admin
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param member_id path string true "member id"
+// @Param body body val.MemberRoleUpdArgs true "update member role args"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /members/{member_id} [put]
+func UpdateMemberRole(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		memberID := ctx.Params().Get("member_id")
-		if memberID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 member_id 路径参数")
+		memberId := cx.Params().Get("member_id")
+		if memberId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 member_id 参数")
 			return
 		}
 
-		var args val.UpdateMemberRoleArgs
-
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+		var args val.MemberRoleUpdArgs
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		if args.ID != memberID {
-			reject(ctx, iris.StatusBadRequest, "路径参数 member_id 与请求体中的 ID 不匹配")
+		args.Id = memberId
+
+		re := memberApp.UpdateRole(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		if err := memberApp.UpdateRole(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		); err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
-			return
-		}
-
-		accept(ctx, "更新成员角色成功", nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// JoinTeam godoc
-// @Summary 	通过邀请码加入汉化组
-// @Description 已登录用户使用邀请码加入对应汉化组
-//
-// @Tags 		member
-// @Security 	ApiKeyAuth
-// @Accept 		json
-// @Produce 	json
-// @Param 		body body val.JoinTeamArgs true "加入汉化组参数"
-//
-// @Success 	200
-//
-// @Router 		/members/join [post]
-func JoinTeam(appState *state.AppState) iris.Handler {
-	memberApp := appState.MemberApp
+// `DeleteMember` godoc
+// @Summary Delete Member
+// @Description Hard delete one member by id
+// @Description The caller must be team admin
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Produce json
+// @Param member_id path string true "member id"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /members/{member_id} [delete]
+func DeleteMember(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
 
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		memberId := cx.Params().Get("member_id")
+		if memberId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 member_id 参数")
+			return
+		}
+
+		re := memberApp.Delete(newReqCx(cx), currUid, memberId)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
+// `JoinTeamByInvitation` godoc
+// @Summary Join Team By Invitation
+// @Description Join one team by member invitation code
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.JoinTeamArgs true "join team args"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /members/join [post]
+func JoinTeamByInvitation(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
 		var args val.JoinTeamArgs
-
-		if err := ctx.ReadJSON(&args); err != nil {
-			reject(ctx, iris.StatusBadRequest, "请求体格式错误: "+err.Error())
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		if err := memberApp.JoinTeam(
-			buildReqCx(ctx),
-			currUserID,
-			&args,
-		); err != nil {
-			reject(ctx, iris.StatusBadRequest, err.Error())
+		re := memberApp.JoinTeam(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
-		accept(ctx, "加入汉化组成功", nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
 
-// RemoveMember godoc
-// @Summary 	移除成员
-// @Description 从汉化组中移除指定成员
-//
-// @Tags 		member
-// @Security 	ApiKeyAuth
-// @Produce 	json
-// @Param 		member_id path string true "成员 ID"
-//
-// @Success 	200
-//
-// @Router 		/members/{member_id} [delete]
-func RemoveMember(appState *state.AppState) iris.Handler {
-	memberApp := appState.MemberApp
-
-	return func(ctx iris.Context) {
-		currUserID, ok := extractCurrUserID(ctx)
-		if !ok {
-			return
-		}
-
-		memberID := ctx.Params().Get("member_id")
-		if memberID == "" {
-			reject(ctx, iris.StatusBadRequest, "缺少 member_id 路径参数")
-			return
-		}
-
-		if err := memberApp.Remove(
-			buildReqCx(ctx),
-			currUserID,
-			memberID,
-		); err != nil {
-			reject(ctx, iris.StatusForbidden, err.Error())
-			return
-		}
-
-		accept(ctx, "移除成员成功", nil)
+// `parseMemberIncludes` parses include query values into typed includes.
+func parseMemberIncludes(rawIncludes []string) ([]enum.MemberIncl, bool) {
+	if len(rawIncludes) == 0 {
+		return nil, true
 	}
+
+	includes := make([]enum.MemberIncl, 0, len(rawIncludes))
+	for i := range rawIncludes {
+		incl := enum.MemberIncl(rawIncludes[i])
+		switch incl {
+		case enum.MemberInclUser, enum.MemberInclTeam:
+			includes = append(includes, incl)
+		default:
+			return nil, false
+		}
+	}
+
+	return includes, true
 }
