@@ -1,0 +1,3518 @@
+basePath: /api/v1
+definitions:
+  enum.WorkflowTransition:
+    enum:
+    - upload_complete
+    - translate_start
+    - translate_complete
+    - proofread_start
+    - proofread_complete
+    - typeset_start
+    - typeset_complete
+    - review_complete
+    - publish_complete
+    type: string
+    x-enum-varnames:
+    - WorkflowUploadComplete
+    - WorkflowTranslateStart
+    - WorkflowTranslateComplete
+    - WorkflowProofreadStart
+    - WorkflowProofreadComplete
+    - WorkflowTypesetStart
+    - WorkflowTypesetComplete
+    - WorkflowReviewComplete
+    - WorkflowPublishComplete
+  res.HttpRes-any:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_AssignmentInvVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.AssignmentInvVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_AssignmentVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.AssignmentVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_ChapterVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.ChapterVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_ComicVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.ComicVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_MemberInvVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.MemberInvVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_MemberVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.MemberVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_PageVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.PageVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_SysMailVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.SysMailVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_TeamVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.TeamVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_WorksetVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.WorksetVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ChapterCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ChapterCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ChapterExportVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ChapterExportVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ChapterVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ChapterVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ComicCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ComicCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ComicVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ComicVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_CreateAssignmentInvRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CreateAssignmentInvRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_CreateMemberInvRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CreateMemberInvRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_CreateMemberRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CreateMemberRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ImportChapterRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ImportChapterRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ListPageUnitsRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ListPageUnitsRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvChapterPagesRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvChapterPagesRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvComicCoverRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvComicCoverRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvTeamAvatarRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvTeamAvatarRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvUserAvatarRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvUserAvatarRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_SavePageUnitsRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.SavePageUnitsRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_TeamCreRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.TeamCreRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_TeamVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.TeamVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_UserLoginRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.UserLoginRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_UserRegRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.UserRegRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_UserVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.UserVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_WorksetCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.WorksetCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  val.AssignmentInvVal:
+    properties:
+      chapter_id:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      invitation_code:
+        type: string
+      invitee_qid:
+        type: string
+      inviter_id:
+        type: string
+      pending:
+        type: boolean
+      role_mask:
+        type: integer
+      updated_at:
+        type: integer
+    type: object
+  val.AssignmentVal:
+    properties:
+      assigned_proofreader_at:
+        type: integer
+      assigned_publisher_at:
+        type: integer
+      assigned_raw_provider_at:
+        type: integer
+      assigned_redrawer_at:
+        type: integer
+      assigned_reviewer_at:
+        type: integer
+      assigned_translator_at:
+        type: integer
+      assigned_typesetter_at:
+        type: integer
+      chapter_id:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      role_mask:
+        type: integer
+      updated_at:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  val.ChapterCreatedRes:
+    properties:
+      id:
+        description: '`Id` is created chapter identifier.'
+        type: string
+    type: object
+  val.ChapterExportVal:
+    properties:
+      chapter_id:
+        type: string
+      chapter_index:
+        type: integer
+      chapter_subtitle:
+        type: string
+      comic_id:
+        type: string
+      comic_title:
+        type: string
+      pages:
+        items:
+          $ref: '#/definitions/val.PageExportVal'
+        type: array
+    type: object
+  val.ChapterUpdArgs:
+    properties:
+      id:
+        description: '`Id` identifies target chapter.'
+        type: string
+      is_pinned:
+        description: '`IsPinned` optionally updates pinned status.'
+        type: boolean
+      subtitle:
+        description: '`Subtitle` is optional subtitle update.'
+        type: string
+      workflow_transition:
+        allOf:
+        - $ref: '#/definitions/enum.WorkflowTransition'
+        description: '`WorkflowTransition` drives workflow timestamp mutation.'
+    type: object
+  val.ChapterVal:
+    properties:
+      comic_id:
+        type: string
+      created_at:
+        type: integer
+      creator_id:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      is_pinned:
+        type: boolean
+      page_count:
+        type: integer
+      proofread_at:
+        type: integer
+      proofread_unit_count:
+        type: integer
+      proofreading_at:
+        type: integer
+      published_at:
+        type: integer
+      reviewed_at:
+        type: integer
+      subtitle:
+        type: string
+      total_unit_count:
+        type: integer
+      transalating_at:
+        type: integer
+      translated_at:
+        type: integer
+      translated_unit_count:
+        type: integer
+      typeset_at:
+        type: integer
+      typesetting_at:
+        type: integer
+      updated_at:
+        type: integer
+      uploaded_at:
+        type: integer
+    type: object
+  val.ComicCreatedRes:
+    properties:
+      id:
+        description: '`Id` is the generated comic identifier'
+        type: string
+    type: object
+  val.ComicUpdArgs:
+    properties:
+      author:
+        description: '`Author` is new comic author'
+        type: string
+      description:
+        description: '`Desc` is new optional description'
+        type: string
+      id:
+        description: '`Id` identifies the target comic'
+        type: string
+      title:
+        description: '`Title` is new comic title'
+        type: string
+    type: object
+  val.ComicVal:
+    properties:
+      author:
+        type: string
+      chapter_count:
+        type: integer
+      cover_uploaded:
+        type: boolean
+      cover_url:
+        type: string
+      created_at:
+        type: integer
+      creator_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      is_completed:
+        type: boolean
+      last_active_at:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: integer
+      workset_id:
+        type: string
+    type: object
+  val.CreateAssignmentInvArgs:
+    properties:
+      chapter_id:
+        type: string
+      invitee_qid:
+        type: string
+      role_mask:
+        type: integer
+    type: object
+  val.CreateAssignmentInvRes:
+    properties:
+      id:
+        type: string
+      invitation_code:
+        type: string
+    type: object
+  val.CreateChapterArgs:
+    properties:
+      comic_id:
+        description: '`ComicId` is target comic identifier.'
+        type: string
+      subtitle:
+        description: '`Subtitle` is optional subtitle.'
+        type: string
+    type: object
+  val.CreateComicArgs:
+    properties:
+      author:
+        description: '`Author` is the comic author'
+        type: string
+      description:
+        description: '`Desc` is optional description'
+        type: string
+      title:
+        description: '`Title` is the comic title'
+        type: string
+      workset_id:
+        description: '`WorksetId` is the owning workset id'
+        type: string
+    type: object
+  val.CreateMemberArgs:
+    properties:
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.CreateMemberInvArgs:
+    properties:
+      invitee_qid:
+        type: string
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+    type: object
+  val.CreateMemberInvRes:
+    properties:
+      id:
+        type: string
+      invitation_code:
+        type: string
+    type: object
+  val.CreateMemberRes:
+    properties:
+      id:
+        type: string
+    type: object
+  val.CreateWorksetArgs:
+    properties:
+      description:
+        description: '`Desc` is an optional description. nil means use empty string.'
+        type: string
+      name:
+        description: '`Name` is the display title of the new workset.'
+        type: string
+      team_id:
+        description: '`TeamId` is the owning team''s identifier.'
+        type: string
+    type: object
+  val.ImportChapterBody:
+    properties:
+      content:
+        type: string
+      format:
+        type: string
+    type: object
+  val.ImportChapterRes:
+    properties:
+      imported_page_count:
+        type: integer
+      imported_unit_count:
+        type: integer
+    type: object
+  val.JoinAssignmentInvArgs:
+    properties:
+      invitation_code:
+        type: string
+    type: object
+  val.JoinTeamArgs:
+    properties:
+      invitation_code:
+        type: string
+    type: object
+  val.ListPageUnitsRes:
+    properties:
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+      units:
+        items:
+          $ref: '#/definitions/val.UnitVal'
+        type: array
+    type: object
+  val.MemberInvUpdArgs:
+    properties:
+      id:
+        type: string
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+    type: object
+  val.MemberInvVal:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      invitation_code:
+        type: string
+      invitee_qid:
+        type: string
+      invitor_id:
+        type: string
+      pending:
+        type: boolean
+      role_mask:
+        type: integer
+      team_id:
+        type: string
+    type: object
+  val.MemberRoleUpdArgs:
+    properties:
+      id:
+        type: string
+      role_mask:
+        type: integer
+    type: object
+  val.MemberVal:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      role_mask:
+        type: integer
+      team:
+        $ref: '#/definitions/val.TeamVal'
+      team_id:
+        type: string
+      updated_at:
+        type: integer
+      user:
+        $ref: '#/definitions/val.UserVal'
+      user_id:
+        type: string
+    type: object
+  val.PageCreationRes:
+    properties:
+      page_id:
+        type: string
+      put_url:
+        type: string
+    type: object
+  val.PageExportVal:
+    properties:
+      image_url:
+        type: string
+      is_uploaded:
+        type: boolean
+      page_id:
+        type: string
+      page_index:
+        type: integer
+      units:
+        items:
+          $ref: '#/definitions/val.UnitExportVal'
+        type: array
+    type: object
+  val.PageVal:
+    properties:
+      chapter_id:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      image_uploaded:
+        type: boolean
+      image_url:
+        type: string
+      index:
+        type: integer
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+      updated_at:
+        type: integer
+    type: object
+  val.ResvChapterPagesArgs:
+    properties:
+      chapter_id:
+        type: string
+      file_extension:
+        type: string
+      page_count:
+        type: integer
+    type: object
+  val.ResvChapterPagesRes:
+    properties:
+      creations:
+        items:
+          $ref: '#/definitions/val.PageCreationRes'
+        type: array
+    type: object
+  val.ResvComicCoverBody:
+    properties:
+      file_extension:
+        type: string
+    type: object
+  val.ResvComicCoverRes:
+    properties:
+      put_url:
+        type: string
+    type: object
+  val.ResvTeamAvatarArgs:
+    properties:
+      file_extension:
+        type: string
+      team_id:
+        type: string
+    type: object
+  val.ResvTeamAvatarRes:
+    properties:
+      put_url:
+        type: string
+    type: object
+  val.ResvUserAvatarArgs:
+    properties:
+      file_extension:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.ResvUserAvatarRes:
+    properties:
+      put_url:
+        type: string
+    type: object
+  val.SavePageUnitsArgs:
+    properties:
+      diff:
+        $ref: '#/definitions/val.UnitDiffVal'
+      page_id:
+        type: string
+    type: object
+  val.SavePageUnitsRes:
+    properties:
+      proofread_unit_count:
+        type: integer
+      total_unit_count:
+        type: integer
+      translated_unit_count:
+        type: integer
+    type: object
+  val.SysMailVal:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      read:
+        type: boolean
+      title:
+        type: string
+    type: object
+  val.TeamCreArgs:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  val.TeamCreRes:
+    properties:
+      id:
+        type: string
+    type: object
+  val.TeamUpdArgs:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  val.TeamVal:
+    properties:
+      avatar_uploaded:
+        type: boolean
+      avatar_url:
+        type: string
+      created_at:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  val.UnitDiffVal:
+    properties:
+      cand_order:
+        items:
+          type: string
+        type: array
+      ops:
+        items:
+          $ref: '#/definitions/val.UnitOpVal'
+        type: array
+      page_id:
+        type: string
+    type: object
+  val.UnitExportVal:
+    properties:
+      is_bubble:
+        type: boolean
+      is_proofread:
+        type: boolean
+      page_id:
+        type: string
+      page_index:
+        type: integer
+      proofread_text:
+        type: string
+      proofreader_comment:
+        type: string
+      proofreader_id:
+        type: string
+      translated_text:
+        type: string
+      translator_comment:
+        type: string
+      translator_id:
+        type: string
+      unit_id:
+        type: string
+      unit_index:
+        type: integer
+      x_coord:
+        type: number
+      y_coord:
+        type: number
+    type: object
+  val.UnitOpVal:
+    properties:
+      id:
+        type: string
+      is_bubble:
+        type: boolean
+      is_proofread:
+        type: boolean
+      last_proofreader_id:
+        type: string
+      last_translator_id:
+        type: string
+      local_id:
+        type: string
+      proofread_text:
+        type: string
+      proofreader_comment:
+        type: string
+      translated_text:
+        type: string
+      translator_comment:
+        type: string
+      x_coord:
+        type: number
+      y_coord:
+        type: number
+    type: object
+  val.UnitVal:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      index:
+        type: integer
+      is_bubble:
+        type: boolean
+      is_proofread:
+        type: boolean
+      last_proofreader_id:
+        type: string
+      last_translator_id:
+        type: string
+      page_id:
+        type: string
+      proofread_text:
+        type: string
+      proofreader_comment:
+        type: string
+      translated_text:
+        type: string
+      translator_comment:
+        type: string
+      updated_at:
+        type: integer
+      x_coord:
+        type: number
+      y_coord:
+        type: number
+    type: object
+  val.UpsertAssignmentArgs:
+    properties:
+      chapter_id:
+        type: string
+      role_mask:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  val.UserLoginArgs:
+    properties:
+      pwd:
+        type: string
+      qq:
+        type: string
+    type: object
+  val.UserLoginRes:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.UserRegArgs:
+    properties:
+      invitation_code:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      qq:
+        type: string
+    type: object
+  val.UserRegRes:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: string
+    type: object
+  val.UserUpdArgs:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      qq:
+        type: string
+    type: object
+  val.UserVal:
+    properties:
+      avatar_uploaded:
+        type: boolean
+      avatar_url:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      is_super_admin:
+        type: boolean
+      last_active_at:
+        type: integer
+      nickname:
+        type: string
+      qq:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  val.WorksetCreatedRes:
+    properties:
+      id:
+        description: '`Id` is the generated identifier for the new workset.'
+        type: string
+    type: object
+  val.WorksetUpdArgs:
+    properties:
+      description:
+        description: |-
+          `Desc` is the new description for `PUT` semantics.
+          Nil means writing SQL `NULL`.
+        type: string
+      id:
+        description: '`Id` identifies the workset to update.'
+        type: string
+      name:
+        description: '`Name` is the new display title.'
+        type: string
+    type: object
+  val.WorksetVal:
+    properties:
+      comic_count:
+        type: integer
+      created_at:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      index:
+        type: integer
+      name:
+        type: string
+      team_id:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: Poprako-S refactor API documentation
+  title: Poprako-S Refactor API
+  version: 0.4.0
+paths:
+  /assignment-invitations:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create assignment invitation for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create assignment invitation args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateAssignmentInvArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_CreateAssignmentInvRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Assignment Invitation
+      tags:
+      - assignment-invitation
+  /assignment-invitations/{invitation_id}:
+    delete:
+      description: |-
+        Delete assignment invitation by id
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: invitation id
+        in: path
+        name: invitation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Assignment Invitation
+      tags:
+      - assignment-invitation
+  /assignment-invitations/chapter/{chapter_id}:
+    get:
+      description: |-
+        List assignment invitations for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: pending filter
+        in: query
+        name: pending
+        type: boolean
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentInvVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Assignment Invitations
+      tags:
+      - assignment-invitation
+  /assignment-invitations/join:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Join chapter collaboration by assignment invitation code
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: join args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.JoinAssignmentInvArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Join Chapter By Invitation
+      tags:
+      - assignment-invitation
+  /assignments:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Upsert assignment by PUT semantics
+        If `role_mask` is zero the request will redirect to delete semantics
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: upsert args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.UpsertAssignmentArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Upsert Assignment
+      tags:
+      - assignment
+  /assignments/{assignment_id}:
+    delete:
+      description: |-
+        Delete assignment by id
+        The caller must be reviewer of target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: assignment id
+        in: path
+        name: assignment_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Assignment
+      tags:
+      - assignment
+  /assignments/chapter/{chapter_id}:
+    get:
+      description: |-
+        List assignments for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Assignments By Chapter
+      tags:
+      - assignment
+  /assignments/mine:
+    get:
+      description: |-
+        List assignments of current user
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List My Assignments
+      tags:
+      - assignment
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login by qid and password and return a `res.HttpRes` wrapper with
+        `val.UserLoginRes`
+      parameters:
+      - description: login args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.UserLoginArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_UserLoginRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      summary: User Login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register by invitation code and return a `res.HttpRes` wrapper
+        with `val.UserRegRes`
+      parameters:
+      - description: registration args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.UserRegArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_UserRegRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      summary: User Registration
+      tags:
+      - auth
+  /chapter:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create chapter under one comic
+        The caller must be an admin of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create chapter args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateChapterArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Chapter
+      tags:
+      - chapter
+  /chapter/{chapter_id}:
+    delete:
+      description: |-
+        Hard-delete one chapter
+        The caller must be an admin of the target chapter team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Chapter
+      tags:
+      - chapter
+    get:
+      description: |-
+        Get one chapter by id
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Chapter By Id
+      tags:
+      - chapter
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update one chapter with PUT semantics
+        The caller must be an admin of the target chapter team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: update chapter args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ChapterUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Chapter
+      tags:
+      - chapter
+  /chapter/{chapter_id}/export:
+    get:
+      description: |-
+        Export one chapter in JSON format
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterExportVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Export Chapter
+      tags:
+      - chapter
+  /chapter/{chapter_id}/export/lp:
+    get:
+      description: |-
+        Export one chapter in LabelPlus text format
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Export Chapter LabelPlus
+      tags:
+      - chapter
+  /chapter/{chapter_id}/import:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Import one chapter from Poprako JSON or LabelPlus text content
+        The caller must be translator or proofreader of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: import chapter args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ImportChapterBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ImportChapterRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Import Chapter
+      tags:
+      - chapter
+  /chapter/{chapter_id}/pages:
+    delete:
+      description: |-
+        Hard-delete all pages under one chapter
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Chapter Pages
+      tags:
+      - chapter
+    get:
+      description: |-
+        List pages under one chapter with pagination
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_PageVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Chapter Pages
+      tags:
+      - chapter
+  /chapter/{chapter_id}/pages/reserve:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Reserve signed upload URLs for all pages of one chapter
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: reserve chapter pages args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvChapterPagesArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ResvChapterPagesRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Reserve Chapter Pages Upload
+      tags:
+      - chapter
+  /chapter/comic/{comic_id}:
+    get:
+      description: |-
+        List chapters for one comic
+        The caller must be a member of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Chapters
+      tags:
+      - chapter
+  /chapter/comic/{comic_id}/pinned:
+    get:
+      description: |-
+        Get pinned chapter for one comic
+        The caller must be a member of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Pinned Chapter
+      tags:
+      - chapter
+  /comic:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create one comic under a workset
+        The caller must be an admin of the target workset team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create comic args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateComicArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ComicCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Comic
+      tags:
+      - comic
+  /comic/{comic_id}:
+    delete:
+      description: |-
+        Hard-delete one comic by id
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Comic
+      tags:
+      - comic
+    get:
+      description: |-
+        Get one comic by id
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ComicVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Comic By Id
+      tags:
+      - comic
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update comic fields with PUT semantics
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: update comic args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ComicUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Comic
+      tags:
+      - comic
+  /comic/{comic_id}/cover:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Reserve a signed upload URL for one comic cover
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      - description: reserve comic cover args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvComicCoverBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ResvComicCoverRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Reserve Comic Cover Upload
+      tags:
+      - comic
+  /comic/{comic_id}/cover/confirm:
+    post:
+      description: |-
+        Confirm one comic cover upload after client upload completed
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Confirm Comic Cover Uploaded
+      tags:
+      - comic
+  /comic/workset/{workset_id}:
+    get:
+      description: |-
+        List active comics for one workset
+        The caller must be a member of the target workset team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: workset id
+        in: path
+        name: workset_id
+        required: true
+        type: string
+      - description: fuzzy title
+        in: query
+        name: fuzzy_title
+        type: string
+      - description: upload phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: upload_phase
+        type: integer
+      - description: translate phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: translate_phase
+        type: integer
+      - description: proofread phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: proofread_phase
+        type: integer
+      - description: typeset phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: typeset_phase
+        type: integer
+      - description: review phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: review_phase
+        type: integer
+      - description: publish phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: publish_phase
+        type: integer
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_ComicVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Comics
+      tags:
+      - comic
+  /member-invitations:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create one invitation under one team
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create invitation args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateMemberInvArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_CreateMemberInvRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Member Invitation
+      tags:
+      - member-invitation
+  /member-invitations/{invitation_id}:
+    delete:
+      description: |-
+        Hard delete one invitation by id
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: invitation id
+        in: path
+        name: invitation_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Member Invitation
+      tags:
+      - member-invitation
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update invitation role mask by put semantics
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: invitation id
+        in: path
+        name: invitation_id
+        required: true
+        type: string
+      - description: update invitation args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.MemberInvUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Member Invitation
+      tags:
+      - member-invitation
+  /member-invitations/team/{team_id}:
+    get:
+      description: |-
+        List invitations under one team
+        The caller must be member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - description: pending filter
+        in: query
+        name: pending
+        type: boolean
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_MemberInvVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Member Invitations
+      tags:
+      - member-invitation
+  /members:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create one member under one team
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create member args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateMemberArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_CreateMemberRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Member
+      tags:
+      - member
+  /members/{member_id}:
+    delete:
+      description: |-
+        Hard delete one member by id
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: member id
+        in: path
+        name: member_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Member
+      tags:
+      - member
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update one member role mask by put semantics
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: member id
+        in: path
+        name: member_id
+        required: true
+        type: string
+      - description: update member role args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.MemberRoleUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Member Role
+      tags:
+      - member
+  /members/join:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Join one team by member invitation code
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: join team args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.JoinTeamArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Join Team By Invitation
+      tags:
+      - member
+  /members/mine:
+    get:
+      description: |-
+        List all memberships of current user
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - collectionFormat: csv
+        description: 'include related fields, optional: user, team'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_MemberVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List My Members
+      tags:
+      - member
+  /members/team/{team_id}:
+    get:
+      description: |-
+        List members under one team
+        The caller must be a member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: user, team'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_MemberVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Team Members
+      tags:
+      - member
+  /page/{page_id}/image/uploaded:
+    post:
+      description: |-
+        Confirm one page image upload after client upload completed
+        The caller must be assigned to the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Confirm Page Image Uploaded
+      tags:
+      - page
+  /page/{page_id}/units:
+    get:
+      description: |-
+        List units for one page
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ListPageUnitsRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Page Units
+      tags:
+      - unit
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Apply one page unit diff and synchronize page and chapter counters
+        The caller must be translator or proofreader on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      - description: save page units args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.SavePageUnitsArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_SavePageUnitsRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Save Page Units
+      tags:
+      - unit
+  /sys-mail:
+    get:
+      description: |-
+        List unread system mails for current authorized user with pagination
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_SysMailVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Unread System Mails
+      tags:
+      - sys-mail
+  /sys-mail/{sys_mail_id}/read:
+    post:
+      description: |-
+        Mark one system mail as read for current authorized user
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: system mail id
+        in: path
+        name: sys_mail_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark System Mail Read
+      tags:
+      - sys-mail
+  /teams:
+    get:
+      parameters:
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_TeamVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Teams
+      tags:
+      - team
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: create team args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.TeamCreArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_TeamCreRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Team
+      tags:
+      - team
+  /teams/{team_id}:
+    get:
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_TeamVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Team Info
+      tags:
+      - team
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - description: update team args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.TeamUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Team
+      tags:
+      - team
+  /teams/{team_id}/avatar:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - description: reserve team avatar args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvTeamAvatarArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ResvTeamAvatarRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Reserve Team Avatar Upload
+      tags:
+      - team
+  /teams/{team_id}/avatar/confirm:
+    post:
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Confirm Team Avatar Uploaded
+      tags:
+      - team
+  /teams/mine:
+    get:
+      parameters:
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_TeamVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List My Teams
+      tags:
+      - team
+  /users/{user_id}:
+    get:
+      description: |-
+        Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_UserVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get User Info
+      tags:
+      - user
+  /users/avatar:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: reserve avatar args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvUserAvatarArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ResvUserAvatarRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Reserve User Avatar Upload
+      tags:
+      - user
+  /users/avatar/confirm:
+    post:
+      description: |-
+        Confirm avatar uploaded after client upload completed and return no JSON body
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Confirm User Avatar Uploaded
+      tags:
+      - user
+  /users/me:
+    get:
+      description: |-
+        Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_UserVal'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get My User Info
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: update user args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.UserUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update My User Info
+      tags:
+      - user
+  /worksets:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create a new workset inside a team
+        The caller must be an admin of the specified team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create workset args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateWorksetArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_WorksetCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Workset
+      tags:
+      - workset
+  /worksets/{workset_id}:
+    delete:
+      description: |-
+        Hard-delete a workset by id
+        The caller must be an admin of the workset's owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: workset id
+        in: path
+        name: workset_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Workset
+      tags:
+      - workset
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Update the name and/or description of an existing workset
+        The caller must be an admin of the workset's owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: workset id
+        in: path
+        name: workset_id
+        required: true
+        type: string
+      - description: update workset args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.WorksetUpdArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Update Workset
+      tags:
+      - workset
+  /worksets/team/{team_id}:
+    get:
+      description: |-
+        List all active worksets for a team
+        The caller must be a member of the specified team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: path
+        name: team_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_WorksetVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Worksets
+      tags:
+      - workset
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -17,8 +17,8 @@ func TestAssembleHelpers(t *testing.T) {
 		"team-1":   "https://cdn.example/team-1",
 	})
 	creator := &model.UserInfo{ID: "user-1", Name: "Tester", QQ: "100001", AvatarKey: "avatar-1", IsAvatarUploaded: true, LastLoginAt: now, CreatedAt: now, UpdatedAt: now}
-	workset := &model.WorksetInfo{ID: "workset-1", TeamID: "team-1", Name: "WS", Description: "desc", Index: 1, CreatedAt: now, UpdatedAt: now}
-	comic := &model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", Index: 2, Title: "Comic", Author: "A", Description: "D", ChapterCount: 3, CreatorID: "user-1", LastActiveAt: now, CreatedAt: now, UpdatedAt: now, Creator: creator, Workset: workset}
+	workset := &model.WorksetInfo{ID: "workset-1", TeamID: "team-1", Name: "WS", Desc: "desc", Index: 1, CreatedAt: now, UpdatedAt: now}
+	comic := &model.ComicInfo{ID: "comic-1", WorksetID: "workset-1", Index: 2, Title: "Comic", Author: "A", Desc: "D", ChapterCount: 3, CreatorID: "user-1", LastActiveAt: now, CreatedAt: now, UpdatedAt: now, Creator: creator, Workset: workset}
 	assembledComic := assembleComicInfo(comic, ossClient)
 	if assembledComic.Creator == nil || assembledComic.Creator.AvatarURL != "https://cdn.example/avatar-1" || assembledComic.Workset == nil || assembledComic.Workset.ID != "workset-1" {
 		t.Fatalf("unexpected assembled comic: %#v", assembledComic)
@@ -51,7 +51,7 @@ func TestAssembleHelpers(t *testing.T) {
 		t.Fatalf("unexpected assembled user: %#v", assembledUser)
 	}
 
-	team := &model.TeamInfo{ID: "team-1", Name: "Team", Description: "Desc", AvatarOSSKey: "team-1", IsAvatarUploaded: true, CreatedAt: now, UpdatedAt: now}
+	team := &model.TeamInfo{ID: "team-1", Name: "Team", Desc: "Desc", AvatarOSSKey: "team-1", IsAvatarUploaded: true, CreatedAt: now, UpdatedAt: now}
 	assembledTeam, err := assembleTeamInfo(team, ossClient)
 	requireNoErr(t, err)
 	if assembledTeam.AvatarURL != "https://cdn.example/team-1" {

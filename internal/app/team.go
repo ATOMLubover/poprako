@@ -146,7 +146,7 @@ func (a *teamAppImpl) Create(
 	}
 
 	// 通过领域服务构造汉化组创建载荷（含权限校验）
-	creation, err := a.teamSvc.NewCreation(currUser, args.Name, args.Description)
+	creation, err := a.teamSvc.NewCreation(currUser, args.Name, args.Desc)
 	if err != nil {
 		// 记录权限校验失败
 		lgr.Warn(
@@ -344,9 +344,9 @@ func (a *teamAppImpl) Update(
 
 	// 组装汉化组更新载荷
 	update := &model.TeamUpdate{
-		ID:          args.ID,
-		Name:        args.Name,
-		Description: args.Description,
+		ID:   args.ID,
+		Name: args.Name,
+		Desc: args.Desc,
 	}
 
 	// 持久化更新
@@ -583,7 +583,7 @@ func assembleTeamInfo(
 	return &val.TeamInfo{
 		ID:               info.ID,
 		Name:             info.Name,
-		Description:      info.Description,
+		Desc:             info.Desc,
 		AvatarURL:        avatarURL,
 		IsAvatarUploaded: info.IsAvatarUploaded,
 		CreatedAt:        info.CreatedAt.UnixMilli(),

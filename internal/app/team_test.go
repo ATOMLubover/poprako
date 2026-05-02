@@ -57,7 +57,7 @@ func TestTeamAppAdminFlows(t *testing.T) {
 
 	app := NewTeamApp(service.NewTeamService(), service.NewMemberService(), userRepo, teamRepo, memberRepo, txnMgr, msgRepo, ossClient)
 
-	createRes, err := app.Create(background(), "user-1", &val.CreateTeamArgs{Name: "Created", Description: "desc"})
+	createRes, err := app.Create(background(), "user-1", &val.CreateTeamArgs{Name: "Created", Desc: "desc"})
 	requireNoErr(t, err)
 	if _, ok := teamRepo.Infos[createRes.ID]; !ok {
 		t.Fatalf("expected created team, got %#v", teamRepo.Infos)
@@ -82,7 +82,7 @@ func TestTeamAppAdminFlows(t *testing.T) {
 		t.Fatalf("expected teams in my list: %#v", listMyRes)
 	}
 
-	err = app.Update(background(), "user-1", &val.UpdateTeamArgs{ID: "team-1", Name: "Updated", Description: "new desc"})
+	err = app.Update(background(), "user-1", &val.UpdateTeamArgs{ID: "team-1", Name: "Updated", Desc: "new desc"})
 	requireNoErr(t, err)
 	if teamRepo.Infos["team-1"].Name != "Updated" {
 		t.Fatalf("unexpected team update: %#v", teamRepo.Infos["team-1"])

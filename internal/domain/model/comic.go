@@ -16,10 +16,10 @@ type ComicInfo struct {
 	Workset *WorksetInfo
 
 	// 在作品集内部的序号
-	Index       int
-	Title       string
-	Author      string
-	Description string
+	Index  int
+	Title  string
+	Author string
+	Desc   string
 
 	ChapterCount int
 
@@ -54,9 +54,9 @@ type ComicCreation struct {
 	// Index 是该漫画在作品集内的序号
 	Index int
 
-	Title       string
-	Author      string
-	Description string
+	Title  string
+	Author string
+	Desc   string
 	// CreatorID 是必须的，记录创建者
 	CreatorID string
 
@@ -67,9 +67,9 @@ type ComicCreation struct {
 type ComicUpdate struct {
 	ID string
 
-	Title       string
-	Author      string
-	Description string
+	Title  string
+	Author string
+	Desc   string
 }
 
 // ComicQueryOpt 指定漫画查询的可选筛选条件

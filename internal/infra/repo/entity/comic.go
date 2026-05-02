@@ -17,7 +17,7 @@ type ComicInfoRow struct {
 	Title         string  `gorm:"column:title"`
 	Author        string  `gorm:"column:author"`
 	ComposedTitle string  `gorm:"column:composed_title"`
-	Description   *string `gorm:"column:description"`
+	Desc          *string `gorm:"column:description"`
 
 	ChapterCount int `gorm:"column:chapter_count"`
 
@@ -58,8 +58,8 @@ func ToComicInfo(row ComicInfoRow) model.ComicInfo {
 		UpdatedAt:       row.UpdatedAt,
 	}
 
-	if row.Description != nil {
-		info.Description = *row.Description
+	if row.Desc != nil {
+		info.Desc = *row.Desc
 	}
 
 	if row.CoverOSSKey != nil {

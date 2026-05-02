@@ -18,7 +18,7 @@ type WorksetService interface {
 		teamID string,
 		index int,
 		name string,
-		description string,
+		desc string,
 	) (*model.WorksetCreation, error)
 }
 
@@ -39,7 +39,7 @@ func (s *worksetServiceImpl) NewCreation(
 	teamID string,
 	index int,
 	name string,
-	description string,
+	desc string,
 ) (*model.WorksetCreation, error) {
 	// 查询当前用户在汉化组中的成员记录 用于鉴权
 	member, err := mr.Get(model.MemberQueryOpt{
@@ -53,10 +53,10 @@ func (s *worksetServiceImpl) NewCreation(
 
 	// 返回创建载荷
 	return &model.WorksetCreation{
-		ID:          GenID("workset"),
-		TeamID:      teamID,
-		Index:       index,
-		Name:        name,
-		Description: description,
+		ID:     GenID("workset"),
+		TeamID: teamID,
+		Index:  index,
+		Name:   name,
+		Desc:   desc,
 	}, nil
 }

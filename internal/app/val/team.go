@@ -7,8 +7,8 @@ type TeamInfo struct {
 
 	// Name 是汉化组的名称
 	Name string `json:"name"`
-	// Description 是汉化组的描述
-	Description string `json:"description"`
+	// Desc 是汉化组的描述
+	Desc string `json:"description"`
 
 	// AvatarURL 是汉化组头像的可访问地址
 	AvatarURL string `json:"avatar_url"`
@@ -25,8 +25,8 @@ type TeamInfo struct {
 type CreateTeamArgs struct {
 	// Name 是汉化组名称
 	Name string `json:"name" validate:"required"`
-	// Description 是汉化组描述
-	Description string `json:"description"`
+	// Desc 是汉化组描述
+	Desc string `json:"description"`
 }
 
 // CreateTeamRes 表示创建汉化组成功后的响应数据
@@ -41,8 +41,8 @@ type UpdateTeamArgs struct {
 	ID string `json:"id" validate:"required"`
 	// Name 是更新后的汉化组名称
 	Name string `json:"name" validate:"required"`
-	// Description 是更新后的汉化组描述
-	Description string `json:"description"`
+	// Desc 是更新后的汉化组描述
+	Desc string `json:"description"`
 }
 
 // ReserveTeamAvatarArgs 表示预留汉化组头像上传接口的请求参数

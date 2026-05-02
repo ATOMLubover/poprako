@@ -93,7 +93,7 @@ func (r *worksetRepoImpl) Create(c *model.WorksetCreation) (*model.WorksetInfo, 
 		"team_id":     c.TeamID,
 		"index":       c.Index,
 		"name":        c.Name,
-		"description": c.Description,
+		"description": c.Desc,
 		"comic_count": 0,
 		"created_at":  now,
 		"updated_at":  now,
@@ -111,8 +111,8 @@ func (r *worksetRepoImpl) Update(u *model.WorksetUpdate) error {
 		"name":       u.Name,
 		"updated_at": time.Now(),
 	}
-	if u.Description != nil {
-		updates["description"] = *u.Description
+	if u.Desc != nil {
+		updates["description"] = *u.Desc
 	}
 
 	return r.gdb.Table(entity.WorksetTable).

@@ -90,7 +90,7 @@ func (r *ComicRepo) Create(c *model.ComicCreation) (*model.ComicInfo, error) {
 		Index:        c.Index,
 		Title:        c.Title,
 		Author:       c.Author,
-		Description:  c.Description,
+		Desc:         c.Desc,
 		CreatorID:    c.CreatorID,
 		LastActiveAt: now,
 		CreatedAt:    now,
@@ -110,7 +110,7 @@ func (r *ComicRepo) Update(u *model.ComicUpdate) error {
 
 	info.Title = u.Title
 	info.Author = u.Author
-	info.Description = u.Description
+	info.Desc = u.Desc
 	info.UpdatedAt = time.Now()
 	r.Infos[u.ID] = info
 

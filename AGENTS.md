@@ -4,6 +4,26 @@
 
 ---
 
+## Code Style Constitution
+
+Before writing or reviewing **any** Go code in this repository, agents **must**
+load and follow the code style constitution:
+
+**Skill:** `common-code-style-constitution`  
+**Location:** `.agents/skills/common-code-style-constitution/SKILL.md`
+
+The rules defined there are non-negotiable and apply uniformly across every
+layer of the codebase. They cover comment language and coverage, identifier
+quoting, package naming (`*_iface` / `*_impl` / `*_infra`), constant
+documentation, camelCase/PascalCase conventions (no Go-style acronym
+uppercasing), context parameter naming, error format, import organization,
+and constructor conventions.
+
+Other layer-specific skills (listed at the bottom of the constitution) extend
+these base rules for their respective packages.
+
+---
+
 ## Module & Runtime
 
 - **Go module**: `poprako-s` (`go 1.25.5`)
@@ -134,3 +154,19 @@ Each phase has `<phase>_at` (completed) and/or `<phase>ing_at` (started) columns
 ## Migration Files
 
 Located in `migrations/`. Follow the pattern `YYYYMMDDHHMMSS_<description>.{up,down}.sql`. All schema is already applied; no pending migrations as of April 2026.
+
+---
+
+## Refactor Hard Conventions
+
+The following rules are mandatory for the `refactor/` implementation:
+
+- For current-user identifiers in app/http signatures and local variables, use `currUid` naming. Do not use `currUserId`.
+- If an aggregate has relation fields (for example `Workset.Team`), the corresponding repo contract and infra implementation must support typed `includes` via `enum.XxxIncl` and preload mapping.
+- Nullable DB columns must stay nullable through domain and infra mappings. Do not coerce nullable fields into non-null defaults during assemble/convert.
+- `Put`-style update payloads must overwrite target fields fully. For nullable fields, `nil` means write SQL `NULL` (not "skip update").
+- In app transaction flows, follow the `user` app pattern: determine reject code via local state and normal error flow. Do not invent sentinel business errors such as `errNotAdmin`.
+- Naming semantics are fixed: `Delete` means hard delete, `Remove` means soft delete.
+- Common abbreviations are mandatory in Go identifiers. For example: use `Desc`/`desc` instead of `Description`/`description`. SQL column names and SQL literals are excluded.
+- In app signatures, when business inputs beyond `cx` and `currUid` are more than one field, they must be wrapped into `val` args structs.
+- All list interfaces must carry pagination explicitly.

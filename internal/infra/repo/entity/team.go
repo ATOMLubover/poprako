@@ -12,7 +12,7 @@ type TeamInfoRow struct {
 	ID string `gorm:"column:id"`
 
 	Name             string  `gorm:"column:name"`
-	Description      *string `gorm:"column:description"`
+	Desc             *string `gorm:"column:description"`
 	AvatarOSSKey     *string `gorm:"column:avatar_oss_key"`
 	IsAvatarUploaded bool    `gorm:"column:is_avatar_uploaded"`
 
@@ -30,8 +30,8 @@ func ToTeamInfo(row TeamInfoRow) model.TeamInfo {
 		UpdatedAt:        row.UpdatedAt,
 	}
 
-	if row.Description != nil {
-		info.Description = *row.Description
+	if row.Desc != nil {
+		info.Desc = *row.Desc
 	}
 	if row.AvatarOSSKey != nil {
 		info.AvatarOSSKey = *row.AvatarOSSKey

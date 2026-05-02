@@ -140,10 +140,10 @@ func (a *worksetAppImpl) Create(
 	lgr := retrieveLgr(cx)
 
 	// 默认描述为空字符串
-	description := ""
+	desc := ""
 
-	if args.Description != nil {
-		description = *args.Description
+	if args.Desc != nil {
+		desc = *args.Desc
 	}
 
 	// 在事务中创建作品集（需要 count 获取 index）
@@ -176,7 +176,7 @@ func (a *worksetAppImpl) Create(
 			args.TeamID,
 			int(count),
 			args.Name,
-			description,
+			desc,
 		)
 		if err != nil {
 			return err
@@ -248,9 +248,9 @@ func (a *worksetAppImpl) Update(
 
 	// 构造更新载荷
 	update := &model.WorksetUpdate{
-		ID:          args.ID,
-		Name:        args.Name,
-		Description: args.Description,
+		ID:   args.ID,
+		Name: args.Name,
+		Desc: args.Desc,
 	}
 
 	// 持久化更新
@@ -328,14 +328,14 @@ func (a *worksetAppImpl) Remove(
 // assembleWorksetInfo 将领域层作品集信息转换为 app 层值对象
 func assembleWorksetInfo(info *model.WorksetInfo) *val.WorksetInfo {
 	result := &val.WorksetInfo{
-		ID:          info.ID,
-		TeamID:      info.TeamID,
-		Index:       info.Index,
-		Name:        info.Name,
-		Description: info.Description,
-		ComicCount:  info.ComicCount,
-		CreatedAt:   info.CreatedAt.UnixMilli(),
-		UpdatedAt:   info.UpdatedAt.UnixMilli(),
+		ID:         info.ID,
+		TeamID:     info.TeamID,
+		Index:      info.Index,
+		Name:       info.Name,
+		Desc:       info.Desc,
+		ComicCount: info.ComicCount,
+		CreatedAt:  info.CreatedAt.UnixMilli(),
+		UpdatedAt:  info.UpdatedAt.UnixMilli(),
 	}
 
 	return result

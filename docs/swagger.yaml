@@ -22,6 +22,36 @@ definitions:
     - WorkflowTypesetComplete
     - WorkflowReviewComplete
     - WorkflowPublishComplete
+  poprako-s_internal_app_val.UserInfo:
+    properties:
+      avatar_url:
+        description: AvatarURL 是用户头像的可访问地址
+        type: string
+      created_at:
+        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
+        type: integer
+      id:
+        description: ID 是用户的唯一标识（例如 UUID 或数据库主键）
+        type: string
+      is_avatar_uploaded:
+        description: IsAvatarUploaded 表示用户是否已上传头像
+        type: boolean
+      is_super_admin:
+        description: IsSuperAdmin 表示用户是否具有超级管理员权限
+        type: boolean
+      last_login_at:
+        description: LastLoginAt 是一个 Unix 毫秒时间戳，表示用户最后一次登录的时间
+        type: integer
+      name:
+        description: Name 是用户的显示名称或昵称
+        type: string
+      qq:
+        description: QQ 是用户的 QQ 号，用于登录或联系方式
+        type: string
+      updated_at:
+        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
+        type: integer
+    type: object
   val.AssignmentInfo:
     properties:
       chapter:
@@ -53,7 +83,7 @@ definitions:
         type: integer
       user:
         allOf:
-        - $ref: '#/definitions/val.UserInfo'
+        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
         description: User 是可选的用户信息（仅在 includes 时填充）
       user_id:
         description: UserID 是被分配用户的 ID
@@ -96,7 +126,7 @@ definitions:
         type: integer
       creator:
         allOf:
-        - $ref: '#/definitions/val.UserInfo'
+        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
         description: Creator 是可选的创建者信息（仅在 includes 时填充）
       creator_id:
         description: CreatorID 是章节创建者 ID
@@ -164,7 +194,7 @@ definitions:
         type: integer
       creator:
         allOf:
-        - $ref: '#/definitions/val.UserInfo'
+        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
         description: Creator 是可选的创建者信息（仅在 includes 时填充）
       creator_id:
         description: CreatorID 是漫画创建者 ID
@@ -518,7 +548,7 @@ definitions:
         type: integer
       user:
         allOf:
-        - $ref: '#/definitions/val.UserInfo'
+        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
         description: User 是可选的用户信息（仅在 includes 时填充）
       user_id:
         description: UserID 是该成员对应的用户 ID
@@ -563,7 +593,7 @@ definitions:
         type: integer
       creator:
         allOf:
-        - $ref: '#/definitions/val.UserInfo'
+        - $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
         description: Creator 是可选的创建者信息（仅在 includes 时填充）
       creator_id:
         description: CreatorID 是页面创建者 ID
@@ -1063,36 +1093,6 @@ definitions:
     required:
     - id
     - name
-    type: object
-  val.UserInfo:
-    properties:
-      avatar_url:
-        description: AvatarURL 是用户头像的可访问地址
-        type: string
-      created_at:
-        description: CreatedAt 是记录创建时间的 Unix 毫秒时间戳
-        type: integer
-      id:
-        description: ID 是用户的唯一标识（例如 UUID 或数据库主键）
-        type: string
-      is_avatar_uploaded:
-        description: IsAvatarUploaded 表示用户是否已上传头像
-        type: boolean
-      is_super_admin:
-        description: IsSuperAdmin 表示用户是否具有超级管理员权限
-        type: boolean
-      last_login_at:
-        description: LastLoginAt 是一个 Unix 毫秒时间戳，表示用户最后一次登录的时间
-        type: integer
-      name:
-        description: Name 是用户的显示名称或昵称
-        type: string
-      qq:
-        description: QQ 是用户的 QQ 号，用于登录或联系方式
-        type: string
-      updated_at:
-        description: UpdatedAt 是记录最近一次更新时间的 Unix 毫秒时间戳
-        type: integer
     type: object
   val.UserStatsInfo:
     properties:
@@ -2339,7 +2339,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.UserInfo'
+            $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
       security:
       - ApiKeyAuth: []
       summary: 根据 ID 获取用户信息
@@ -2354,7 +2354,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/val.UserInfo'
+            $ref: '#/definitions/poprako-s_internal_app_val.UserInfo'
       security:
       - ApiKeyAuth: []
       summary: 获取当前登录用户信息

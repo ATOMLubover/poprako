@@ -61,11 +61,11 @@ func (r *TeamRepo) Create(c *model.TeamCreation) (*model.TeamInfo, error) {
 	r.ensure()
 	now := time.Now()
 	info := model.TeamInfo{
-		ID:          c.ID,
-		Name:        c.Name,
-		Description: c.Description,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:        c.ID,
+		Name:      c.Name,
+		Desc:      c.Desc,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	r.Infos[info.ID] = info
 	copy := info
@@ -79,7 +79,7 @@ func (r *TeamRepo) Update(u *model.TeamUpdate) error {
 		return errNotFound
 	}
 	info.Name = u.Name
-	info.Description = u.Description
+	info.Desc = u.Desc
 	info.UpdatedAt = time.Now()
 	r.Infos[u.ID] = info
 	return nil

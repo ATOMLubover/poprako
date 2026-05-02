@@ -125,7 +125,7 @@ func (r *comicRepoImpl) Create(c *model.ComicCreation) (*model.ComicInfo, error)
 		"title":              c.Title,
 		"author":             c.Author,
 		"composed_title":     fmt.Sprintf("【%d】[%s] %s", c.Index, c.Author, c.Title),
-		"description":        c.Description,
+		"description":        c.Desc,
 		"chapter_count":      0,
 		"has_pinned_chapter": false,
 		"creator_id":         c.CreatorID,
@@ -158,7 +158,7 @@ func (r *comicRepoImpl) Update(u *model.ComicUpdate) error {
 		Updates(map[string]any{
 			"title":          u.Title,
 			"author":         u.Author,
-			"description":    u.Description,
+			"description":    u.Desc,
 			"composed_title": fmt.Sprintf("【%d】[%s] %s", row.Index, u.Author, u.Title),
 			"updated_at":     time.Now(),
 		}).Error

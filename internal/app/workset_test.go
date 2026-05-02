@@ -31,16 +31,16 @@ func TestWorksetAppCreateUsesMockTxnRepos(t *testing.T) {
 	memberRepo := mock_repo.NewMockMemberRepo()
 	memberRepo.Infos["member-1"] = *adminMember()
 	worksetRepo := mock_repo.NewMockWorksetRepo()
-	description := "desc"
+	desc := "desc"
 	txnMgr := mock_repo.NewMockTxnMgr(newMockTxnContext(mockTxnRepos{member: memberRepo, workset: worksetRepo}))
 
 	app := NewWorksetApp(service.NewWorksetService(), memberRepo, worksetRepo, txnMgr)
 
-	res, err := app.Create(background(), "user-1", &val.CreateWorksetArgs{TeamID: "team-1", Name: "WS", Description: &description})
+	res, err := app.Create(background(), "user-1", &val.CreateWorksetArgs{TeamID: "team-1", Name: "WS", Desc: &desc})
 	requireNoErr(t, err)
 
 	stored := worksetRepo.Infos[res.ID]
-	if stored.Index != 0 || stored.Description != "desc" {
+	if stored.Index != 0 || stored.Desc != "desc" {
 		t.Fatalf("unexpected workset: %#v", stored)
 	}
 }
@@ -53,7 +53,7 @@ func TestWorksetAppUpdateAndRemove(t *testing.T) {
 	app := NewWorksetApp(service.NewWorksetService(), memberRepo, worksetRepo, mock_repo.NewMockTxnMgr(nil))
 
 	desc := "new desc"
-	err := app.Update(background(), "user-1", &val.UpdateWorksetArgs{ID: "workset-1", Name: "New", Description: &desc})
+	err := app.Update(background(), "user-1", &val.UpdateWorksetArgs{ID: "workset-1", Name: "New", Desc: &desc})
 	requireNoErr(t, err)
 	if worksetRepo.Infos["workset-1"].Name != "New" {
 		t.Fatalf("unexpected updated workset: %#v", worksetRepo.Infos["workset-1"])
