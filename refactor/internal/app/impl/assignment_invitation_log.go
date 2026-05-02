@@ -69,8 +69,8 @@ func (a *assignmentInvLogAppImpl) Create(cx context.Context, currUid string, arg
 	return a.inner.Create(cx, currUid, args)
 }
 
-// `Remove` enriches logger context and forwards call.
-func (a *assignmentInvLogAppImpl) Remove(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None] {
+// `Delete` enriches logger context and forwards call.
+func (a *assignmentInvLogAppImpl) Delete(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -82,7 +82,7 @@ func (a *assignmentInvLogAppImpl) Remove(cx context.Context, currUid string, inv
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.Remove(cx, currUid, invId)
+	return a.inner.Delete(cx, currUid, invId)
 }
 
 // `JoinByInvCode` enriches logger context and forwards call.

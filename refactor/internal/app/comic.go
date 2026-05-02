@@ -25,7 +25,25 @@ type ComicApp interface {
 	// `currUid` must be a member of the owning team
 	GetById(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ComicVal]
 
-	// `Remove` soft-deletes one comic by id
+	// `ResvCover` reserves signed upload url for one comic cover.
+	ResvCover(
+		cx context.Context,
+		currUid string,
+		args *val.ResvComicCoverArgs,
+	) app_res.AppRes[val.ResvComicCoverRes]
+
+	// `MarkCoverUploaded` confirms one comic cover upload.
+	MarkCoverUploaded(
+		cx context.Context,
+		currUid string,
+		comicId string,
+	) app_res.AppRes[app_res.None]
+
+	// `Delete` hard-deletes one comic by id
 	// `currUid` must be an admin of the owning team
-	Remove(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None]
+	Delete(
+		cx context.Context,
+		currUid string,
+		comicId string,
+	) app_res.AppRes[app_res.None]
 }

@@ -25,21 +25,18 @@ CREATE TABLE IF NOT EXISTS "t_chapter" (
     "creator_id"            TEXT        NOT NULL REFERENCES "t_user" ("id"),
 
     "created_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "deleted_at"            TIMESTAMPTZ
+    "updated_at"            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Unique position per comic on active rows
+-- Unique position per comic.
 CREATE UNIQUE INDEX IF NOT EXISTS "uidx_chapter_comic_id_index"
-    ON "t_chapter" ("comic_id", "index")
-    WHERE deleted_at IS NULL;
+    ON "t_chapter" ("comic_id", "index");
 
 -- Support chapter list query by comic and index desc
 CREATE INDEX IF NOT EXISTS "idx_chapter_comic_id_index_desc"
-    ON "t_chapter" ("comic_id", "index" DESC)
-    WHERE deleted_at IS NULL;
+    ON "t_chapter" ("comic_id", "index" DESC);
 
--- Support pinned chapter query by comic
-CREATE INDEX IF NOT EXISTS "idx_chapter_comic_id_pinned"
-    ON "t_chapter" ("comic_id", "pinned")
-    WHERE deleted_at IS NULL;
+-- Enforce single pinned chapter per comic while allowing many unpinned rows.
+CREATE UNIQUE INDEX IF NOT EXISTS "uidx_chapter_comic_id_pinned_true"
+    ON "t_chapter" ("comic_id")
+    WHERE pinned = TRUE;

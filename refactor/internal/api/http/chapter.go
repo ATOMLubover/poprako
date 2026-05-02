@@ -246,10 +246,10 @@ func UpdateChapter(st *state.AppState) iris.Handler {
 	}
 }
 
-// `RemoveChapter` godoc
-// @Summary Remove Chapter
+// `DeleteChapter` godoc
+// @Summary Delete Chapter
 //
-//	Soft-delete one chapter.
+//	Hard-delete one chapter.
 //	The caller must be an admin of the target chapter team.
 //	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
 //
@@ -262,7 +262,7 @@ func UpdateChapter(st *state.AppState) iris.Handler {
 // @Failure 401 {object} res.HttpRes
 // @Failure 500 {object} res.HttpRes
 // @Router /chapter/{chapter_id} [delete]
-func RemoveChapter(st *state.AppState) iris.Handler {
+func DeleteChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 
 	return func(cx iris.Context) {
@@ -278,7 +278,7 @@ func RemoveChapter(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := chapterApp.Remove(newReqCx(cx), currUid, chapterId)
+		re := chapterApp.Delete(newReqCx(cx), currUid, chapterId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

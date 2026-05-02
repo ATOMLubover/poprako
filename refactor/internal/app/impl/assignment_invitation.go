@@ -40,7 +40,20 @@ type assignmentInvAppImpl struct {
 }
 
 // `NewAssignmentInvApp` creates one `AssignmentInvApp` implementation.
-func NewAssignmentInvApp(txnCtrl repo_iface.TxnCtrl, assignmentInvSvc svc.AssignmentInvSvc, assignmentSvc svc.AssignmentSvc, userRepo repo_iface.UserRepo, memberRepo repo_iface.MemberRepo, worksetRepo repo_iface.WorksetRepo, comicRepo repo_iface.ComicRepo, chapterRepo repo_iface.ChapterRepo, assignmentInvRepo repo_iface.AssignmentInvRepo, assignmentRepo repo_iface.AssignmentRepo, evBus event_iface.EvBus, errClsf repo_iface.ErrClsf) app_iface.AssignmentInvApp {
+func NewAssignmentInvApp(
+	txnCtrl repo_iface.TxnCtrl,
+	userRepo repo_iface.UserRepo,
+	memberRepo repo_iface.MemberRepo,
+	worksetRepo repo_iface.WorksetRepo,
+	comicRepo repo_iface.ComicRepo,
+	chapterRepo repo_iface.ChapterRepo,
+	assignmentInvRepo repo_iface.AssignmentInvRepo,
+	assignmentRepo repo_iface.AssignmentRepo,
+	assignmentInvSvc svc.AssignmentInvSvc,
+	assignmentSvc svc.AssignmentSvc,
+	evBus event_iface.EvBus,
+	errClsf repo_iface.ErrClsf,
+) app_iface.AssignmentInvApp {
 	if txnCtrl == nil || userRepo == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || assignmentInvRepo == nil || assignmentRepo == nil || evBus == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewAssignmentInvApp] nil dependency",
@@ -69,7 +82,7 @@ func NewAssignmentInvApp(txnCtrl repo_iface.TxnCtrl, assignmentInvSvc svc.Assign
 		assignmentInvRepo: assignmentInvRepo,
 		assignmentRepo:    assignmentRepo,
 		evBus:             evBus,
-		errClsf:            errClsf,
+		errClsf:           errClsf,
 	}
 }
 
@@ -102,13 +115,13 @@ func (a *assignmentInvAppImpl) ListByChapter(cx context.Context, currUid string,
 		return app_res.Reject[[]val.AssignmentInvVal](app_res.ServerError, "获取邀请列表失败")
 	}
 
-	vals := make([]val.AssignmentInvVal, len(items))
+	invitationVals := make([]val.AssignmentInvVal, len(items))
 	for i := range items {
-		v := asmAssignmentInvVal(&items[i])
-		vals[i] = v
+		invitationVal := asmAssignmentInvVal(&items[i])
+		invitationVals[i] = invitationVal
 	}
 
-	return app_res.Accept(&vals)
+	return app_res.Accept(&invitationVals)
 }
 
 // `Create` creates one invitation for assignment.
@@ -155,8 +168,8 @@ func (a *assignmentInvAppImpl) Create(cx context.Context, currUid string, args *
 	return re
 }
 
-// `Remove` removes one invitation by id.
-func (a *assignmentInvAppImpl) Remove(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None] {
+// `Delete` deletes one invitation by id.
+func (a *assignmentInvAppImpl) Delete(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	if invId == "" {
@@ -187,7 +200,7 @@ func (a *assignmentInvAppImpl) Remove(cx context.Context, currUid string, invId 
 		return app_res.Accept(&app_res.None{}), nil
 	})
 	if err != nil {
-		lgr.Error("[assignmentInvAppImpl.Remove] failed to run transaction", zap.Error(err))
+		lgr.Error("[assignmentInvAppImpl.Delete] failed to run transaction", zap.Error(err))
 		return re
 	}
 

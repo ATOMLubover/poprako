@@ -3,7 +3,6 @@ package aggr
 import "time"
 
 // `Comic` represents one manga title inside a workset
-// It is soft-deletable and only rows with nil `DeletedAt` are active in repo query
 // Relation fields are optional and loaded by typed includes
 // Mutable fields are updated by `ComicUpd` with put semantics
 // Time fields are plain domain timestamps without transport formatting
@@ -27,6 +26,10 @@ type Comic struct {
 	Desc *string
 	// `IsCompleted` marks whether the comic has completed its lifecycle.
 	IsCompleted bool
+	// `CoverKey` is the OSS object key of comic cover image.
+	CoverKey *string
+	// `CoverUploaded` marks whether cover image upload is confirmed.
+	CoverUploaded bool
 
 	// `ChapterCount` is the denormalized chapter counter
 	ChapterCount int

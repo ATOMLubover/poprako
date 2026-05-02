@@ -73,39 +73,6 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 	}
 }
 
-// `GetMyUserStats` godoc
-// @Summary Get My User Stats
-//
-//	Get current authorized user stats and return a `res.HttpRes` wrapper with `val.UserStats`.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
-// @Tags user
-// @Security ApiKeyAuth
-// @Produce json
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.UserStats}"
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /user/me/stats [get]
-func GetMyUserStats(st *state.AppState) iris.Handler {
-	userStatsApp := st.UserStatsApp
-
-	return func(cx iris.Context) {
-		currUid, ok := takeCurrUid(cx)
-		if !ok {
-			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
-			return
-		}
-
-		re := userStatsApp.GetStats(newReqCx(cx), currUid)
-		if re.IsReject() {
-			res.Reject(cx, int(re.Code()), re.Msg())
-			return
-		}
-
-		res.Accept(cx, iris.StatusOK, re.Data())
-	}
-}
-
 // `ResvUserAvatar` godoc
 // @Summary Reserve User Avatar Upload
 //

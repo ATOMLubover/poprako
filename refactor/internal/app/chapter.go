@@ -25,6 +25,10 @@ type ChapterApp interface {
 	// `Update` updates mutable chapter fields.
 	Update(cx context.Context, currUid string, args *val.ChapterUpdArgs) app_res.AppRes[app_res.None]
 
-	// `Remove` soft-deletes one chapter.
-	Remove(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None]
+	// `Delete` hard-deletes one chapter.
+	Delete(
+		cx context.Context,
+		currUid string,
+		chapterId string,
+	) app_res.AppRes[app_res.None]
 }

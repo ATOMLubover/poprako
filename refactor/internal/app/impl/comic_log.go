@@ -114,8 +114,31 @@ func (a *comicLogAppImpl) GetById(cx context.Context, currUid string, comicId st
 	return a.inner.GetById(cx, currUid, comicId)
 }
 
-// `Remove` enriches logger context and forwards call
-func (a *comicLogAppImpl) Remove(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
+// `ResvCover` enriches logger context and forwards call
+func (a *comicLogAppImpl) ResvCover(cx context.Context, currUid string, args *val.ResvComicCoverArgs) app_res.AppRes[val.ResvComicCoverRes] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	if args == nil {
+		return app_res.Reject[val.ResvComicCoverRes](app_res.BadRequest, "预留参数不能为空")
+	}
+
+	lgr := app_util.TakeLgr(cx)
+
+	lgr = lgr.With(
+		zap.String("curr_uid", currUid),
+		zap.String("comic_id", args.ComicId),
+		zap.String("file_extension", args.FileExt),
+	)
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.ResvCover(cx, currUid, args)
+}
+
+// `MarkCoverUploaded` enriches logger context and forwards call
+func (a *comicLogAppImpl) MarkCoverUploaded(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -129,5 +152,23 @@ func (a *comicLogAppImpl) Remove(cx context.Context, currUid string, comicId str
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.Remove(cx, currUid, comicId)
+	return a.inner.MarkCoverUploaded(cx, currUid, comicId)
+}
+
+// `Delete` enriches logger context and forwards call.
+func (a *comicLogAppImpl) Delete(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	lgr := app_util.TakeLgr(cx)
+
+	lgr = lgr.With(
+		zap.String("curr_uid", currUid),
+		zap.String("comic_id", comicId),
+	)
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.Delete(cx, currUid, comicId)
 }

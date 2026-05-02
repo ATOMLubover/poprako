@@ -36,6 +36,10 @@ type ComicRow struct {
 	Desc *string `gorm:"column:description"`
 	// `IsCompleted` marks whether the comic is completed.
 	IsCompleted bool `gorm:"column:is_completed"`
+	// `CoverKey` is optional OSS key of comic cover image.
+	CoverKey *string `gorm:"column:cover_key"`
+	// `CoverUploaded` marks whether cover upload has been confirmed.
+	CoverUploaded bool `gorm:"column:cover_uploaded"`
 
 	// `ChapterCount` is denormalized chapter count
 	ChapterCount int `gorm:"column:chapter_count"`
@@ -69,19 +73,21 @@ func (r *ComicRow) ToComicAggr() *aggr.Comic {
 	}
 
 	return &aggr.Comic{
-		Id:           r.Id,
-		WorksetId:    r.WorksetId,
-		Workset:      workset,
-		Index:        r.Index,
-		Title:        r.Title,
-		Author:       r.Author,
-		Desc:         r.Desc,
-		IsCompleted:  r.IsCompleted,
-		ChapterCount: r.ChapterCount,
-		CreatorId:    r.CreatorId,
-		LastActiveAt: r.LastActiveAt,
-		CreatedAt:    r.CreatedAt,
-		UpdatedAt:    r.UpdatedAt,
+		Id:            r.Id,
+		WorksetId:     r.WorksetId,
+		Workset:       workset,
+		Index:         r.Index,
+		Title:         r.Title,
+		Author:        r.Author,
+		Desc:          r.Desc,
+		IsCompleted:   r.IsCompleted,
+		CoverKey:      r.CoverKey,
+		CoverUploaded: r.CoverUploaded,
+		ChapterCount:  r.ChapterCount,
+		CreatorId:     r.CreatorId,
+		LastActiveAt:  r.LastActiveAt,
+		CreatedAt:     r.CreatedAt,
+		UpdatedAt:     r.UpdatedAt,
 	}
 }
 

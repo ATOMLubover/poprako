@@ -9,8 +9,7 @@ import (
 // `WORKSET_TABLE` is the table name for the workset entity.
 const WORKSET_TABLE = "t_workset"
 
-// `WorksetRow` maps a full active workset record for read queries.
-// Only rows with `deleted_at IS NULL` are considered active.
+// `WorksetRow` maps a full workset record for read queries.
 type WorksetRow struct {
 	// `Id` is the primary key.
 	Id string `gorm:"column:id;primaryKey"`

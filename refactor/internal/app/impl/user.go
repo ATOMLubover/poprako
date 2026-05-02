@@ -264,12 +264,29 @@ func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArg
 		userRepo := prov.UserRepo()
 		ossMsgRepo := prov.OssMsgRepo()
 
+		user, err := userRepo.GetById(args.UserId)
+		if err != nil {
+			if repo_infra.IsNotFound(err) {
+				return app_res.Reject[val.ResvUserAvatarRes](app_res.BadRequest, "用户不存在"), app_res.DefErr()
+			}
+
+			return app_res.Reject[val.ResvUserAvatarRes](app_res.ServerError, "生成头像上传信息失败"), err
+		}
+
+		oldKey := user.AvatarKey
+
 		if err := userRepo.PrefillAvatarKey(args.UserId, key); err != nil {
 			if repo_infra.IsNotFound(err) {
 				return app_res.Reject[val.ResvUserAvatarRes](app_res.BadRequest, "用户不存在"), app_res.DefErr()
 			}
 
 			return app_res.Reject[val.ResvUserAvatarRes](app_res.ServerError, "生成头像上传信息失败"), err
+		}
+
+		if oldKey != "" && oldKey != key {
+			if err := a.ossMsgSvc.SavePendingDel(ossMsgRepo, enum.OssResUserAvatar, args.UserId, []string{oldKey}); err != nil {
+				return app_res.Reject[val.ResvUserAvatarRes](app_res.ServerError, "生成头像上传信息失败"), err
+			}
 		}
 
 		if err := a.ossMsgSvc.SavePendingCre(ossMsgRepo, enum.OssResUserAvatar, args.UserId, []string{key}); err != nil {

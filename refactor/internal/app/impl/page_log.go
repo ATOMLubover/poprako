@@ -77,8 +77,8 @@ func (a *pageLogAppImpl) MarkImageUploaded(cx context.Context, currUid string, a
 	return a.inner.MarkImageUploaded(cx, currUid, args)
 }
 
-// `RemoveByChapterId` enriches logger context then forwards the call.
-func (a *pageLogAppImpl) RemoveByChapterId(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
+// `DeleteByChapterId` enriches logger context then forwards the call.
+func (a *pageLogAppImpl) DeleteByChapterId(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -87,5 +87,5 @@ func (a *pageLogAppImpl) RemoveByChapterId(cx context.Context, currUid string, c
 	lgr = lgr.With(zap.String("curr_uid", currUid), zap.String("chapter_id", chapterId))
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.RemoveByChapterId(cx, currUid, chapterId)
+	return a.inner.DeleteByChapterId(cx, currUid, chapterId)
 }

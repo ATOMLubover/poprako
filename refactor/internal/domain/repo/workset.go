@@ -9,16 +9,14 @@ import (
 // `WorksetRepo` defines the persistence contract for the `Workset` aggregate.
 type WorksetRepo interface {
 	// `GetById` retrieves an active workset by its unique identifier.
-	// Returns an error if the workset does not exist or has been soft-deleted.
+	// Returns an error if the workset does not exist.
 	GetById(id string, inc ...enum.WorksetIncl) (*aggr.Workset, RepoErr)
 
-	// `List` returns all active worksets that match the given options,
+	// `List` returns all worksets that match the given options,
 	// ordered by `index` ascending.
 	List(opt *query.ListWorksetOpt, inc ...enum.WorksetIncl) ([]*aggr.Workset, RepoErr)
 
-	// `Count` returns the number of active worksets matching the given options.
-	// Used to determine the next available `index` before a new workset is created.
-	// NOTE: optimistic lock on `index` is the responsibility of the caller to ensure consistency.
+	// `Count` returns the number of worksets matching the given options.
 	Count(opt *query.ListWorksetOpt) (int64, RepoErr)
 
 	// `Create` persists a new workset from the given creation input and returns
@@ -32,7 +30,10 @@ type WorksetRepo interface {
 	// The counter update is usually called inside app transaction flows.
 	UpdateComicCount(id string, delta int) RepoErr
 
-	// `Remove` marks the workset as deleted by setting its `deleted_at`
-	// timestamp without physically removing the row.
-	Remove(id string) RepoErr
+	// `IncrementComicNextIndex` allocates one comic index from workset-scoped sequence.
+	// It returns the allocated index value for immediate insert use.
+	IncrementComicNextIndex(id string) (int, RepoErr)
+
+	// `Delete` hard-deletes one workset row by id.
+	Delete(id string) RepoErr
 }

@@ -187,19 +187,6 @@ func (*ChapterPinUpdRow) TableName() string {
 	return CHAPTER_TABLE
 }
 
-// `ChapterRemoveUpdRow` is write model for chapter soft delete.
-type ChapterRemoveUpdRow struct {
-	// `DeletedAt` is the soft-delete timestamp written on remove.
-	DeletedAt time.Time `gorm:"column:deleted_at"`
-	// `UpdatedAt` is the row update timestamp.
-	UpdatedAt time.Time `gorm:"column:updated_at"`
-}
-
-// `TableName` returns table name for `ChapterRemoveUpdRow`.
-func (*ChapterRemoveUpdRow) TableName() string {
-	return CHAPTER_TABLE
-}
-
 // `ChapterPageCountUpdRow` is write model for page count overwrite.
 type ChapterPageCountUpdRow struct {
 	// `PageCount` is the new page count value.

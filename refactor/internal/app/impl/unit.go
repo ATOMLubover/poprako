@@ -39,12 +39,12 @@ type unitAppImpl struct {
 // `NewUnitApp` creates one `UnitApp` implementation.
 func NewUnitApp(
 	txnCtrl repo_iface.TxnCtrl,
-	unitSvc svc.UnitSvc,
 	comicRepo repo_iface.ComicRepo,
 	chapterRepo repo_iface.ChapterRepo,
 	pageRepo repo_iface.PageRepo,
 	unitRepo repo_iface.UnitRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
+	unitSvc svc.UnitSvc,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.UnitApp {
 	if txnCtrl == nil || comicRepo == nil || chapterRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || errClsf == nil {
@@ -106,13 +106,13 @@ func (a *unitAppImpl) ListByPage(cx context.Context, currUid string, args *val.L
 		return app_res.Reject[val.ListPageUnitsRes](app_res.ServerError, "获取 unit 列表失败")
 	}
 
-	vals := make([]val.UnitVal, 0, len(units))
+	unitVals := make([]val.UnitVal, 0, len(units))
 	for i := range units {
-		vals = append(vals, asmUnitVal(units[i]))
+		unitVals = append(unitVals, asmUnitVal(units[i]))
 	}
 
 	return app_res.Accept(&val.ListPageUnitsRes{
-		Units:               vals,
+		Units:               unitVals,
 		TotalUnitCount:      page.TotalUnitCount,
 		TranslatedUnitCount: page.TranslatedUnitCount,
 		ProofreadUnitCount:  page.ProofreadUnitCount,
@@ -156,7 +156,7 @@ func (a *unitAppImpl) SaveByPage(cx context.Context, currUid string, args *val.S
 		}
 
 		// Load chapter after permission check so comic last-active can be touched.
-		ch, err := chapterRepo.GetById(page.ChapterId)
+		chapter, err := chapterRepo.GetById(page.ChapterId)
 		if err != nil {
 			return app_res.Reject[val.SavePageUnitsRes](app_res.ServerError, "保存 unit 失败"), err
 		}
@@ -182,7 +182,7 @@ func (a *unitAppImpl) SaveByPage(cx context.Context, currUid string, args *val.S
 			return app_res.Reject[val.SavePageUnitsRes](app_res.ServerError, "保存 unit 失败"), err
 		}
 
-		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+		if err := comicRepo.TouchLastActive(chapter.ComicId); err != nil {
 			return app_res.Reject[val.SavePageUnitsRes](app_res.ServerError, "保存 unit 失败"), err
 		}
 

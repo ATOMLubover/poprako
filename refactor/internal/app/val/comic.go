@@ -12,10 +12,12 @@ type ComicVal struct {
 
 	Index int `json:"index"`
 
-	Title       string  `json:"title"`
-	Author      string  `json:"author"`
-	Desc        *string `json:"description"`
-	IsCompleted bool    `json:"is_completed"`
+	Title         string  `json:"title"`
+	Author        string  `json:"author"`
+	Desc          *string `json:"description"`
+	IsCompleted   bool    `json:"is_completed"`
+	CoverUrl      string  `json:"cover_url"`
+	CoverUploaded bool    `json:"cover_uploaded"`
 
 	ChapterCount int `json:"chapter_count"`
 
@@ -90,4 +92,20 @@ type ComicUpdArgs struct {
 	Author string `json:"author"`
 	// `Desc` is new optional description
 	Desc *string `json:"description"`
+}
+
+// `ResvComicCoverArgs` holds parameters for reserving comic cover upload.
+type ResvComicCoverArgs struct {
+	ComicId string `json:"comic_id"`
+	FileExt string `json:"file_extension"`
+}
+
+// `ResvComicCoverBody` is the transport body for comic-cover reservation endpoint.
+type ResvComicCoverBody struct {
+	FileExt string `json:"file_extension"`
+}
+
+// `ResvComicCoverRes` returns signed put url for cover upload.
+type ResvComicCoverRes struct {
+	PutUrl string `json:"put_url"`
 }

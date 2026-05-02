@@ -3,7 +3,6 @@ package aggr
 import "time"
 
 // `Workset` represents a collection of comics owned by a team.
-// It is soft-deletable; a nil `DeletedAt` means the workset is active.
 type Workset struct {
 	// `Id` is the unique identifier for this workset.
 	Id string

@@ -10,9 +10,7 @@ CREATE TABLE IF NOT EXISTS "t_team" (
     "workset_next_index" INTEGER NOT NULL DEFAULT 0,
 
     "created_at" TIMESTAMPTZ DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ DEFAULT NOW(),
-
-    "deleted_at" TIMESTAMPTZ
+    "updated_at" TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Create a default team directly in database.

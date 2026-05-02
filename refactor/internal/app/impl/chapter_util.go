@@ -11,7 +11,6 @@ import (
 	"poprako-s/internal/domain/model/enum"
 )
 
-
 // `asmChapterVal` converts chapter aggregate to app value object.
 func asmChapterVal(ch *aggr.Chapter) val.ChapterVal {
 	return val.ChapterVal{
@@ -45,9 +44,9 @@ func toUnixMilliPtr(t *time.Time) *int64 {
 		return nil
 	}
 
-	v := t.UnixMilli()
+	unixMilli := t.UnixMilli()
 
-	return &v
+	return &unixMilli
 }
 
 // `vfyListChapterArgs` validates and normalizes chapter list arguments.
@@ -118,8 +117,8 @@ func vfyChapterId(chapterId string) app_res.AppRes[app_res.None] {
 	return app_res.Accept(&app_res.None{})
 }
 
-// `vfyRemoveChapterId` validates chapter remove id.
-func vfyRemoveChapterId(chapterId string) app_res.AppRes[app_res.None] {
+// `vfyDeleteChapterId` validates chapter delete id.
+func vfyDeleteChapterId(chapterId string) app_res.AppRes[app_res.None] {
 	if chapterId == "" {
 		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 不能为空")
 	}

@@ -2,7 +2,6 @@ package app_impl
 
 import (
 	"context"
-	"time"
 
 	app_iface "poprako-s/internal/app"
 	app_res "poprako-s/internal/app/res"
@@ -16,7 +15,6 @@ import (
 	"poprako-s/internal/domain/svc"
 	event_iface "poprako-s/internal/event"
 	repo_infra "poprako-s/internal/infra/repo"
-	"poprako-s/pkg/util"
 
 	"go.uber.org/zap"
 )
@@ -42,13 +40,13 @@ type chapterAppImpl struct {
 // `NewChapterApp` creates one `ChapterApp` implementation.
 func NewChapterApp(
 	txnCtrl repo_iface.TxnCtrl,
-	chapterSvc svc.ChapterSvc,
-	assignmentSvc svc.AssignmentSvc,
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
 	chapterRepo repo_iface.ChapterRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
+	chapterSvc svc.ChapterSvc,
+	assignmentSvc svc.AssignmentSvc,
 	evBus event_iface.EvBus,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.ChapterApp {
@@ -95,12 +93,12 @@ func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.List
 		return app_res.Reject[[]val.ChapterVal](re.Code(), re.Msg())
 	}
 
-	cm, err := a.comicRepo.GetById(args.ComicId, enum.ComicInclWorkset)
+	comic, err := a.comicRepo.GetById(args.ComicId, enum.ComicInclWorkset)
 	if err != nil {
 		return app_res.Reject[[]val.ChapterVal](app_res.BadRequest, "漫画不存在")
 	}
 
-	if re := a.chapterSvc.CanListChapter(currUid, cm.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+	if re := a.chapterSvc.CanListChapter(currUid, comic.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[[]val.ChapterVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
@@ -116,12 +114,12 @@ func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.List
 		return app_res.Reject[[]val.ChapterVal](app_res.ServerError, "获取章节列表失败")
 	}
 
-	vals := make([]val.ChapterVal, len(chapters))
-	for i, ch := range chapters {
-		vals[i] = asmChapterVal(ch)
+	chapterVals := make([]val.ChapterVal, len(chapters))
+	for i, chapter := range chapters {
+		chapterVals[i] = asmChapterVal(chapter)
 	}
 
-	return app_res.Accept(&vals)
+	return app_res.Accept(&chapterVals)
 }
 
 // `GetById` returns one chapter by id.
@@ -132,7 +130,7 @@ func (a *chapterAppImpl) GetById(cx context.Context, currUid string, chapterId s
 		return app_res.Reject[val.ChapterVal](re.Code(), re.Msg())
 	}
 
-	ch, err := a.chapterRepo.GetById(chapterId)
+	chapter, err := a.chapterRepo.GetById(chapterId)
 	if err != nil {
 		if repo_infra.IsNotFound(err) {
 			return app_res.Reject[val.ChapterVal](app_res.NotFound, "章节不存在")
@@ -143,20 +141,20 @@ func (a *chapterAppImpl) GetById(cx context.Context, currUid string, chapterId s
 		return app_res.Reject[val.ChapterVal](app_res.ServerError, "获取章节失败")
 	}
 
-	cm, err := a.comicRepo.GetById(ch.ComicId, enum.ComicInclWorkset)
+	comic, err := a.comicRepo.GetById(chapter.ComicId, enum.ComicInclWorkset)
 	if err != nil {
 		lgr.Error("[chapterAppImpl.GetById] failed to get comic", zap.Error(err))
 
 		return app_res.Reject[val.ChapterVal](app_res.ServerError, "获取章节失败")
 	}
 
-	if re := a.chapterSvc.CanListChapter(currUid, cm.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+	if re := a.chapterSvc.CanListChapter(currUid, comic.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[val.ChapterVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
-	v := asmChapterVal(ch)
+	chapterVal := asmChapterVal(chapter)
 
-	return app_res.Accept(&v)
+	return app_res.Accept(&chapterVal)
 }
 
 // `GetPinned` returns pinned chapter under target comic.
@@ -167,28 +165,28 @@ func (a *chapterAppImpl) GetPinned(cx context.Context, currUid string, comicId s
 		return app_res.Reject[val.ChapterVal](app_res.BadRequest, "comic_id 不能为空")
 	}
 
-	cm, err := a.comicRepo.GetById(comicId, enum.ComicInclWorkset)
+	comic, err := a.comicRepo.GetById(comicId, enum.ComicInclWorkset)
 	if err != nil {
 		return app_res.Reject[val.ChapterVal](app_res.BadRequest, "漫画不存在")
 	}
 
-	if re := a.chapterSvc.CanListChapter(currUid, cm.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+	if re := a.chapterSvc.CanListChapter(currUid, comic.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[val.ChapterVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
-	ch, err := a.chapterRepo.FindPinnedByComicId(comicId)
+	chapter, err := a.chapterRepo.FindPinnedByComicId(comicId)
 	if err != nil {
 		lgr.Error("[chapterAppImpl.GetPinned] failed to get pinned chapter", zap.Error(err))
 		return app_res.Reject[val.ChapterVal](app_res.ServerError, "获取置顶章节失败")
 	}
 
-	if ch == nil {
+	if chapter == nil {
 		return app_res.Accept[val.ChapterVal](nil)
 	}
 
-	v := asmChapterVal(ch)
+	chapterVal := asmChapterVal(chapter)
 
-	return app_res.Accept(&v)
+	return app_res.Accept(&chapterVal)
 }
 
 // `Create` creates one chapter under target comic.
@@ -208,27 +206,27 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 		chapterRepo := prov.ChapterRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
-		cm, err := comicRepo.GetById(args.ComicId)
+		comic, err := comicRepo.GetById(args.ComicId)
 		if err != nil {
 			return app_res.Reject[val.ChapterCreatedRes](app_res.Forbidden, "仅汉化组管理员可创建章节"), app_res.DefErr()
 		}
 
-		ws, err := worksetRepo.GetById(cm.WorksetId)
+		workset, err := worksetRepo.GetById(comic.WorksetId)
 		if err != nil {
 			return app_res.Reject[val.ChapterCreatedRes](app_res.Forbidden, "仅汉化组管理员可创建章节"), app_res.DefErr()
 		}
 
-		if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+		if re := a.chapterSvc.CanAdminChapter(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[val.ChapterCreatedRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		count, err := chapterRepo.Count(&query.ListChapterOpt{ComicId: &args.ComicId})
+		index, err := comicRepo.IncrementChapterNextIndex(args.ComicId)
 		if err != nil {
 			return app_res.Reject[val.ChapterCreatedRes](app_res.ServerError, "创建章节失败"), err
 		}
 
-		cre := a.chapterSvc.NewChapterCre(args.ComicId, int(count), args.Subtitle, currUid)
-		ch, err := chapterRepo.Create(cre)
+		cre := a.chapterSvc.NewChapterCre(args.ComicId, index, args.Subtitle, currUid)
+		chapter, err := chapterRepo.Create(cre)
 		if err != nil {
 			return app_res.Reject[val.ChapterCreatedRes](app_res.ServerError, "创建章节失败"), err
 		}
@@ -241,14 +239,14 @@ func (a *chapterAppImpl) Create(cx context.Context, currUid string, args *val.Cr
 			return app_res.Reject[val.ChapterCreatedRes](app_res.ServerError, "创建章节失败"), err
 		}
 
-		reviewerCre := a.assignmentSvc.NewAssignmentCre(ch.Id, currUid, aggr.RoleMask(enum.RoleReviewer))
+		reviewerCre := a.assignmentSvc.NewAssignmentCre(chapter.Id, currUid, aggr.RoleMask(enum.RoleReviewer))
 		if _, err := assignmentRepo.Create(reviewerCre); err != nil {
 			return app_res.Reject[val.ChapterCreatedRes](app_res.ServerError, "创建章节失败"), err
 		}
 
-		ev = append(ev, event.NewAssignmentCreatedEv(currUid, ch.Id))
+		ev = append(ev, event.NewAssignmentCreatedEv(currUid, chapter.Id))
 
-		return app_res.Accept(&val.ChapterCreatedRes{Id: ch.Id}), nil
+		return app_res.Accept(&val.ChapterCreatedRes{Id: chapter.Id}), nil
 	})
 	if err != nil {
 		lgr.Error("[chapterAppImpl.Create] failed to run create chapter transaction", zap.Error(err))
@@ -278,17 +276,17 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		chapterRepo := prov.ChapterRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
-		ch, err := chapterRepo.GetById(args.Id)
+		chapter, err := chapterRepo.GetById(args.Id)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
 		}
 
-		cm, err := comicRepo.GetById(ch.ComicId)
+		comic, err := comicRepo.GetById(chapter.ComicId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
 		}
 
-		ws, err := worksetRepo.GetById(cm.WorksetId)
+		workset, err := worksetRepo.GetById(comic.WorksetId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
 		}
@@ -300,39 +298,36 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 			}
 		} else {
 			// Metadata-only update requires team admin permission.
-			if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			if re := a.chapterSvc.CanAdminChapter(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
 				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 			}
 		}
 
 		if args.WorkflowTransition != nil {
-			wasPublished := ch.PublishedAt != nil
+			wasPublished := chapter.PublishedAt != nil
 
-			if err := ch.TransiteWorkflow(*args.WorkflowTransition); err != nil {
+			if err := chapter.TransiteWorkflow(*args.WorkflowTransition); err != nil {
 				return app_res.Reject[app_res.None](app_res.BadRequest, "无效的工作流状态转换"), app_res.DefErr()
 			}
 
-			if !wasPublished && ch.PublishedAt != nil {
-				assignments, lerr := assignmentRepo.List(&query.ListAssignmentOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: 500}})
-				if lerr != nil {
-					return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), lerr
+			if !wasPublished && chapter.PublishedAt != nil {
+				assignments, listErr := listAllAssignments(assignmentRepo, chapter.Id)
+				if listErr != nil {
+					return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), listErr
 				}
 
-				assignedUserIds := make([]string, 0, len(assignments))
-				for i := range assignments {
-					assignedUserIds = append(assignedUserIds, assignments[i].UserId)
-				}
+				assignedUserIds := collectAssignedUserIds(assignments)
 
-				ev = append(ev, event.NewChapterPublishedEv(ch.Id, assignedUserIds))
+				ev = append(ev, event.NewChapterPublishedEv(chapter.Id, assignedUserIds))
 			}
 		}
 
-		upd := mkChapterUpd(args, ch)
+		upd := mkChapterUpd(args, chapter)
 		if err := chapterRepo.Update(upd); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), err
 		}
 
-		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+		if err := comicRepo.TouchLastActive(chapter.ComicId); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), err
 		}
 
@@ -349,11 +344,11 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 	return re
 }
 
-// `Remove` soft-deletes one chapter.
-func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
+// `Delete` hard-deletes one chapter.
+func (a *chapterAppImpl) Delete(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
-	if re := vfyRemoveChapterId(chapterId); re.IsReject() {
+	if re := vfyDeleteChapterId(chapterId); re.IsReject() {
 		return app_res.Reject[app_res.None](re.Code(), re.Msg())
 	}
 
@@ -368,83 +363,76 @@ func (a *chapterAppImpl) Remove(cx context.Context, currUid string, chapterId st
 		ossMsgRepo := prov.OssMsgRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
-		ch, err := chapterRepo.GetById(chapterId)
+		chapter, err := chapterRepo.GetById(chapterId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除章节"), app_res.DefErr()
 		}
 
-		cm, err := comicRepo.GetById(ch.ComicId)
+		comic, err := comicRepo.GetById(chapter.ComicId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除章节"), app_res.DefErr()
 		}
 
-		ws, err := worksetRepo.GetById(cm.WorksetId)
+		workset, err := worksetRepo.GetById(comic.WorksetId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除章节"), app_res.DefErr()
 		}
 
-		if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+		if re := a.chapterSvc.CanAdminChapter(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		assignments, err := assignmentRepo.List(&query.ListAssignmentOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: 500}})
+		// Load assignments before deleting rows so chapter-removed payload stays complete.
+		assignments, err := listAllAssignments(assignmentRepo, chapter.Id)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
-		assignedUserIds := make([]string, 0, len(assignments))
-		for i := range assignments {
-			assignedUserIds = append(assignedUserIds, assignments[i].UserId)
-		}
+		assignedUserIds := collectAssignedUserIds(assignments)
 
-		// Enqueue page image cleanup and clear page count before removing the chapter.
-		limit := ch.PageCount
-		if limit <= 0 {
-			limit = 10000
-		}
-		pages, err := pageRepo.List(&query.ListPageOpt{ChapterId: &ch.Id, Pagi: query.PagiOpt{Limit: limit}})
+		// Load pages before deleting rows so OSS cleanup stays complete.
+		pages, err := listAllPages(pageRepo, chapter.Id)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
-		now := time.Now()
-		expireAt := now.Add(30 * time.Minute)
-		for i := range pages {
-			if pages[i].ImageKey == nil || *pages[i].ImageKey == "" {
-				continue
-			}
-			if err := ossMsgRepo.SavePendingDel(&aggr.OssDelMsg{Id: util.GenId("oss_msg"), ResTyp: enum.OssResPageImage, ResId: pages[i].Id, Status: enum.OssMsgStatePending, ObjKeys: []string{*pages[i].ImageKey}, VisibleAt: now, ExpireAt: expireAt}); err != nil {
-				return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
-			}
-		}
-		if err := pageRepo.DeleteByChapterId(ch.Id); err != nil {
-			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
-		}
-		if err := chapterRepo.SetPageCount(ch.Id, 0); err != nil {
+
+		// Enqueue page-image cleanup before deleting local rows.
+		ossMsgSvc := svc.NewOssMsgSvc()
+		if err := savePageImageDeleteMsgs(ossMsgSvc, ossMsgRepo, pages); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
-		if err := assignmentRepo.DeleteByChapterId(ch.Id); err != nil {
+		// Delete descendant rows before deleting the chapter row itself.
+		if err := pageRepo.DeleteByChapterId(chapter.Id); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
-		if err := chapterRepo.Remove(chapterId); err != nil {
+		if err := chapterRepo.SetPageCount(chapter.Id, 0); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
-		if err := comicRepo.UpdateChapterCount(ch.ComicId, -1); err != nil {
+		if err := assignmentRepo.DeleteByChapterId(chapter.Id); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
-		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+		if err := chapterRepo.Delete(chapterId); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
 		}
 
-		ev = append(ev, event.NewChapterRemovedEv(ch.Id, ch.PublishedAt != nil, assignedUserIds))
+		if err := comicRepo.UpdateChapterCount(chapter.ComicId, -1); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+		}
+
+		if err := comicRepo.TouchLastActive(chapter.ComicId); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+		}
+
+		ev = append(ev, event.NewChapterRemovedEv(chapter.Id, chapter.PublishedAt != nil, assignedUserIds))
 
 		return app_res.Accept(&app_res.None{}), nil
 	})
 	if err != nil {
-		lgr.Error("[chapterAppImpl.Remove] failed to run remove chapter transaction", zap.Error(err))
+		lgr.Error("[chapterAppImpl.Delete] failed to run delete chapter transaction", zap.Error(err))
 
 		return re
 	}

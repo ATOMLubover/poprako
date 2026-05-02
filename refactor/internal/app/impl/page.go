@@ -2,7 +2,6 @@ package app_impl
 
 import (
 	"context"
-	"time"
 
 	app_iface "poprako-s/internal/app"
 	app_res "poprako-s/internal/app/res"
@@ -15,7 +14,6 @@ import (
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
 	repo_infra "poprako-s/internal/infra/repo"
-	"poprako-s/pkg/util"
 
 	"go.uber.org/zap"
 )
@@ -64,15 +62,15 @@ type pageResvHolder struct {
 // `NewPageApp` creates one `PageApp` implementation.
 func NewPageApp(
 	txnCtrl repo_iface.TxnCtrl,
-	pageSvc svc.PageSvc,
-	chapterSvc svc.ChapterSvc,
-	ossMsgSvc svc.OssMsgSvc,
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
 	chapterRepo repo_iface.ChapterRepo,
 	pageRepo repo_iface.PageRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
+	pageSvc svc.PageSvc,
+	chapterSvc svc.ChapterSvc,
+	ossMsgSvc svc.OssMsgSvc,
 	ossSigner oss_iface.Signer,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.PageApp {
@@ -126,7 +124,7 @@ func (a *pageAppImpl) ResvChapterPages(cx context.Context, currUid string, args 
 		assignmentRepo := prov.AssignmentRepo()
 		ossMsgRepo := prov.OssMsgRepo()
 
-		ch, err := chapterRepo.GetById(args.ChapterId)
+		chapter, err := chapterRepo.GetById(args.ChapterId)
 		if err != nil {
 			if repo_infra.IsNotFound(err) {
 				return app_res.Reject[val.ResvChapterPagesRes](app_res.BadRequest, "章节不存在"), app_res.DefErr()
@@ -135,19 +133,19 @@ func (a *pageAppImpl) ResvChapterPages(cx context.Context, currUid string, args 
 			return app_res.Reject[val.ResvChapterPagesRes](app_res.ServerError, "预留页面失败"), err
 		}
 
-		if re := a.pageSvc.CanResvPages(currUid, ch.Id, assignmentRepo, a.errClsf); re.IsReject() {
+		if re := a.pageSvc.CanResvPages(currUid, chapter.Id, assignmentRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[val.ResvChapterPagesRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		if ch.PageCount != 0 {
+		if chapter.PageCount != 0 {
 			return app_res.Reject[val.ResvChapterPagesRes](app_res.Conflict, "当前章节已存在页面，不允许再次上传"), app_res.DefErr()
 		}
 
 		txnHolders := make([]pageResvHolder, 0, args.PageCount)
 		batch := make([]*aggr.PageCre, 0, args.PageCount)
 		for i := 0; i < args.PageCount; i++ {
-			cre := a.pageSvc.NewPageCre(ch.Id, i, nil)
-			imageKey := a.pageSvc.GenImageKey(ch.Id, cre.Id, args.FileExt)
+			cre := a.pageSvc.NewPageCre(chapter.Id, i, nil)
+			imageKey := a.pageSvc.GenImageKey(chapter.Id, cre.Id, args.FileExt)
 			cre.ImageKey = &imageKey
 
 			batch = append(batch, cre)
@@ -164,11 +162,11 @@ func (a *pageAppImpl) ResvChapterPages(cx context.Context, currUid string, args 
 			}
 		}
 
-		if err := chapterRepo.SetPageCount(ch.Id, len(txnHolders)); err != nil {
+		if err := chapterRepo.SetPageCount(chapter.Id, len(txnHolders)); err != nil {
 			return app_res.Reject[val.ResvChapterPagesRes](app_res.ServerError, "预留页面失败"), err
 		}
 
-		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+		if err := comicRepo.TouchLastActive(chapter.ComicId); err != nil {
 			return app_res.Reject[val.ResvChapterPagesRes](app_res.ServerError, "预留页面失败"), err
 		}
 
@@ -208,7 +206,7 @@ func (a *pageAppImpl) List(cx context.Context, currUid string, args *val.ListCha
 	}
 
 	// Resolve chapter ownership and verify the caller can view chapter pages.
-	ch, err := a.chapterRepo.GetById(args.ChapterId)
+	chapter, err := a.chapterRepo.GetById(args.ChapterId)
 	if err != nil {
 		if repo_infra.IsNotFound(err) {
 			return app_res.Reject[[]val.PageVal](app_res.BadRequest, "章节不存在")
@@ -219,14 +217,14 @@ func (a *pageAppImpl) List(cx context.Context, currUid string, args *val.ListCha
 		return app_res.Reject[[]val.PageVal](app_res.ServerError, "获取页面列表失败")
 	}
 
-	cm, err := a.comicRepo.GetById(ch.ComicId, enum.ComicInclWorkset)
+	comic, err := a.comicRepo.GetById(chapter.ComicId, enum.ComicInclWorkset)
 	if err != nil {
 		lgr.Error("[pageAppImpl.List] failed to get comic", zap.Error(err))
 
 		return app_res.Reject[[]val.PageVal](app_res.ServerError, "获取页面列表失败")
 	}
 
-	if re := a.chapterSvc.CanListChapter(currUid, cm.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+	if re := a.chapterSvc.CanListChapter(currUid, comic.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[[]val.PageVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
@@ -238,19 +236,19 @@ func (a *pageAppImpl) List(cx context.Context, currUid string, args *val.ListCha
 		return app_res.Reject[[]val.PageVal](app_res.ServerError, "获取页面列表失败")
 	}
 
-	vals := make([]val.PageVal, 0, len(pages))
+	pageVals := make([]val.PageVal, 0, len(pages))
 	for i := range pages {
-		v, err := asmPageVal(pages[i], a.ossSigner)
+		pageVal, err := asmPageVal(pages[i], a.ossSigner)
 		if err != nil {
 			lgr.Error("[pageAppImpl.List] failed to assemble page value", zap.String("page_id", pages[i].Id), zap.Error(err))
 
 			return app_res.Reject[[]val.PageVal](app_res.ServerError, "获取页面列表失败")
 		}
 
-		vals = append(vals, *v)
+		pageVals = append(pageVals, *pageVal)
 	}
 
-	return app_res.Accept(&vals)
+	return app_res.Accept(&pageVals)
 }
 
 // `MarkImageUploaded` confirms one page image upload.
@@ -308,12 +306,12 @@ func (a *pageAppImpl) MarkImageUploaded(cx context.Context, currUid string, args
 	return re
 }
 
-// `RemoveByChapterId` deletes all pages under one chapter.
-func (a *pageAppImpl) RemoveByChapterId(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
+// `DeleteByChapterId` deletes all pages under one chapter.
+func (a *pageAppImpl) DeleteByChapterId(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
 	// Validate the target chapter id before starting destructive operations.
-	if re := vfyRemoveByChapterId(chapterId); re.IsReject() {
+	if re := vfyDeleteByChapterId(chapterId); re.IsReject() {
 		return app_res.Reject[app_res.None](re.Code(), re.Msg())
 	}
 
@@ -326,7 +324,7 @@ func (a *pageAppImpl) RemoveByChapterId(cx context.Context, currUid string, chap
 		pageRepo := prov.PageRepo()
 		ossMsgRepo := prov.OssMsgRepo()
 
-		ch, err := chapterRepo.GetById(chapterId)
+		chapter, err := chapterRepo.GetById(chapterId)
 		if err != nil {
 			if repo_infra.IsNotFound(err) {
 				return app_res.Reject[app_res.None](app_res.BadRequest, "章节不存在"), app_res.DefErr()
@@ -335,21 +333,21 @@ func (a *pageAppImpl) RemoveByChapterId(cx context.Context, currUid string, chap
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 		}
 
-		cm, err := comicRepo.GetById(ch.ComicId)
+		comic, err := comicRepo.GetById(chapter.ComicId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除页面"), app_res.DefErr()
 		}
 
-		ws, err := worksetRepo.GetById(cm.WorksetId)
+		workset, err := worksetRepo.GetById(comic.WorksetId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可删除页面"), app_res.DefErr()
 		}
 
-		if re := a.chapterSvc.CanAdminChapter(currUid, ws.TeamId, memberRepo, a.errClsf); re.IsReject() {
+		if re := a.chapterSvc.CanAdminChapter(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		limit := ch.PageCount
+		limit := chapter.PageCount
 		if limit <= 0 {
 			limit = 10000
 		}
@@ -359,14 +357,13 @@ func (a *pageAppImpl) RemoveByChapterId(cx context.Context, currUid string, chap
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 		}
 
-		now := time.Now()
-		expireAt := now.Add(30 * time.Minute)
+		ossMsgSvc := svc.NewOssMsgSvc()
 		for i := range pages {
 			if pages[i].ImageKey == nil || *pages[i].ImageKey == "" {
 				continue
 			}
 
-			if err := ossMsgRepo.SavePendingDel(&aggr.OssDelMsg{Id: util.GenId("oss_msg"), ResTyp: enum.OssResPageImage, ResId: pages[i].Id, Status: enum.OssMsgStatePending, ObjKeys: []string{*pages[i].ImageKey}, VisibleAt: now, ExpireAt: expireAt}); err != nil {
+			if err := ossMsgSvc.SavePendingDel(ossMsgRepo, enum.OssResPageImage, pages[i].Id, []string{*pages[i].ImageKey}); err != nil {
 				return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 			}
 		}
@@ -379,14 +376,14 @@ func (a *pageAppImpl) RemoveByChapterId(cx context.Context, currUid string, chap
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 		}
 
-		if err := comicRepo.TouchLastActive(ch.ComicId); err != nil {
+		if err := comicRepo.TouchLastActive(chapter.ComicId); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 		}
 
 		return app_res.Accept(&app_res.None{}), nil
 	})
 	if err != nil {
-		lgr.Error("[pageAppImpl.RemoveByChapterId] failed to remove chapter pages", zap.Error(err))
+		lgr.Error("[pageAppImpl.DeleteByChapterId] failed to delete chapter pages", zap.Error(err))
 
 		return re
 	}

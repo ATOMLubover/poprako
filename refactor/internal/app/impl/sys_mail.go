@@ -48,13 +48,13 @@ func (a *sysMailAppImpl) List(cx context.Context, currUid string, args *val.List
 		return app_res.Reject[[]val.SysMailVal](app_res.ServerError, "获取系统消息失败")
 	}
 
-	vals := make([]val.SysMailVal, len(items))
+	sysMailVals := make([]val.SysMailVal, len(items))
 
 	for i := range items {
-		vals[i] = asmSysMailVal(&items[i])
+		sysMailVals[i] = asmSysMailVal(&items[i])
 	}
 
-	return app_res.Accept(&vals)
+	return app_res.Accept(&sysMailVals)
 }
 
 // `MarkRead` marks one system mail as read for current user.

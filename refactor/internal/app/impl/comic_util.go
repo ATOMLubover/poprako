@@ -10,22 +10,22 @@ import (
 	"poprako-s/internal/domain/model/enum"
 )
 
-
 // `asmComicVal` converts a `Comic` aggregate to app-facing `ComicVal`
 func asmComicVal(cm *aggr.Comic) val.ComicVal {
 	return val.ComicVal{
-		Id:           cm.Id,
-		WorksetId:    cm.WorksetId,
-		Index:        cm.Index,
-		Title:        cm.Title,
-		Author:       cm.Author,
-		Desc:         cm.Desc,
-		IsCompleted:  cm.IsCompleted,
-		ChapterCount: cm.ChapterCount,
-		CreatorId:    cm.CreatorId,
-		LastActiveAt: cm.LastActiveAt.UnixMilli(),
-		CreatedAt:    cm.CreatedAt.UnixMilli(),
-		UpdatedAt:    cm.UpdatedAt.UnixMilli(),
+		Id:            cm.Id,
+		WorksetId:     cm.WorksetId,
+		Index:         cm.Index,
+		Title:         cm.Title,
+		Author:        cm.Author,
+		Desc:          cm.Desc,
+		IsCompleted:   cm.IsCompleted,
+		CoverUploaded: cm.CoverUploaded,
+		ChapterCount:  cm.ChapterCount,
+		CreatorId:     cm.CreatorId,
+		LastActiveAt:  cm.LastActiveAt.UnixMilli(),
+		CreatedAt:     cm.CreatedAt.UnixMilli(),
+		UpdatedAt:     cm.UpdatedAt.UnixMilli(),
 	}
 }
 
@@ -120,10 +120,23 @@ func vfyComicId(comicId string) app_res.AppRes[app_res.None] {
 	return app_res.Accept(&app_res.None{})
 }
 
-// `vfyRemoveComicId` validates remove arguments.
-func vfyRemoveComicId(comicId string) app_res.AppRes[app_res.None] {
+// `vfyDeleteComicId` validates delete arguments.
+func vfyDeleteComicId(comicId string) app_res.AppRes[app_res.None] {
 	if comicId == "" {
 		return app_res.Reject[app_res.None](app_res.BadRequest, "comic_id 不能为空")
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
+// `vfyResvComicCoverArgs` validates reserve-cover arguments.
+func vfyResvComicCoverArgs(args *val.ResvComicCoverArgs) app_res.AppRes[app_res.None] {
+	if args == nil {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "预留参数不能为空")
+	}
+
+	if args.ComicId == "" || args.FileExt == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "comic_id file_extension 不能为空")
 	}
 
 	return app_res.Accept(&app_res.None{})

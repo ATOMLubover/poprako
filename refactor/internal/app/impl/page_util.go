@@ -74,8 +74,8 @@ func vfyMarkPageImageUploadedArgs(args *val.MarkPageImageUploadedArgs) app_res.A
 	return app_res.Accept(&app_res.None{})
 }
 
-// `vfyRemoveByChapterId` validates chapter page deletion arguments.
-func vfyRemoveByChapterId(chapterId string) app_res.AppRes[app_res.None] {
+// `vfyDeleteByChapterId` validates chapter page deletion arguments.
+func vfyDeleteByChapterId(chapterId string) app_res.AppRes[app_res.None] {
 	if chapterId == "" {
 		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 不能为空")
 	}

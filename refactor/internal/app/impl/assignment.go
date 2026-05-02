@@ -34,7 +34,17 @@ type assignmentAppImpl struct {
 }
 
 // `NewAssignmentApp` creates one `AssignmentApp` implementation.
-func NewAssignmentApp(txnCtrl repo_iface.TxnCtrl, assignmentSvc svc.AssignmentSvc, memberRepo repo_iface.MemberRepo, worksetRepo repo_iface.WorksetRepo, comicRepo repo_iface.ComicRepo, chapterRepo repo_iface.ChapterRepo, assignmentRepo repo_iface.AssignmentRepo, evBus event_iface.EvBus, errClsf repo_iface.ErrClsf) app_iface.AssignmentApp {
+func NewAssignmentApp(
+	txnCtrl repo_iface.TxnCtrl,
+	memberRepo repo_iface.MemberRepo,
+	worksetRepo repo_iface.WorksetRepo,
+	comicRepo repo_iface.ComicRepo,
+	chapterRepo repo_iface.ChapterRepo,
+	assignmentRepo repo_iface.AssignmentRepo,
+	assignmentSvc svc.AssignmentSvc,
+	evBus event_iface.EvBus,
+	errClsf repo_iface.ErrClsf,
+) app_iface.AssignmentApp {
 	if txnCtrl == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || assignmentRepo == nil || evBus == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewAssignmentApp] nil dependency",
@@ -74,22 +84,22 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
-	ch, err := a.chapterRepo.GetById(args.ChapterId)
+	chapter, err := a.chapterRepo.GetById(args.ChapterId)
 	if err != nil {
 		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
 	}
 
-	cm, err := a.comicRepo.GetById(ch.ComicId)
+	comic, err := a.comicRepo.GetById(chapter.ComicId)
 	if err != nil {
 		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
 	}
 
-	ws, err := a.worksetRepo.GetById(cm.WorksetId)
+	workset, err := a.worksetRepo.GetById(comic.WorksetId)
 	if err != nil {
 		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
 	}
 
-	ok, err := a.memberRepo.ExistByUserTeamId(ws.TeamId, currUid)
+	ok, err := a.memberRepo.ExistByUserTeamId(workset.TeamId, currUid)
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.ListByChapter] failed to verify team membership", zap.Error(err))
 		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
@@ -104,12 +114,12 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
 	}
 
-	vals := make([]val.AssignmentVal, len(items))
+	assignmentVals := make([]val.AssignmentVal, len(items))
 	for i, item := range items {
-		vals[i] = asmAssignmentVal(item)
+		assignmentVals[i] = asmAssignmentVal(item)
 	}
 
-	return app_res.Accept(&vals)
+	return app_res.Accept(&assignmentVals)
 }
 
 func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal] {
@@ -129,12 +139,12 @@ func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args 
 		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
 	}
 
-	vals := make([]val.AssignmentVal, len(items))
+	assignmentVals := make([]val.AssignmentVal, len(items))
 	for i, item := range items {
-		vals[i] = asmAssignmentVal(item)
+		assignmentVals[i] = asmAssignmentVal(item)
 	}
 
-	return app_res.Accept(&vals)
+	return app_res.Accept(&assignmentVals)
 }
 
 // `Upsert` executes put-semantics upsert for assignment roles.
@@ -171,7 +181,7 @@ func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val
 				return app_res.Reject[app_res.None](app_res.ServerError, "保存分配失败"), err
 			}
 
-			ch, err := chapterRepo.GetById(args.ChapterId)
+			chapter, err := chapterRepo.GetById(args.ChapterId)
 			if err != nil {
 				return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 			}
@@ -180,7 +190,7 @@ func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val
 				return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 			}
 
-			ev = append(ev, event.NewAssignmentRemovedEv(args.UserId, args.ChapterId, ch.PublishedAt != nil))
+			ev = append(ev, event.NewAssignmentRemovedEv(args.UserId, args.ChapterId, chapter.PublishedAt != nil))
 
 			return app_res.Accept(&app_res.None{}), nil
 		}
@@ -245,7 +255,7 @@ func (a *assignmentAppImpl) Delete(cx context.Context, currUid string, assignmen
 			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		ch, err := chapterRepo.GetById(target.ChapterId)
+		chapter, err := chapterRepo.GetById(target.ChapterId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 		}
@@ -254,7 +264,7 @@ func (a *assignmentAppImpl) Delete(cx context.Context, currUid string, assignmen
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除分配失败"), err
 		}
 
-		ev = append(ev, event.NewAssignmentRemovedEv(target.UserId, target.ChapterId, ch.PublishedAt != nil))
+		ev = append(ev, event.NewAssignmentRemovedEv(target.UserId, target.ChapterId, chapter.PublishedAt != nil))
 
 		return app_res.Accept(&app_res.None{}), nil
 	})

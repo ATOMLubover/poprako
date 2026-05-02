@@ -72,16 +72,16 @@ func (r *sysMailRepoImpl) ListUnreadByRcvId(rcvId string, pagi query.PagiOpt) ([
 func (r *sysMailRepoImpl) MarkReadByRcvId(id string, rcvId string) repo_iface.RepoErr {
 	upd := entity.NewSysMailMarkReadUpdRow()
 
-	res := r.gdb.
+	updRe := r.gdb.
 		Table(entity.SYS_MAIL_TABLE).
 		Where("id = ? AND receiver_id = ?", id, rcvId).
 		Select("read").
 		Updates(upd)
-	if res.Error != nil {
-		return res.Error
+	if updRe.Error != nil {
+		return updRe.Error
 	}
 
-	if res.RowsAffected == 0 {
+	if updRe.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
 

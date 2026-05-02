@@ -25,11 +25,11 @@ func NewChapterRepo(gdb *gorm.DB) repo_iface.ChapterRepo {
 	return &chapterRepoImpl{gdb: gdb}
 }
 
-// `GetById` retrieves one active chapter by id.
+// `GetById` retrieves one chapter by id.
 func (r *chapterRepoImpl) GetById(id string, inc ...enum.ChapterIncl) (*aggr.Chapter, repo_iface.RepoErr) {
 	var row entity.ChapterRow
 
-	q := r.gdb.Table(entity.CHAPTER_TABLE).Where("id = ? AND deleted_at IS NULL", id)
+	q := r.gdb.Table(entity.CHAPTER_TABLE).Where("id = ?", id)
 	q = withChapterIncl(q, inc...)
 
 	err := q.First(&row).Error
@@ -46,7 +46,7 @@ func (r *chapterRepoImpl) FindPinnedByComicId(comicId string, inc ...enum.Chapte
 
 	q := r.gdb.
 		Table(entity.CHAPTER_TABLE).
-		Where("comic_id = ? AND pinned = TRUE AND deleted_at IS NULL", comicId)
+		Where("comic_id = ? AND pinned = TRUE", comicId)
 	q = withChapterIncl(q, inc...)
 
 	err := q.First(&row).Error
@@ -61,11 +61,11 @@ func (r *chapterRepoImpl) FindPinnedByComicId(comicId string, inc ...enum.Chapte
 	return row.ToChapterAggr(), nil
 }
 
-// `List` lists active chapters matching options.
+// `List` lists chapters matching options.
 func (r *chapterRepoImpl) List(opt *query.ListChapterOpt, inc ...enum.ChapterIncl) ([]*aggr.Chapter, repo_iface.RepoErr) {
 	var rows []entity.ChapterRow
 
-	q := r.gdb.Table(entity.CHAPTER_TABLE).Where("deleted_at IS NULL")
+	q := r.gdb.Table(entity.CHAPTER_TABLE)
 
 	if opt != nil && opt.ComicId != nil {
 		q = q.Where("comic_id = ?", *opt.ComicId)
@@ -94,11 +94,11 @@ func (r *chapterRepoImpl) List(opt *query.ListChapterOpt, inc ...enum.ChapterInc
 	return result, nil
 }
 
-// `Count` counts active chapters matching options.
+// `Count` counts chapters matching options.
 func (r *chapterRepoImpl) Count(opt *query.ListChapterOpt) (int64, repo_iface.RepoErr) {
 	var count int64
 
-	q := r.gdb.Table(entity.CHAPTER_TABLE).Where("deleted_at IS NULL")
+	q := r.gdb.Table(entity.CHAPTER_TABLE)
 
 	if opt != nil && opt.ComicId != nil {
 		q = q.Where("comic_id = ?", *opt.ComicId)
@@ -130,7 +130,7 @@ func (r *chapterRepoImpl) Create(cre *aggr.ChapterCre) (*aggr.Chapter, repo_ifac
 
 		if err := tx.
 			Table(entity.CHAPTER_TABLE).
-			Where("comic_id = ? AND deleted_at IS NULL AND pinned = TRUE", cre.ComicId).
+			Where("comic_id = ? AND pinned = TRUE", cre.ComicId).
 			Select("pinned", "updated_at").
 			Updates(pinClrRow).Error; err != nil {
 			return err
@@ -164,7 +164,7 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 	if upd.IsPinned != nil {
 		if *upd.IsPinned {
 			if err := r.gdb.Table(entity.CHAPTER_TABLE).
-				Where("comic_id = (SELECT comic_id FROM t_chapter WHERE id = ? AND deleted_at IS NULL) AND id <> ? AND deleted_at IS NULL AND pinned = TRUE", upd.Id, upd.Id).
+				Where("comic_id = (SELECT comic_id FROM t_chapter WHERE id = ?) AND id <> ? AND pinned = TRUE", upd.Id, upd.Id).
 				Select("pinned", "updated_at").
 				Updates(&entity.ChapterPinUpdRow{IsPinned: false, UpdatedAt: now}).Error; err != nil {
 				return err
@@ -228,7 +228,7 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 
 	return r.gdb.
 		Table(entity.CHAPTER_TABLE).
-		Where("id = ? AND deleted_at IS NULL", upd.Id).
+		Where("id = ?", upd.Id).
 		Select(selectCols).
 		Updates(updRow).Error
 }
@@ -242,7 +242,7 @@ func (r *chapterRepoImpl) SetPageCount(id string, count int) repo_iface.RepoErr 
 
 	return r.gdb.
 		Table(entity.CHAPTER_TABLE).
-		Where("id = ? AND deleted_at IS NULL", id).
+		Where("id = ?", id).
 		Select("page_count", "updated_at").
 		Updates(updRow).Error
 }
@@ -251,7 +251,7 @@ func (r *chapterRepoImpl) SetPageCount(id string, count int) repo_iface.RepoErr 
 func (r *chapterRepoImpl) AdjustUnitCounts(id string, deltaTotal int, deltaTranslated int, deltaProofread int) repo_iface.RepoErr {
 	return r.gdb.
 		Table(entity.CHAPTER_TABLE).
-		Where("id = ? AND deleted_at IS NULL", id).
+		Where("id = ?", id).
 		Updates(map[string]any{
 			"total_unit_count":      gorm.Expr("total_unit_count + ?", deltaTotal),
 			"translated_unit_count": gorm.Expr("translated_unit_count + ?", deltaTranslated),
@@ -260,16 +260,12 @@ func (r *chapterRepoImpl) AdjustUnitCounts(id string, deltaTotal int, deltaTrans
 		}).Error
 }
 
-// `Remove` soft-deletes one chapter.
-func (r *chapterRepoImpl) Remove(id string) repo_iface.RepoErr {
-	now := time.Now()
-	updRow := &entity.ChapterRemoveUpdRow{DeletedAt: now, UpdatedAt: now}
-
+// `Delete` hard-deletes one chapter.
+func (r *chapterRepoImpl) Delete(id string) repo_iface.RepoErr {
 	return r.gdb.
 		Table(entity.CHAPTER_TABLE).
-		Where("id = ? AND deleted_at IS NULL", id).
-		Select("deleted_at", "updated_at").
-		Updates(updRow).Error
+		Where("id = ?", id).
+		Delete(&entity.ChapterRow{}).Error
 }
 
 // `withChapterIncl` maps typed include options to preloads.
@@ -284,7 +280,7 @@ func withChapterIncl(q *gorm.DB, inc ...enum.ChapterIncl) *gorm.DB {
 	return q
 }
 
-// `fmtInt` formats index without importing strconv in multiple places.
-func fmtInt(v int) string {
-	return strconv.FormatInt(int64(v), 10)
+// `fmtInt` formats index without importing `strconv` in multiple places.
+func fmtInt(n int) string {
+	return strconv.FormatInt(int64(n), 10)
 }

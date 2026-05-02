@@ -8,16 +8,16 @@ import (
 
 // `ChapterRepo` defines persistence contract for chapter aggregate.
 type ChapterRepo interface {
-	// `GetById` retrieves one active chapter by id.
+	// `GetById` retrieves one chapter by id.
 	GetById(id string, inc ...enum.ChapterIncl) (*aggr.Chapter, RepoErr)
 
-	// `FindPinnedByComicId` retrieves pinned active chapter of one comic.
+	// `FindPinnedByComicId` retrieves pinned chapter of one comic.
 	FindPinnedByComicId(comicId string, inc ...enum.ChapterIncl) (*aggr.Chapter, RepoErr)
 
-	// `List` returns active chapters matching query options.
+	// `List` returns chapters matching query options.
 	List(opt *query.ListChapterOpt, inc ...enum.ChapterIncl) ([]*aggr.Chapter, RepoErr)
 
-	// `Count` returns active chapter count matching query options.
+	// `Count` returns chapter count matching query options.
 	Count(opt *query.ListChapterOpt) (int64, RepoErr)
 
 	// `Create` inserts one chapter and returns created aggregate.
@@ -32,6 +32,6 @@ type ChapterRepo interface {
 	// `AdjustUnitCounts` atomically applies page-level unit count delta to one chapter.
 	AdjustUnitCounts(id string, deltaTotal int, deltaTranslated int, deltaProofread int) RepoErr
 
-	// `Remove` soft-deletes one chapter.
-	Remove(id string) RepoErr
+	// `Delete` hard-deletes one chapter.
+	Delete(id string) RepoErr
 }

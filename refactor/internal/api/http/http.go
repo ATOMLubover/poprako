@@ -45,7 +45,6 @@ func NewApp(st *state.AppState) *iris.Application {
 			{
 				user.Get("/{user_id}", GetUserInfo(st))
 				user.Get("/me", GetMyUserInfo(st))
-				user.Get("/me/stats", GetMyUserStats(st))
 
 				user.Post("/avatar", ResvUserAvatar(st))
 				user.Post("/avatar/confirm", MarkUserAvatarUploaded(st))
@@ -61,7 +60,7 @@ func NewApp(st *state.AppState) *iris.Application {
 				workset.Get("/team/{team_id}", ListWorksets(st))
 				workset.Post("", CreateWorkset(st))
 				workset.Put("/{workset_id}", UpdateWorkset(st))
-				workset.Delete("/{workset_id}", RemoveWorkset(st))
+				workset.Delete("/{workset_id}", DeleteWorkset(st))
 			}
 
 			comic := authorized.Party("/comic")
@@ -70,20 +69,25 @@ func NewApp(st *state.AppState) *iris.Application {
 				comic.Get("/{comic_id}", GetComicById(st))
 				comic.Post("", CreateComic(st))
 				comic.Put("/{comic_id}", UpdateComic(st))
-				comic.Delete("/{comic_id}", RemoveComic(st))
+				comic.Post("/{comic_id}/cover", ResvComicCover(st))
+				comic.Post("/{comic_id}/cover/confirm", MarkComicCoverUploaded(st))
+				comic.Delete("/{comic_id}", DeleteComic(st))
 			}
 
 			chapter := authorized.Party("/chapter")
 			{
 				chapter.Get("/comic/{comic_id}", ListChapters(st))
+				chapter.Get("/{chapter_id}/export", ExportChapter(st))
+				chapter.Get("/{chapter_id}/export/lp", ExportChapterLp(st))
 				chapter.Get("/{chapter_id}/pages", ListChapterPages(st))
 				chapter.Get("/{chapter_id}", GetChapterById(st))
 				chapter.Get("/comic/{comic_id}/pinned", GetPinnedChapter(st))
+				chapter.Post("/{chapter_id}/import", ImportChapter(st))
 				chapter.Post("", CreateChapter(st))
 				chapter.Post("/{chapter_id}/pages/reserve", ResvChapterPages(st))
 				chapter.Put("/{chapter_id}", UpdateChapter(st))
-				chapter.Delete("/{chapter_id}/pages", RemoveChapterPages(st))
-				chapter.Delete("/{chapter_id}", RemoveChapter(st))
+				chapter.Delete("/{chapter_id}/pages", DeleteChapterPages(st))
+				chapter.Delete("/{chapter_id}", DeleteChapter(st))
 			}
 
 			page := authorized.Party("/page")

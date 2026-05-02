@@ -124,8 +124,8 @@ func (a *chapterLogAppImpl) Update(cx context.Context, currUid string, args *val
 	return a.inner.Update(cx, currUid, args)
 }
 
-// `Remove` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) Remove(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
+// `Delete` enriches logger context and forwards call.
+func (a *chapterLogAppImpl) Delete(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -138,5 +138,5 @@ func (a *chapterLogAppImpl) Remove(cx context.Context, currUid string, chapterId
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.Remove(cx, currUid, chapterId)
+	return a.inner.Delete(cx, currUid, chapterId)
 }

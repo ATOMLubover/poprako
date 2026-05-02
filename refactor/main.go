@@ -9,6 +9,8 @@
 package main
 
 import (
+	"context"
+	"os/signal"
 	"poprako-s/internal/api/http"
 	"poprako-s/internal/api/state"
 	app_impl "poprako-s/internal/app/impl"
@@ -18,13 +20,19 @@ import (
 	oss_infra "poprako-s/internal/infra/ext/oss"
 	token_infra "poprako-s/internal/infra/ext/token"
 	repo_infra "poprako-s/internal/infra/repo"
+	worker_infra "poprako-s/internal/infra/worker"
 	"poprako-s/internal/lgr"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
 func main() {
+	runCx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+	defer stop()
+
 	// Load environment variables from .env file if it exists,
 	// otherwise rely on system environment variables.
 	if err := godotenv.Load(); err != nil {
@@ -69,7 +77,6 @@ func main() {
 	unitRepo := repo_infra.NewUnitRepo(gdb)
 	assignmentInvRepo := repo_infra.NewAssignmentInvRepo(gdb)
 	assignmentRepo := repo_infra.NewAssignmentRepo(gdb)
-	userStatsRepo := repo_infra.NewUserStatsRepo(gdb)
 	sysMailRepo := repo_infra.NewSysMailRepo(gdb)
 
 	// Construct all services.
@@ -84,10 +91,15 @@ func main() {
 	unitSvc := svc.UnitSvc{}
 	assignmentInvSvc := svc.NewAssignmentInvSvc()
 	assignmentSvc := svc.NewAssignmentSvc()
+	exportSvc := svc.ChapterExportSvc{}
+	importSvc := svc.ChapterImportSvc{}
 
 	// Construct all external services.
 	ossClient := oss_infra.NewOssClient()
 	tknParser := token_infra.NewJwtParser()
+
+	// Start OSS background worker for pending create/delete message consumption.
+	go worker_infra.NewOssWorker(ossMsgRepo, ossClient).Run(runCx)
 
 	// Initialize event bus and register handlers.
 	// in case of unexpected shutdown, ensure event bus is closed to prevent resource leaks.
@@ -97,72 +109,83 @@ func main() {
 
 	evBus.Sub(event_infra.NewNotifyInvitorHandler(teamRepo, sysMailRepo))
 	evBus.Sub(event_infra.NewUpdateUserActiveHandler(userRepo))
-	evBus.Sub(event_infra.NewUpdateUserStatsOnAssignmentCreatedHandler(userStatsRepo))
-	evBus.Sub(event_infra.NewUpdateUserStatsOnAssignmentRemovedHandler(userStatsRepo))
-	evBus.Sub(event_infra.NewUpdateUserStatsOnChapterPublishedHandler(userStatsRepo))
-	evBus.Sub(event_infra.NewUpdateUserStatsOnChapterRemovedHandler(userStatsRepo))
 
 	evBus.Run()
 
 	// Construct all applications with repositories and services.
 	// DI deps are listed in order of repo, service, external service.
-	userApp := app_impl.NewUserApp(
-		txnCtrl, userRepo, memberRepo, memberInvRepo, ossMsgRepo,
-		userSvc, memberSvc, ossMsgSvc,
-		tknParser, ossClient, evBus,
+	userApp := app_impl.NewUserLogApp(
+		app_impl.NewUserApp(
+			txnCtrl, userRepo, memberRepo, memberInvRepo, ossMsgRepo,
+			userSvc, memberSvc, ossMsgSvc,
+			tknParser, ossClient, evBus,
+		),
 	)
-	teamApp := app_impl.NewTeamApp(
-		teamRepo,
-		ossClient,
+	teamApp := app_impl.NewTeamLogApp(
+		app_impl.NewTeamApp(
+			teamRepo,
+			ossClient,
+		),
 	)
 	worksetApp := app_impl.NewWorksetLogApp(
-		app_impl.NewWorksetApp(txnCtrl, worksetSvc, memberRepo, worksetRepo, errClsf),
+		app_impl.NewWorksetApp(
+			txnCtrl, memberRepo, worksetRepo,
+			worksetSvc,
+			evBus,
+			errClsf,
+		),
 	)
 	comicApp := app_impl.NewComicLogApp(
-		app_impl.NewComicApp(txnCtrl, comicSvc, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, evBus, errClsf),
+		app_impl.NewComicApp(
+			txnCtrl, memberRepo, worksetRepo, comicRepo,
+			ossClient,
+			comicSvc, chapterSvc, assignmentSvc,
+			evBus, errClsf,
+		),
 	)
 	chapterApp := app_impl.NewChapterLogApp(
-		app_impl.NewChapterApp(txnCtrl, chapterSvc, assignmentSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo, evBus, errClsf),
+		app_impl.NewChapterApp(
+			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
+			chapterSvc, assignmentSvc,
+			evBus, errClsf,
+		),
+	)
+	chapterPortApp := app_impl.NewChapterPortLogApp(
+		app_impl.NewChapterPortApp(
+			txnCtrl, chapterRepo, comicRepo, pageRepo, unitRepo, assignmentRepo,
+			unitSvc, exportSvc, importSvc,
+			ossClient, errClsf,
+		),
 	)
 	pageApp := app_impl.NewPageLogApp(
-		app_impl.NewPageApp(txnCtrl, pageSvc, chapterSvc, ossMsgSvc, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo, ossClient, errClsf),
+		app_impl.NewPageApp(
+			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo,
+			pageSvc, chapterSvc, ossMsgSvc,
+			ossClient, errClsf,
+		),
 	)
 	unitApp := app_impl.NewUnitLogApp(
-		app_impl.NewUnitApp(txnCtrl, unitSvc, comicRepo, chapterRepo, pageRepo, unitRepo, assignmentRepo, errClsf),
-	)
-	userStatsApp := app_impl.NewUserStatsLogApp(
-		app_impl.NewUserStatsApp(userStatsRepo),
+		app_impl.NewUnitApp(
+			txnCtrl, comicRepo, chapterRepo, pageRepo, unitRepo, assignmentRepo,
+			unitSvc,
+			errClsf,
+		),
 	)
 	sysMailApp := app_impl.NewSysMailLogApp(
 		app_impl.NewSysMailApp(sysMailRepo),
 	)
 	assignmentInvApp := app_impl.NewAssignmentInvLogApp(
 		app_impl.NewAssignmentInvApp(
-			txnCtrl,
-			assignmentInvSvc,
-			assignmentSvc,
-			userRepo,
-			memberRepo,
-			worksetRepo,
-			comicRepo,
-			chapterRepo,
-			assignmentInvRepo,
-			assignmentRepo,
-			evBus,
-			errClsf,
+			txnCtrl, userRepo, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentInvRepo, assignmentRepo,
+			assignmentInvSvc, assignmentSvc,
+			evBus, errClsf,
 		),
 	)
 	assignmentApp := app_impl.NewAssignmentLogApp(
 		app_impl.NewAssignmentApp(
-			txnCtrl,
+			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
 			assignmentSvc,
-			memberRepo,
-			worksetRepo,
-			comicRepo,
-			chapterRepo,
-			assignmentRepo,
-			evBus,
-			errClsf,
+			evBus, errClsf,
 		),
 	)
 
@@ -173,9 +196,9 @@ func main() {
 		worksetApp,
 		comicApp,
 		chapterApp,
+		chapterPortApp,
 		pageApp,
 		unitApp,
-		userStatsApp,
 		sysMailApp,
 		assignmentInvApp,
 		assignmentApp,

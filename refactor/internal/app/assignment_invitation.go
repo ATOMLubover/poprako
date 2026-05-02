@@ -15,8 +15,8 @@ type AssignmentInvApp interface {
 	// `Create` creates one invitation for assignment.
 	Create(cx context.Context, currUid string, args *val.CreateAssignmentInvArgs) app_res.AppRes[val.CreateAssignmentInvRes]
 
-	// `Remove` removes one invitation by id.
-	Remove(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None]
+	// `Delete` deletes one invitation by id.
+	Delete(cx context.Context, currUid string, invId string) app_res.AppRes[app_res.None]
 
 	// `JoinByInvCode` joins one chapter by invitation code.
 	JoinByInvCode(cx context.Context, currUid string, args *val.JoinAssignmentInvArgs) app_res.AppRes[app_res.None]

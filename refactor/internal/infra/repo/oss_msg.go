@@ -38,7 +38,7 @@ func (r *ossMsgRepoImpl) SavePendingCre(msg *aggr.OssCreMsg) repo_iface.RepoErr 
 		UpdatedAt:  time.Now(),
 	}
 
-	res := r.gdb.
+	updRe := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
 		Where(
 			"resource_type = ? AND resource_id = ? AND operation = ? AND status <> ?",
@@ -49,11 +49,11 @@ func (r *ossMsgRepoImpl) SavePendingCre(msg *aggr.OssCreMsg) repo_iface.RepoErr 
 		).
 		Select("id", "operation", "status", "object_keys", "visible_at", "expire_at", "processing_at", "attempt_count", "last_error", "updated_at").
 		Updates(upd)
-	if res.Error != nil {
-		return res.Error
+	if updRe.Error != nil {
+		return updRe.Error
 	}
 
-	if res.RowsAffected > 0 {
+	if updRe.RowsAffected > 0 {
 		return nil
 	}
 
@@ -136,32 +136,32 @@ func (r *ossMsgRepoImpl) ClaimPending(op enum.OssOp) (*aggr.OssMsg, repo_iface.R
 
 	now := time.Now()
 
-	res := r.gdb.
+	queryRe := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
 		Where("status = ? AND operation = ? AND visible_at <= ?", string(enum.OssMsgStatePending), string(op), now).
 		Order("visible_at ASC").
 		Limit(1).
 		Find(&row)
-	if res.Error != nil {
-		return nil, res.Error
+	if queryRe.Error != nil {
+		return nil, queryRe.Error
 	}
 
-	if res.RowsAffected == 0 {
+	if queryRe.RowsAffected == 0 {
 		return nil, nil
 	}
 
 	upd := entity.NewOssMsgMarkProcUpdRow(now)
 
-	res = r.gdb.
+	updRe := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
 		Where("id = ? AND status = ?", row.Id, string(enum.OssMsgStatePending)).
 		Select("status", "processing_at", "updated_at").
 		Updates(upd)
-	if res.Error != nil {
-		return nil, res.Error
+	if updRe.Error != nil {
+		return nil, updRe.Error
 	}
 
-	if res.RowsAffected == 0 {
+	if updRe.RowsAffected == 0 {
 		// Message is claimed by another worker.
 		return nil, nil
 	}

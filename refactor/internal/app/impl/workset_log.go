@@ -93,8 +93,8 @@ func (a *worksetLogAppImpl) Update(cx context.Context, currUid string, args *val
 	return a.inner.Update(cx, currUid, args)
 }
 
-// `Remove` enriches the logger context then forwards the call.
-func (a *worksetLogAppImpl) Remove(cx context.Context, currUid string, worksetId string) app_res.AppRes[app_res.None] {
+// `Delete` enriches the logger context then forwards the call.
+func (a *worksetLogAppImpl) Delete(cx context.Context, currUid string, worksetId string) app_res.AppRes[app_res.None] {
 	if cx == nil {
 		cx = context.Background()
 	}
@@ -108,5 +108,5 @@ func (a *worksetLogAppImpl) Remove(cx context.Context, currUid string, worksetId
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.Remove(cx, currUid, worksetId)
+	return a.inner.Delete(cx, currUid, worksetId)
 }

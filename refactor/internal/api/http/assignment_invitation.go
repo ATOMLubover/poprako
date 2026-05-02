@@ -57,12 +57,12 @@ func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 
 		var pending *bool
 		if p := cx.URLParam("pending"); p != "" {
-			v, berr := cx.URLParamBool("pending")
-			if berr != nil {
+			pendingVal, boolErr := cx.URLParamBool("pending")
+			if boolErr != nil {
 				res.Reject(cx, iris.StatusBadRequest, "pending 参数格式错误")
 				return
 			}
-			pending = &v
+			pending = &pendingVal
 		}
 
 		re := app.ListByChapter(newReqCx(cx), currUid, &val.ListAssignmentInvArgs{ChapterId: chapterId, Pending: pending, Offset: offset, Limit: limit})
@@ -150,7 +150,7 @@ func DeleteAssignmentInvitation(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := app.Remove(newReqCx(cx), currUid, invId)
+		re := app.Delete(newReqCx(cx), currUid, invId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

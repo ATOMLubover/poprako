@@ -15,6 +15,5 @@ type Prov interface {
 	UnitRepo() UnitRepo
 	AssignmentInvRepo() AssignmentInvRepo
 	AssignmentRepo() AssignmentRepo
-	UserStatsRepo() UserStatsRepo
 	OssMsgRepo() OssMsgRepo
 }

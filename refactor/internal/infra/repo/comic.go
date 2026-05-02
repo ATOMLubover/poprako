@@ -12,6 +12,7 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const chapterPinAlias = "pch"
@@ -27,13 +28,13 @@ func NewComicRepo(gdb *gorm.DB) repo_iface.ComicRepo {
 	return &comicRepoImpl{gdb: gdb}
 }
 
-// `GetById` retrieves one active comic by primary key
+// `GetById` retrieves one comic by primary key
 func (r *comicRepoImpl) GetById(id string, inc ...enum.ComicIncl) (*aggr.Comic, repo_iface.RepoErr) {
 	var row entity.ComicRow
 
 	q := r.gdb.
 		Table(entity.COMIC_TABLE).
-		Where("t_comic.id = ? AND t_comic.deleted_at IS NULL", id)
+		Where("t_comic.id = ?", id)
 
 	q = withComicIncl(q, inc...)
 
@@ -45,13 +46,12 @@ func (r *comicRepoImpl) GetById(id string, inc ...enum.ComicIncl) (*aggr.Comic, 
 	return row.ToComicAggr(), nil
 }
 
-// `List` returns active comics matching query options and includes
+// `List` returns comics matching query options and includes
 func (r *comicRepoImpl) List(opt *query.ListComicOpt, inc ...enum.ComicIncl) ([]*aggr.Comic, repo_iface.RepoErr) {
 	var rows []entity.ComicRow
 
 	q := r.gdb.
-		Table(entity.COMIC_TABLE).
-		Where("t_comic.deleted_at IS NULL")
+		Table(entity.COMIC_TABLE)
 
 	if hasComicSearchFilter(opt) {
 		q = q.Where("t_comic.is_completed = FALSE")
@@ -104,13 +104,12 @@ func (r *comicRepoImpl) List(opt *query.ListComicOpt, inc ...enum.ComicIncl) ([]
 	return result, nil
 }
 
-// `Count` returns active comic count matching query options
+// `Count` returns comic count matching query options
 func (r *comicRepoImpl) Count(opt *query.ListComicOpt) (int64, repo_iface.RepoErr) {
 	var count int64
 
 	q := r.gdb.
-		Table(entity.COMIC_TABLE).
-		Where("t_comic.deleted_at IS NULL")
+		Table(entity.COMIC_TABLE)
 
 	if hasComicSearchFilter(opt) {
 		q = q.Where("t_comic.is_completed = FALSE")
@@ -175,16 +174,16 @@ func (r *comicRepoImpl) Update(upd *aggr.ComicUpd) repo_iface.RepoErr {
 	}
 
 	// Resolve current comic index so fuzzy text always carries index info.
-	cm, err := r.GetById(upd.Id)
+	comic, err := r.GetById(upd.Id)
 	if err != nil {
 		return err
 	}
 
-	updRow.FuzzyTitle = buildComicFuzzyTitle(cm.Index, upd.Author, upd.Title)
+	updRow.FuzzyTitle = buildComicFuzzyTitle(comic.Index, upd.Author, upd.Title)
 
 	err = r.gdb.
 		Table(entity.COMIC_TABLE).
-		Where("t_comic.id = ? AND t_comic.deleted_at IS NULL", upd.Id).
+		Where("t_comic.id = ?", upd.Id).
 		Select("title", "author", "fuzzy_title", "description", "updated_at").
 		Updates(updRow).Error
 
@@ -197,7 +196,7 @@ func (r *comicRepoImpl) UpdateChapterCount(id string, delta int) repo_iface.Repo
 
 	return r.gdb.
 		Table(entity.COMIC_TABLE).
-		Where("t_comic.id = ? AND t_comic.deleted_at IS NULL", id).
+		Where("t_comic.id = ?", id).
 		Updates(map[string]any{
 			"chapter_count": gorm.Expr("GREATEST(chapter_count + ?, 0)", delta),
 			"updated_at":    now,
@@ -215,26 +214,72 @@ func (r *comicRepoImpl) TouchLastActive(id string) repo_iface.RepoErr {
 
 	err := r.gdb.
 		Table(entity.COMIC_TABLE).
-		Where("t_comic.id = ? AND t_comic.deleted_at IS NULL", id).
+		Where("t_comic.id = ?", id).
 		Select("last_active_at", "updated_at").
 		Updates(updRow).Error
 
 	return err
 }
 
-// `Remove` soft-deletes one comic by setting `deleted_at`
-func (r *comicRepoImpl) Remove(id string) repo_iface.RepoErr {
+// `PrefillCoverKey` writes one reserved cover key before client upload starts.
+func (r *comicRepoImpl) PrefillCoverKey(id string, key string) repo_iface.RepoErr {
 	now := time.Now()
 
-	err := r.gdb.
+	return r.gdb.
 		Table(entity.COMIC_TABLE).
-		Where("t_comic.id = ? AND t_comic.deleted_at IS NULL", id).
+		Where("t_comic.id = ?", id).
 		Updates(map[string]any{
-			"deleted_at": now,
-			"updated_at": now,
+			"cover_key":      key,
+			"cover_uploaded": false,
+			"updated_at":     now,
 		}).Error
+}
 
-	return err
+// `MarkCoverUploaded` marks one comic cover upload as completed.
+func (r *comicRepoImpl) MarkCoverUploaded(id string) repo_iface.RepoErr {
+	now := time.Now()
+
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Updates(map[string]any{
+			"cover_uploaded": true,
+			"updated_at":     now,
+		}).Error
+}
+
+// `IncrementChapterNextIndex` allocates one next chapter index from one comic row.
+func (r *comicRepoImpl) IncrementChapterNextIndex(id string) (int, repo_iface.RepoErr) {
+	type nextIndexRow struct {
+		NextIndex int `gorm:"column:chapter_next_index"`
+	}
+
+	var row nextIndexRow
+
+	updRe := r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Select("chapter_next_index").
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "chapter_next_index"}}}).
+		Updates(map[string]any{"chapter_next_index": gorm.Expr("chapter_next_index + 1")}).
+		Scan(&row)
+	if updRe.Error != nil {
+		return 0, updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+
+	return row.NextIndex - 1, nil
+}
+
+// `Delete` hard-deletes one comic row by id.
+func (r *comicRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Delete(&entity.ComicRow{}).Error
 }
 
 // `withComicIncl` maps typed include options to preload actions
@@ -254,8 +299,7 @@ func withPinnedChapterJoin(q *gorm.DB) *gorm.DB {
 	return q.Joins(
 		"LEFT JOIN t_chapter AS " + chapterPinAlias +
 			" ON " + chapterPinAlias + ".comic_id = t_comic.id" +
-			" AND " + chapterPinAlias + ".pinned = TRUE" +
-			" AND " + chapterPinAlias + ".deleted_at IS NULL",
+			" AND " + chapterPinAlias + ".pinned = TRUE",
 	)
 }
 

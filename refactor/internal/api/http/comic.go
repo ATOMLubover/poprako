@@ -130,12 +130,12 @@ func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, 
 		return nil, nil
 	}
 
-	v, err := strconv.Atoi(phaseVal)
+	phaseInt, err := strconv.Atoi(phaseVal)
 	if err != nil {
 		return nil, err
 	}
 
-	phase := enum.WorkflowPhase(v)
+	phase := enum.WorkflowPhase(phaseInt)
 	if phase < enum.WorkflowPending || phase > enum.WorkflowCompleted {
 		return nil, strconv.ErrSyntax
 	}
@@ -283,23 +283,25 @@ func UpdateComic(st *state.AppState) iris.Handler {
 	}
 }
 
-// `RemoveComic` godoc
-// @Summary Remove Comic
+// `ResvComicCover` godoc
+// @Summary Reserve Comic Cover Upload
 //
-//	Soft-delete one comic by id
-//	The caller must be an admin of the owning team
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//	Reserve a signed upload url for one comic cover.
+//	The caller must be an admin of the owning team.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
 //
 // @Tags comic
 // @Security ApiKeyAuth
+// @Accept json
 // @Produce json
 // @Param comic_id path string true "comic id"
-// @Success 200 {object} res.HttpRes
+// @Param body body val.ResvComicCoverBody true "reserve comic cover args"
+// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ResvComicCoverRes}"
 // @Failure 400 {object} res.HttpRes
 // @Failure 401 {object} res.HttpRes
 // @Failure 500 {object} res.HttpRes
-// @Router /comic/{comic_id} [delete]
-func RemoveComic(st *state.AppState) iris.Handler {
+// @Router /comic/{comic_id}/cover [post]
+func ResvComicCover(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
 	return func(cx iris.Context) {
@@ -315,7 +317,99 @@ func RemoveComic(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := comicApp.Remove(newReqCx(cx), currUid, comicId)
+		var args val.ResvComicCoverArgs
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		args.ComicId = comicId
+
+		re := comicApp.ResvCover(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
+// `MarkComicCoverUploaded` godoc
+// @Summary Confirm Comic Cover Uploaded
+//
+//	Confirm one comic cover upload after client upload completed.
+//	The caller must be an admin of the owning team.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
+//
+// @Tags comic
+// @Security ApiKeyAuth
+// @Produce json
+// @Param comic_id path string true "comic id"
+// @Success 200 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes
+// @Failure 401 {object} res.HttpRes
+// @Failure 500 {object} res.HttpRes
+// @Router /comic/{comic_id}/cover/confirm [post]
+func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
+	comicApp := st.ComicApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		comicId := cx.Params().Get("comic_id")
+		if comicId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 comic_id 参数")
+			return
+		}
+
+		re := comicApp.MarkCoverUploaded(newReqCx(cx), currUid, comicId)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
+// `DeleteComic` godoc
+// @Summary Delete Comic
+//
+//	Hard-delete one comic by id
+//	The caller must be an admin of the owning team
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+// @Tags comic
+// @Security ApiKeyAuth
+// @Produce json
+// @Param comic_id path string true "comic id"
+// @Success 200 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes
+// @Failure 401 {object} res.HttpRes
+// @Failure 500 {object} res.HttpRes
+// @Router /comic/{comic_id} [delete]
+func DeleteComic(st *state.AppState) iris.Handler {
+	comicApp := st.ComicApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		comicId := cx.Params().Get("comic_id")
+		if comicId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 comic_id 参数")
+			return
+		}
+
+		re := comicApp.Delete(newReqCx(cx), currUid, comicId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

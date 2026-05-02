@@ -6,6 +6,7 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // `teamRepoImpl` implements `repo_iface.TeamRepo` with `gorm`.
@@ -33,4 +34,30 @@ func (r *teamRepoImpl) GetById(id string) (*aggr.Team, repo_iface.RepoErr) {
 
 	// Convert the row into `aggr.Team`.
 	return row.ToTeamAggr(), nil
+}
+
+// `IncrementWorksetNextIndex` allocates one next workset index from one team row.
+func (r *teamRepoImpl) IncrementWorksetNextIndex(id string) (int, repo_iface.RepoErr) {
+	type nextIndexRow struct {
+		NextIndex int `gorm:"column:workset_next_index"`
+	}
+
+	var row nextIndexRow
+
+	updRe := r.gdb.
+		Table(entity.TEAM_TABLE).
+		Where("id = ?", id).
+		Select("workset_next_index").
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "workset_next_index"}}}).
+		Updates(map[string]any{"workset_next_index": gorm.Expr("workset_next_index + 1")}).
+		Scan(&row)
+	if updRe.Error != nil {
+		return 0, updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+
+	return row.NextIndex - 1, nil
 }

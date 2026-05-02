@@ -168,10 +168,10 @@ func UpdateWorkset(st *state.AppState) iris.Handler {
 	}
 }
 
-// `RemoveWorkset` godoc
-// @Summary Remove Workset
+// `DeleteWorkset` godoc
+// @Summary Delete Workset
 //
-//	Soft-delete a workset by id.
+//	Hard-delete a workset by id.
 //	The caller must be an admin of the workset's owning team.
 //	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
 //
@@ -184,7 +184,7 @@ func UpdateWorkset(st *state.AppState) iris.Handler {
 // @Failure 401 {object} res.HttpRes
 // @Failure 500 {object} res.HttpRes
 // @Router /workset/{workset_id} [delete]
-func RemoveWorkset(st *state.AppState) iris.Handler {
+func DeleteWorkset(st *state.AppState) iris.Handler {
 	worksetApp := st.WorksetApp
 
 	return func(cx iris.Context) {
@@ -200,7 +200,7 @@ func RemoveWorkset(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := worksetApp.Remove(newReqCx(cx), currUid, worksetId)
+		re := worksetApp.Delete(newReqCx(cx), currUid, worksetId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

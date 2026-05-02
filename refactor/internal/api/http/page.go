@@ -109,8 +109,8 @@ func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 	}
 }
 
-// `RemoveChapterPages` deletes all pages under one chapter.
-func RemoveChapterPages(st *state.AppState) iris.Handler {
+// `DeleteChapterPages` deletes all pages under one chapter.
+func DeleteChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
 	return func(cx iris.Context) {
@@ -126,7 +126,7 @@ func RemoveChapterPages(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := pageApp.RemoveByChapterId(newReqCx(cx), currUid, chapterId)
+		re := pageApp.DeleteByChapterId(newReqCx(cx), currUid, chapterId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

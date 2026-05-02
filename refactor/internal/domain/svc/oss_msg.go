@@ -39,3 +39,26 @@ func (OssMsgSvc) SavePendingCre(
 		CreatedAt: now,
 	})
 }
+
+// `SavePendingDel` writes one pending OSS delete message with retry metadata.
+func (OssMsgSvc) SavePendingDel(
+	ossMsgRepo repo_iface.OssMsgRepo,
+	resTyp enum.OssResTyp,
+	resId string,
+	keys []string,
+) error {
+	id := util.GenId("oss_msg")
+	now := time.Now()
+	exp := now.Add(OSS_CRE_EXP)
+
+	return ossMsgRepo.SavePendingDel(&aggr.OssDelMsg{
+		Id:        id,
+		ResTyp:    resTyp,
+		ResId:     resId,
+		Status:    enum.OssMsgStatePending,
+		ObjKeys:   keys,
+		VisibleAt: now,
+		ExpireAt:  exp,
+		CreatedAt: now,
+	})
+}

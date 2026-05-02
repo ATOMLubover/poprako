@@ -10,6 +10,7 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // `worksetRepoImpl` is the GORM-backed implementation of `repo_iface.WorksetRepo`.
@@ -23,13 +24,13 @@ func NewWorksetRepo(gdb *gorm.DB) repo_iface.WorksetRepo {
 	return &worksetRepoImpl{gdb: gdb}
 }
 
-// `GetById` retrieves a single active workset by its primary key.
+// `GetById` retrieves a single workset by its primary key.
 func (r *worksetRepoImpl) GetById(id string, inc ...enum.WorksetIncl) (*aggr.Workset, repo_iface.RepoErr) {
 	var row entity.WorksetRow
 
 	q := r.gdb.
 		Table(entity.WORKSET_TABLE).
-		Where("id = ? AND deleted_at IS NULL", id)
+		Where("id = ?", id)
 
 	q = withWorksetIncl(q, inc...)
 
@@ -41,13 +42,12 @@ func (r *worksetRepoImpl) GetById(id string, inc ...enum.WorksetIncl) (*aggr.Wor
 	return row.ToWorksetAggr(), nil
 }
 
-// `List` returns all active worksets matching the given options, ordered by `index` ascending.
+// `List` returns all worksets matching the given options, ordered by `index` ascending.
 func (r *worksetRepoImpl) List(opt *query.ListWorksetOpt, inc ...enum.WorksetIncl) ([]*aggr.Workset, repo_iface.RepoErr) {
 	var rows []entity.WorksetRow
 
 	q := r.gdb.
-		Table(entity.WORKSET_TABLE).
-		Where("deleted_at IS NULL")
+		Table(entity.WORKSET_TABLE)
 
 	// Apply optional filters.
 	if opt != nil && opt.TeamId != nil {
@@ -79,13 +79,12 @@ func (r *worksetRepoImpl) List(opt *query.ListWorksetOpt, inc ...enum.WorksetInc
 	return result, nil
 }
 
-// `Count` returns the number of active worksets matching the given options.
+// `Count` returns the number of worksets matching the given options.
 func (r *worksetRepoImpl) Count(opt *query.ListWorksetOpt) (int64, repo_iface.RepoErr) {
 	var count int64
 
 	q := r.gdb.
-		Table(entity.WORKSET_TABLE).
-		Where("deleted_at IS NULL")
+		Table(entity.WORKSET_TABLE)
 
 	// Apply optional filters.
 	if opt != nil && opt.TeamId != nil {
@@ -127,7 +126,7 @@ func (r *worksetRepoImpl) Update(upd *aggr.WorksetUpd) repo_iface.RepoErr {
 
 	err := r.gdb.
 		Table(entity.WORKSET_TABLE).
-		Where("id = ? AND deleted_at IS NULL", upd.Id).
+		Where("id = ?", upd.Id).
 		Select("name", "description", "updated_at").
 		Updates(updRow).Error
 
@@ -140,7 +139,7 @@ func (r *worksetRepoImpl) UpdateComicCount(id string, delta int) repo_iface.Repo
 
 	err := r.gdb.
 		Table(entity.WORKSET_TABLE).
-		Where("id = ? AND deleted_at IS NULL", id).
+		Where("id = ?", id).
 		Updates(map[string]any{
 			"comic_count": gorm.Expr("GREATEST(comic_count + ?, 0)", delta),
 			"updated_at":  now,
@@ -149,16 +148,38 @@ func (r *worksetRepoImpl) UpdateComicCount(id string, delta int) repo_iface.Repo
 	return err
 }
 
-// `Remove` marks the workset as deleted by setting `deleted_at` to the current time.
-func (r *worksetRepoImpl) Remove(id string) repo_iface.RepoErr {
-	now := time.Now()
+// `IncrementComicNextIndex` allocates one next comic index from one workset row.
+func (r *worksetRepoImpl) IncrementComicNextIndex(id string) (int, repo_iface.RepoErr) {
+	type nextIndexRow struct {
+		NextIndex int `gorm:"column:comic_next_index"`
+	}
 
-	err := r.gdb.
+	var row nextIndexRow
+
+	updRe := r.gdb.
 		Table(entity.WORKSET_TABLE).
-		Where("id = ? AND deleted_at IS NULL", id).
-		UpdateColumn("deleted_at", now).Error
+		Where("id = ?", id).
+		Select("comic_next_index").
+		Clauses(clause.Returning{Columns: []clause.Column{{Name: "comic_next_index"}}}).
+		Updates(map[string]any{"comic_next_index": gorm.Expr("comic_next_index + 1")}).
+		Scan(&row)
+	if updRe.Error != nil {
+		return 0, updRe.Error
+	}
 
-	return err
+	if updRe.RowsAffected == 0 {
+		return 0, gorm.ErrRecordNotFound
+	}
+
+	return row.NextIndex - 1, nil
+}
+
+// `Delete` hard-deletes one workset row by id.
+func (r *worksetRepoImpl) Delete(id string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.WORKSET_TABLE).
+		Where("id = ?", id).
+		Delete(&entity.WorksetRow{}).Error
 }
 
 // `withWorksetIncl` applies typed include options to the base query.
