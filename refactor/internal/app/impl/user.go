@@ -252,6 +252,31 @@ func (a *userAppImpl) GetInfo(cx context.Context, id string) app_res.AppRes[val.
 	return app_res.Accept(userVal)
 }
 
+// `Update` updates user profile by put semantics.
+func (a *userAppImpl) Update(cx context.Context, args *val.UserUpdArgs) app_res.AppRes[app_res.None] {
+	lgr := app_util.TakeLgr(cx)
+
+	if re := vfyUserUpdArgs(args); re.IsReject() {
+		return app_res.Reject[app_res.None](re.Code(), re.Msg())
+	}
+
+	if err := a.userRepo.Update(&aggr.UserUpd{Id: args.Id, Qid: args.Qid, Name: args.Name}); err != nil {
+		if repo_infra.IsNotFound(err) {
+			return app_res.Reject[app_res.None](app_res.BadRequest, "用户不存在")
+		}
+
+		if repo_infra.IsDupKey(err) {
+			return app_res.Reject[app_res.None](app_res.Conflict, "qq 或昵称已被使用")
+		}
+
+		lgr.Error("[userAppImpl.Update] failed to update user", zap.Error(err))
+
+		return app_res.Reject[app_res.None](app_res.ServerError, "更新用户信息失败")
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
 // func (a *userAppImpl) UpdateInfo(cx context.Context, args *val.UserUpdateArgs) app_res.AppRes[app_res.None] {
 // }
 

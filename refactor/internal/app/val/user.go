@@ -42,12 +42,13 @@ type UserRegRes struct {
 	Token  token_iface.SignedToken `json:"token"`
 }
 
-// type UserUpdateArgs struct {
-// 	Id string `json:"id"`
-//
-// 	Name string `json:"name"`
-// 	Qid  string `json:"qq"`
-// }
+// `UserUpdArgs` holds mutable fields for one user put update.
+type UserUpdArgs struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
+	Qid  string `json:"qq"`
+}
 
 // `ResvUserAvatarArgs` provides the file extension
 // of the avatar to be uploaded, so that the server and

@@ -10,11 +10,9 @@ import (
 
 // `ListAssignmentInvitations` godoc
 // @Summary List Assignment Invitations
-//
-//	List assignment invitations for one chapter
-//	The caller must be reviewer of the target chapter
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description List assignment invitations for one chapter
+// @Description The caller must be reviewer of the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment-invitation
 // @Security ApiKeyAuth
 // @Produce json
@@ -22,11 +20,11 @@ import (
 // @Param pending query bool false "pending filter"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=[]val.AssignmentInvVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment-invitation/chapter/{chapter_id} [get]
+// @Success 200 {object} res.HttpRes[[]val.AssignmentInvVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignment-invitations/chapter/{chapter_id} [get]
 func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 
@@ -77,21 +75,19 @@ func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 
 // `CreateAssignmentInvitation` godoc
 // @Summary Create Assignment Invitation
-//
-//	Create assignment invitation for one chapter
-//	The caller must be reviewer of the target chapter
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Create assignment invitation for one chapter
+// @Description The caller must be reviewer of the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment-invitation
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param body body val.CreateAssignmentInvArgs true "create assignment invitation args"
-// @Success 201 {object} res.HttpRes "res.HttpRes{data=val.CreateAssignmentInvRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment-invitation [post]
+// @Success 201 {object} res.HttpRes[val.CreateAssignmentInvRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignment-invitations [post]
 func CreateAssignmentInvitation(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 
@@ -120,20 +116,18 @@ func CreateAssignmentInvitation(st *state.AppState) iris.Handler {
 
 // `DeleteAssignmentInvitation` godoc
 // @Summary Delete Assignment Invitation
-//
-//	Delete assignment invitation by id
-//	The caller must be reviewer of the target chapter
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Delete assignment invitation by id
+// @Description The caller must be reviewer of the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment-invitation
 // @Security ApiKeyAuth
 // @Produce json
 // @Param invitation_id path string true "invitation id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment-invitation/{invitation_id} [delete]
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignment-invitations/{invitation_id} [delete]
 func DeleteAssignmentInvitation(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 
@@ -162,20 +156,18 @@ func DeleteAssignmentInvitation(st *state.AppState) iris.Handler {
 
 // `JoinByAssignmentInvitation` godoc
 // @Summary Join Chapter By Invitation
-//
-//	Join chapter collaboration by assignment invitation code
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Join chapter collaboration by assignment invitation code
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment-invitation
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param body body val.JoinAssignmentInvArgs true "join args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment-invitation/join [post]
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignment-invitations/join [post]
 func JoinByAssignmentInvitation(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 

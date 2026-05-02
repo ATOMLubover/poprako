@@ -100,6 +100,32 @@ func (a *userLogAppImpl) Register(cx context.Context, args *val.UserRegArgs) app
 	return a.inner.Register(cx, args)
 }
 
+// `Update` validates args, enriches logger context, and forwards the call.
+func (a *userLogAppImpl) Update(cx context.Context, args *val.UserUpdArgs) app_res.AppRes[app_res.None] {
+	// Ensure `cx` is always non-nil for downstream calls.
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	// Reject nil args early to prevent nil dereference in `inner`.
+	if args == nil {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "请求参数不能为空")
+	}
+
+	// Resolve logger from context and fallback to global logger.
+	lgr := app_util.TakeLgr(cx)
+	if lgr == nil {
+		lgr = zap.L()
+	}
+
+	// Attach stable input fields and save logger back to context.
+	lgr = lgr.With(zap.String("args.id", args.Id), zap.String("args.qid", args.Qid))
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.Update(cx, args)
+}
+
 // `ResvAvatar` validates args, enriches logger context, and forwards the call.
 func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes] {
 	// Ensure `cx` is always non-nil for downstream calls.

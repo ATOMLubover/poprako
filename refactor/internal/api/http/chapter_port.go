@@ -12,20 +12,18 @@ import (
 
 // `ExportChapter` godoc
 // @Summary Export Chapter
-//
-//	Export one chapter in JSON format.
-//	The caller must have any assignment on the target chapter.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Export one chapter in JSON format
+// @Description The caller must have any assignment on the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
 // @Param chapter_id path string true "chapter id"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ChapterExportVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 403 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ChapterExportVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 403 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/{chapter_id}/export [get]
 func ExportChapter(st *state.AppState) iris.Handler {
 	chapterPortApp := st.ChapterPortApp
@@ -55,20 +53,18 @@ func ExportChapter(st *state.AppState) iris.Handler {
 
 // `ExportChapterLp` godoc
 // @Summary Export Chapter LabelPlus
-//
-//	Export one chapter in LabelPlus text format.
-//	The caller must have any assignment on the target chapter.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Export one chapter in LabelPlus text format
+// @Description The caller must have any assignment on the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce text/plain
 // @Param chapter_id path string true "chapter id"
 // @Success 200 {string} string
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 403 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 403 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/{chapter_id}/export/lp [get]
 func ExportChapterLp(st *state.AppState) iris.Handler {
 	chapterPortApp := st.ChapterPortApp
@@ -106,22 +102,20 @@ func ExportChapterLp(st *state.AppState) iris.Handler {
 
 // `ImportChapter` godoc
 // @Summary Import Chapter
-//
-//	Import one chapter from Poprako JSON or LabelPlus text content.
-//	The caller must be translator or proofreader of the target chapter.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Import one chapter from Poprako JSON or LabelPlus text content
+// @Description The caller must be translator or proofreader of the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param chapter_id path string true "chapter id"
 // @Param body body val.ImportChapterBody true "import chapter args"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ImportChapterRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 403 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ImportChapterRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 403 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/{chapter_id}/import [post]
 func ImportChapter(st *state.AppState) iris.Handler {
 	chapterPortApp := st.ChapterPortApp

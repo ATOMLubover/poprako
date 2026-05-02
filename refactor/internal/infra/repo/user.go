@@ -87,6 +87,27 @@ func (r *userRepoImpl) Register(reg *aggr.UserReg) (*aggr.User, repo_iface.RepoE
 	return r.GetById(regRow.Id)
 }
 
+// `Update` applies put-style mutable fields to one user row.
+func (r *userRepoImpl) Update(upd *aggr.UserUpd) repo_iface.RepoErr {
+	updRe := r.gdb.
+		Table(entity.USER_TABLE).
+		Where("id = ?", upd.Id).
+		Updates(map[string]any{
+			"nickname":   upd.Name,
+			"qid":        upd.Qid,
+			"updated_at": time.Now(),
+		})
+	if updRe.Error != nil {
+		return updRe.Error
+	}
+
+	if updRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
 // `Refresh` updates the `last_active_at` timestamp for the given user id
 func (r *userRepoImpl) Refresh(id string, activeAt time.Time) repo_iface.RepoErr {
 	return r.gdb.

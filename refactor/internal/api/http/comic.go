@@ -13,11 +13,9 @@ import (
 
 // `ListComics` godoc
 // @Summary List Comics
-//
-//	List active comics for one workset
-//	The caller must be a member of the target workset team
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description List active comics for one workset
+// @Description The caller must be a member of the target workset team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Produce json
@@ -31,10 +29,10 @@ import (
 // @Param publish_phase query int false "publish phase 0 pending 1 ongoing 2 completed"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=[]val.ComicVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[[]val.ComicVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic/workset/{workset_id} [get]
 func ListComics(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
@@ -123,7 +121,7 @@ func ListComics(st *state.AppState) iris.Handler {
 	}
 }
 
-// `parseWorkflowPhaseParam` parses one workflow phase query parameter.
+// `parseWorkflowPhaseParam` parses one workflow phase query parameter
 func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, error) {
 	phaseVal := cx.URLParamDefault(key, "")
 	if phaseVal == "" {
@@ -145,20 +143,18 @@ func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, 
 
 // `GetComicById` godoc
 // @Summary Get Comic By Id
-//
-//	Get one comic by id.
-//	The caller must be a member of the owning team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Get one comic by id
+// @Description The caller must be a member of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Produce json
 // @Param comic_id path string true "comic id"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ComicVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 404 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ComicVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 404 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic/{comic_id} [get]
 func GetComicById(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
@@ -188,20 +184,18 @@ func GetComicById(st *state.AppState) iris.Handler {
 
 // `CreateComic` godoc
 // @Summary Create Comic
-//
-//	Create one comic under a workset
-//	The caller must be an admin of the target workset team
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Create one comic under a workset
+// @Description The caller must be an admin of the target workset team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param body body val.CreateComicArgs true "create comic args"
-// @Success 201 {object} res.HttpRes "res.HttpRes{data=val.ComicCreatedRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 201 {object} res.HttpRes[val.ComicCreatedRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic [post]
 func CreateComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
@@ -232,21 +226,19 @@ func CreateComic(st *state.AppState) iris.Handler {
 
 // `UpdateComic` godoc
 // @Summary Update Comic
-//
-//	Update comic fields with put semantics
-//	The caller must be an admin of the owning team
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Update comic fields with PUT semantics
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param comic_id path string true "comic id"
 // @Param body body val.ComicUpdArgs true "update comic args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic/{comic_id} [put]
 func UpdateComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
@@ -285,21 +277,19 @@ func UpdateComic(st *state.AppState) iris.Handler {
 
 // `ResvComicCover` godoc
 // @Summary Reserve Comic Cover Upload
-//
-//	Reserve a signed upload url for one comic cover.
-//	The caller must be an admin of the owning team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Reserve a signed upload URL for one comic cover
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param comic_id path string true "comic id"
 // @Param body body val.ResvComicCoverBody true "reserve comic cover args"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ResvComicCoverRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ResvComicCoverRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic/{comic_id}/cover [post]
 func ResvComicCover(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
@@ -337,19 +327,17 @@ func ResvComicCover(st *state.AppState) iris.Handler {
 
 // `MarkComicCoverUploaded` godoc
 // @Summary Confirm Comic Cover Uploaded
-//
-//	Confirm one comic cover upload after client upload completed.
-//	The caller must be an admin of the owning team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Confirm one comic cover upload after client upload completed
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Produce json
 // @Param comic_id path string true "comic id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic/{comic_id}/cover/confirm [post]
 func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
@@ -379,19 +367,17 @@ func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
 
 // `DeleteComic` godoc
 // @Summary Delete Comic
-//
-//	Hard-delete one comic by id
-//	The caller must be an admin of the owning team
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Hard-delete one comic by id
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags comic
 // @Security ApiKeyAuth
 // @Produce json
 // @Param comic_id path string true "comic id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /comic/{comic_id} [delete]
 func DeleteComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp

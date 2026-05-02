@@ -9,6 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// `LogLatency` is an Iris middleware that records request latency
+// In production (`EnvProd`) it is a no-op to avoid overhead
+// In all other environments it logs method, path, status and duration at debug level
 func LogLatency(cf *cfg.AppCfg) iris.Handler {
 	if cf.Env == cfg.EnvProd {
 		return func(cx iris.Context) {

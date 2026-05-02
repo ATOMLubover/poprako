@@ -1,5 +1,6 @@
 package query
 
+// `ListMemberInvOpt` defines filters and pagination for member invitation listing.
 type ListMemberInvOpt struct {
 	// `TeamId` is required, as we only list invitations of a team.
 	TeamId string

@@ -97,10 +97,24 @@ type memberInvMarkCompletedUpdRow struct {
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
+// `memberInvUpdRow` maps mutable columns for one invitation put update.
+type memberInvUpdRow struct {
+	RoleMask  int64     `gorm:"column:role_mask"`
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
 // `NewMemberInvMarkCompletedUpdRow` builds update row for `MarkCompleted`
 func NewMemberInvMarkCompletedUpdRow() *memberInvMarkCompletedUpdRow {
 	return &memberInvMarkCompletedUpdRow{
 		Pending:   false,
+		UpdatedAt: time.Now(),
+	}
+}
+
+// `NewMemberInvUpdRowFromAggr` builds update row from invitation update aggregate.
+func NewMemberInvUpdRowFromAggr(upd *aggr.MemberInvUpd) *memberInvUpdRow {
+	return &memberInvUpdRow{
+		RoleMask:  int64(upd.RoleMask),
 		UpdatedAt: time.Now(),
 	}
 }

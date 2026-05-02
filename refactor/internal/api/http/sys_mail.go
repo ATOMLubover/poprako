@@ -10,19 +10,17 @@ import (
 
 // `ListSysMail` godoc
 // @Summary List Unread System Mails
-//
-//	List unread system mails for current authorized user with pagination.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description List unread system mails for current authorized user with pagination
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags sys-mail
 // @Security ApiKeyAuth
 // @Produce json
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=[]val.SysMailVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[[]val.SysMailVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /sys-mail [get]
 func ListSysMail(st *state.AppState) iris.Handler {
 	sysMailApp := st.SysMailApp
@@ -63,18 +61,16 @@ func ListSysMail(st *state.AppState) iris.Handler {
 
 // `MarkSysMailRead` godoc
 // @Summary Mark System Mail Read
-//
-//	Mark one system mail as read for current authorized user.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Mark one system mail as read for current authorized user
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags sys-mail
 // @Security ApiKeyAuth
 // @Produce json
 // @Param sys_mail_id path string true "system mail id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /sys-mail/{sys_mail_id}/read [post]
 func MarkSysMailRead(st *state.AppState) iris.Handler {
 	sysMailApp := st.SysMailApp

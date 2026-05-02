@@ -15,3 +15,19 @@ type Team struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+// `TeamCre` holds immutable fields for one team creation.
+type TeamCre struct {
+	Id string
+
+	Name string
+	Desc string
+}
+
+// `TeamUpd` holds mutable fields for one team put update.
+type TeamUpd struct {
+	Id string
+
+	Name string
+	Desc string
+}

@@ -18,7 +18,8 @@ type UserRepo interface {
 	// `Register` creates a new user,
 	Register(reg *aggr.UserReg) (*aggr.User, RepoErr)
 
-	// Update(upd *aggr.UserUpd) RepoErr
+	// `Update` applies put-style mutable fields to one user row.
+	Update(upd *aggr.UserUpd) RepoErr
 
 	// // `Remove` executes a **soft** delete on given user id.
 	// Remove(id string) RepoErr

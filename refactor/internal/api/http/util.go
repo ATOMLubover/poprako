@@ -13,6 +13,10 @@ import (
 	"go.uber.org/zap"
 )
 
+// `takeCurrUid` extracts the current user id from the Iris context
+// It reads the `UserToken` stored by `Auth` middleware under `UtkKey`
+// Returns the user id and `true` on success, or an empty string and `false`
+// when the token is missing or invalid
 func takeCurrUid(cx iris.Context) (string, bool) {
 	utk, ok := cx.Values().Get(middleware.UtkKey).(*aggr.UserToken)
 	if !ok || utk == nil {
@@ -22,6 +26,9 @@ func takeCurrUid(cx iris.Context) (string, bool) {
 	return utk.UserId, true
 }
 
+// `newReqCx` creates a request-scoped `context.Context` from an Iris context
+// It injects the request id (from middleware or a newly generated one) into
+// a zap logger attachment, which `app` layer constructors consume via `app_util`
 func newReqCx(cx iris.Context) context.Context {
 	reqId := requestid.Get(cx)
 	if reqId == "" {

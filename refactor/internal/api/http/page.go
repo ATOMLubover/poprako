@@ -8,7 +8,22 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// `ResvChapterPages` reserves upload slots for all pages of one chapter.
+// `ResvChapterPages` godoc
+// @Summary Reserve Chapter Pages Upload
+// @Description Reserve signed upload URLs for all pages of one chapter
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags chapter
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param chapter_id path string true "chapter id"
+// @Param body body val.ResvChapterPagesArgs true "reserve chapter pages args"
+// @Success 200 {object} res.HttpRes[val.ResvChapterPagesRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /chapter/{chapter_id}/pages/reserve [post]
 func ResvChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -42,7 +57,22 @@ func ResvChapterPages(st *state.AppState) iris.Handler {
 	}
 }
 
-// `ListChapterPages` lists pages under one chapter.
+// `ListChapterPages` godoc
+// @Summary List Chapter Pages
+// @Description List pages under one chapter with pagination
+// @Description The caller must be a member of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags chapter
+// @Security ApiKeyAuth
+// @Produce json
+// @Param chapter_id path string true "chapter id"
+// @Param offset query int false "pagination offset"
+// @Param limit query int false "pagination limit"
+// @Success 200 {object} res.HttpRes[[]val.PageVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /chapter/{chapter_id}/pages [get]
 func ListChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -82,7 +112,20 @@ func ListChapterPages(st *state.AppState) iris.Handler {
 	}
 }
 
-// `MarkPageImageUploaded` confirms one page image upload.
+// `MarkPageImageUploaded` godoc
+// @Summary Confirm Page Image Uploaded
+// @Description Confirm one page image upload after client upload completed
+// @Description The caller must be assigned to the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags page
+// @Security ApiKeyAuth
+// @Produce json
+// @Param page_id path string true "page id"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /page/{page_id}/image/uploaded [post]
 func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -109,7 +152,20 @@ func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 	}
 }
 
-// `DeleteChapterPages` deletes all pages under one chapter.
+// `DeleteChapterPages` godoc
+// @Summary Delete Chapter Pages
+// @Description Hard-delete all pages under one chapter
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags chapter
+// @Security ApiKeyAuth
+// @Produce json
+// @Param chapter_id path string true "chapter id"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /chapter/{chapter_id}/pages [delete]
 func DeleteChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 

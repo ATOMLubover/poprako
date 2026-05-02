@@ -8,8 +8,15 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// `UtkKey` is the context key under which the parsed `UserToken` is stored
+// Both `Auth` middleware (writer) and `takeCurrUid` (reader) use this key
 const UtkKey = "user_token"
 
+// `Auth` is an Iris middleware that extracts and validates a JWT token
+// It reads the token from the `authorization` cookie first, falling back
+// to the `Authorization` header when the cookie is absent
+// On success the parsed `UserToken` is stored in the Iris context under `UtkKey`
+// On failure a 401 `res.HttpRes` rejection is written and the handler chain stops
 func Auth() iris.Handler {
 	parser := token_impl.NewJwtParser()
 

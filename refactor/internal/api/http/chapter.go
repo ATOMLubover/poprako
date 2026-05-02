@@ -10,21 +10,19 @@ import (
 
 // `ListChapters` godoc
 // @Summary List Chapters
-//
-//	List chapters for one comic.
-//	The caller must be a member of the target comic team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description List chapters for one comic
+// @Description The caller must be a member of the target comic team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
 // @Param comic_id path string true "comic id"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=[]val.ChapterVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[[]val.ChapterVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/comic/{comic_id} [get]
 func ListChapters(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
@@ -68,20 +66,18 @@ func ListChapters(st *state.AppState) iris.Handler {
 
 // `GetChapterById` godoc
 // @Summary Get Chapter By Id
-//
-//	Get one chapter by id.
-//	The caller must be a member of the owning team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Get one chapter by id
+// @Description The caller must be a member of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
 // @Param chapter_id path string true "chapter id"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ChapterVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 404 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ChapterVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 404 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/{chapter_id} [get]
 func GetChapterById(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
@@ -111,19 +107,17 @@ func GetChapterById(st *state.AppState) iris.Handler {
 
 // `GetPinnedChapter` godoc
 // @Summary Get Pinned Chapter
-//
-//	Get pinned chapter for one comic.
-//	The caller must be a member of the target comic team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Get pinned chapter for one comic
+// @Description The caller must be a member of the target comic team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
 // @Param comic_id path string true "comic id"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ChapterVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ChapterVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/comic/{comic_id}/pinned [get]
 func GetPinnedChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
@@ -153,20 +147,18 @@ func GetPinnedChapter(st *state.AppState) iris.Handler {
 
 // `CreateChapter` godoc
 // @Summary Create Chapter
-//
-//	Create chapter under one comic.
-//	The caller must be an admin of the target comic team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Create chapter under one comic
+// @Description The caller must be an admin of the target comic team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param body body val.CreateChapterArgs true "create chapter args"
-// @Success 201 {object} res.HttpRes "res.HttpRes{data=val.ChapterCreatedRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 201 {object} res.HttpRes[val.ChapterCreatedRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter [post]
 func CreateChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
@@ -196,21 +188,19 @@ func CreateChapter(st *state.AppState) iris.Handler {
 
 // `UpdateChapter` godoc
 // @Summary Update Chapter
-//
-//	Update one chapter.
-//	The caller must be an admin of the target chapter team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Update one chapter with PUT semantics
+// @Description The caller must be an admin of the target chapter team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param chapter_id path string true "chapter id"
 // @Param body body val.ChapterUpdArgs true "update chapter args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/{chapter_id} [put]
 func UpdateChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
@@ -248,19 +238,17 @@ func UpdateChapter(st *state.AppState) iris.Handler {
 
 // `DeleteChapter` godoc
 // @Summary Delete Chapter
-//
-//	Hard-delete one chapter.
-//	The caller must be an admin of the target chapter team.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Hard-delete one chapter
+// @Description The caller must be an admin of the target chapter team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
 // @Param chapter_id path string true "chapter id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /chapter/{chapter_id} [delete]
 func DeleteChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp

@@ -10,20 +10,18 @@ import (
 
 // `ListPageUnits` godoc
 // @Summary List Page Units
-//
-//	List units for one page.
-//	The caller must have any assignment on the target chapter.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description List units for one page
+// @Description The caller must have any assignment on the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags unit
 // @Security ApiKeyAuth
 // @Produce json
 // @Param page_id path string true "page id"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.ListPageUnitsRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 403 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.ListPageUnitsRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 403 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /page/{page_id}/units [get]
 func ListPageUnits(st *state.AppState) iris.Handler {
 	unitApp := st.UnitApp
@@ -53,22 +51,20 @@ func ListPageUnits(st *state.AppState) iris.Handler {
 
 // `SavePageUnits` godoc
 // @Summary Save Page Units
-//
-//	Apply one page unit diff and synchronize page and chapter counters.
-//	The caller must be translator or proofreader on the target chapter.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present.
-//
+// @Description Apply one page unit diff and synchronize page and chapter counters
+// @Description The caller must be translator or proofreader on the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags unit
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param page_id path string true "page id"
 // @Param body body val.SavePageUnitsArgs true "save page units args"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=val.SavePageUnitsRes}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 403 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.SavePageUnitsRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 403 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
 // @Router /page/{page_id}/units [post]
 func SavePageUnits(st *state.AppState) iris.Handler {
 	unitApp := st.UnitApp

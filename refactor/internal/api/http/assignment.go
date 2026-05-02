@@ -10,22 +10,20 @@ import (
 
 // `ListAssignmentsByChapter` godoc
 // @Summary List Assignments By Chapter
-//
-//	List assignments for one chapter
-//	The caller must be reviewer of the target chapter
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description List assignments for one chapter
+// @Description The caller must be reviewer of the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment
 // @Security ApiKeyAuth
 // @Produce json
 // @Param chapter_id path string true "chapter id"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=[]val.AssignmentVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment/chapter/{chapter_id} [get]
+// @Success 200 {object} res.HttpRes[[]val.AssignmentVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignments/chapter/{chapter_id} [get]
 func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 
@@ -66,20 +64,18 @@ func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 
 // `ListMyAssignments` godoc
 // @Summary List My Assignments
-//
-//	List assignments of current user
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description List assignments of current user
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment
 // @Security ApiKeyAuth
 // @Produce json
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes "res.HttpRes{data=[]val.AssignmentVal}"
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment/mine [get]
+// @Success 200 {object} res.HttpRes[[]val.AssignmentVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignments/mine [get]
 func ListMyAssignments(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 
@@ -114,21 +110,19 @@ func ListMyAssignments(st *state.AppState) iris.Handler {
 
 // `UpsertAssignment` godoc
 // @Summary Upsert Assignment
-//
-//	Upsert assignment by put semantics
-//	If role_mask is zero the request will redirect to delete semantics
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Upsert assignment by PUT semantics
+// @Description If `role_mask` is zero the request will redirect to delete semantics
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param body body val.UpsertAssignmentArgs true "upsert args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment [put]
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignments [put]
 func UpsertAssignment(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 
@@ -157,20 +151,18 @@ func UpsertAssignment(st *state.AppState) iris.Handler {
 
 // `DeleteAssignment` godoc
 // @Summary Delete Assignment
-//
-//	Delete assignment by id
-//	The caller must be reviewer of target chapter
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Delete assignment by id
+// @Description The caller must be reviewer of target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags assignment
 // @Security ApiKeyAuth
 // @Produce json
 // @Param assignment_id path string true "assignment id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Failure 500 {object} res.HttpRes
-// @Router /assignment/{assignment_id} [delete]
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /assignments/{assignment_id} [delete]
 func DeleteAssignment(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 

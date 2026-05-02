@@ -82,7 +82,9 @@ func main() {
 	// Construct all services.
 	errClsf := repo_infra.NewErrClassifier()
 	userSvc := svc.NewUserSvc()
+	teamSvc := svc.NewTeamSvc()
 	memberSvc := svc.NewMemberSvc()
+	memberInvSvc := svc.NewMemberInvSvc()
 	ossMsgSvc := svc.NewOssMsgSvc()
 	worksetSvc := svc.NewWorksetSvc()
 	comicSvc := svc.NewComicSvc()
@@ -123,8 +125,35 @@ func main() {
 	)
 	teamApp := app_impl.NewTeamLogApp(
 		app_impl.NewTeamApp(
+			txnCtrl,
 			teamRepo,
+			userRepo,
+			memberRepo,
+			ossMsgRepo,
+			teamSvc,
+			ossMsgSvc,
 			ossClient,
+			errClsf,
+		),
+	)
+	memberApp := app_impl.NewMemberLogApp(
+		app_impl.NewMemberApp(
+			txnCtrl,
+			userRepo,
+			memberRepo,
+			memberInvRepo,
+			memberSvc,
+			ossClient,
+			errClsf,
+		),
+	)
+	memberInvApp := app_impl.NewMemberInvLogApp(
+		app_impl.NewMemberInvApp(
+			txnCtrl,
+			memberRepo,
+			memberInvRepo,
+			memberInvSvc,
+			errClsf,
 		),
 	)
 	worksetApp := app_impl.NewWorksetLogApp(
@@ -193,6 +222,8 @@ func main() {
 		appCfg,
 		userApp,
 		teamApp,
+		memberApp,
+		memberInvApp,
 		worksetApp,
 		comicApp,
 		chapterApp,

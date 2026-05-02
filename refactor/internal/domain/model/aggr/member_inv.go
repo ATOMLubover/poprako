@@ -34,3 +34,10 @@ type MemberInvCre struct {
 
 	RoleMask RoleMask
 }
+
+// `MemberInvUpd` holds mutable fields for one member invitation put update.
+type MemberInvUpd struct {
+	Id string
+
+	RoleMask RoleMask
+}

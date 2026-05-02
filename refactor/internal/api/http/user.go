@@ -10,17 +10,17 @@ import (
 
 // `GetUserInfo` godoc
 // @Summary Get User Info
-//
-//	Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
 // @Param user_id path string true "user id"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Router /user/{user_id} [get]
+// @Success 200 {object} res.HttpRes[val.UserVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /users/{user_id} [get]
 func GetUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -43,16 +43,14 @@ func GetUserInfo(st *state.AppState) iris.Handler {
 
 // `GetMyUserInfo` godoc
 // @Summary Get My User Info
-//
-//	Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
-// @Success 200 {object} res.HttpRes
-// @Failure 401 {object} res.HttpRes
-// @Router /user/me [get]
+// @Success 200 {object} res.HttpRes[val.UserVal]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/me [get]
 func GetMyUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -75,18 +73,17 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 
 // `ResvUserAvatar` godoc
 // @Summary Reserve User Avatar Upload
-//
-//	Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
 // @Param body body val.ResvUserAvatarArgs true "reserve avatar args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Router /user/avatar [post]
+// @Success 200 {object} res.HttpRes[val.ResvUserAvatarRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/avatar [post]
 func ResvUserAvatar(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -110,16 +107,14 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 
 // `MarkUserAvatarUploaded` godoc
 // @Summary Confirm User Avatar Uploaded
-//
-//	Confirm avatar uploaded after client upload completed and return no JSON body.
-//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-//
+// @Description Confirm avatar uploaded after client upload completed and return no JSON body
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
 // @Success 200
-// @Failure 401 {object} res.HttpRes
-// @Router /user/avatar/confirm [post]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/avatar/confirm [post]
 func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -136,6 +131,49 @@ func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 			return
 		}
 
-		res.Accept(cx, iris.StatusOK, nil)
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
+// `UpdateMyUserInfo` godoc
+// @Summary Update My User Info
+//
+//	Update current authorized user profile by put semantics.
+//	Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+//
+// @Tags user
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param body body val.UserUpdArgs true "update user args"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Router /users/me [put]
+func UpdateMyUserInfo(st *state.AppState) iris.Handler {
+	userApp := st.UserApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		var args val.UserUpdArgs
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数错误")
+			return
+		}
+
+		args.Id = currUid
+
+		re := userApp.Update(newReqCx(cx), &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }

@@ -14,12 +14,29 @@ type TeamVal struct {
 	UpdatedAt int64 `json:"updated_at"`
 }
 
+// `TeamCreArgs` holds immutable fields for team creation.
+type TeamCreArgs struct {
+	Name string `json:"name"`
+	Desc string `json:"description"`
+}
+
+// `TeamCreRes` returns the created team id.
+type TeamCreRes struct {
+	Id string `json:"id"`
+}
+
 // `TeamUpdArgs` holds mutable fields for team update.
 type TeamUpdArgs struct {
 	Id string `json:"id"`
 
 	Name string `json:"name"`
 	Desc string `json:"description"`
+}
+
+// `ListTeamArgs` carries list args for listing all teams.
+type ListTeamArgs struct {
+	Offset int `url:"offset"`
+	Limit  int `url:"limit"`
 }
 
 // `ResvTeamAvatarArgs` holds parameters for reserving team avatar upload.

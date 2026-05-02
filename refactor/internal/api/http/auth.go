@@ -10,15 +10,13 @@ import (
 
 // `LoginUser` godoc
 // @Summary User Login
-//
-//	Login by qid and password and return a `res.HttpRes` wrapper with `val.UserLoginRes`
-//
+// @Description Login by qid and password and return a `res.HttpRes` wrapper with `val.UserLoginRes`
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param body body val.UserLoginArgs true "login args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
+// @Success 200 {object} res.HttpRes[val.UserLoginRes]
+// @Failure 400 {object} res.HttpRes[any]
 // @Router /auth/login [post]
 func LoginUser(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
@@ -43,16 +41,14 @@ func LoginUser(st *state.AppState) iris.Handler {
 
 // `RegUser` godoc
 // @Summary User Registration
-//
-//	Register by invitation code and return a `res.HttpRes` wrapper with `val.UserRegRes`
-//
+// @Description Register by invitation code and return a `res.HttpRes` wrapper with `val.UserRegRes`
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param body body val.UserRegArgs true "registration args"
-// @Success 200 {object} res.HttpRes
-// @Failure 400 {object} res.HttpRes
-// @Router /auth/reg [post]
+// @Success 200 {object} res.HttpRes[val.UserRegRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Router /auth/register [post]
 func RegUser(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 

@@ -8,24 +8,25 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-// `ListWorksets` godoc
-// @Summary List Worksets
-// @Description List all active worksets for a team
-// @Description The caller must be a member of the specified team
+// `ListMemberInvitations` godoc
+// @Summary List Member Invitations
+// @Description List invitations under one team
+// @Description The caller must be member of the target team
 // @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-// @Tags workset
+// @Tags member-invitation
 // @Security ApiKeyAuth
 // @Produce json
 // @Param team_id path string true "team id"
+// @Param pending query bool false "pending filter"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
-// @Success 200 {object} res.HttpRes[[]val.WorksetVal]
+// @Success 200 {object} res.HttpRes[[]val.MemberInvVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets/team/{team_id} [get]
-func ListWorksets(st *state.AppState) iris.Handler {
-	worksetApp := st.WorksetApp
+// @Router /member-invitations/teams/{team_id} [get]
+func ListMemberInvitations(st *state.AppState) iris.Handler {
+	memberInvApp := st.MemberInvApp
 
 	return func(cx iris.Context) {
 		currUid, ok := takeCurrUid(cx)
@@ -52,15 +53,26 @@ func ListWorksets(st *state.AppState) iris.Handler {
 			return
 		}
 
-		args := &val.ListWorksetArgs{
-			TeamId: teamId,
-			Offset: offset,
-			Limit:  limit,
+		var pending *bool
+
+		if p := cx.URLParam("pending"); p != "" {
+			pendingVal, boolErr := cx.URLParamBool("pending")
+			if boolErr != nil {
+				res.Reject(cx, iris.StatusBadRequest, "pending 参数格式错误")
+				return
+			}
+
+			pending = &pendingVal
 		}
 
-		re := worksetApp.List(newReqCx(cx), currUid, args)
+		re := memberInvApp.List(newReqCx(cx), currUid, &val.ListMemberInvArgs{
+			TeamId:  teamId,
+			Pending: pending,
+			Offset:  offset,
+			Limit:   limit,
+		})
 		if re.IsReject() {
-			res.Reject(cx, int(re.Code()), "获取作品集列表失败")
+			res.Reject(cx, int(re.Code()), re.Msg())
 			return
 		}
 
@@ -68,23 +80,23 @@ func ListWorksets(st *state.AppState) iris.Handler {
 	}
 }
 
-// `CreateWorkset` godoc
-// @Summary Create Workset
-// @Description Create a new workset inside a team
-// @Description The caller must be an admin of the specified team
+// `CreateMemberInvitation` godoc
+// @Summary Create Member Invitation
+// @Description Create one invitation under one team
+// @Description The caller must be team admin
 // @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-// @Tags workset
+// @Tags member-invitation
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Param body body val.CreateWorksetArgs true "create workset args"
-// @Success 201 {object} res.HttpRes[val.WorksetCreatedRes]
+// @Param body body val.CreateMemberInvArgs true "create invitation args"
+// @Success 201 {object} res.HttpRes[val.CreateMemberInvRes]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets [post]
-func CreateWorkset(st *state.AppState) iris.Handler {
-	worksetApp := st.WorksetApp
+// @Router /member-invitations [post]
+func CreateMemberInvitation(st *state.AppState) iris.Handler {
+	memberInvApp := st.MemberInvApp
 
 	return func(cx iris.Context) {
 		currUid, ok := takeCurrUid(cx)
@@ -93,14 +105,13 @@ func CreateWorkset(st *state.AppState) iris.Handler {
 			return
 		}
 
-		var args val.CreateWorksetArgs
-
+		var args val.CreateMemberInvArgs
 		if err := cx.ReadJSON(&args); err != nil {
 			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		re := worksetApp.Create(newReqCx(cx), currUid, &args)
+		re := memberInvApp.Create(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -110,24 +121,24 @@ func CreateWorkset(st *state.AppState) iris.Handler {
 	}
 }
 
-// `UpdateWorkset` godoc
-// @Summary Update Workset
-// @Description Update the name and/or description of an existing workset
-// @Description The caller must be an admin of the workset's owning team
+// `UpdateMemberInvitation` godoc
+// @Summary Update Member Invitation
+// @Description Update invitation role mask by put semantics
+// @Description The caller must be team admin
 // @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-// @Tags workset
+// @Tags member-invitation
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Param workset_id path string true "workset id"
-// @Param body body val.WorksetUpdArgs true "update workset args"
+// @Param invitation_id path string true "invitation id"
+// @Param body body val.MemberInvUpdArgs true "update invitation args"
 // @Success 200 {object} res.HttpRes[any]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets/{workset_id} [put]
-func UpdateWorkset(st *state.AppState) iris.Handler {
-	worksetApp := st.WorksetApp
+// @Router /member-invitations/{invitation_id} [put]
+func UpdateMemberInvitation(st *state.AppState) iris.Handler {
+	memberInvApp := st.MemberInvApp
 
 	return func(cx iris.Context) {
 		currUid, ok := takeCurrUid(cx)
@@ -136,23 +147,21 @@ func UpdateWorkset(st *state.AppState) iris.Handler {
 			return
 		}
 
-		worksetId := cx.Params().Get("workset_id")
-		if worksetId == "" {
-			res.Reject(cx, iris.StatusBadRequest, "缺少 workset_id 参数")
+		invId := cx.Params().Get("invitation_id")
+		if invId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 invitation_id 参数")
 			return
 		}
 
-		var args val.WorksetUpdArgs
-
+		var args val.MemberInvUpdArgs
 		if err := cx.ReadJSON(&args); err != nil {
 			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		// Bind path id into args so the inner app only needs one field.
-		args.Id = worksetId
+		args.Id = invId
 
-		re := worksetApp.Update(newReqCx(cx), currUid, &args)
+		re := memberInvApp.Update(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -162,22 +171,22 @@ func UpdateWorkset(st *state.AppState) iris.Handler {
 	}
 }
 
-// `DeleteWorkset` godoc
-// @Summary Delete Workset
-// @Description Hard-delete a workset by id
-// @Description The caller must be an admin of the workset's owning team
+// `DeleteMemberInvitation` godoc
+// @Summary Delete Member Invitation
+// @Description Hard delete one invitation by id
+// @Description The caller must be team admin
 // @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-// @Tags workset
+// @Tags member-invitation
 // @Security ApiKeyAuth
 // @Produce json
-// @Param workset_id path string true "workset id"
+// @Param invitation_id path string true "invitation id"
 // @Success 200 {object} res.HttpRes[any]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets/{workset_id} [delete]
-func DeleteWorkset(st *state.AppState) iris.Handler {
-	worksetApp := st.WorksetApp
+// @Router /member-invitations/{invitation_id} [delete]
+func DeleteMemberInvitation(st *state.AppState) iris.Handler {
+	memberInvApp := st.MemberInvApp
 
 	return func(cx iris.Context) {
 		currUid, ok := takeCurrUid(cx)
@@ -186,13 +195,13 @@ func DeleteWorkset(st *state.AppState) iris.Handler {
 			return
 		}
 
-		worksetId := cx.Params().Get("workset_id")
-		if worksetId == "" {
-			res.Reject(cx, iris.StatusBadRequest, "缺少 workset_id 参数")
+		invId := cx.Params().Get("invitation_id")
+		if invId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 invitation_id 参数")
 			return
 		}
 
-		re := worksetApp.Delete(newReqCx(cx), currUid, worksetId)
+		re := memberInvApp.Delete(newReqCx(cx), currUid, invId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
