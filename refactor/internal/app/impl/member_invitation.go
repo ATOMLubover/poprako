@@ -134,8 +134,8 @@ func (a *memberInvAppImpl) Create(cx context.Context, currUid string, args *val.
 func (a *memberInvAppImpl) Update(cx context.Context, currUid string, args *val.MemberInvUpdArgs) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
 
-	if args == nil || args.Id == "" || args.TeamId == "" {
-		return app_res.Reject[app_res.None](app_res.BadRequest, "id 和 team_id 不能为空")
+	if args == nil || args.Id == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "id 不能为空")
 	}
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[app_res.None]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[app_res.None], error) {
@@ -151,11 +151,7 @@ func (a *memberInvAppImpl) Update(cx context.Context, currUid string, args *val.
 			return app_res.Reject[app_res.None](app_res.ServerError, "更新邀请失败"), err
 		}
 
-		if invitation.TeamId != args.TeamId {
-			return app_res.Reject[app_res.None](app_res.BadRequest, "邀请与 team_id 不匹配"), app_res.DefErr()
-		}
-
-		if re := a.memberInvSvc.CanAdminMemberInv(currUid, args.TeamId, memberRepo, a.errClsf); re.IsReject() {
+		if re := a.memberInvSvc.CanAdminMemberInv(currUid, invitation.TeamId, memberRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 

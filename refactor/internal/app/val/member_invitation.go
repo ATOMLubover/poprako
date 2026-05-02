@@ -49,7 +49,5 @@ type CreateMemberInvRes struct {
 type MemberInvUpdArgs struct {
 	Id string `json:"id"`
 
-	TeamId string `json:"team_id"`
-
 	RoleMask aggr.RoleMask `json:"role_mask"`
 }

@@ -69,7 +69,7 @@ func (a *memberInvLogAppImpl) Update(cx context.Context, currUid string, args *v
 		return app_res.Reject[app_res.None](app_res.BadRequest, "更新参数不能为空")
 	}
 
-	lgr := app_util.TakeLgr(cx).With(zap.String("curr_uid", currUid), zap.String("invitation_id", args.Id), zap.String("team_id", args.TeamId), zap.Uint32("role_mask", uint32(args.RoleMask)))
+	lgr := app_util.TakeLgr(cx).With(zap.String("curr_uid", currUid), zap.String("invitation_id", args.Id), zap.Uint32("role_mask", uint32(args.RoleMask)))
 
 	cx = app_util.SaveLgr(cx, lgr)
 
