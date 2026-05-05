@@ -25,29 +25,31 @@ export async function phase5Translate(state: SeedState): Promise<void> {
   const insertID2 = crypto.randomUUID();
 
   await api<null>(
-    "PUT",
-    "/units",
+    "POST",
+    `/pages/${pageID}/units`,
     {
       page_id: pageID,
-      unit_diff: {
-        insert: [
+      difference: {
+        page_id: pageID,
+        operations: [
           {
-            id: insertID1,
-            index: 0,
+            local_id: insertID1,
+            is_bubble: true,
+            is_proofread: false,
             x_coord: 100,
             y_coord: 200,
-            is_bubble: true,
             translated_text: "你好，世界！",
           },
           {
-            id: insertID2,
-            index: 1,
+            local_id: insertID2,
+            is_bubble: true,
+            is_proofread: false,
             x_coord: 150,
             y_coord: 300,
-            is_bubble: true,
             translated_text: "这是第二个气泡框。",
           },
         ],
+        candidate_order: [insertID1, insertID2],
       },
     },
     { token: state.translatorToken },
@@ -56,10 +58,10 @@ export async function phase5Translate(state: SeedState): Promise<void> {
   logOk("Units inserted (2 bubbles)");
 
   // ── 5.2 Re-fetch units (mandatory round-trip) ─────────────────────────────
-  const units = await apiGet<UnitInfo[]>("/units", {
+  const unitList = await apiGet<{ units: UnitInfo[] }>(`/pages/${pageID}/units`, {
     token: state.translatorToken,
-    query: { page_id: pageID },
   });
+  const units = unitList.units;
 
   logOk(`Units fetched from server`, { count: units?.length ?? 0 });
 
@@ -75,17 +77,24 @@ export async function phase5Translate(state: SeedState): Promise<void> {
 
   // ── 5.3 Patch first unit — add translator comment ─────────────────────────
   await api<null>(
-    "PUT",
-    "/units",
+    "POST",
+    `/pages/${pageID}/units`,
     {
       page_id: pageID,
-      unit_diff: {
-        patch: [
+      difference: {
+        page_id: pageID,
+        operations: [
           {
             id: firstUnit.id,
+            is_bubble: firstUnit.is_bubble,
+            is_proofread: firstUnit.is_proofread,
+            x_coord: firstUnit.x_coord,
+            y_coord: firstUnit.y_coord,
+            translated_text: firstUnit.translated_text,
             translator_comment: "译者注：此处使用了双关语。",
           },
         ],
+        candidate_order: units.map((u) => u.id),
       },
     },
     { token: state.translatorToken },

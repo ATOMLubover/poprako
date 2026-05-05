@@ -16,10 +16,10 @@ export async function phase7Proofread(state: SeedState): Promise<void> {
 
   // ── 7.1 Re-fetch units as proofreader ─────────────────────────────────────
   // Must use proofreader's token and must re-fetch (not reuse phase-5 result).
-  const units = await apiGet<UnitInfo[]>("/units", {
+  const unitList = await apiGet<{ units: UnitInfo[] }>(`/pages/${pageID}/units`, {
     token: state.proofreaderToken,
-    query: { page_id: pageID },
   });
+  const units = unitList.units;
 
   logOk("Units re-fetched as proofreader", { count: units?.length ?? 0 });
 
@@ -33,22 +33,30 @@ export async function phase7Proofread(state: SeedState): Promise<void> {
   );
 
   // ── 7.2 Patch all units ───────────────────────────────────────────────────
-  const patches = units.map((u) => ({
+  const patchOps = units.map((u) => ({
     id: u.id,
-    proofread_text: `${u.translated_text ?? ""} [已校对]`,
+    is_bubble: u.is_bubble,
     is_proofread: true,
+    x_coord: u.x_coord,
+    y_coord: u.y_coord,
+    translated_text: u.translated_text,
+    proofread_text: `${u.translated_text ?? ""} [已校对]`,
     proofreader_comment: "校对通过",
   }));
 
   await api<null>(
-    "PUT",
-    "/units",
+    "POST",
+    `/pages/${pageID}/units`,
     {
       page_id: pageID,
-      unit_diff: { patch: patches },
+      difference: {
+        page_id: pageID,
+        operations: patchOps,
+        candidate_order: units.map((u) => u.id),
+      },
     },
     { token: state.proofreaderToken },
   );
 
-  logOk(`Patched ${patches.length} units as proofread`);
+  logOk(`Patched ${patchOps.length} units as proofread`);
 }

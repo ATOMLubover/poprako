@@ -25,20 +25,9 @@ func NewOssMsgRepo(gdb *gorm.DB) repo_iface.OssMsgRepo {
 func (r *ossMsgRepoImpl) SavePendingCre(msg *aggr.OssCreMsg) repo_iface.RepoErr {
 	creRow := entity.NewOssCreMsgCreRowFromAggr(msg)
 
-	upd := &entity.OssMsgRow{
-		Id:         creRow.Id,
-		Op:         creRow.Op,
-		Status:     string(enum.OssMsgStatePending),
-		ObjKeys:    creRow.ObjKeys,
-		VisibleAt:  creRow.VisibleAt,
-		ExpireAt:   creRow.ExpireAt,
-		ProcAt:     nil,
-		AttemptCnt: 0,
-		LastErr:    "",
-		UpdatedAt:  time.Now(),
-	}
-
-	updRe := r.gdb.
+	// Remove existing active message for the same resource-operation pair first,
+	// so the following insert always writes the latest payload.
+	delRe := r.gdb.
 		Table(entity.OSS_MSG_TABLE).
 		Where(
 			"resource_type = ? AND resource_id = ? AND operation = ? AND status <> ?",
@@ -47,14 +36,9 @@ func (r *ossMsgRepoImpl) SavePendingCre(msg *aggr.OssCreMsg) repo_iface.RepoErr 
 			creRow.Op,
 			string(enum.OssMsgStateCompleted),
 		).
-		Select("id", "operation", "status", "object_keys", "visible_at", "expire_at", "processing_at", "attempt_count", "last_error", "updated_at").
-		Updates(upd)
-	if updRe.Error != nil {
-		return updRe.Error
-	}
-
-	if updRe.RowsAffected > 0 {
-		return nil
+		Delete(&entity.OssMsgRow{})
+	if delRe.Error != nil {
+		return delRe.Error
 	}
 
 	err := r.gdb.

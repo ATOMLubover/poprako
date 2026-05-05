@@ -1,6 +1,7 @@
 package repo_infra
 
 import (
+	"fmt"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -10,7 +11,6 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // `worksetRepoImpl` is the GORM-backed implementation of `repo_iface.WorksetRepo`.
@@ -156,13 +156,14 @@ func (r *worksetRepoImpl) IncrementComicNextIndex(id string) (int, repo_iface.Re
 
 	var row nextIndexRow
 
-	updRe := r.gdb.
-		Table(entity.WORKSET_TABLE).
-		Where("id = ?", id).
-		Select("comic_next_index").
-		Clauses(clause.Returning{Columns: []clause.Column{{Name: "comic_next_index"}}}).
-		Updates(map[string]any{"comic_next_index": gorm.Expr("comic_next_index + 1")}).
-		Scan(&row)
+	// Atomically increment `comic_next_index` and fetch the new value.
+	updRe := r.gdb.Raw(
+		fmt.Sprintf(
+			"UPDATE %s SET comic_next_index = comic_next_index + 1 WHERE id = ? RETURNING comic_next_index",
+			entity.WORKSET_TABLE,
+		),
+		id,
+	).Scan(&row)
 	if updRe.Error != nil {
 		return 0, updRe.Error
 	}

@@ -10,6 +10,7 @@
  */
 
 import { api, logStep, logOk, logInfo } from "../client";
+import { ROLE } from "../config";
 import type {
   CreateWorksetRes,
   CreateComicRes,
@@ -68,16 +69,30 @@ export async function phase2Content(state: SeedState): Promise<void> {
   state.chapterID = chapterRes.id;
   logOk("Chapter created", { chapter_id: chapterRes.id });
 
+  // The creator gets REVIEWER automatically, but page upload confirmation needs
+  // a chapter-level RAW_PROVIDER assignment as well.
+  await api<null>(
+    "PUT",
+    "/assignments",
+    {
+      chapter_id: state.chapterID,
+      user_id: state.adminUserID,
+      role_mask: ROLE.RAW_PROVIDER | ROLE.REVIEWER,
+    },
+    { token: state.adminToken },
+  );
+
+  logOk("Admin chapter assignment updated with RAW_PROVIDER");
+
   // ── 2.4 Reserve pages ─────────────────────────────────────────────────────
   // The REVIEWER assignment for the chapter creator was made synchronously by
   // the backend during chapter creation, so this call succeeds immediately.
   const pagesRes = await api<ReserveChapterPagesRes>(
     "POST",
-    "/pages",
+    `/chapters/${state.chapterID}/pages/reserve`,
     {
-      chapter_id: state.chapterID,
       page_count: PAGE_COUNT,
-      extension: "png",
+      file_extension: "png",
     },
     { token: state.adminToken },
   );
@@ -88,9 +103,9 @@ export async function phase2Content(state: SeedState): Promise<void> {
   // ── 2.5 Mark each page as uploaded ───────────────────────────────────────
   for (const pageID of state.pageIDs) {
     await api<null>(
-      "PUT",
-      `/pages/${pageID}`,
-      { id: pageID, is_uploaded: true },
+      "POST",
+      `/pages/${pageID}/image/uploaded`,
+      null,
       { token: state.adminToken },
     );
   }

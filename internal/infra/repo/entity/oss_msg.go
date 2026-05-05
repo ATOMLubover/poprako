@@ -1,11 +1,85 @@
 package entity
 
 import (
+	"database/sql/driver"
+	"encoding/csv"
+	"fmt"
+	"strings"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
 )
+
+// `stringArrVal` maps postgres `text[]` values without external dependencies.
+type stringArrVal []string
+
+// `Value` converts `stringArrVal` into a postgres-compatible array literal.
+func (v stringArrVal) Value() (driver.Value, error) {
+	if len(v) == 0 {
+		return "{}", nil
+	}
+
+	b := strings.Builder{}
+	b.WriteByte('{')
+
+	for i := range v {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+
+		escaped := strings.ReplaceAll(v[i], "\\", "\\\\")
+		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+
+		b.WriteByte('"')
+		b.WriteString(escaped)
+		b.WriteByte('"')
+	}
+
+	b.WriteByte('}')
+
+	return b.String(), nil
+}
+
+// `Scan` parses a postgres array literal into `stringArrVal`.
+func (v *stringArrVal) Scan(src any) error {
+	if src == nil {
+		*v = nil
+
+		return nil
+	}
+
+	var raw string
+	switch t := src.(type) {
+	case string:
+		raw = t
+	case []byte:
+		raw = string(t)
+	default:
+		return fmt.Errorf("[stringArrVal.Scan] unsupported source type: %T", src)
+	}
+
+	if raw == "{}" {
+		*v = []string{}
+
+		return nil
+	}
+
+	if len(raw) < 2 || raw[0] != '{' || raw[len(raw)-1] != '}' {
+		return fmt.Errorf("[stringArrVal.Scan] invalid array literal: %s", raw)
+	}
+
+	inner := strings.ReplaceAll(raw[1:len(raw)-1], `\"`, `"`)
+	r := csv.NewReader(strings.NewReader(inner))
+	vals, err := r.Read()
+	if err != nil {
+		return fmt.Errorf("[stringArrVal.Scan] failed to parse array literal: %w", err)
+	}
+
+	*v = vals
+
+	return nil
+}
 
 // `OSS_MSG_TABLE` is the table name for oss messages
 const OSS_MSG_TABLE = "t_oss_message"
@@ -19,7 +93,7 @@ type OssMsgRow struct {
 	Op     string `gorm:"column:operation"`
 	Status string `gorm:"column:status"`
 
-	ObjKeys []string `gorm:"column:object_keys;type:text[]"`
+	ObjKeys stringArrVal `gorm:"column:object_keys;type:text[]"`
 
 	VisibleAt time.Time  `gorm:"column:visible_at"`
 	ExpireAt  time.Time  `gorm:"column:expire_at"`
@@ -50,7 +124,7 @@ func (r *OssMsgRow) ToOssMsgAggr() *aggr.OssMsg {
 		ResId:      r.ResId,
 		Op:         enum.OssOp(r.Op),
 		Status:     enum.OssMsgStatus(r.Status),
-		ObjKeys:    r.ObjKeys,
+		ObjKeys:    []string(r.ObjKeys),
 		VisibleAt:  r.VisibleAt,
 		ExpireAt:   r.ExpireAt,
 		ProcAt:     r.ProcAt,
@@ -70,7 +144,7 @@ type OssCreMsgCreRow struct {
 	Op     string `gorm:"column:operation"`
 	Status string `gorm:"column:status"`
 
-	ObjKeys []string `gorm:"column:object_keys;type:text[]"`
+	ObjKeys stringArrVal `gorm:"column:object_keys;type:text[]"`
 
 	VisibleAt time.Time  `gorm:"column:visible_at"`
 	ExpireAt  time.Time  `gorm:"column:expire_at"`
@@ -93,7 +167,7 @@ func NewOssCreMsgCreRowFromAggr(msg *aggr.OssCreMsg) *OssCreMsgCreRow {
 		ResId:      msg.ResId,
 		Op:         string(enum.OssOpCre),
 		Status:     string(msg.Status),
-		ObjKeys:    msg.ObjKeys,
+		ObjKeys:    stringArrVal(msg.ObjKeys),
 		VisibleAt:  msg.VisibleAt,
 		ExpireAt:   msg.ExpireAt,
 		ProcAt:     msg.ProcAt,
@@ -118,7 +192,7 @@ type OssDelMsgCreRow struct {
 	Op     string `gorm:"column:operation"`
 	Status string `gorm:"column:status"`
 
-	ObjKeys []string `gorm:"column:object_keys;type:text[]"`
+	ObjKeys stringArrVal `gorm:"column:object_keys;type:text[]"`
 
 	VisibleAt time.Time  `gorm:"column:visible_at"`
 	ExpireAt  time.Time  `gorm:"column:expire_at"`
@@ -141,7 +215,7 @@ func NewOssDelMsgCreRowFromAggr(msg *aggr.OssDelMsg) *OssDelMsgCreRow {
 		ResId:      msg.ResId,
 		Op:         string(enum.OssOpDel),
 		Status:     string(msg.Status),
-		ObjKeys:    msg.ObjKeys,
+		ObjKeys:    stringArrVal(msg.ObjKeys),
 		VisibleAt:  msg.VisibleAt,
 		ExpireAt:   msg.ExpireAt,
 		ProcAt:     msg.ProcAt,

@@ -17,11 +17,11 @@ export async function phase1Users(state: SeedState): Promise<void> {
   // ── 1.1 Invitation for translator ─────────────────────────────────────────
   const invTranslator = await api<InvitationInfo>(
     "POST",
-    "/invitations",
+    "/member-invitations",
     {
       team_id: state.teamID,
       invitee_qid: TRANSLATOR_CREDS.qid,
-      roles: ROLE.TRANSLATOR,
+      role_mask: ROLE.TRANSLATOR,
     },
     { token: state.adminToken },
   );
@@ -33,11 +33,11 @@ export async function phase1Users(state: SeedState): Promise<void> {
   // ── 1.2 Invitation for proofreader ────────────────────────────────────────
   const invProofreader = await api<InvitationInfo>(
     "POST",
-    "/invitations",
+    "/member-invitations",
     {
       team_id: state.teamID,
       invitee_qid: PROOFREADER_CREDS.qid,
-      roles: ROLE.PROOFREADER,
+      role_mask: ROLE.PROOFREADER,
     },
     { token: state.adminToken },
   );

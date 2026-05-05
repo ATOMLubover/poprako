@@ -12,7 +12,6 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 const chapterPinAlias = "pch"
@@ -256,13 +255,14 @@ func (r *comicRepoImpl) IncrementChapterNextIndex(id string) (int, repo_iface.Re
 
 	var row nextIndexRow
 
-	updRe := r.gdb.
-		Table(entity.COMIC_TABLE).
-		Where("t_comic.id = ?", id).
-		Select("chapter_next_index").
-		Clauses(clause.Returning{Columns: []clause.Column{{Name: "chapter_next_index"}}}).
-		Updates(map[string]any{"chapter_next_index": gorm.Expr("chapter_next_index + 1")}).
-		Scan(&row)
+	// Atomically increment `chapter_next_index` and fetch the new value.
+	updRe := r.gdb.Raw(
+		fmt.Sprintf(
+			"UPDATE %s SET chapter_next_index = chapter_next_index + 1 WHERE id = ? RETURNING chapter_next_index",
+			entity.COMIC_TABLE,
+		),
+		id,
+	).Scan(&row)
 	if updRe.Error != nil {
 		return 0, updRe.Error
 	}

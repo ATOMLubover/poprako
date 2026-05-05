@@ -24,7 +24,7 @@ export async function phase8Finalize(state: SeedState): Promise<void> {
 
   for (const transition of TRANSITIONS) {
     await api<null>(
-      "PATCH",
+      "PUT",
       `/chapters/${state.chapterID}`,
       { workflow_transition: transition },
       { token: state.adminToken },

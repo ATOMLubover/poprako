@@ -14,7 +14,7 @@ export async function phase4WorkflowStart(state: SeedState): Promise<void> {
 
   // ── 4.1 upload_complete ───────────────────────────────────────────────────
   await api<null>(
-    "PATCH",
+    "PUT",
     `/chapters/${state.chapterID}`,
     { workflow_transition: WORKFLOW.UPLOAD_COMPLETE },
     { token: state.adminToken },
@@ -24,7 +24,7 @@ export async function phase4WorkflowStart(state: SeedState): Promise<void> {
 
   // ── 4.2 translate_start ───────────────────────────────────────────────────
   await api<null>(
-    "PATCH",
+    "PUT",
     `/chapters/${state.chapterID}`,
     { workflow_transition: WORKFLOW.TRANSLATE_START },
     { token: state.adminToken },

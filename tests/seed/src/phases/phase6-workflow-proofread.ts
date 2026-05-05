@@ -14,7 +14,7 @@ export async function phase6WorkflowProofread(state: SeedState): Promise<void> {
 
   // ── 6.1 translate_complete ────────────────────────────────────────────────
   await api<null>(
-    "PATCH",
+    "PUT",
     `/chapters/${state.chapterID}`,
     { workflow_transition: WORKFLOW.TRANSLATE_COMPLETE },
     { token: state.adminToken },
@@ -26,7 +26,7 @@ export async function phase6WorkflowProofread(state: SeedState): Promise<void> {
 
   // ── 6.2 proofread_start ───────────────────────────────────────────────────
   await api<null>(
-    "PATCH",
+    "PUT",
     `/chapters/${state.chapterID}`,
     { workflow_transition: WORKFLOW.PROOFREAD_START },
     { token: state.adminToken },

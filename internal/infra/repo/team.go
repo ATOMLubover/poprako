@@ -1,6 +1,7 @@
 package repo_infra
 
 import (
+	"fmt"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -9,7 +10,6 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // `teamRepoImpl` implements `repo_iface.TeamRepo` with `gorm`.
@@ -183,13 +183,14 @@ func (r *teamRepoImpl) IncrementWorksetNextIndex(id string) (int, repo_iface.Rep
 
 	var row nextIndexRow
 
-	updRe := r.gdb.
-		Table(entity.TEAM_TABLE).
-		Where("id = ?", id).
-		Select("workset_next_index").
-		Clauses(clause.Returning{Columns: []clause.Column{{Name: "workset_next_index"}}}).
-		Updates(map[string]any{"workset_next_index": gorm.Expr("workset_next_index + 1")}).
-		Scan(&row)
+	// Atomically increment `workset_next_index` and fetch the new value.
+	updRe := r.gdb.Raw(
+		fmt.Sprintf(
+			"UPDATE %s SET workset_next_index = workset_next_index + 1 WHERE id = ? RETURNING workset_next_index",
+			entity.TEAM_TABLE,
+		),
+		id,
+	).Scan(&row)
 	if updRe.Error != nil {
 		return 0, updRe.Error
 	}

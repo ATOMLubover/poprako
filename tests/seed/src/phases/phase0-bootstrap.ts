@@ -41,12 +41,7 @@ export async function phase0Bootstrap(state: SeedState): Promise<void> {
     {
       team_id: state.teamID,
       user_id: state.adminUserID,
-      role_mask:
-        ROLE.RAW_PROVIDER |
-        ROLE.REVIEWER |
-        ROLE.ADMIN |
-        ROLE.PROOFREADER |
-        ROLE.TYPESETTER,
+      role_mask: ROLE.RAW_PROVIDER | ROLE.REVIEWER | ROLE.ADMIN,
     },
     { token: state.adminToken },
   );
