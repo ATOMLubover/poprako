@@ -4,6 +4,7 @@ import (
 	"poprako-s/internal/api/http/res"
 	token_iface "poprako-s/internal/domain/ext/token"
 	token_impl "poprako-s/internal/infra/ext/token"
+	"strings"
 
 	"github.com/kataras/iris/v12"
 )
@@ -37,6 +38,9 @@ func Auth() iris.Handler {
 		} else {
 			tk = authHeader
 		}
+
+		// Strip "Bearer " prefix from Authorization header
+		tk = strings.TrimPrefix(tk, "Bearer ")
 
 		utk, err := parser.ParseToken(token_iface.SignedToken(tk))
 		if err != nil {

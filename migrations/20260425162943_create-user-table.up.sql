@@ -30,8 +30,8 @@ INSERT INTO "t_user" (
     "is_super_admin"
 ) VALUES (
     'user-00000000-0000-0000-0000-000000000001',
-    'SuperAdmin-OvO',
     '123456789',
+    'SuperAdmin-OvO',
     '$2a$10$eEEkAsc7h3jdkOyjahdH6OX20w/dHKdGVaH7MNREkh54O57v.E2y2', -- 123456
     TRUE
 ) ON CONFLICT (id) DO NOTHING;

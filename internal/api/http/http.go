@@ -96,7 +96,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			comic := authorized.Party("/comics")
 			{
-				comic.Get("/workset/{workset_id}", ListComics(st))
+				comic.Get("/worksets/{workset_id}", ListComics(st))
 				comic.Get("/{comic_id}", GetComicById(st))
 				comic.Post("", CreateComic(st))
 				comic.Put("/{comic_id}", UpdateComic(st))
@@ -107,12 +107,12 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			chapter := authorized.Party("/chapters")
 			{
-				chapter.Get("/comic/{comic_id}", ListChapters(st))
+				chapter.Get("/comics/{comic_id}", ListChapters(st))
 				chapter.Get("/{chapter_id}/export", ExportChapter(st))
 				chapter.Get("/{chapter_id}/export/lp", ExportChapterLp(st))
 				chapter.Get("/{chapter_id}/pages", ListChapterPages(st))
 				chapter.Get("/{chapter_id}", GetChapterById(st))
-				chapter.Get("/comic/{comic_id}/pinned", GetPinnedChapter(st))
+				chapter.Get("/comics/{comic_id}/pinned", GetPinnedChapter(st))
 				chapter.Post("/{chapter_id}/import", ImportChapter(st))
 				chapter.Post("", CreateChapter(st))
 				chapter.Post("/{chapter_id}/pages/reserve", ResvChapterPages(st))
@@ -136,7 +136,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			assignmentInv := authorized.Party("/assignment-invitations")
 			{
-				assignmentInv.Get("/chapter/{chapter_id}", ListAssignmentInvitations(st))
+				assignmentInv.Get("/chapters/{chapter_id}", ListAssignmentInvitations(st))
 				assignmentInv.Post("", CreateAssignmentInvitation(st))
 				assignmentInv.Delete("/{invitation_id}", DeleteAssignmentInvitation(st))
 				assignmentInv.Post("/join", JoinByAssignmentInvitation(st))
@@ -144,7 +144,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			assignment := authorized.Party("/assignments")
 			{
-				assignment.Get("/chapter/{chapter_id}", ListAssignmentsByChapter(st))
+				assignment.Get("/chapters/{chapter_id}", ListAssignmentsByChapter(st))
 				assignment.Get("/mine", ListMyAssignments(st))
 				assignment.Put("", UpsertAssignment(st))
 				assignment.Delete("/{assignment_id}", DeleteAssignment(st))

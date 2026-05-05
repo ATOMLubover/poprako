@@ -12,11 +12,8 @@ func (b *EvBase) PushEv(e Event) {
 	b.ev = append(b.ev, e)
 }
 
-// `clearEv` clears all events in pending list of `EventBase`.
-// In case of memory leak, never ref **SINGLE** element of
-// b.ev with raw calls.
 func (b *EvBase) clearEv() {
-	clear(b.ev)
+	b.ev = nil
 }
 
 func (b *EvBase) PullEv() []Event {

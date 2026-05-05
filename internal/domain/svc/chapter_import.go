@@ -34,12 +34,12 @@ type ChapterImportPage struct {
 
 // ChapterImportUnit is a parsed unit ready for import.
 type ChapterImportUnit struct {
-	ID        string
-	Index     int
-	X         float64
-	Y         float64
-	IsBubble  bool
-	MainText  *string
+	ID       string
+	Index    int
+	X        float64
+	Y        float64
+	IsBubble bool
+	MainText *string
 
 	TranslatedText *string
 	ProofreadText  *string

@@ -15,11 +15,11 @@ export async function phase0Bootstrap(state: SeedState): Promise<void> {
 
   // ── 0.1 Login as super admin ──────────────────────────────────────────────
   const loginRes = await api<LoginUserRes>("POST", "/auth/login", {
-    qq: SUPER_ADMIN_CREDS.qq,
+    qid: SUPER_ADMIN_CREDS.qid,
     password: SUPER_ADMIN_CREDS.password,
   });
 
-  state.adminToken = loginRes.access_token;
+  state.adminToken = loginRes.token;
   state.adminUserID = loginRes.user_id;
   logOk("Admin logged in", { user_id: loginRes.user_id });
 
@@ -41,7 +41,7 @@ export async function phase0Bootstrap(state: SeedState): Promise<void> {
     {
       team_id: state.teamID,
       user_id: state.adminUserID,
-      roles:
+      role_mask:
         ROLE.RAW_PROVIDER |
         ROLE.REVIEWER |
         ROLE.ADMIN |

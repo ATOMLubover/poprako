@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS "t_unit" (
     "is_bubble" BOOLEAN NOT NULL DEFAULT FALSE,
     "is_proofread" BOOLEAN NOT NULL DEFAULT FALSE,
 
-    "x_coord" DOUBLE NOT NULL,
-    "y_coord" DOUBLE NOT NULL,
+    "x_coord" DOUBLE PRECISION NOT NULL,
+    "y_coord" DOUBLE PRECISION NOT NULL,
 
     "translated_text" TEXT,
     "translator_comment" TEXT,

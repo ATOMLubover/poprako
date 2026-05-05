@@ -757,8 +757,6 @@ definitions:
         type: string
       role_mask:
         type: integer
-      team_id:
-        type: string
     type: object
   val.MemberInvVal:
     properties:
@@ -902,7 +900,7 @@ definitions:
     type: object
   val.SavePageUnitsArgs:
     properties:
-      diff:
+      difference:
         $ref: '#/definitions/val.UnitDiffVal'
       page_id:
         type: string
@@ -969,15 +967,21 @@ definitions:
     type: object
   val.UnitDiffVal:
     properties:
-      cand_order:
+      candidate_order:
+        description: |-
+          `CandOrder` is the client-suggested unit ordering for reindexing
+          Use `local_id` for create ops or real `id` for save ops
         items:
           type: string
         type: array
-      ops:
+      operations:
+        description: '`Ops` is a list of unit operations applied before reindexing'
         items:
           $ref: '#/definitions/val.UnitOpVal'
         type: array
       page_id:
+        description: '`PageId` identifies the target page and must match the path
+          parameter'
         type: string
     type: object
   val.UnitExportVal:
@@ -1014,28 +1018,52 @@ definitions:
   val.UnitOpVal:
     properties:
       id:
+        description: '`Id` is the server-assigned unit identifier (set for SAVE and
+          DELETE ops)'
         type: string
       is_bubble:
+        description: '`IsBubble` indicates whether the unit is a speech bubble (required
+          for CREATE and SAVE)'
         type: boolean
       is_proofread:
+        description: '`IsProofread` indicates whether the unit has been proofread
+          (required for CREATE and SAVE)'
         type: boolean
       last_proofreader_id:
+        description: '`LastProofreaderId` is the user id of the last proofreader (mutable
+          field for SAVE)'
         type: string
       last_translator_id:
+        description: '`LastTranslatorId` is the user id of the last translator (mutable
+          field for SAVE)'
         type: string
       local_id:
+        description: '`LocalId` is a client-generated temporary identifier (set for
+          CREATE ops)'
         type: string
       proofread_text:
+        description: '`ProofreadText` is the proofread content (mutable field for
+          SAVE)'
         type: string
       proofreader_comment:
+        description: '`ProofreaderComment` is the proofreader''s note (mutable field
+          for SAVE)'
         type: string
       translated_text:
+        description: '`TranslatedText` is the translated content (mutable field for
+          SAVE)'
         type: string
       translator_comment:
+        description: '`TranslatorComment` is the translator''s note (mutable field
+          for SAVE)'
         type: string
       x_coord:
+        description: '`XCoord` is the horizontal coordinate (required for CREATE and
+          SAVE)'
         type: number
       y_coord:
+        description: '`YCoord` is the vertical coordinate (required for CREATE and
+          SAVE)'
         type: number
     type: object
   val.UnitVal:
@@ -1082,9 +1110,9 @@ definitions:
     type: object
   val.UserLoginArgs:
     properties:
-      pwd:
+      password:
         type: string
-      qq:
+      qid:
         type: string
     type: object
   val.UserLoginRes:
@@ -1102,7 +1130,7 @@ definitions:
         type: string
       password:
         type: string
-      qq:
+      qid:
         type: string
     type: object
   val.UserRegRes:
@@ -1118,7 +1146,7 @@ definitions:
         type: string
       name:
         type: string
-      qq:
+      qid:
         type: string
     type: object
   val.UserVal:
@@ -1137,7 +1165,7 @@ definitions:
         type: integer
       nickname:
         type: string
-      qq:
+      qid:
         type: string
       updated_at:
         type: integer
@@ -1262,7 +1290,7 @@ paths:
       summary: Delete Assignment Invitation
       tags:
       - assignment-invitation
-  /assignment-invitations/chapter/{chapter_id}:
+  /assignment-invitations/chapters/{chapter_id}:
     get:
       description: |-
         List assignment invitations for one chapter
@@ -1423,7 +1451,7 @@ paths:
       summary: Delete Assignment
       tags:
       - assignment
-  /assignments/chapter/{chapter_id}:
+  /assignments/chapters/{chapter_id}:
     get:
       description: |-
         List assignments for one chapter
@@ -1559,7 +1587,7 @@ paths:
       summary: User Registration
       tags:
       - auth
-  /chapter:
+  /chapters:
     post:
       consumes:
       - application/json
@@ -1598,7 +1626,7 @@ paths:
       summary: Create Chapter
       tags:
       - chapter
-  /chapter/{chapter_id}:
+  /chapters/{chapter_id}:
     delete:
       description: |-
         Hard-delete one chapter
@@ -1716,7 +1744,7 @@ paths:
       summary: Update Chapter
       tags:
       - chapter
-  /chapter/{chapter_id}/export:
+  /chapters/{chapter_id}/export:
     get:
       description: |-
         Export one chapter in JSON format
@@ -1756,7 +1784,7 @@ paths:
       summary: Export Chapter
       tags:
       - chapter
-  /chapter/{chapter_id}/export/lp:
+  /chapters/{chapter_id}/export/lp:
     get:
       description: |-
         Export one chapter in LabelPlus text format
@@ -1796,7 +1824,7 @@ paths:
       summary: Export Chapter LabelPlus
       tags:
       - chapter
-  /chapter/{chapter_id}/import:
+  /chapters/{chapter_id}/import:
     post:
       consumes:
       - application/json
@@ -1844,7 +1872,7 @@ paths:
       summary: Import Chapter
       tags:
       - chapter
-  /chapter/{chapter_id}/pages:
+  /chapters/{chapter_id}/pages:
     delete:
       description: |-
         Hard-delete all pages under one chapter
@@ -1923,7 +1951,7 @@ paths:
       summary: List Chapter Pages
       tags:
       - chapter
-  /chapter/{chapter_id}/pages/reserve:
+  /chapters/{chapter_id}/pages/reserve:
     post:
       consumes:
       - application/json
@@ -1967,7 +1995,7 @@ paths:
       summary: Reserve Chapter Pages Upload
       tags:
       - chapter
-  /chapter/comic/{comic_id}:
+  /chapters/comics/{comic_id}:
     get:
       description: |-
         List chapters for one comic
@@ -2011,7 +2039,7 @@ paths:
       summary: List Chapters
       tags:
       - chapter
-  /chapter/comic/{comic_id}/pinned:
+  /chapters/comics/{comic_id}/pinned:
     get:
       description: |-
         Get pinned chapter for one comic
@@ -2047,7 +2075,7 @@ paths:
       summary: Get Pinned Chapter
       tags:
       - chapter
-  /comic:
+  /comics:
     post:
       consumes:
       - application/json
@@ -2086,7 +2114,7 @@ paths:
       summary: Create Comic
       tags:
       - comic
-  /comic/{comic_id}:
+  /comics/{comic_id}:
     delete:
       description: |-
         Hard-delete one comic by id
@@ -2204,7 +2232,7 @@ paths:
       summary: Update Comic
       tags:
       - comic
-  /comic/{comic_id}/cover:
+  /comics/{comic_id}/cover:
     post:
       consumes:
       - application/json
@@ -2248,7 +2276,7 @@ paths:
       summary: Reserve Comic Cover Upload
       tags:
       - comic
-  /comic/{comic_id}/cover/confirm:
+  /comics/{comic_id}/cover/confirm:
     post:
       description: |-
         Confirm one comic cover upload after client upload completed
@@ -2284,7 +2312,7 @@ paths:
       summary: Confirm Comic Cover Uploaded
       tags:
       - comic
-  /comic/workset/{workset_id}:
+  /comics/worksets/{workset_id}:
     get:
       description: |-
         List active comics for one workset
@@ -2474,7 +2502,7 @@ paths:
       summary: Update Member Invitation
       tags:
       - member-invitation
-  /member-invitations/team/{team_id}:
+  /member-invitations/teams/{team_id}:
     get:
       description: |-
         List invitations under one team
@@ -2774,7 +2802,7 @@ paths:
       summary: List Team Members
       tags:
       - member
-  /page/{page_id}/image/uploaded:
+  /pages/{page_id}/image/uploaded:
     post:
       description: |-
         Confirm one page image upload after client upload completed
@@ -2810,7 +2838,7 @@ paths:
       summary: Confirm Page Image Uploaded
       tags:
       - page
-  /page/{page_id}/units:
+  /pages/{page_id}/units:
     get:
       description: |-
         List units for one page
@@ -2855,6 +2883,29 @@ paths:
       - application/json
       description: |-
         Apply one page unit diff and synchronize page and chapter counters
+
+        ## Operations
+        Each op in `diff.ops` is classified automatically by the server:
+        - **CREATE**: set `local_id`, leave `id` empty  Must include `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
+        - **SAVE (update/upsert)**: set `id` plus >=1 mutable field  Must include all geometry fields (`is_bubble`, `is_proofread`, `x_coord`, `y_coord`)
+        - **DELETE**: set `id` only, no mutable fields
+        Mutable fields: `is_bubble`, `is_proofread`, `x_coord`, `y_coord`, `translated_text`, `translator_comment`, `last_translator_id`, `proofread_text`, `proofreader_comment`, `last_proofreader_id`
+
+        ## `cand_order` (client-suggested reindex order)
+        An ordered list of unit identifiers to control the final display order after mutations are applied
+        Use `local_id` for CREATE ops or real `id` for SAVE ops
+        Must include every `local_id` and `id` from CREATE/SAVE ops  Must exclude all deleted ids  No duplicates  No empty strings
+        Units not listed in `cand_order` are kept near their original neighbours
+
+        ## Validation rules (return 400 on failure)
+        - `diff.page_id` must match the path `page_id`
+        - Each op must have `local_id` xor `id` (not both, not neither)
+        - CREATE ops require `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
+        - SAVE ops require all geometry fields plus at least one mutable field
+        - The same unit cannot appear in both a CREATE/SAVE op and a DELETE op
+        - `cand_order` must not contain ids being deleted
+
+        ## Permission
         The caller must be translator or proofreader on the target chapter
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
@@ -2897,7 +2948,7 @@ paths:
       summary: Save Page Units
       tags:
       - unit
-  /sys-mail:
+  /sys-mails:
     get:
       description: |-
         List unread system mails for current authorized user with pagination
@@ -2935,7 +2986,7 @@ paths:
       summary: List Unread System Mails
       tags:
       - sys-mail
-  /sys-mail/{sys_mail_id}/read:
+  /sys-mails/{sys_mail_id}/read:
     post:
       description: |-
         Mark one system mail as read for current authorized user

@@ -20,7 +20,7 @@ export async function phase1Users(state: SeedState): Promise<void> {
     "/invitations",
     {
       team_id: state.teamID,
-      invitee_qq: TRANSLATOR_CREDS.qq,
+      invitee_qid: TRANSLATOR_CREDS.qid,
       roles: ROLE.TRANSLATOR,
     },
     { token: state.adminToken },
@@ -36,7 +36,7 @@ export async function phase1Users(state: SeedState): Promise<void> {
     "/invitations",
     {
       team_id: state.teamID,
-      invitee_qq: PROOFREADER_CREDS.qq,
+      invitee_qid: PROOFREADER_CREDS.qid,
       roles: ROLE.PROOFREADER,
     },
     { token: state.adminToken },
@@ -48,25 +48,25 @@ export async function phase1Users(state: SeedState): Promise<void> {
 
   // ── 1.3 Register translator ───────────────────────────────────────────────
   const translatorRes = await api<RegUserRes>("POST", "/auth/register", {
-    qq: TRANSLATOR_CREDS.qq,
+    qid: TRANSLATOR_CREDS.qid,
     password: TRANSLATOR_CREDS.password,
     name: TRANSLATOR_CREDS.name,
     invitation_code: invTranslator.invitation_code,
   });
 
-  state.translatorToken = translatorRes.access_token;
+  state.translatorToken = translatorRes.token;
   state.translatorUserID = translatorRes.user_id;
   logOk("Translator registered", { user_id: translatorRes.user_id });
 
   // ── 1.4 Register proofreader ──────────────────────────────────────────────
   const proofreaderRes = await api<RegUserRes>("POST", "/auth/register", {
-    qq: PROOFREADER_CREDS.qq,
+    qid: PROOFREADER_CREDS.qid,
     password: PROOFREADER_CREDS.password,
     name: PROOFREADER_CREDS.name,
     invitation_code: invProofreader.invitation_code,
   });
 
-  state.proofreaderToken = proofreaderRes.access_token;
+  state.proofreaderToken = proofreaderRes.token;
   state.proofreaderUserID = proofreaderRes.user_id;
   logOk("Proofreader registered", { user_id: proofreaderRes.user_id });
 

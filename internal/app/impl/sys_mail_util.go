@@ -7,7 +7,6 @@ import (
 	"poprako-s/internal/domain/model/aggr"
 )
 
-
 // `asmSysMailVal` converts `SysMail` aggregate to app-facing value object.
 func asmSysMailVal(mail *aggr.SysMail) val.SysMailVal {
 	return val.SysMailVal{

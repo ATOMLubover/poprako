@@ -23,7 +23,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id}/pages/reserve [post]
+// @Router /chapters/{chapter_id}/pages/reserve [post]
 func ResvChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -72,7 +72,7 @@ func ResvChapterPages(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id}/pages [get]
+// @Router /chapters/{chapter_id}/pages [get]
 func ListChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -125,7 +125,7 @@ func ListChapterPages(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /page/{page_id}/image/uploaded [post]
+// @Router /pages/{page_id}/image/uploaded [post]
 func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -165,7 +165,7 @@ func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id}/pages [delete]
+// @Router /chapters/{chapter_id}/pages [delete]
 func DeleteChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 

@@ -1,7 +1,7 @@
 export const BASE_URL = "http://127.0.0.1:8080/api/v1";
 
 export const SUPER_ADMIN_CREDS = {
-  qq: "123456789",
+  qid: "123456789",
   password: "123456",
 };
 
@@ -35,13 +35,13 @@ export const WORKFLOW = {
 
 // Test user credentials — QQ is unique per run
 export const TRANSLATOR_CREDS = {
-  qq: `${20000 + RUN_ID}`,
+  qid: `${20000 + RUN_ID}`,
   password: "test123",
   name: `Translator-${RUN_ID}`,
 };
 
 export const PROOFREADER_CREDS = {
-  qq: `${30000 + RUN_ID}`,
+  qid: `${30000 + RUN_ID}`,
   password: "test123",
   name: `Proofreader-${RUN_ID}`,
 };

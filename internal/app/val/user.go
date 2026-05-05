@@ -5,7 +5,7 @@ import token_iface "poprako-s/internal/domain/ext/token"
 type UserVal struct {
 	Id string `json:"id"`
 
-	Qid      string `json:"qq"`
+	Qid      string `json:"qid"`
 	Nickname string `json:"nickname"`
 
 	AvatarUrl      string `json:"avatar_url"`
@@ -20,8 +20,8 @@ type UserVal struct {
 }
 
 type UserLoginArgs struct {
-	Qid string `json:"qq"`
-	Pwd string `json:"pwd"`
+	Qid string `json:"qid"`
+	Pwd string `json:"password"`
 }
 
 type UserLoginRes struct {
@@ -30,7 +30,7 @@ type UserLoginRes struct {
 }
 
 type UserRegArgs struct {
-	Qid  string `json:"qq"`
+	Qid  string `json:"qid"`
 	Name string `json:"name"`
 	Pwd  string `json:"password"`
 
@@ -47,7 +47,7 @@ type UserUpdArgs struct {
 	Id string `json:"id"`
 
 	Name string `json:"name"`
-	Qid  string `json:"qq"`
+	Qid  string `json:"qid"`
 }
 
 // `ResvUserAvatarArgs` provides the file extension

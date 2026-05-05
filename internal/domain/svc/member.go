@@ -74,9 +74,24 @@ func (MemberSvc) CanAdminMember(currUid string, teamId string, memberRepo repo_i
 	return svc_res.Accept()
 }
 
-// `CanCreateMember` validates whether current user can create members for one team.
-func (s MemberSvc) CanCreateMember(currUid string, teamId string, memberRepo repo_iface.MemberRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
-	return s.CanAdminMember(currUid, teamId, memberRepo, clsf)
+// `CanCreateMember` validates whether current super admin can directly create members for one team.
+func (MemberSvc) CanCreateMember(currUid string, userRepo repo_iface.UserRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	currUser, err := userRepo.GetById(currUid)
+	if err != nil {
+		zap.L().Error(
+			"[MemberSvc.CanCreateMember] failed to get current user",
+			zap.String("currUid", currUid),
+			zap.Error(err),
+		)
+
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅超级管理员可执行该操作", "权限校验失败", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if currUser == nil || !currUser.IsSuperAdmin {
+		return svc_res.Reject(svc_res.Forbidden, "仅超级管理员可执行该操作")
+	}
+
+	return svc_res.Accept()
 }
 
 // `CanUpdateMember` validates whether current user can update one target member roles.

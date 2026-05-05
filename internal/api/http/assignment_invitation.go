@@ -24,7 +24,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignment-invitations/chapter/{chapter_id} [get]
+// @Router /assignment-invitations/chapters/{chapter_id} [get]
 func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 

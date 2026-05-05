@@ -4,10 +4,10 @@ import (
 	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
-	"poprako-s/internal/domain/model/query"
-	repo_iface "poprako-s/internal/domain/repo"
 	oss_iface "poprako-s/internal/domain/ext/oss"
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/query"
+	repo_iface "poprako-s/internal/domain/repo"
 )
 
 // `asmTeamVal` converts `Team` aggregate to app value object.

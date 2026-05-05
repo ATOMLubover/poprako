@@ -23,7 +23,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/comic/{comic_id} [get]
+// @Router /chapters/comics/{comic_id} [get]
 func ListChapters(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 
@@ -78,7 +78,7 @@ func ListChapters(st *state.AppState) iris.Handler {
 // @Failure 404 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id} [get]
+// @Router /chapters/{chapter_id} [get]
 func GetChapterById(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 
@@ -118,7 +118,7 @@ func GetChapterById(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/comic/{comic_id}/pinned [get]
+// @Router /chapters/comics/{comic_id}/pinned [get]
 func GetPinnedChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 
@@ -159,7 +159,7 @@ func GetPinnedChapter(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter [post]
+// @Router /chapters [post]
 func CreateChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 
@@ -201,7 +201,7 @@ func CreateChapter(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id} [put]
+// @Router /chapters/{chapter_id} [put]
 func UpdateChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 
@@ -249,7 +249,7 @@ func UpdateChapter(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id} [delete]
+// @Router /chapters/{chapter_id} [delete]
 func DeleteChapter(st *state.AppState) iris.Handler {
 	chapterApp := st.ChapterApp
 

@@ -24,7 +24,7 @@ import (
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 403 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id}/export [get]
+// @Router /chapters/{chapter_id}/export [get]
 func ExportChapter(st *state.AppState) iris.Handler {
 	chapterPortApp := st.ChapterPortApp
 
@@ -65,7 +65,7 @@ func ExportChapter(st *state.AppState) iris.Handler {
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 403 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id}/export/lp [get]
+// @Router /chapters/{chapter_id}/export/lp [get]
 func ExportChapterLp(st *state.AppState) iris.Handler {
 	chapterPortApp := st.ChapterPortApp
 
@@ -116,7 +116,7 @@ func ExportChapterLp(st *state.AppState) iris.Handler {
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 403 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapter/{chapter_id}/import [post]
+// @Router /chapters/{chapter_id}/import [post]
 func ImportChapter(st *state.AppState) iris.Handler {
 	chapterPortApp := st.ChapterPortApp
 

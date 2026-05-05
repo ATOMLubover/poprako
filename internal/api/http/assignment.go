@@ -23,7 +23,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignments/chapter/{chapter_id} [get]
+// @Router /assignments/chapters/{chapter_id} [get]
 func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 

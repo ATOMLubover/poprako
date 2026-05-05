@@ -73,7 +73,7 @@ func (a *memberAppImpl) Create(cx context.Context, currUid string, args *val.Cre
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.CreateMemberRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.CreateMemberRes], error) {
 		memberRepo := prov.MemberRepo()
 
-		if re := a.memberSvc.CanCreateMember(currUid, args.TeamId, memberRepo, a.errClsf); re.IsReject() {
+		if re := a.memberSvc.CanCreateMember(currUid, prov.UserRepo(), a.errClsf); re.IsReject() {
 			return app_res.Reject[val.CreateMemberRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 

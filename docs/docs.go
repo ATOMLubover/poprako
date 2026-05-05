@@ -72,7 +72,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignment-invitations/chapter/{chapter_id}": {
+        "/assignment-invitations/chapters/{chapter_id}": {
             "get": {
                 "security": [
                     {
@@ -308,7 +308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignments/chapter/{chapter_id}": {
+        "/assignments/chapters/{chapter_id}": {
             "get": {
                 "security": [
                     {
@@ -561,7 +561,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter": {
+        "/chapters": {
             "post": {
                 "security": [
                     {
@@ -618,7 +618,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/comic/{comic_id}": {
+        "/chapters/comics/{comic_id}": {
             "get": {
                 "security": [
                     {
@@ -682,7 +682,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/comic/{comic_id}/pinned": {
+        "/chapters/comics/{comic_id}/pinned": {
             "get": {
                 "security": [
                     {
@@ -734,7 +734,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/{chapter_id}": {
+        "/chapters/{chapter_id}": {
             "get": {
                 "security": [
                     {
@@ -904,7 +904,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/{chapter_id}/export": {
+        "/chapters/{chapter_id}/export": {
             "get": {
                 "security": [
                     {
@@ -962,7 +962,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/{chapter_id}/export/lp": {
+        "/chapters/{chapter_id}/export/lp": {
             "get": {
                 "security": [
                     {
@@ -1020,7 +1020,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/{chapter_id}/import": {
+        "/chapters/{chapter_id}/import": {
             "post": {
                 "security": [
                     {
@@ -1090,7 +1090,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/{chapter_id}/pages": {
+        "/chapters/{chapter_id}/pages": {
             "get": {
                 "security": [
                     {
@@ -1204,7 +1204,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapter/{chapter_id}/pages/reserve": {
+        "/chapters/{chapter_id}/pages/reserve": {
             "post": {
                 "security": [
                     {
@@ -1268,7 +1268,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comic": {
+        "/comics": {
             "post": {
                 "security": [
                     {
@@ -1325,7 +1325,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comic/workset/{workset_id}": {
+        "/comics/worksets/{workset_id}": {
             "get": {
                 "security": [
                     {
@@ -1431,7 +1431,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comic/{comic_id}": {
+        "/comics/{comic_id}": {
             "get": {
                 "security": [
                     {
@@ -1601,7 +1601,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comic/{comic_id}/cover": {
+        "/comics/{comic_id}/cover": {
             "post": {
                 "security": [
                     {
@@ -1665,7 +1665,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comic/{comic_id}/cover/confirm": {
+        "/comics/{comic_id}/cover/confirm": {
             "post": {
                 "security": [
                     {
@@ -1774,7 +1774,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/member-invitations/team/{team_id}": {
+        "/member-invitations/teams/{team_id}": {
             "get": {
                 "security": [
                     {
@@ -2327,7 +2327,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/page/{page_id}/image/uploaded": {
+        "/pages/{page_id}/image/uploaded": {
             "post": {
                 "security": [
                     {
@@ -2379,7 +2379,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/page/{page_id}/units": {
+        "/pages/{page_id}/units": {
             "get": {
                 "security": [
                     {
@@ -2442,7 +2442,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Apply one page unit diff and synchronize page and chapter counters\nThe caller must be translator or proofreader on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "description": "Apply one page unit diff and synchronize page and chapter counters\n\n## Operations\nEach op in ` + "`" + `diff.ops` + "`" + ` is classified automatically by the server:\n- **CREATE**: set ` + "`" + `local_id` + "`" + `, leave ` + "`" + `id` + "`" + ` empty  Must include ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `\n- **SAVE (update/upsert)**: set ` + "`" + `id` + "`" + ` plus \u003e=1 mutable field  Must include all geometry fields (` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `)\n- **DELETE**: set ` + "`" + `id` + "`" + ` only, no mutable fields\nMutable fields: ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `, ` + "`" + `translated_text` + "`" + `, ` + "`" + `translator_comment` + "`" + `, ` + "`" + `last_translator_id` + "`" + `, ` + "`" + `proofread_text` + "`" + `, ` + "`" + `proofreader_comment` + "`" + `, ` + "`" + `last_proofreader_id` + "`" + `\n\n## ` + "`" + `cand_order` + "`" + ` (client-suggested reindex order)\nAn ordered list of unit identifiers to control the final display order after mutations are applied\nUse ` + "`" + `local_id` + "`" + ` for CREATE ops or real ` + "`" + `id` + "`" + ` for SAVE ops\nMust include every ` + "`" + `local_id` + "`" + ` and ` + "`" + `id` + "`" + ` from CREATE/SAVE ops  Must exclude all deleted ids  No duplicates  No empty strings\nUnits not listed in ` + "`" + `cand_order` + "`" + ` are kept near their original neighbours\n\n## Validation rules (return 400 on failure)\n- ` + "`" + `diff.page_id` + "`" + ` must match the path ` + "`" + `page_id` + "`" + `\n- Each op must have ` + "`" + `local_id` + "`" + ` xor ` + "`" + `id` + "`" + ` (not both, not neither)\n- CREATE ops require ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `\n- SAVE ops require all geometry fields plus at least one mutable field\n- The same unit cannot appear in both a CREATE/SAVE op and a DELETE op\n- ` + "`" + `cand_order` + "`" + ` must not contain ids being deleted\n\n## Permission\nThe caller must be translator or proofreader on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
                 "consumes": [
                     "application/json"
                 ],
@@ -2505,7 +2505,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/sys-mail": {
+        "/sys-mails": {
             "get": {
                 "security": [
                     {
@@ -2562,7 +2562,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/sys-mail/{sys_mail_id}/read": {
+        "/sys-mails/{sys_mail_id}/read": {
             "post": {
                 "security": [
                     {
@@ -4593,9 +4593,6 @@ const docTemplate = `{
                 },
                 "role_mask": {
                     "type": "integer"
-                },
-                "team_id": {
-                    "type": "string"
                 }
             }
         },
@@ -4819,7 +4816,7 @@ const docTemplate = `{
         "val.SavePageUnitsArgs": {
             "type": "object",
             "properties": {
-                "diff": {
+                "difference": {
                     "$ref": "#/definitions/val.UnitDiffVal"
                 },
                 "page_id": {
@@ -4923,19 +4920,22 @@ const docTemplate = `{
         "val.UnitDiffVal": {
             "type": "object",
             "properties": {
-                "cand_order": {
+                "candidate_order": {
+                    "description": "` + "`" + `CandOrder` + "`" + ` is the client-suggested unit ordering for reindexing\nUse ` + "`" + `local_id` + "`" + ` for create ops or real ` + "`" + `id` + "`" + ` for save ops",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "ops": {
+                "operations": {
+                    "description": "` + "`" + `Ops` + "`" + ` is a list of unit operations applied before reindexing",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/val.UnitOpVal"
                     }
                 },
                 "page_id": {
+                    "description": "` + "`" + `PageId` + "`" + ` identifies the target page and must match the path parameter",
                     "type": "string"
                 }
             }
@@ -4991,39 +4991,51 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
+                    "description": "` + "`" + `Id` + "`" + ` is the server-assigned unit identifier (set for SAVE and DELETE ops)",
                     "type": "string"
                 },
                 "is_bubble": {
+                    "description": "` + "`" + `IsBubble` + "`" + ` indicates whether the unit is a speech bubble (required for CREATE and SAVE)",
                     "type": "boolean"
                 },
                 "is_proofread": {
+                    "description": "` + "`" + `IsProofread` + "`" + ` indicates whether the unit has been proofread (required for CREATE and SAVE)",
                     "type": "boolean"
                 },
                 "last_proofreader_id": {
+                    "description": "` + "`" + `LastProofreaderId` + "`" + ` is the user id of the last proofreader (mutable field for SAVE)",
                     "type": "string"
                 },
                 "last_translator_id": {
+                    "description": "` + "`" + `LastTranslatorId` + "`" + ` is the user id of the last translator (mutable field for SAVE)",
                     "type": "string"
                 },
                 "local_id": {
+                    "description": "` + "`" + `LocalId` + "`" + ` is a client-generated temporary identifier (set for CREATE ops)",
                     "type": "string"
                 },
                 "proofread_text": {
+                    "description": "` + "`" + `ProofreadText` + "`" + ` is the proofread content (mutable field for SAVE)",
                     "type": "string"
                 },
                 "proofreader_comment": {
+                    "description": "` + "`" + `ProofreaderComment` + "`" + ` is the proofreader's note (mutable field for SAVE)",
                     "type": "string"
                 },
                 "translated_text": {
+                    "description": "` + "`" + `TranslatedText` + "`" + ` is the translated content (mutable field for SAVE)",
                     "type": "string"
                 },
                 "translator_comment": {
+                    "description": "` + "`" + `TranslatorComment` + "`" + ` is the translator's note (mutable field for SAVE)",
                     "type": "string"
                 },
                 "x_coord": {
+                    "description": "` + "`" + `XCoord` + "`" + ` is the horizontal coordinate (required for CREATE and SAVE)",
                     "type": "number"
                 },
                 "y_coord": {
+                    "description": "` + "`" + `YCoord` + "`" + ` is the vertical coordinate (required for CREATE and SAVE)",
                     "type": "number"
                 }
             }
@@ -5095,10 +5107,10 @@ const docTemplate = `{
         "val.UserLoginArgs": {
             "type": "object",
             "properties": {
-                "pwd": {
+                "password": {
                     "type": "string"
                 },
-                "qq": {
+                "qid": {
                     "type": "string"
                 }
             }
@@ -5126,7 +5138,7 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "qq": {
+                "qid": {
                     "type": "string"
                 }
             }
@@ -5151,7 +5163,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "qq": {
+                "qid": {
                     "type": "string"
                 }
             }
@@ -5180,7 +5192,7 @@ const docTemplate = `{
                 "nickname": {
                     "type": "string"
                 },
-                "qq": {
+                "qid": {
                     "type": "string"
                 },
                 "updated_at": {

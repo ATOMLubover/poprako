@@ -21,7 +21,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /sys-mail [get]
+// @Router /sys-mails [get]
 func ListSysMail(st *state.AppState) iris.Handler {
 	sysMailApp := st.SysMailApp
 
@@ -71,7 +71,7 @@ func ListSysMail(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /sys-mail/{sys_mail_id}/read [post]
+// @Router /sys-mails/{sys_mail_id}/read [post]
 func MarkSysMailRead(st *state.AppState) iris.Handler {
 	sysMailApp := st.SysMailApp
 

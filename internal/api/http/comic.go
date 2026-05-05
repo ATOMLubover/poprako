@@ -33,7 +33,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic/workset/{workset_id} [get]
+// @Router /comics/worksets/{workset_id} [get]
 func ListComics(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -155,7 +155,7 @@ func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, 
 // @Failure 404 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic/{comic_id} [get]
+// @Router /comics/{comic_id} [get]
 func GetComicById(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -196,7 +196,7 @@ func GetComicById(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic [post]
+// @Router /comics [post]
 func CreateComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -239,7 +239,7 @@ func CreateComic(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic/{comic_id} [put]
+// @Router /comics/{comic_id} [put]
 func UpdateComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -290,7 +290,7 @@ func UpdateComic(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic/{comic_id}/cover [post]
+// @Router /comics/{comic_id}/cover [post]
 func ResvComicCover(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -338,7 +338,7 @@ func ResvComicCover(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic/{comic_id}/cover/confirm [post]
+// @Router /comics/{comic_id}/cover/confirm [post]
 func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -378,7 +378,7 @@ func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comic/{comic_id} [delete]
+// @Router /comics/{comic_id} [delete]
 func DeleteComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 

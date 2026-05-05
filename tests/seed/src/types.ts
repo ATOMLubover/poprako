@@ -2,12 +2,12 @@
 
 export interface LoginUserRes {
   user_id: string;
-  access_token: string;
+  token: string;
 }
 
 export interface RegUserRes {
   user_id: string;
-  access_token: string;
+  token: string;
 }
 
 // ─── Team ────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ export interface CreateMemberRes {
 export interface InvitationInfo {
   id: string;
   team_id: string;
-  invitee_qq: string;
+  invitee_qid: string;
   invitation_code: string;
   roles: number;
   pending: boolean;

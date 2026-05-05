@@ -58,4 +58,3 @@ func ClampOffsetLimit(offset int, limit *int) app_res.AppRes[app_res.None] {
 
 	return app_res.Accept(&app_res.None{})
 }
-
