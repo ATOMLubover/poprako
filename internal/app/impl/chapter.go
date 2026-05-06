@@ -85,6 +85,32 @@ func NewChapterApp(
 	}
 }
 
+// `mkChapterRepoIncl` composes repo include options from app args.
+func mkChapterRepoIncl(includes []enum.ChapterIncl) []enum.ChapterIncl {
+	if len(includes) == 0 {
+		return nil
+	}
+
+	repoIncls := make([]enum.ChapterIncl, 0, len(includes))
+
+	for i := range includes {
+		repoIncls = append(repoIncls, includes[i])
+
+		switch includes[i] {
+		case enum.ChapterInclComicWorkset:
+			repoIncls = append(repoIncls, enum.ChapterInclComic)
+
+		case enum.ChapterInclComicWorksetTeam:
+			repoIncls = append(repoIncls, enum.ChapterInclComic, enum.ChapterInclComicWorkset)
+
+		case enum.ChapterInclComicCreator:
+			repoIncls = append(repoIncls, enum.ChapterInclComic)
+		}
+	}
+
+	return repoIncls
+}
+
 // `List` returns chapter list under target comic.
 func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.ListChapterArgs) app_res.AppRes[[]val.ChapterVal] {
 	lgr := app_util.TakeLgr(cx)
@@ -108,7 +134,7 @@ func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.List
 			Offset: args.Offset,
 			Limit:  args.Limit,
 		},
-	})
+	}, mkChapterRepoIncl(args.Includes)...)
 	if err != nil {
 		lgr.Error("[chapterAppImpl.List] failed to list chapters", zap.Error(err))
 		return app_res.Reject[[]val.ChapterVal](app_res.ServerError, "获取章节列表失败")
@@ -123,14 +149,18 @@ func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.List
 }
 
 // `GetById` returns one chapter by id.
-func (a *chapterAppImpl) GetById(cx context.Context, currUid string, chapterId string) app_res.AppRes[val.ChapterVal] {
+func (a *chapterAppImpl) GetById(cx context.Context, currUid string, args *val.GetChapterByIdArgs) app_res.AppRes[val.ChapterVal] {
 	lgr := app_util.TakeLgr(cx)
 
-	if re := vfyChapterId(chapterId); re.IsReject() {
+	if args == nil {
+		return app_res.Reject[val.ChapterVal](app_res.BadRequest, "查询参数不能为空")
+	}
+
+	if re := vfyChapterId(args.ChapterId); re.IsReject() {
 		return app_res.Reject[val.ChapterVal](re.Code(), re.Msg())
 	}
 
-	chapter, err := a.chapterRepo.GetById(chapterId)
+	chapter, err := a.chapterRepo.GetById(args.ChapterId, mkChapterRepoIncl(args.Includes)...)
 	if err != nil {
 		if repo_infra.IsNotFound(err) {
 			return app_res.Reject[val.ChapterVal](app_res.NotFound, "章节不存在")

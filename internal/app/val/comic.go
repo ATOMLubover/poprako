@@ -8,7 +8,8 @@ import "poprako-s/internal/domain/model/enum"
 type ComicVal struct {
 	Id string `json:"id"`
 
-	WorksetId string `json:"workset_id"`
+	WorksetId string      `json:"workset_id"`
+	Workset   *WorksetVal `json:"workset,omitempty"`
 
 	Index int `json:"index"`
 
@@ -21,7 +22,8 @@ type ComicVal struct {
 
 	ChapterCount int `json:"chapter_count"`
 
-	CreatorId string `json:"creator_id"`
+	CreatorId string   `json:"creator_id"`
+	Creator   *UserVal `json:"creator,omitempty"`
 
 	LastActiveAt int64 `json:"last_active_at"`
 	CreatedAt    int64 `json:"created_at"`
@@ -51,6 +53,8 @@ type ListComicArgs struct {
 
 	PublishPhase *enum.WorkflowPhase `url:"publish_phase"`
 
+	Includes []enum.ComicIncl `url:"includes"`
+
 	Offset int `url:"offset"`
 	Limit  int `url:"limit"`
 }
@@ -77,6 +81,15 @@ type CreateComicArgs struct {
 type ComicCreatedRes struct {
 	// `Id` is the generated comic identifier
 	Id string `json:"id"`
+}
+
+// `GetComicByIdArgs` carries query args for comic detail API.
+type GetComicByIdArgs struct {
+	// `ComicId` identifies the target comic.
+	ComicId string `url:"comic_id"`
+
+	// `Includes` controls relation assembly fields.
+	Includes []enum.ComicIncl `url:"includes"`
 }
 
 // `ComicUpdArgs` holds mutable fields for comic put update

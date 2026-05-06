@@ -41,6 +41,8 @@ type Chapter struct {
 
 	// `CreatorId` is chapter creator user identifier
 	CreatorId string
+	// `Creator` is included only when includes contain `creator`.
+	Creator *User
 
 	// `CreatedAt` is creation timestamp
 	CreatedAt time.Time

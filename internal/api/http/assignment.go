@@ -4,6 +4,7 @@ import (
 	"poprako-s/internal/api/http/res"
 	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/model/enum"
 
 	"github.com/kataras/iris/v12"
 )
@@ -16,14 +17,15 @@ import (
 // @Tags assignment
 // @Security ApiKeyAuth
 // @Produce json
-// @Param chapter_id path string true "chapter id"
+// @Param chapter_id query string true "chapter id"
+// @Param includes query []string false "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
 // @Success 200 {object} res.HttpRes[[]val.AssignmentVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignments/chapters/{chapter_id} [get]
+// @Router /api/v1/assignments [get]
 func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 
@@ -34,25 +36,23 @@ func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 			return
 		}
 
-		chapterId := cx.Params().Get("chapter_id")
-		if chapterId == "" {
+		var args val.ListAssignmentByChapterArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.ChapterId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
+		if !parseAssignmentIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
 			return
 		}
 
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		re := app.ListByChapter(newReqCx(cx), currUid, &val.ListAssignmentByChapterArgs{ChapterId: chapterId, Offset: offset, Limit: limit})
+		re := app.ListByChapter(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -69,13 +69,14 @@ func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 // @Tags assignment
 // @Security ApiKeyAuth
 // @Produce json
+// @Param includes query []string false "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
 // @Success 200 {object} res.HttpRes[[]val.AssignmentVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignments/mine [get]
+// @Router /api/v1/assignments/mine [get]
 func ListMyAssignments(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 
@@ -86,19 +87,18 @@ func ListMyAssignments(st *state.AppState) iris.Handler {
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
+		var args val.ListAssignmentByUserArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
+		if !parseAssignmentIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
 			return
 		}
 
-		re := app.ListByUser(newReqCx(cx), currUid, &val.ListAssignmentByUserArgs{Offset: offset, Limit: limit})
+		re := app.ListByUser(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -106,6 +106,31 @@ func ListMyAssignments(st *state.AppState) iris.Handler {
 
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
+}
+
+// `parseAssignmentIncludes` validates include query values.
+func parseAssignmentIncludes(includes []enum.AssignmentIncl) bool {
+	if len(includes) == 0 {
+		return true
+	}
+
+	for i := range includes {
+		switch includes[i] {
+		case enum.AssignmentInclUser,
+			enum.AssignmentInclChapter,
+			enum.AssignmentInclChapterComic,
+			enum.AssignmentInclChapterComicWorkset,
+			enum.AssignmentInclChapterComicWorksetTeam,
+			enum.AssignmentInclChapterCreator,
+			enum.AssignmentInclChapterComicCreator:
+			continue
+
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // `UpsertAssignment` godoc
@@ -122,7 +147,7 @@ func ListMyAssignments(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignments [put]
+// @Router /api/v1/assignments [put]
 func UpsertAssignment(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 
@@ -162,7 +187,7 @@ func UpsertAssignment(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignments/{assignment_id} [delete]
+// @Router /api/v1/assignments/{assignment_id} [delete]
 func DeleteAssignment(st *state.AppState) iris.Handler {
 	app := st.AssignmentApp
 

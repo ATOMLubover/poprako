@@ -11,21 +11,45 @@ import (
 )
 
 // `asmComicVal` converts a `Comic` aggregate to app-facing `ComicVal`
-func asmComicVal(cm *aggr.Comic) val.ComicVal {
+func asmComicVal(comic *aggr.Comic) val.ComicVal {
+	var worksetVal *val.WorksetVal
+	var creatorVal *val.UserVal
+
+	if comic.Workset != nil {
+		v := asmWorksetVal(comic.Workset)
+
+		worksetVal = &v
+	}
+
+	if comic.Creator != nil {
+		creatorVal = &val.UserVal{
+			Id:             comic.Creator.Id,
+			Qid:            comic.Creator.Qid,
+			Nickname:       comic.Creator.Nickname,
+			AvatarUploaded: comic.Creator.AvatarUploaded,
+			IsSuperAdmin:   comic.Creator.IsSuperAdmin,
+			LastActiveAt:   comic.Creator.LastActiveAt.UnixMilli(),
+			CreatedAt:      comic.Creator.CreatedAt.UnixMilli(),
+			UpdatedAt:      comic.Creator.UpdatedAt.UnixMilli(),
+		}
+	}
+
 	return val.ComicVal{
-		Id:            cm.Id,
-		WorksetId:     cm.WorksetId,
-		Index:         cm.Index,
-		Title:         cm.Title,
-		Author:        cm.Author,
-		Desc:          cm.Desc,
-		IsCompleted:   cm.IsCompleted,
-		CoverUploaded: cm.CoverUploaded,
-		ChapterCount:  cm.ChapterCount,
-		CreatorId:     cm.CreatorId,
-		LastActiveAt:  cm.LastActiveAt.UnixMilli(),
-		CreatedAt:     cm.CreatedAt.UnixMilli(),
-		UpdatedAt:     cm.UpdatedAt.UnixMilli(),
+		Id:            comic.Id,
+		WorksetId:     comic.WorksetId,
+		Workset:       worksetVal,
+		Index:         comic.Index,
+		Title:         comic.Title,
+		Author:        comic.Author,
+		Desc:          comic.Desc,
+		IsCompleted:   comic.IsCompleted,
+		CoverUploaded: comic.CoverUploaded,
+		ChapterCount:  comic.ChapterCount,
+		CreatorId:     comic.CreatorId,
+		Creator:       creatorVal,
+		LastActiveAt:  comic.LastActiveAt.UnixMilli(),
+		CreatedAt:     comic.CreatedAt.UnixMilli(),
+		UpdatedAt:     comic.UpdatedAt.UnixMilli(),
 	}
 }
 

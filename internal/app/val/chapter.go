@@ -6,7 +6,8 @@ import "poprako-s/internal/domain/model/enum"
 type ChapterVal struct {
 	Id string `json:"id"`
 
-	ComicId string `json:"comic_id"`
+	ComicId string    `json:"comic_id"`
+	Comic   *ComicVal `json:"comic,omitempty"`
 
 	IsPinned bool `json:"is_pinned"`
 
@@ -18,7 +19,8 @@ type ChapterVal struct {
 	TranslatedUnitCount int `json:"translated_unit_count"`
 	ProofreadUnitCount  int `json:"proofread_unit_count"`
 
-	CreatorId string `json:"creator_id"`
+	CreatorId string   `json:"creator_id"`
+	Creator   *UserVal `json:"creator,omitempty"`
 
 	UploadedAt *int64 `json:"uploaded_at"`
 
@@ -43,6 +45,8 @@ type ListChapterArgs struct {
 	// `ComicId` is target comic identifier.
 	ComicId string `url:"comic_id"`
 
+	Includes []enum.ChapterIncl `url:"includes"`
+
 	Offset int `url:"offset"`
 	Limit  int `url:"limit"`
 }
@@ -60,6 +64,15 @@ type CreateChapterArgs struct {
 type ChapterCreatedRes struct {
 	// `Id` is created chapter identifier.
 	Id string `json:"id"`
+}
+
+// `GetChapterByIdArgs` carries query args for chapter detail API.
+type GetChapterByIdArgs struct {
+	// `ChapterId` identifies the target chapter.
+	ChapterId string `url:"chapter_id"`
+
+	// `Includes` controls relation assembly fields.
+	Includes []enum.ChapterIncl `url:"includes"`
 }
 
 // `ChapterUpdArgs` holds mutable chapter fields.

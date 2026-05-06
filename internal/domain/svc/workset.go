@@ -51,7 +51,7 @@ func (WorksetSvc) CanAdminWorkset(currUid string, teamId string, memberRepo repo
 }
 
 func (WorksetSvc) CanListWorkset(currUid string, teamId string, memberRepo repo_iface.MemberRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
-	ok, err := memberRepo.ExistByUserTeamId(teamId, currUid)
+	ok, err := memberRepo.ExistByUserTeamId(currUid, teamId)
 	if err != nil {
 		zap.L().Error(
 			"[WorksetSvc.CanListWorkset] failed to verify member",

@@ -2,6 +2,7 @@ package repo_iface
 
 import (
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
 )
 
@@ -14,7 +15,8 @@ type AssignmentRepo interface {
 	GetByChapterUserId(chapterId string, userId string) (*aggr.Assignment, RepoErr)
 
 	// `List` returns assignment list by query options.
-	List(opt *query.ListAssignmentOpt) ([]*aggr.Assignment, RepoErr)
+	// Relation loading is controlled by typed `AssignmentIncl` variadic arguments.
+	List(opt *query.ListAssignmentOpt, inc ...enum.AssignmentIncl) ([]*aggr.Assignment, RepoErr)
 
 	// `Create` inserts one assignment.
 	Create(cre *aggr.AssignmentCre) (*aggr.Assignment, RepoErr)

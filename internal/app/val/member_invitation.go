@@ -1,16 +1,21 @@
 package val
 
-import "poprako-s/internal/domain/model/aggr"
+import (
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+)
 
 // `MemberInvVal` is app-facing value object for one team invitation.
 type MemberInvVal struct {
 	Id string `json:"id"`
 
-	InvitorId string `json:"invitor_id"`
-	TeamId    string `json:"team_id"`
+	InvitorId string   `json:"invitor_id"`
+	Invitor   *UserVal `json:"invitor,omitempty"`
+	TeamId    string   `json:"team_id"`
 
-	InviteeQid string `json:"invitee_qid"`
-	InvCode    string `json:"invitation_code"`
+	InviteeQid string   `json:"invitee_qid"`
+	Invitee    *UserVal `json:"invitee,omitempty"`
+	InvCode    string   `json:"invitation_code"`
 
 	Pending bool `json:"pending"`
 
@@ -22,6 +27,8 @@ type MemberInvVal struct {
 // `ListMemberInvArgs` carries list args for team invitation listing.
 type ListMemberInvArgs struct {
 	TeamId string `url:"team_id"`
+
+	Includes []enum.MemberInvIncl `url:"includes"`
 
 	Pending *bool `url:"pending"`
 

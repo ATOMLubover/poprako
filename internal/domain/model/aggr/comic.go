@@ -36,6 +36,8 @@ type Comic struct {
 
 	// `CreatorId` is the user identifier who created this comic
 	CreatorId string
+	// `Creator` is included only when includes contain `creator`.
+	Creator *User
 
 	// `LastActiveAt` tracks the latest activity timestamp
 	LastActiveAt time.Time

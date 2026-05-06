@@ -16,13 +16,13 @@ import (
 // @Tags unit
 // @Security ApiKeyAuth
 // @Produce json
-// @Param page_id path string true "page id"
+// @Param page_id query string true "page id"
 // @Success 200 {object} res.HttpRes[val.ListPageUnitsRes]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 403 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /pages/{page_id}/units [get]
+// @Router /api/v1/units [get]
 func ListPageUnits(st *state.AppState) iris.Handler {
 	unitApp := st.UnitApp
 
@@ -33,13 +33,18 @@ func ListPageUnits(st *state.AppState) iris.Handler {
 			return
 		}
 
-		pageId := cx.Params().Get("page_id")
-		if pageId == "" {
+		var args val.ListPageUnitsArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.PageId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 page_id 参数")
 			return
 		}
 
-		re := unitApp.ListByPage(newReqCx(cx), currUid, &val.ListPageUnitsArgs{PageId: pageId})
+		re := unitApp.ListByPage(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -67,7 +72,7 @@ func ListPageUnits(st *state.AppState) iris.Handler {
 // @Description Units not listed in `cand_order` are kept near their original neighbours
 // @Description
 // @Description ## Validation rules (return 400 on failure)
-// @Description - `diff.page_id` must match the path `page_id`
+// @Description - `diff.page_id` must match the query `page_id`
 // @Description - Each op must have `local_id` xor `id` (not both, not neither)
 // @Description - CREATE ops require `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
 // @Description - SAVE ops require all geometry fields plus at least one mutable field
@@ -81,14 +86,14 @@ func ListPageUnits(st *state.AppState) iris.Handler {
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Param page_id path string true "page id"
+// @Param page_id query string true "page id"
 // @Param body body val.SavePageUnitsArgs true "save page units args"
 // @Success 200 {object} res.HttpRes[val.SavePageUnitsRes]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 403 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /pages/{page_id}/units [post]
+// @Router /api/v1/units [post]
 func SavePageUnits(st *state.AppState) iris.Handler {
 	unitApp := st.UnitApp
 
@@ -99,8 +104,15 @@ func SavePageUnits(st *state.AppState) iris.Handler {
 			return
 		}
 
-		pageId := cx.Params().Get("page_id")
-		if pageId == "" {
+		var queryArgs struct {
+			PageId string `url:"page_id"`
+		}
+		if err := cx.ReadQuery(&queryArgs); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if queryArgs.PageId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 page_id 参数")
 			return
 		}
@@ -111,7 +123,7 @@ func SavePageUnits(st *state.AppState) iris.Handler {
 			return
 		}
 
-		args.PageId = pageId
+		args.PageId = queryArgs.PageId
 
 		re := unitApp.SaveByPage(newReqCx(cx), currUid, &args)
 		if re.IsReject() {

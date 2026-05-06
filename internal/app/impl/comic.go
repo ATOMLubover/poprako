@@ -83,6 +83,25 @@ func NewComicApp(
 	}
 }
 
+// `mkComicRepoIncl` composes repo include options from app args.
+func mkComicRepoIncl(includes []enum.ComicIncl) []enum.ComicIncl {
+	if len(includes) == 0 {
+		return nil
+	}
+
+	repoIncls := make([]enum.ComicIncl, 0, len(includes))
+
+	for i := range includes {
+		repoIncls = append(repoIncls, includes[i])
+
+		if includes[i] == enum.ComicInclWorksetTeam {
+			repoIncls = append(repoIncls, enum.ComicInclWorkset)
+		}
+	}
+
+	return repoIncls
+}
+
 // `List` returns all comics for one workset
 func (a *comicAppImpl) List(cx context.Context, currUid string, args *val.ListComicArgs) app_res.AppRes[[]val.ComicVal] {
 	lgr := app_util.TakeLgr(cx)
@@ -118,7 +137,7 @@ func (a *comicAppImpl) List(cx context.Context, currUid string, args *val.ListCo
 		listOpt.FuzzyTitle = &args.FuzzyTitle
 	}
 
-	comics, err := a.comicRepo.List(listOpt)
+	comics, err := a.comicRepo.List(listOpt, mkComicRepoIncl(args.Includes)...)
 	if err != nil {
 		lgr.Error(
 			"[comicAppImpl.List] failed to list comics",
@@ -268,15 +287,19 @@ func (a *comicAppImpl) Update(cx context.Context, currUid string, args *val.Comi
 	return app_res.Accept(&app_res.None{})
 }
 
-// `GetById` returns one comic by id
-func (a *comicAppImpl) GetById(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ComicVal] {
+// `GetById` returns one comic by id.
+func (a *comicAppImpl) GetById(cx context.Context, currUid string, args *val.GetComicByIdArgs) app_res.AppRes[val.ComicVal] {
 	lgr := app_util.TakeLgr(cx)
 
-	if re := vfyComicId(comicId); re.IsReject() {
+	if args == nil {
+		return app_res.Reject[val.ComicVal](app_res.BadRequest, "查询参数不能为空")
+	}
+
+	if re := vfyComicId(args.ComicId); re.IsReject() {
 		return app_res.Reject[val.ComicVal](re.Code(), re.Msg())
 	}
 
-	comic, err := a.comicRepo.GetById(comicId)
+	comic, err := a.comicRepo.GetById(args.ComicId, mkComicRepoIncl(args.Includes)...)
 	if err != nil {
 		if repo_infra.IsNotFound(err) {
 			return app_res.Reject[val.ComicVal](app_res.NotFound, "漫画不存在")

@@ -30,6 +30,71 @@ func (AssignmentSvc) CanReviewAssignment(currUid string, chapterId string, assig
 	return svc_res.Accept()
 }
 
+// `CanListByChapter` validates whether caller can list assignments under one chapter.
+// Legacy-compatible rule: allow either team member access or chapter-assignment fallback access.
+func (s AssignmentSvc) CanListByChapter(
+	currUid string,
+	chapterId string,
+	memberRepo repo_iface.MemberRepo,
+	worksetRepo repo_iface.WorksetRepo,
+	comicRepo repo_iface.ComicRepo,
+	chapterRepo repo_iface.ChapterRepo,
+	assignmentRepo repo_iface.AssignmentRepo,
+	clsf repo_iface.ErrClsf,
+) svc_res.SvcRes {
+	ch, err := chapterRepo.GetById(chapterId)
+	if err != nil {
+		if re := s.canListByChapterFallback(currUid, chapterId, assignmentRepo, clsf); !re.IsReject() {
+			return re
+		}
+
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "章节不存在", "章节信息查询超时", "章节信息服务暂不可用", "章节信息查询失败")
+	}
+
+	cm, err := comicRepo.GetById(ch.ComicId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "章节不存在", "章节信息查询超时", "章节信息服务暂不可用", "章节信息查询失败")
+	}
+
+	ws, err := worksetRepo.GetById(cm.WorksetId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "章节不存在", "章节信息查询超时", "章节信息服务暂不可用", "章节信息查询失败")
+	}
+
+	ok, err := memberRepo.ExistByUserTeamId(currUid, ws.TeamId)
+	if err != nil {
+		if re := s.canListByChapterFallback(currUid, chapterId, assignmentRepo, clsf); !re.IsReject() {
+			return re
+		}
+
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "无权查看该章节的分配列表", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if ok {
+		return svc_res.Accept()
+	}
+
+	if re := s.canListByChapterFallback(currUid, chapterId, assignmentRepo, clsf); !re.IsReject() {
+		return re
+	}
+
+	return svc_res.Reject(svc_res.Forbidden, "无权查看该章节的分配列表")
+}
+
+// `canListByChapterFallback` validates legacy fallback access by existing chapter assignment.
+func (AssignmentSvc) canListByChapterFallback(currUid string, chapterId string, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "无权查看该章节的分配列表", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if assignment == nil {
+		return svc_res.Reject(svc_res.Forbidden, "无权查看该章节的分配列表")
+	}
+
+	return svc_res.Accept()
+}
+
 func (AssignmentSvc) CanTakeAssignmentRoles(userId string, chapterId string, roleMask aggr.RoleMask, memberRepo repo_iface.MemberRepo, chapterRepo repo_iface.ChapterRepo, comicRepo repo_iface.ComicRepo, worksetRepo repo_iface.WorksetRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
 	if roleMask == 0 {
 		return svc_res.Accept()

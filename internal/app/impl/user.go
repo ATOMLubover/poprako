@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	app_iface "poprako-s/internal/app"
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	oss_iface "poprako-s/internal/domain/ext/oss"
@@ -266,7 +266,7 @@ func (a *userAppImpl) Update(cx context.Context, args *val.UserUpdArgs) app_res.
 		}
 
 		if repo_infra.IsDupKey(err) {
-			return app_res.Reject[app_res.None](app_res.Conflict, "qq 或昵称已被使用")
+			return app_res.Reject[app_res.None](app_res.Conflict, "qid 或昵称已被使用")
 		}
 
 		lgr.Error("[userAppImpl.Update] failed to update user", zap.Error(err))

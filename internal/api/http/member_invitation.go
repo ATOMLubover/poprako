@@ -4,6 +4,7 @@ import (
 	"poprako-s/internal/api/http/res"
 	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
+	"poprako-s/internal/domain/model/enum"
 
 	"github.com/kataras/iris/v12"
 )
@@ -16,7 +17,8 @@ import (
 // @Tags member-invitation
 // @Security ApiKeyAuth
 // @Produce json
-// @Param team_id path string true "team id"
+// @Param team_id query string true "team id"
+// @Param includes query []string false "include related fields, optional: invitor, invitee"
 // @Param pending query bool false "pending filter"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
@@ -24,7 +26,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /member-invitations/teams/{team_id} [get]
+// @Router /api/v1/member-invitations [get]
 func ListMemberInvitations(st *state.AppState) iris.Handler {
 	memberInvApp := st.MemberInvApp
 
@@ -35,42 +37,23 @@ func ListMemberInvitations(st *state.AppState) iris.Handler {
 			return
 		}
 
-		teamId := cx.Params().Get("team_id")
-		if teamId == "" {
+		var args val.ListMemberInvArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.TeamId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 team_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
+		if !parseMemberInvIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
 			return
 		}
 
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		var pending *bool
-
-		if p := cx.URLParam("pending"); p != "" {
-			pendingVal, boolErr := cx.URLParamBool("pending")
-			if boolErr != nil {
-				res.Reject(cx, iris.StatusBadRequest, "pending 参数格式错误")
-				return
-			}
-
-			pending = &pendingVal
-		}
-
-		re := memberInvApp.List(newReqCx(cx), currUid, &val.ListMemberInvArgs{
-			TeamId:  teamId,
-			Pending: pending,
-			Offset:  offset,
-			Limit:   limit,
-		})
+		re := memberInvApp.List(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -78,6 +61,25 @@ func ListMemberInvitations(st *state.AppState) iris.Handler {
 
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
+}
+
+// `parseMemberInvIncludes` validates include query values.
+func parseMemberInvIncludes(includes []enum.MemberInvIncl) bool {
+	if len(includes) == 0 {
+		return true
+	}
+
+	for i := range includes {
+		switch includes[i] {
+		case enum.MemberInvInclInvitor, enum.MemberInvInclInvitee:
+			continue
+
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // `CreateMemberInvitation` godoc
@@ -94,7 +96,7 @@ func ListMemberInvitations(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /member-invitations [post]
+// @Router /api/v1/member-invitations [post]
 func CreateMemberInvitation(st *state.AppState) iris.Handler {
 	memberInvApp := st.MemberInvApp
 
@@ -136,7 +138,7 @@ func CreateMemberInvitation(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /member-invitations/{invitation_id} [put]
+// @Router /api/v1/member-invitations/{invitation_id} [put]
 func UpdateMemberInvitation(st *state.AppState) iris.Handler {
 	memberInvApp := st.MemberInvApp
 
@@ -184,7 +186,7 @@ func UpdateMemberInvitation(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /member-invitations/{invitation_id} [delete]
+// @Router /api/v1/member-invitations/{invitation_id} [delete]
 func DeleteMemberInvitation(st *state.AppState) iris.Handler {
 	memberInvApp := st.MemberInvApp
 

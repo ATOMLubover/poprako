@@ -16,7 +16,7 @@ import (
 // @Tags assignment-invitation
 // @Security ApiKeyAuth
 // @Produce json
-// @Param chapter_id path string true "chapter id"
+// @Param chapter_id query string true "chapter id"
 // @Param pending query bool false "pending filter"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
@@ -24,7 +24,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignment-invitations/chapters/{chapter_id} [get]
+// @Router /api/v1/assignment-invitations [get]
 func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 
@@ -35,35 +35,18 @@ func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 			return
 		}
 
-		chapterId := cx.Params().Get("chapter_id")
-		if chapterId == "" {
+		var args val.ListAssignmentInvArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.ChapterId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
-			return
-		}
-
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		var pending *bool
-		if p := cx.URLParam("pending"); p != "" {
-			pendingVal, boolErr := cx.URLParamBool("pending")
-			if boolErr != nil {
-				res.Reject(cx, iris.StatusBadRequest, "pending 参数格式错误")
-				return
-			}
-			pending = &pendingVal
-		}
-
-		re := app.ListByChapter(newReqCx(cx), currUid, &val.ListAssignmentInvArgs{ChapterId: chapterId, Pending: pending, Offset: offset, Limit: limit})
+		re := app.ListByChapter(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -87,7 +70,7 @@ func ListAssignmentInvitations(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignment-invitations [post]
+// @Router /api/v1/assignment-invitations [post]
 func CreateAssignmentInvitation(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 
@@ -127,7 +110,7 @@ func CreateAssignmentInvitation(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignment-invitations/{invitation_id} [delete]
+// @Router /api/v1/assignment-invitations/{invitation_id} [delete]
 func DeleteAssignmentInvitation(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 
@@ -167,7 +150,7 @@ func DeleteAssignmentInvitation(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /assignment-invitations/join [post]
+// @Router /api/v1/assignment-invitations/join [post]
 func JoinByAssignmentInvitation(st *state.AppState) iris.Handler {
 	app := st.AssignmentInvApp
 

@@ -8,7 +8,6 @@ import (
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
-	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/event"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
@@ -138,14 +137,6 @@ func (a *assignmentInvAppImpl) Create(cx context.Context, currUid string, args *
 
 		if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[val.CreateAssignmentInvRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
-		}
-
-		if args.RoleMask == 0 {
-			return app_res.Reject[val.CreateAssignmentInvRes](app_res.BadRequest, "至少指定一个角色"), app_res.DefErr()
-		}
-
-		if args.RoleMask.HasAnyRole(enum.RoleAdmin) {
-			return app_res.Reject[val.CreateAssignmentInvRes](app_res.BadRequest, "章节邀请不支持管理员角色"), app_res.DefErr()
 		}
 
 		cre, err := a.assignmentInvSvc.NewAssignmentInvCre(currUid, args.ChapterId, args.InviteeQid, args.RoleMask)

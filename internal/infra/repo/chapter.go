@@ -274,6 +274,18 @@ func withChapterIncl(q *gorm.DB, inc ...enum.ChapterIncl) *gorm.DB {
 		switch i {
 		case enum.ChapterInclComic:
 			q = q.Preload("Comic")
+
+		case enum.ChapterInclComicWorkset:
+			q = q.Preload("Comic.Workset")
+
+		case enum.ChapterInclComicWorksetTeam:
+			q = q.Preload("Comic.Workset.Team")
+
+		case enum.ChapterInclComicCreator:
+			q = q.Preload("Comic.Creator")
+
+		case enum.ChapterInclCreator:
+			q = q.Preload("Creator")
 		}
 	}
 

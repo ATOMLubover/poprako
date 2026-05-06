@@ -2,8 +2,9 @@ package val
 
 // `WorksetVal` is the app-facing value object for a `Workset`.
 type WorksetVal struct {
-	Id     string `json:"id"`
-	TeamId string `json:"team_id"`
+	Id     string   `json:"id"`
+	TeamId string   `json:"team_id"`
+	Team   *TeamVal `json:"team,omitempty"`
 
 	Index int     `json:"index"`
 	Name  string  `json:"name"`

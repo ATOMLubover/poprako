@@ -205,26 +205,18 @@ func (a *pageAppImpl) List(cx context.Context, currUid string, args *val.ListCha
 		return app_res.Reject[[]val.PageVal](re.Code(), re.Msg())
 	}
 
-	// Resolve chapter ownership and verify the caller can view chapter pages.
-	chapter, err := a.chapterRepo.GetById(args.ChapterId)
-	if err != nil {
-		if repo_infra.IsNotFound(err) {
-			return app_res.Reject[[]val.PageVal](app_res.BadRequest, "章节不存在")
-		}
+	// Verify caller access via legacy-compatible permission path in domain service.
 
-		lgr.Error("[pageAppImpl.List] failed to get chapter", zap.Error(err))
-
-		return app_res.Reject[[]val.PageVal](app_res.ServerError, "获取页面列表失败")
-	}
-
-	comic, err := a.comicRepo.GetById(chapter.ComicId, enum.ComicInclWorkset)
-	if err != nil {
-		lgr.Error("[pageAppImpl.List] failed to get comic", zap.Error(err))
-
-		return app_res.Reject[[]val.PageVal](app_res.ServerError, "获取页面列表失败")
-	}
-
-	if re := a.chapterSvc.CanListChapter(currUid, comic.Workset.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+	if re := a.pageSvc.CanListByChapter(
+		currUid,
+		args.ChapterId,
+		a.memberRepo,
+		a.worksetRepo,
+		a.comicRepo,
+		a.chapterRepo,
+		a.assignmentRepo,
+		a.errClsf,
+	); re.IsReject() {
 		return app_res.Reject[[]val.PageVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 

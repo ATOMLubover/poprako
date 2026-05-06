@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	repo_mock "poprako-s/internal/domain/repo/mock"
@@ -42,7 +43,7 @@ func (r *stubAssignmentRepo) GetByChapterUserId(string, string) (*aggr.Assignmen
 }
 
 // `List` returns no assignments for unsupported test paths.
-func (*stubAssignmentRepo) List(*query.ListAssignmentOpt) ([]*aggr.Assignment, repo_iface.RepoErr) {
+func (*stubAssignmentRepo) List(*query.ListAssignmentOpt, ...enum.AssignmentIncl) ([]*aggr.Assignment, repo_iface.RepoErr) {
 	return nil, nil
 }
 

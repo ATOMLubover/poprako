@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/assignment-invitations": {
+        "/api/v1/assignment-invitations": {
             "post": {
                 "security": [
                     {
@@ -72,7 +72,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignment-invitations/chapters/{chapter_id}": {
+        "/api/v1/assignment-invitations/chapters/{chapter_id}": {
             "get": {
                 "security": [
                     {
@@ -142,7 +142,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignment-invitations/join": {
+        "/api/v1/assignment-invitations/join": {
             "post": {
                 "security": [
                     {
@@ -199,7 +199,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignment-invitations/{invitation_id}": {
+        "/api/v1/assignment-invitations/{invitation_id}": {
             "delete": {
                 "security": [
                     {
@@ -251,7 +251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignments": {
+        "/api/v1/assignments": {
             "put": {
                 "security": [
                     {
@@ -308,7 +308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignments/chapters/{chapter_id}": {
+        "/api/v1/assignments/chapters/{chapter_id}": {
             "get": {
                 "security": [
                     {
@@ -332,6 +332,16 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "pagination offset",
                         "name": "offset",
@@ -372,7 +382,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignments/mine": {
+        "/api/v1/assignments/mine": {
             "get": {
                 "security": [
                     {
@@ -389,6 +399,16 @@ const docTemplate = `{
                 "summary": "List My Assignments",
                 "parameters": [
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "pagination offset",
                         "name": "offset",
@@ -429,7 +449,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/assignments/{assignment_id}": {
+        "/api/v1/assignments/{assignment_id}": {
             "delete": {
                 "security": [
                     {
@@ -481,7 +501,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/api/v1/auth/login": {
             "post": {
                 "description": "Login by qid and password and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.UserLoginRes` + "`" + `",
                 "consumes": [
@@ -521,7 +541,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/api/v1/auth/register": {
             "post": {
                 "description": "Register by invitation code and return a ` + "`" + `res.HttpRes` + "`" + ` wrapper with ` + "`" + `val.UserRegRes` + "`" + `",
                 "consumes": [
@@ -561,7 +581,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters": {
+        "/api/v1/chapters": {
             "post": {
                 "security": [
                     {
@@ -618,7 +638,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/comics/{comic_id}": {
+        "/api/v1/chapters/comics/{comic_id}": {
             "get": {
                 "security": [
                     {
@@ -640,6 +660,16 @@ const docTemplate = `{
                         "name": "comic_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: comic, comic.workset, comic.workset.team, comic.creator, creator",
+                        "name": "includes",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -682,7 +712,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/comics/{comic_id}/pinned": {
+        "/api/v1/chapters/comics/{comic_id}/pinned": {
             "get": {
                 "security": [
                     {
@@ -734,7 +764,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/{chapter_id}": {
+        "/api/v1/chapters/{chapter_id}": {
             "get": {
                 "security": [
                     {
@@ -756,6 +786,16 @@ const docTemplate = `{
                         "name": "chapter_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: comic, comic.workset, comic.workset.team, comic.creator, creator",
+                        "name": "includes",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -904,7 +944,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/{chapter_id}/export": {
+        "/api/v1/chapters/{chapter_id}/export": {
             "get": {
                 "security": [
                     {
@@ -962,7 +1002,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/{chapter_id}/export/lp": {
+        "/api/v1/chapters/{chapter_id}/export/lp": {
             "get": {
                 "security": [
                     {
@@ -1020,7 +1060,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/{chapter_id}/import": {
+        "/api/v1/chapters/{chapter_id}/import": {
             "post": {
                 "security": [
                     {
@@ -1090,7 +1130,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/{chapter_id}/pages": {
+        "/api/v1/chapters/{chapter_id}/pages": {
             "get": {
                 "security": [
                     {
@@ -1204,7 +1244,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/chapters/{chapter_id}/pages/reserve": {
+        "/api/v1/chapters/{chapter_id}/pages/reserve": {
             "post": {
                 "security": [
                     {
@@ -1268,7 +1308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comics": {
+        "/api/v1/comics": {
             "post": {
                 "security": [
                     {
@@ -1325,7 +1365,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comics/worksets/{workset_id}": {
+        "/api/v1/comics/worksets/{workset_id}": {
             "get": {
                 "security": [
                     {
@@ -1391,6 +1431,16 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: workset, workset.team, creator",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "pagination offset",
                         "name": "offset",
@@ -1431,7 +1481,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comics/{comic_id}": {
+        "/api/v1/comics/{comic_id}": {
             "get": {
                 "security": [
                     {
@@ -1453,6 +1503,16 @@ const docTemplate = `{
                         "name": "comic_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: workset, workset.team, creator",
+                        "name": "includes",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1601,7 +1661,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comics/{comic_id}/cover": {
+        "/api/v1/comics/{comic_id}/cover": {
             "post": {
                 "security": [
                     {
@@ -1665,7 +1725,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/comics/{comic_id}/cover/confirm": {
+        "/api/v1/comics/{comic_id}/cover/confirm": {
             "post": {
                 "security": [
                     {
@@ -1717,7 +1777,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/member-invitations": {
+        "/api/v1/member-invitations": {
             "post": {
                 "security": [
                     {
@@ -1774,7 +1834,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/member-invitations/teams/{team_id}": {
+        "/api/v1/member-invitations/teams/{team_id}": {
             "get": {
                 "security": [
                     {
@@ -1796,6 +1856,16 @@ const docTemplate = `{
                         "name": "team_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: invitor, invitee",
+                        "name": "includes",
+                        "in": "query"
                     },
                     {
                         "type": "boolean",
@@ -1844,7 +1914,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/member-invitations/{invitation_id}": {
+        "/api/v1/member-invitations/{invitation_id}": {
             "put": {
                 "security": [
                     {
@@ -1958,7 +2028,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/members": {
+        "/api/v1/members": {
             "post": {
                 "security": [
                     {
@@ -2015,7 +2085,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/members/join": {
+        "/api/v1/members/join": {
             "post": {
                 "security": [
                     {
@@ -2072,7 +2142,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/members/mine": {
+        "/api/v1/members/mine": {
             "get": {
                 "security": [
                     {
@@ -2139,7 +2209,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/members/team/{team_id}": {
+        "/api/v1/members/team/{team_id}": {
             "get": {
                 "security": [
                     {
@@ -2213,7 +2283,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/members/{member_id}": {
+        "/api/v1/members/{member_id}": {
             "put": {
                 "security": [
                     {
@@ -2327,7 +2397,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/pages/{page_id}/image/uploaded": {
+        "/api/v1/pages/{page_id}/image/uploaded": {
             "post": {
                 "security": [
                     {
@@ -2379,7 +2449,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/pages/{page_id}/units": {
+        "/api/v1/pages/{page_id}/units": {
             "get": {
                 "security": [
                     {
@@ -2505,7 +2575,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/sys-mails": {
+        "/api/v1/sys-mails": {
             "get": {
                 "security": [
                     {
@@ -2562,7 +2632,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/sys-mails/{sys_mail_id}/read": {
+        "/api/v1/sys-mails/{sys_mail_id}/read": {
             "post": {
                 "security": [
                     {
@@ -2614,7 +2684,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams": {
+        "/api/v1/teams": {
             "get": {
                 "security": [
                     {
@@ -2724,7 +2794,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams/mine": {
+        "/api/v1/teams/mine": {
             "get": {
                 "security": [
                     {
@@ -2780,7 +2850,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams/{team_id}": {
+        "/api/v1/teams/{team_id}": {
             "get": {
                 "security": [
                     {
@@ -2880,7 +2950,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams/{team_id}/avatar": {
+        "/api/v1/teams/{team_id}/avatar": {
             "post": {
                 "security": [
                     {
@@ -2943,7 +3013,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/teams/{team_id}/avatar/confirm": {
+        "/api/v1/teams/{team_id}/avatar/confirm": {
             "post": {
                 "security": [
                     {
@@ -2994,7 +3064,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/avatar": {
+        "/api/v1/users/avatar": {
             "post": {
                 "security": [
                     {
@@ -3045,7 +3115,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/avatar/confirm": {
+        "/api/v1/users/avatar/confirm": {
             "post": {
                 "security": [
                     {
@@ -3073,7 +3143,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/me": {
+        "/api/v1/users/me": {
             "get": {
                 "security": [
                     {
@@ -3152,7 +3222,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{user_id}": {
+        "/api/v1/users/{user_id}": {
             "get": {
                 "security": [
                     {
@@ -3204,7 +3274,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/worksets": {
+        "/api/v1/worksets": {
             "post": {
                 "security": [
                     {
@@ -3261,7 +3331,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/worksets/team/{team_id}": {
+        "/api/v1/worksets/team/{team_id}": {
             "get": {
                 "security": [
                     {
@@ -3325,7 +3395,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/worksets/{workset_id}": {
+        "/api/v1/worksets/{workset_id}": {
             "put": {
                 "security": [
                     {
@@ -4179,6 +4249,9 @@ const docTemplate = `{
                 "assigned_typesetter_at": {
                     "type": "integer"
                 },
+                "chapter": {
+                    "$ref": "#/definitions/val.ChapterVal"
+                },
                 "chapter_id": {
                     "type": "string"
                 },
@@ -4193,6 +4266,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/val.UserVal"
                 },
                 "user_id": {
                     "type": "string"
@@ -4262,11 +4338,17 @@ const docTemplate = `{
         "val.ChapterVal": {
             "type": "object",
             "properties": {
+                "comic": {
+                    "$ref": "#/definitions/val.ComicVal"
+                },
                 "comic_id": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "integer"
+                },
+                "creator": {
+                    "$ref": "#/definitions/val.UserVal"
                 },
                 "creator_id": {
                     "type": "string"
@@ -4375,6 +4457,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "integer"
                 },
+                "creator": {
+                    "$ref": "#/definitions/val.UserVal"
+                },
                 "creator_id": {
                     "type": "string"
                 },
@@ -4398,6 +4483,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "workset": {
+                    "$ref": "#/definitions/val.WorksetVal"
                 },
                 "workset_id": {
                     "type": "string"
@@ -4608,8 +4696,14 @@ const docTemplate = `{
                 "invitation_code": {
                     "type": "string"
                 },
+                "invitee": {
+                    "$ref": "#/definitions/val.UserVal"
+                },
                 "invitee_qid": {
                     "type": "string"
+                },
+                "invitor": {
+                    "$ref": "#/definitions/val.UserVal"
                 },
                 "invitor_id": {
                     "type": "string"
@@ -5247,6 +5341,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "team": {
+                    "$ref": "#/definitions/val.TeamVal"
+                },
                 "team_id": {
                     "type": "string"
                 },
@@ -5269,7 +5366,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "0.4.0",
 	Host:             "",
-	BasePath:         "/api/v1",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Poprako-S Refactor API",
 	Description:      "Poprako-S refactor API documentation",

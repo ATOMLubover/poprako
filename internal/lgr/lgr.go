@@ -33,6 +33,11 @@ func New(appCfg *cfg.AppCfg) *zap.Logger {
 		zap.AddStacktrace(zap.PanicLevel),
 	)
 
+	lgr.Info(
+		"Logger initialized",
+		zap.String("environment", string(appCfg.Env)),
+	)
+
 	return lgr
 }
 

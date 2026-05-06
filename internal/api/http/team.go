@@ -23,7 +23,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /teams [post]
+// @Router /api/v1/teams [post]
 func CreateTeam(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 
@@ -62,7 +62,7 @@ func CreateTeam(st *state.AppState) iris.Handler {
 // @Param team_id path string true "team id"
 // @Success 200 {object} res.HttpRes[val.TeamVal]
 // @Failure 400 {object} res.HttpRes[any]
-// @Router /teams/{team_id} [get]
+// @Router /api/v1/teams/{team_id} [get]
 func GetTeamInfo(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 
@@ -98,7 +98,7 @@ func GetTeamInfo(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /teams [get]
+// @Router /api/v1/teams [get]
 func ListTeams(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 
@@ -146,7 +146,7 @@ func ListTeams(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /teams/mine [get]
+// @Router /api/v1/teams/mine [get]
 func ListMyTeams(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 
@@ -195,7 +195,7 @@ func ListMyTeams(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /teams/{team_id} [put]
+// @Router /api/v1/teams/{team_id} [put]
 func UpdateTeam(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 
@@ -246,7 +246,7 @@ func UpdateTeam(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /teams/{team_id}/avatar [post]
+// @Router /api/v1/teams/{team_id}/avatar [post]
 func ReserveTeamAvatar(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 
@@ -295,7 +295,7 @@ func ReserveTeamAvatar(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /teams/{team_id}/avatar/confirm [post]
+// @Router /api/v1/teams/{team_id}/avatar/confirm [post]
 func ConfirmTeamAvatarUploaded(st *state.AppState) iris.Handler {
 	teamApp := st.TeamApp
 

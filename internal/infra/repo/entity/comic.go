@@ -46,6 +46,8 @@ type ComicRow struct {
 
 	// `CreatorId` is creator user id
 	CreatorId string `gorm:"column:creator_id"`
+	// `Creator` is included when `includes` contains `creator`.
+	Creator *UserRow `gorm:"foreignKey:CreatorId"`
 
 	// `LastActiveAt` is last activity timestamp
 	LastActiveAt time.Time `gorm:"column:last_active_at"`
@@ -67,9 +69,14 @@ func (r *ComicRow) ToComicAggr() *aggr.Comic {
 	}
 
 	var workset *aggr.Workset
+	var creator *aggr.User
 
 	if r.Workset != nil {
 		workset = r.Workset.ToWorksetAggr()
+	}
+
+	if r.Creator != nil {
+		creator = r.Creator.ToUserAggr()
 	}
 
 	return &aggr.Comic{
@@ -85,6 +92,7 @@ func (r *ComicRow) ToComicAggr() *aggr.Comic {
 		CoverUploaded: r.CoverUploaded,
 		ChapterCount:  r.ChapterCount,
 		CreatorId:     r.CreatorId,
+		Creator:       creator,
 		LastActiveAt:  r.LastActiveAt,
 		CreatedAt:     r.CreatedAt,
 		UpdatedAt:     r.UpdatedAt,

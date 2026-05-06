@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// `MemberInv` represents one member invitation and optional included relations.
 type MemberInv struct {
 	Id string
 
@@ -23,6 +24,7 @@ type MemberInv struct {
 	CreatedAt time.Time
 }
 
+// `MemberInvCre` is the create payload for member invitation.
 type MemberInvCre struct {
 	Id string
 

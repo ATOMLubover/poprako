@@ -143,20 +143,16 @@ func (a *chapterPortAppImpl) Import(cx context.Context, currUid string, args *va
 		return app_res.Reject[val.ImportChapterRes](re.Code(), re.Msg())
 	}
 
-	// Verify the caller has translator/proofreader assignment on the target chapter.
-	assignment, err := a.assignmentRepo.GetByChapterUserId(args.ChapterId, currUid)
-	if err != nil {
-		if a.errClsf.IsNotFound(err) {
-			return app_res.Reject[val.ImportChapterRes](app_res.Forbidden, "仅当前章节的翻译或校对可导入")
-		}
-
-		lgr.Error("[chapterPortAppImpl.Import] failed to check assignment", zap.Error(err))
-
-		return app_res.Reject[val.ImportChapterRes](app_res.ServerError, "导入章节失败")
+	// Verify translator/proofreader import permission through domain service.
+	if re := a.unitSvc.CanEditPageUnits(currUid, args.ChapterId, a.assignmentRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[val.ImportChapterRes](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
-	if assignment == nil || !assignment.HasAnyRole(enum.RoleTranslator, enum.RoleProofreader) {
-		return app_res.Reject[val.ImportChapterRes](app_res.Forbidden, "仅当前章节的翻译或校对可导入")
+	assignment, err := a.assignmentRepo.GetByChapterUserId(args.ChapterId, currUid)
+	if err != nil || assignment == nil {
+		lgr.Error("[chapterPortAppImpl.Import] failed to load caller assignment", zap.Error(err))
+
+		return app_res.Reject[val.ImportChapterRes](app_res.ServerError, "导入章节失败")
 	}
 
 	chapter, err := a.chapterRepo.GetById(args.ChapterId)

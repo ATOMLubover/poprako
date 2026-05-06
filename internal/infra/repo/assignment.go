@@ -2,6 +2,7 @@ package repo_infra
 
 import (
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/infra/repo/entity"
@@ -50,10 +51,12 @@ func (r *assignmentRepoImpl) GetByChapterUserId(chapterId string, userId string)
 }
 
 // `List` returns assignment list by query options.
-func (r *assignmentRepoImpl) List(opt *query.ListAssignmentOpt) ([]*aggr.Assignment, repo_iface.RepoErr) {
+func (r *assignmentRepoImpl) List(opt *query.ListAssignmentOpt, inc ...enum.AssignmentIncl) ([]*aggr.Assignment, repo_iface.RepoErr) {
 	var rows []entity.AssignmentRow
 
 	qry := r.gdb.Table(entity.ASSIGNMENT_TABLE)
+
+	qry = withAssignmentIncl(qry, inc...)
 
 	if opt != nil && opt.ChapterId != nil {
 		qry = qry.Where("chapter_id = ?", *opt.ChapterId)
@@ -82,6 +85,36 @@ func (r *assignmentRepoImpl) List(opt *query.ListAssignmentOpt) ([]*aggr.Assignm
 	}
 
 	return items, nil
+}
+
+// `withAssignmentIncl` maps typed include options to preloads.
+func withAssignmentIncl(q *gorm.DB, inc ...enum.AssignmentIncl) *gorm.DB {
+	for _, i := range inc {
+		switch i {
+		case enum.AssignmentInclUser:
+			q = q.Preload("User")
+
+		case enum.AssignmentInclChapter:
+			q = q.Preload("Chapter")
+
+		case enum.AssignmentInclChapterComic:
+			q = q.Preload("Chapter.Comic")
+
+		case enum.AssignmentInclChapterComicWorkset:
+			q = q.Preload("Chapter.Comic.Workset")
+
+		case enum.AssignmentInclChapterComicWorksetTeam:
+			q = q.Preload("Chapter.Comic.Workset.Team")
+
+		case enum.AssignmentInclChapterCreator:
+			q = q.Preload("Chapter.Creator")
+
+		case enum.AssignmentInclChapterComicCreator:
+			q = q.Preload("Chapter.Comic.Creator")
+		}
+	}
+
+	return q
 }
 
 // `Create` inserts one assignment.

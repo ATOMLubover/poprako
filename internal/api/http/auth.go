@@ -1,6 +1,9 @@
 package http
 
 import (
+	"net/http"
+
+	"poprako-s/internal/api/http/middleware"
 	"poprako-s/internal/api/http/res"
 	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
@@ -17,7 +20,7 @@ import (
 // @Param body body val.UserLoginArgs true "login args"
 // @Success 200 {object} res.HttpRes[val.UserLoginRes]
 // @Failure 400 {object} res.HttpRes[any]
-// @Router /auth/login [post]
+// @Router /api/v1/auth/login [post]
 func LoginUser(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -35,6 +38,14 @@ func LoginUser(st *state.AppState) iris.Handler {
 			return
 		}
 
+		cx.SetCookie(&http.Cookie{
+			Name:     middleware.AuthCookieName,
+			Value:    string(re.Data().Token),
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   7 * 24 * 3600, // 7 days
+		})
+
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
@@ -48,7 +59,7 @@ func LoginUser(st *state.AppState) iris.Handler {
 // @Param body body val.UserRegArgs true "registration args"
 // @Success 200 {object} res.HttpRes[val.UserRegRes]
 // @Failure 400 {object} res.HttpRes[any]
-// @Router /auth/register [post]
+// @Router /api/v1/auth/register [post]
 func RegUser(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -65,6 +76,14 @@ func RegUser(st *state.AppState) iris.Handler {
 			res.Reject(cx, int(re.Code()), "注册失败")
 			return
 		}
+
+		cx.SetCookie(&http.Cookie{
+			Name:     middleware.AuthCookieName,
+			Value:    string(re.Data().Token),
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   7 * 24 * 3600, // 7 days
+		})
 
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}

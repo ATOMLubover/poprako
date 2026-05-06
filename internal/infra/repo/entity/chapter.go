@@ -50,6 +50,8 @@ type ChapterRow struct {
 
 	// `CreatorId` is creator user id.
 	CreatorId string `gorm:"column:creator_id"`
+	// `Creator` is included when includes contain `creator`.
+	Creator *UserRow `gorm:"foreignKey:CreatorId"`
 
 	// Timestamps.
 	CreatedAt time.Time `gorm:"column:created_at"`
@@ -68,8 +70,14 @@ func (r *ChapterRow) ToChapterAggr() *aggr.Chapter {
 	}
 
 	var comic *aggr.Comic
+	var creator *aggr.User
+
 	if r.Comic != nil {
 		comic = r.Comic.ToComicAggr()
+	}
+
+	if r.Creator != nil {
+		creator = r.Creator.ToUserAggr()
 	}
 
 	return &aggr.Chapter{
@@ -93,6 +101,7 @@ func (r *ChapterRow) ToChapterAggr() *aggr.Chapter {
 		ReviewedAt:          r.ReviewedAt,
 		PublishedAt:         r.PublishedAt,
 		CreatorId:           r.CreatorId,
+		Creator:             creator,
 		CreatedAt:           r.CreatedAt,
 		UpdatedAt:           r.UpdatedAt,
 	}

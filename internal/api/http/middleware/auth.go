@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"strings"
+
 	"poprako-s/internal/api/http/res"
 	token_iface "poprako-s/internal/domain/ext/token"
 	token_impl "poprako-s/internal/infra/ext/token"
-	"strings"
 
 	"github.com/kataras/iris/v12"
 )
@@ -12,6 +13,8 @@ import (
 // `UtkKey` is the context key under which the parsed `UserToken` is stored
 // Both `Auth` middleware (writer) and `takeCurrUid` (reader) use this key
 const UtkKey = "user_token"
+
+const AuthCookieName = "authorization"
 
 // `Auth` is an Iris middleware that extracts and validates a JWT token
 // It reads the token from the `authorization` cookie first, falling back

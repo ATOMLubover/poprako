@@ -14,7 +14,7 @@ type ChapterApp interface {
 
 	// `GetById` returns one chapter by id.
 	// `currUid` must be a member of the owning team.
-	GetById(cx context.Context, currUid string, chapterId string) app_res.AppRes[val.ChapterVal]
+	GetById(cx context.Context, currUid string, args *val.GetChapterByIdArgs) app_res.AppRes[val.ChapterVal]
 
 	// `GetPinned` returns pinned chapter under one comic.
 	GetPinned(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ChapterVal]

@@ -16,14 +16,14 @@ import (
 // @Tags workset
 // @Security ApiKeyAuth
 // @Produce json
-// @Param team_id path string true "team id"
+// @Param team_id query string true "team id"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
 // @Success 200 {object} res.HttpRes[[]val.WorksetVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets/team/{team_id} [get]
+// @Router /api/v1/worksets [get]
 func ListWorksets(st *state.AppState) iris.Handler {
 	worksetApp := st.WorksetApp
 
@@ -34,31 +34,18 @@ func ListWorksets(st *state.AppState) iris.Handler {
 			return
 		}
 
-		teamId := cx.Params().Get("team_id")
-		if teamId == "" {
+		var args val.ListWorksetArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.TeamId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 team_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
-			return
-		}
-
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		args := &val.ListWorksetArgs{
-			TeamId: teamId,
-			Offset: offset,
-			Limit:  limit,
-		}
-
-		re := worksetApp.List(newReqCx(cx), currUid, args)
+		re := worksetApp.List(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), "获取作品集列表失败")
 			return
@@ -82,7 +69,7 @@ func ListWorksets(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets [post]
+// @Router /api/v1/worksets [post]
 func CreateWorkset(st *state.AppState) iris.Handler {
 	worksetApp := st.WorksetApp
 
@@ -125,7 +112,7 @@ func CreateWorkset(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets/{workset_id} [put]
+// @Router /api/v1/worksets/{workset_id} [put]
 func UpdateWorkset(st *state.AppState) iris.Handler {
 	worksetApp := st.WorksetApp
 
@@ -175,7 +162,7 @@ func UpdateWorkset(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /worksets/{workset_id} [delete]
+// @Router /api/v1/worksets/{workset_id} [delete]
 func DeleteWorkset(st *state.AppState) iris.Handler {
 	worksetApp := st.WorksetApp
 

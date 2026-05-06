@@ -8,6 +8,7 @@ import (
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
@@ -15,6 +16,20 @@ import (
 
 	"go.uber.org/zap"
 )
+
+func mkMemberInvRepoIncl(includes []enum.MemberInvIncl) []enum.MemberInvIncl {
+	if len(includes) == 0 {
+		return nil
+	}
+
+	repoIncls := make([]enum.MemberInvIncl, 0, len(includes))
+
+	for i := range includes {
+		repoIncls = append(repoIncls, includes[i])
+	}
+
+	return repoIncls
+}
 
 // `memberInvAppImpl` is the default implementation of `MemberInvApp`.
 type memberInvAppImpl struct {
@@ -68,13 +83,14 @@ func (a *memberInvAppImpl) List(cx context.Context, currUid string, args *val.Li
 	}
 
 	invs, err := a.memberInvRepo.List(query.ListMemberInvOpt{
-		TeamId:  args.TeamId,
-		Pending: args.Pending,
+		TeamId:   args.TeamId,
+		Includes: args.Includes,
+		Pending:  args.Pending,
 		Pagi: query.PagiOpt{
 			Offset: args.Offset,
 			Limit:  args.Limit,
 		},
-	})
+	}, mkMemberInvRepoIncl(args.Includes)...)
 	if err != nil {
 		lgr.Error("[memberInvAppImpl.List] failed to list invitations", zap.Error(err))
 

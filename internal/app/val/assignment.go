@@ -1,13 +1,18 @@
 package val
 
-import "poprako-s/internal/domain/model/aggr"
+import (
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+)
 
 // `AssignmentVal` is app-facing value object for assignment.
 type AssignmentVal struct {
 	Id string `json:"id"`
 
-	ChapterId string `json:"chapter_id"`
-	UserId    string `json:"user_id"`
+	ChapterId string      `json:"chapter_id"`
+	UserId    string      `json:"user_id"`
+	Chapter   *ChapterVal `json:"chapter,omitempty"`
+	User      *UserVal    `json:"user,omitempty"`
 
 	RoleMask aggr.RoleMask `json:"role_mask"`
 
@@ -27,12 +32,16 @@ type AssignmentVal struct {
 type ListAssignmentByChapterArgs struct {
 	ChapterId string `url:"chapter_id"`
 
+	Includes []enum.AssignmentIncl `url:"includes"`
+
 	Offset int `url:"offset"`
 	Limit  int `url:"limit"`
 }
 
 // `ListAssignmentByUserArgs` carries my list args for assignment.
 type ListAssignmentByUserArgs struct {
+	Includes []enum.AssignmentIncl `url:"includes"`
+
 	Offset int `url:"offset"`
 	Limit  int `url:"limit"`
 }

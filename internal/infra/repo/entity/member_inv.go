@@ -13,11 +13,13 @@ const MEMBER_INV_TABLE = "t_member_invitation"
 type MemberInvRow struct {
 	Id string `gorm:"column:id;primaryKey"`
 
-	InvitorId string `gorm:"column:inviter_id"`
-	TeamId    string `gorm:"column:team_id"`
+	InvitorId string   `gorm:"column:inviter_id"`
+	Invitor   *UserRow `gorm:"foreignKey:InvitorId"`
+	TeamId    string   `gorm:"column:team_id"`
 
-	InviteeQid string `gorm:"column:invitee_qid"`
-	InvCode    string `gorm:"column:invitation_code"`
+	InviteeQid string   `gorm:"column:invitee_qid"`
+	Invitee    *UserRow `gorm:"foreignKey:InviteeQid;references:Qid"`
+	InvCode    string   `gorm:"column:invitation_code"`
 
 	Pending bool `gorm:"column:pending"`
 
@@ -39,11 +41,23 @@ func (r *MemberInvRow) ToMemberInvAggr() *aggr.MemberInv {
 		return nil
 	}
 
+	var invitor *aggr.User
+	if r.Invitor != nil {
+		invitor = r.Invitor.ToUserAggr()
+	}
+
+	var invitee *aggr.User
+	if r.Invitee != nil {
+		invitee = r.Invitee.ToUserAggr()
+	}
+
 	return &aggr.MemberInv{
 		Id:         r.Id,
 		InvitorId:  r.InvitorId,
+		Invitor:    invitor,
 		TeamId:     r.TeamId,
 		InviteeQid: r.InviteeQid,
+		Invitee:    invitee,
 		InvCode:    r.InvCode,
 		Pending:    r.Pending,
 		RoleMask:   aggr.RoleMask(r.RoleMask),

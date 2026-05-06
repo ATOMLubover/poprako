@@ -2,7 +2,6 @@
 // @title Poprako-S Refactor API
 // @version 0.4.0
 // @description Poprako-S refactor API documentation
-// @BasePath /api/v1
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization

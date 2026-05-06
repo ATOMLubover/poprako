@@ -20,7 +20,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /users/{user_id} [get]
+// @Router /api/v1/users/{user_id} [get]
 func GetUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -50,7 +50,7 @@ func GetUserInfo(st *state.AppState) iris.Handler {
 // @Produce json
 // @Success 200 {object} res.HttpRes[val.UserVal]
 // @Failure 401 {object} res.HttpRes[any]
-// @Router /users/me [get]
+// @Router /api/v1/users/me [get]
 func GetMyUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -83,7 +83,7 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 // @Success 200 {object} res.HttpRes[val.ResvUserAvatarRes]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
-// @Router /users/avatar [post]
+// @Router /api/v1/users/avatar [post]
 func ResvUserAvatar(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -114,7 +114,7 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 // @Produce json
 // @Success 200
 // @Failure 401 {object} res.HttpRes[any]
-// @Router /users/avatar/confirm [post]
+// @Router /api/v1/users/avatar/confirm [post]
 func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
@@ -149,7 +149,7 @@ func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 // @Success 200 {object} res.HttpRes[any]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
-// @Router /users/me [put]
+// @Router /api/v1/users/me [put]
 func UpdateMyUserInfo(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 

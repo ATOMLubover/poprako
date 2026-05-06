@@ -1,8 +1,6 @@
 package http
 
 import (
-	"strconv"
-
 	"poprako-s/internal/api/http/res"
 	"poprako-s/internal/api/state"
 	"poprako-s/internal/app/val"
@@ -19,7 +17,7 @@ import (
 // @Tags comic
 // @Security ApiKeyAuth
 // @Produce json
-// @Param workset_id path string true "workset id"
+// @Param workset_id query string true "workset id"
 // @Param fuzzy_title query string false "fuzzy title"
 // @Param upload_phase query int false "upload phase 0 pending 1 ongoing 2 completed"
 // @Param translate_phase query int false "translate phase 0 pending 1 ongoing 2 completed"
@@ -27,13 +25,14 @@ import (
 // @Param typeset_phase query int false "typeset phase 0 pending 1 ongoing 2 completed"
 // @Param review_phase query int false "review phase 0 pending 1 ongoing 2 completed"
 // @Param publish_phase query int false "publish phase 0 pending 1 ongoing 2 completed"
+// @Param includes query []string false "include related fields, optional: workset, workset.team, creator"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
 // @Success 200 {object} res.HttpRes[[]val.ComicVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics/worksets/{workset_id} [get]
+// @Router /api/v1/comics [get]
 func ListComics(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -44,74 +43,53 @@ func ListComics(st *state.AppState) iris.Handler {
 			return
 		}
 
-		worksetId := cx.Params().Get("workset_id")
-		if worksetId == "" {
+		var args val.ListComicArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.WorksetId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 workset_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
+		if !parseComicIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
 			return
 		}
 
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		uploadPhase, err := parseWorkflowPhaseParam(cx, "upload_phase")
-		if err != nil {
+		if !validateWorkflowPhase(args.UploadPhase) {
 			res.Reject(cx, iris.StatusBadRequest, "upload_phase 参数格式错误")
 			return
 		}
 
-		translatePhase, err := parseWorkflowPhaseParam(cx, "translate_phase")
-		if err != nil {
+		if !validateWorkflowPhase(args.TranslatePhase) {
 			res.Reject(cx, iris.StatusBadRequest, "translate_phase 参数格式错误")
 			return
 		}
 
-		proofreadPhase, err := parseWorkflowPhaseParam(cx, "proofread_phase")
-		if err != nil {
+		if !validateWorkflowPhase(args.ProofreadPhase) {
 			res.Reject(cx, iris.StatusBadRequest, "proofread_phase 参数格式错误")
 			return
 		}
 
-		typesetPhase, err := parseWorkflowPhaseParam(cx, "typeset_phase")
-		if err != nil {
+		if !validateWorkflowPhase(args.TypesetPhase) {
 			res.Reject(cx, iris.StatusBadRequest, "typeset_phase 参数格式错误")
 			return
 		}
 
-		reviewPhase, err := parseWorkflowPhaseParam(cx, "review_phase")
-		if err != nil {
+		if !validateWorkflowPhase(args.ReviewPhase) {
 			res.Reject(cx, iris.StatusBadRequest, "review_phase 参数格式错误")
 			return
 		}
 
-		publishPhase, err := parseWorkflowPhaseParam(cx, "publish_phase")
-		if err != nil {
+		if !validateWorkflowPhase(args.PublishPhase) {
 			res.Reject(cx, iris.StatusBadRequest, "publish_phase 参数格式错误")
 			return
 		}
 
-		args := &val.ListComicArgs{
-			WorksetId:      worksetId,
-			FuzzyTitle:     cx.URLParamDefault("fuzzy_title", ""),
-			UploadPhase:    uploadPhase,
-			TranslatePhase: translatePhase,
-			ProofreadPhase: proofreadPhase,
-			TypesetPhase:   typesetPhase,
-			ReviewPhase:    reviewPhase,
-			PublishPhase:   publishPhase,
-			Offset:         offset,
-			Limit:          limit,
-		}
-
-		re := comicApp.List(newReqCx(cx), currUid, args)
+		re := comicApp.List(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -121,24 +99,17 @@ func ListComics(st *state.AppState) iris.Handler {
 	}
 }
 
-// `parseWorkflowPhaseParam` parses one workflow phase query parameter
-func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, error) {
-	phaseVal := cx.URLParamDefault(key, "")
-	if phaseVal == "" {
-		return nil, nil
+// `validateWorkflowPhase` validates workflow phase filter values.
+func validateWorkflowPhase(phase *enum.WorkflowPhase) bool {
+	if phase == nil {
+		return true
 	}
 
-	phaseInt, err := strconv.Atoi(phaseVal)
-	if err != nil {
-		return nil, err
+	if *phase < enum.WorkflowPending || *phase > enum.WorkflowCompleted {
+		return false
 	}
 
-	phase := enum.WorkflowPhase(phaseInt)
-	if phase < enum.WorkflowPending || phase > enum.WorkflowCompleted {
-		return nil, strconv.ErrSyntax
-	}
-
-	return &phase, nil
+	return true
 }
 
 // `GetComicById` godoc
@@ -150,12 +121,13 @@ func parseWorkflowPhaseParam(cx iris.Context, key string) (*enum.WorkflowPhase, 
 // @Security ApiKeyAuth
 // @Produce json
 // @Param comic_id path string true "comic id"
+// @Param includes query []string false "include related fields, optional: workset, workset.team, creator"
 // @Success 200 {object} res.HttpRes[val.ComicVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 404 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics/{comic_id} [get]
+// @Router /api/v1/comics/{comic_id} [get]
 func GetComicById(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -172,7 +144,20 @@ func GetComicById(st *state.AppState) iris.Handler {
 			return
 		}
 
-		re := comicApp.GetById(newReqCx(cx), currUid, comicId)
+		var args val.GetComicByIdArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		args.ComicId = comicId
+
+		if !parseComicIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
+			return
+		}
+
+		re := comicApp.GetById(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -180,6 +165,27 @@ func GetComicById(st *state.AppState) iris.Handler {
 
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
+}
+
+// `parseComicIncludes` validates include query values.
+func parseComicIncludes(includes []enum.ComicIncl) bool {
+	if len(includes) == 0 {
+		return true
+	}
+
+	for i := range includes {
+		switch includes[i] {
+		case enum.ComicInclWorkset,
+			enum.ComicInclWorksetTeam,
+			enum.ComicInclCreator:
+			continue
+
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // `CreateComic` godoc
@@ -196,7 +202,7 @@ func GetComicById(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics [post]
+// @Router /api/v1/comics [post]
 func CreateComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -239,7 +245,7 @@ func CreateComic(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics/{comic_id} [put]
+// @Router /api/v1/comics/{comic_id} [put]
 func UpdateComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -290,7 +296,7 @@ func UpdateComic(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics/{comic_id}/cover [post]
+// @Router /api/v1/comics/{comic_id}/cover [post]
 func ResvComicCover(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -338,7 +344,7 @@ func ResvComicCover(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics/{comic_id}/cover/confirm [post]
+// @Router /api/v1/comics/{comic_id}/cover/confirm [post]
 func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 
@@ -378,7 +384,7 @@ func MarkComicCoverUploaded(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /comics/{comic_id} [delete]
+// @Router /api/v1/comics/{comic_id} [delete]
 func DeleteComic(st *state.AppState) iris.Handler {
 	comicApp := st.ComicApp
 

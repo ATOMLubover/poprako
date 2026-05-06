@@ -32,6 +32,9 @@ func NewApp(st *state.AppState) *iris.Application {
 	app.Use(requestid.New())
 	app.Use(middleware.LogLatency(st.Cfg))
 
+	// Enable CORS middleware.
+	// app.UseRouter(middleware.CorsMiddleware())
+
 	if st.Cfg.Env == cfg.EnvDev {
 		enableSwag(app)
 	}
@@ -71,7 +74,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			member := authorized.Party("/members")
 			{
 				member.Post("", CreateMember(st))
-				member.Get("/team/{team_id}", ListTeamMembers(st))
+				member.Get("", ListTeamMembers(st))
 				member.Get("/mine", ListMyMembers(st))
 				member.Put("/{member_id}", UpdateMemberRole(st))
 				member.Delete("/{member_id}", DeleteMember(st))
@@ -80,7 +83,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			memberInvitation := authorized.Party("/member-invitations")
 			{
-				memberInvitation.Get("/teams/{team_id}", ListMemberInvitations(st))
+				memberInvitation.Get("", ListMemberInvitations(st))
 				memberInvitation.Post("", CreateMemberInvitation(st))
 				memberInvitation.Put("/{invitation_id}", UpdateMemberInvitation(st))
 				memberInvitation.Delete("/{invitation_id}", DeleteMemberInvitation(st))
@@ -88,7 +91,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			workset := authorized.Party("/worksets")
 			{
-				workset.Get("/team/{team_id}", ListWorksets(st))
+				workset.Get("", ListWorksets(st))
 				workset.Post("", CreateWorkset(st))
 				workset.Put("/{workset_id}", UpdateWorkset(st))
 				workset.Delete("/{workset_id}", DeleteWorkset(st))
@@ -96,7 +99,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			comic := authorized.Party("/comics")
 			{
-				comic.Get("/worksets/{workset_id}", ListComics(st))
+				comic.Get("", ListComics(st))
 				comic.Get("/{comic_id}", GetComicById(st))
 				comic.Post("", CreateComic(st))
 				comic.Put("/{comic_id}", UpdateComic(st))
@@ -107,25 +110,29 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			chapter := authorized.Party("/chapters")
 			{
-				chapter.Get("/comics/{comic_id}", ListChapters(st))
+				chapter.Get("", ListChapters(st))
+				chapter.Get("/pinned", GetPinnedChapter(st))
 				chapter.Get("/{chapter_id}/export", ExportChapter(st))
 				chapter.Get("/{chapter_id}/export/lp", ExportChapterLp(st))
-				chapter.Get("/{chapter_id}/pages", ListChapterPages(st))
 				chapter.Get("/{chapter_id}", GetChapterById(st))
-				chapter.Get("/comics/{comic_id}/pinned", GetPinnedChapter(st))
 				chapter.Post("/{chapter_id}/import", ImportChapter(st))
 				chapter.Post("", CreateChapter(st))
-				chapter.Post("/{chapter_id}/pages/reserve", ResvChapterPages(st))
 				chapter.Put("/{chapter_id}", UpdateChapter(st))
-				chapter.Delete("/{chapter_id}/pages", DeleteChapterPages(st))
 				chapter.Delete("/{chapter_id}", DeleteChapter(st))
 			}
 
 			page := authorized.Party("/pages")
 			{
-				page.Get("/{page_id}/units", ListPageUnits(st))
-				page.Post("/{page_id}/units", SavePageUnits(st))
+				page.Get("", ListChapterPages(st))
+				page.Post("/reserve", ResvChapterPages(st))
+				page.Delete("", DeleteChapterPages(st))
 				page.Post("/{page_id}/image/uploaded", MarkPageImageUploaded(st))
+			}
+
+			unit := authorized.Party("/units")
+			{
+				unit.Get("", ListPageUnits(st))
+				unit.Post("", SavePageUnits(st))
 			}
 
 			sysMail := authorized.Party("/sys-mails")
@@ -136,7 +143,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			assignmentInv := authorized.Party("/assignment-invitations")
 			{
-				assignmentInv.Get("/chapters/{chapter_id}", ListAssignmentInvitations(st))
+				assignmentInv.Get("", ListAssignmentInvitations(st))
 				assignmentInv.Post("", CreateAssignmentInvitation(st))
 				assignmentInv.Delete("/{invitation_id}", DeleteAssignmentInvitation(st))
 				assignmentInv.Post("/join", JoinByAssignmentInvitation(st))
@@ -144,7 +151,7 @@ func NewApp(st *state.AppState) *iris.Application {
 
 			assignment := authorized.Party("/assignments")
 			{
-				assignment.Get("/chapters/{chapter_id}", ListAssignmentsByChapter(st))
+				assignment.Get("", ListAssignmentsByChapter(st))
 				assignment.Get("/mine", ListMyAssignments(st))
 				assignment.Put("", UpsertAssignment(st))
 				assignment.Delete("/{assignment_id}", DeleteAssignment(st))

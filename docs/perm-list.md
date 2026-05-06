@@ -1,6 +1,6 @@
-# 权限清单 (Refactor)
+# 权限清单 (Legacy 对齐)
 
-> 仅统计 `refactor/` 下实现。括号内为文件:行号。统一最后提交: 2026-04-29。
+> 统计当前 `internal/` 实现。权限逻辑统一内化在 `internal/domain/svc/`，`app` 层仅做参数校验和编排。
 
 ## 角色
 
@@ -18,20 +18,31 @@
 
 ## 资源×操作
 
-| 资源       | 操作              | 鉴权                               | Svc方法                                          |
-| ---------- | ----------------- | ---------------------------------- | ------------------------------------------------ |
-| Workset    | List              | 团队成员                           | `CanListWorkset` (`svc/workset.go:53`)           |
-| Workset    | Create/Upd/Remove | Team Admin                         | `CanAdminWorkset` (`svc/workset.go:34`)          |
-| Comic      | List              | 团队成员                           | `CanListComic` (`svc/comic.go:23`)               |
-| Comic      | Create/Upd/Remove | Team Admin                         | `CanAdminComic` (`svc/comic.go:42`)              |
-| Chapter    | List/GetPinned    | 团队成员                           | `CanListChapter` (`svc/chapter.go:23`)           |
-| Chapter    | Create/Remove     | Team Admin                         | `CanAdminChapter` (`svc/chapter.go:42`)          |
-| Chapter    | Upd(元数据)       | Team Admin                         | `CanAdminChapter` (`svc/chapter.go:42`)          |
-| Chapter    | Workflow 推进     | **章级角色**                       | `CanTransiteWorkflow` (`svc/chapter.go:xx`)      |
-| Assignment | ListByChapter     | **团队成员**                       | 链查 `chapter→comic→workset→team→member`         |
-| Assignment | ListByUser        | 已认证                             | 无(自己的分配)                                   |
-| Assignment | Upsert            | Chap Reviewer + 目标用户有Team角色 | `CanReviewAssignment` + `CanTakeAssignmentRoles` |
-| Assignment | Delete            | Chap Reviewer                      | `CanReviewAssignment`                            |
+| 资源 | 操作 | 鉴权 | Svc 方法 |
+| --- | --- | --- | --- |
+| Workset | List | 团队成员 | `WorksetSvc.CanListWorkset` |
+| Workset | Create/Upd/Delete | Team Admin | `WorksetSvc.CanAdminWorkset` |
+| Comic | List | 团队成员 | `ComicSvc.CanListComic` |
+| Comic | Create/Upd/Delete | Team Admin | `ComicSvc.CanAdminComic` |
+| Chapter | List/GetPinned/GetById | 团队成员 | `ChapterSvc.CanListChapter` |
+| Chapter | Create/Upd/Delete | Team Admin | `ChapterSvc.CanAdminChapter` |
+| Chapter | Workflow 推进 | 章级角色（Reviewer 全通） | `ChapterSvc.CanTransiteWorkflow` |
+| Page | ListByChapter | 团队成员；若团队成员校验失败，允许章节 assignment 回退访问（legacy 兼容） | `PageSvc.CanListByChapter` |
+| Page | ResvChapterPages | 仅图源或监修 | `PageSvc.CanResvPages` |
+| Page | MarkImageUploaded | 仅图源 | `PageSvc.CanMarkImageUploaded` |
+| Page | DeleteByChapterId | Team Admin | `ChapterSvc.CanAdminChapter` |
+| Unit | ListByPage | 仅当前章节参与者 | `UnitSvc.CanListPageUnits` |
+| Unit | SaveByPage | 仅当前章节翻译或校对 | `UnitSvc.CanEditPageUnits` |
+| Assignment | ListByChapter | 团队成员；若团队成员校验失败，允许章节 assignment 回退访问（legacy 兼容） | `AssignmentSvc.CanListByChapter` |
+| Assignment | ListByUser | 已认证（只看自己） | 无 |
+| Assignment | Upsert/Delete | 仅章节监修；目标用户需具备对应 team 角色 | `AssignmentSvc.CanReviewAssignment` + `AssignmentSvc.CanTakeAssignmentRoles` |
+| Assignment Invitation | Create/Delete/Accept | 仅章节监修；角色合法性校验不允许 `RoleAdmin` | `AssignmentSvc.CanReviewAssignment` + `AssignmentInvSvc.NewAssignmentInvCre` |
+| Member | ListByTeam | 团队成员 | `MemberSvc.CanListMember` |
+| Member | UpdateRole/Delete | Team Admin | `MemberSvc.CanAdminMember` |
+| Member Invitation | List | 团队成员 | `MemberInvSvc.CanListMemberInv` |
+| Member Invitation | Create/Delete/UpdateRole | Team Admin | `MemberInvSvc.CanAdminMemberInv` |
+| Team | List/Create（全团队维度） | Super Admin | `TeamSvc.CanListTeam` |
+| Team | Update/Delete/Avatar 操作 | Team Admin | `TeamSvc.CanAdminTeam` |
 
 ## Workflow → 章角色映射
 
@@ -48,15 +59,20 @@
 
 ## 关键文件
 
-| 文件                                  | 最后提交   |
-| ------------------------------------- | ---------- |
-| `refactor/.../svc/workset.go`         | 2026-04-29 |
-| `refactor/.../svc/comic.go`           | 2026-04-29 |
-| `refactor/.../svc/chapter.go`         | 2026-04-29 |
-| `refactor/.../svc/assignment.go`      | 2026-04-29 |
-| `refactor/.../app/impl/workset.go`    | 2026-04-29 |
-| `refactor/.../app/impl/comic.go`      | 2026-04-29 |
-| `refactor/.../app/impl/chapter.go`    | 2026-04-29 |
-| `refactor/.../app/impl/assignment.go` | 2026-04-29 |
-| `refactor/.../model/enum/role.go`     | 2026-04-27 |
-| `refactor/.../model/aggr/role.go`     | 2026-04-27 |
+| 文件 |
+| --- |
+| `internal/domain/svc/workset.go` |
+| `internal/domain/svc/comic.go` |
+| `internal/domain/svc/chapter.go` |
+| `internal/domain/svc/page.go` |
+| `internal/domain/svc/unit.go` |
+| `internal/domain/svc/assignment.go` |
+| `internal/domain/svc/member.go` |
+| `internal/domain/svc/member_inv.go` |
+| `internal/domain/svc/team.go` |
+| `internal/app/impl/workset.go` |
+| `internal/app/impl/comic.go` |
+| `internal/app/impl/chapter.go` |
+| `internal/app/impl/page.go` |
+| `internal/app/impl/unit.go` |
+| `internal/app/impl/assignment.go` |

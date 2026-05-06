@@ -61,7 +61,6 @@ func (b *evBusImpl) Sub(h event_iface.EvHandler) {
 	zap.L().Debug(
 		"[evBusImpl.Sub] subscribed handler to event type",
 		zap.Any("event_type", typ),
-		zap.Any("handler", h),
 	)
 }
 

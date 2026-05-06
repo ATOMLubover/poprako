@@ -84,31 +84,23 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
-	chapter, err := a.chapterRepo.GetById(args.ChapterId)
-	if err != nil {
-		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
+	if re := a.assignmentSvc.CanListByChapter(
+		currUid,
+		args.ChapterId,
+		a.memberRepo,
+		a.worksetRepo,
+		a.comicRepo,
+		a.chapterRepo,
+		a.assignmentRepo,
+		a.errClsf,
+	); re.IsReject() {
+		return app_res.Reject[[]val.AssignmentVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
-	comic, err := a.comicRepo.GetById(chapter.ComicId)
-	if err != nil {
-		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
-	}
-
-	workset, err := a.worksetRepo.GetById(comic.WorksetId)
-	if err != nil {
-		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "章节不存在")
-	}
-
-	ok, err := a.memberRepo.ExistByUserTeamId(workset.TeamId, currUid)
-	if err != nil {
-		lgr.Error("[assignmentAppImpl.ListByChapter] failed to verify team membership", zap.Error(err))
-		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
-	}
-	if !ok {
-		return app_res.Reject[[]val.AssignmentVal](app_res.Forbidden, "无权查看该章节的分配列表")
-	}
-
-	items, err := a.assignmentRepo.List(mkListAssignmentOptByChapter(args.ChapterId, args.Offset, args.Limit))
+	items, err := a.assignmentRepo.List(
+		mkListAssignmentOptByChapter(args.ChapterId, args.Includes, args.Offset, args.Limit),
+		mkAssignmentRepoIncl(args.Includes)...,
+	)
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.ListByChapter] failed to list assignments", zap.Error(err))
 		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
@@ -133,7 +125,10 @@ func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args 
 		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
-	items, err := a.assignmentRepo.List(mkListAssignmentOptByUser(currUid, args.Offset, args.Limit))
+	items, err := a.assignmentRepo.List(
+		mkListAssignmentOptByUser(currUid, args.Includes, args.Offset, args.Limit),
+		mkAssignmentRepoIncl(args.Includes)...,
+	)
 	if err != nil {
 		lgr.Error("[assignmentAppImpl.ListMy] failed to list assignments", zap.Error(err))
 		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")

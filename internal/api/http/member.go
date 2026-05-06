@@ -23,7 +23,7 @@ import (
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /members [post]
+// @Router /api/v1/members [post]
 func CreateMember(st *state.AppState) iris.Handler {
 	memberApp := st.MemberApp
 
@@ -58,7 +58,7 @@ func CreateMember(st *state.AppState) iris.Handler {
 // @Tags member
 // @Security ApiKeyAuth
 // @Produce json
-// @Param team_id path string true "team id"
+// @Param team_id query string true "team id"
 // @Param includes query []string false "include related fields, optional: user, team"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
@@ -66,7 +66,7 @@ func CreateMember(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /members/team/{team_id} [get]
+// @Router /api/v1/members [get]
 func ListTeamMembers(st *state.AppState) iris.Handler {
 	memberApp := st.MemberApp
 
@@ -77,36 +77,23 @@ func ListTeamMembers(st *state.AppState) iris.Handler {
 			return
 		}
 
-		teamId := cx.Params().Get("team_id")
-		if teamId == "" {
+		var args val.ListMemberByTeamArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.TeamId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 team_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
-			return
-		}
-
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		includes, ok := parseMemberIncludes(cx.URLParamSlice("includes"))
-		if !ok {
+		if !parseMemberIncludes(args.Includes) {
 			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
 			return
 		}
 
-		re := memberApp.ListByTeam(newReqCx(cx), currUid, &val.ListMemberByTeamArgs{
-			TeamId:   teamId,
-			Includes: includes,
-			Offset:   offset,
-			Limit:    limit,
-		})
+		re := memberApp.ListByTeam(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -130,7 +117,7 @@ func ListTeamMembers(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /members/mine [get]
+// @Router /api/v1/members/mine [get]
 func ListMyMembers(st *state.AppState) iris.Handler {
 	memberApp := st.MemberApp
 
@@ -141,29 +128,18 @@ func ListMyMembers(st *state.AppState) iris.Handler {
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
+		var args val.ListMyMemberArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
 
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		includes, ok := parseMemberIncludes(cx.URLParamSlice("includes"))
-		if !ok {
+		if !parseMemberIncludes(args.Includes) {
 			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
 			return
 		}
 
-		re := memberApp.ListMine(newReqCx(cx), currUid, &val.ListMyMemberArgs{
-			Includes: includes,
-			Offset:   offset,
-			Limit:    limit,
-		})
+		re := memberApp.ListMine(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -171,6 +147,25 @@ func ListMyMembers(st *state.AppState) iris.Handler {
 
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
+}
+
+// `parseMemberIncludes` validates include query values.
+func parseMemberIncludes(includes []enum.MemberIncl) bool {
+	if len(includes) == 0 {
+		return true
+	}
+
+	for i := range includes {
+		switch includes[i] {
+		case enum.MemberInclUser, enum.MemberInclTeam:
+			continue
+
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // `UpdateMemberRole` godoc
@@ -188,7 +183,7 @@ func ListMyMembers(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /members/{member_id} [put]
+// @Router /api/v1/members/{member_id} [put]
 func UpdateMemberRole(st *state.AppState) iris.Handler {
 	memberApp := st.MemberApp
 
@@ -236,7 +231,7 @@ func UpdateMemberRole(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /members/{member_id} [delete]
+// @Router /api/v1/members/{member_id} [delete]
 func DeleteMember(st *state.AppState) iris.Handler {
 	memberApp := st.MemberApp
 
@@ -276,7 +271,7 @@ func DeleteMember(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /members/join [post]
+// @Router /api/v1/members/join [post]
 func JoinTeamByInvitation(st *state.AppState) iris.Handler {
 	memberApp := st.MemberApp
 
@@ -301,24 +296,4 @@ func JoinTeamByInvitation(st *state.AppState) iris.Handler {
 
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
-}
-
-// `parseMemberIncludes` parses include query values into typed includes.
-func parseMemberIncludes(rawIncludes []string) ([]enum.MemberIncl, bool) {
-	if len(rawIncludes) == 0 {
-		return nil, true
-	}
-
-	includes := make([]enum.MemberIncl, 0, len(rawIncludes))
-	for i := range rawIncludes {
-		incl := enum.MemberIncl(rawIncludes[i])
-		switch incl {
-		case enum.MemberInclUser, enum.MemberInclTeam:
-			includes = append(includes, incl)
-		default:
-			return nil, false
-		}
-	}
-
-	return includes, true
 }

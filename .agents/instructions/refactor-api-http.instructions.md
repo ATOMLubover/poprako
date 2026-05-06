@@ -2,6 +2,8 @@
 description: "Use when editing refactor API HTTP files under refactor/internal/api/http, including Iris handlers, swagger godoc, auth middleware, HttpRes response wrapping, request context helpers, and API HTTP style."
 name: "Refactor Api Http Style"
 applyTo:
+  - "internal/api/http/*.go"
+  - "internal/api/http/**/*.go"
   - "refactor/internal/api/http/*.go"
   - "refactor/internal/api/http/**/*.go"
 ---
@@ -23,8 +25,17 @@ applyTo:
 - handler 工厂签名统一为 `func Xxx(st *state.AppState) iris.Handler`
 - handler 方法体只做四类事 读取 HTTP 输入 取当前用户 调用 app 翻译为 HTTP 响应
 - 路径参数 查询参数 body cookie header 的读取与基础校验留在 handler 层完成
+- 若某个 app 入参结构体字段已声明 `url:"..."` tag 则必须使用统一 query 绑定流程自动注入 不允许继续手写 `Params().Get` 或 `URLParam*` 再手动拼装该字段
 - body 解析失败 缺少必要路径参数 缺少当前用户等 HTTP 级错误 直接在 handler 层返回 `res.Reject`
 - handler 不直接写 `cx.JSON` `cx.WriteString` 这类原始输出 优先统一走 `res.Accept` 与 `res.Reject`
+
+## 路由语义规则
+
+- 返回资源集合时 路由必须使用资源自身集合路径 例如 `/api/v1/assignments` `/api/v1/chapters` `/api/v1/members`
+- 返回单资源时 路由必须使用资源自身 id 例如 `/api/v1/assignments/{assignment_id}` `/api/v1/chapters/{chapter_id}`
+- 当集合接口需要按其他资源筛选时 外部资源 id 只能放 query 参数 例如 `?chapter_id=` `?team_id=` `?workset_id=` 不允许写成 `/assignments/chapters/{chapter_id}` 这类 foreign-key path
+- 路径最后一段只允许是资源本身复数名 资源本身 id 或资源本身操作名 不允许在资源路径直接插入其他资源字段
+- swagger `@Param` 必须与真实输入来源一致 若输入来自 query 则必须写 `query` 不允许误写成 `path`
 
 ## swagger godoc 规则
 

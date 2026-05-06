@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   enum.WorkflowTransition:
     enum:
@@ -483,6 +482,8 @@ definitions:
         type: integer
       assigned_typesetter_at:
         type: integer
+      chapter:
+        $ref: '#/definitions/val.ChapterVal'
       chapter_id:
         type: string
       created_at:
@@ -493,6 +494,8 @@ definitions:
         type: integer
       updated_at:
         type: integer
+      user:
+        $ref: '#/definitions/val.UserVal'
       user_id:
         type: string
     type: object
@@ -537,10 +540,14 @@ definitions:
     type: object
   val.ChapterVal:
     properties:
+      comic:
+        $ref: '#/definitions/val.ComicVal'
       comic_id:
         type: string
       created_at:
         type: integer
+      creator:
+        $ref: '#/definitions/val.UserVal'
       creator_id:
         type: string
       id:
@@ -613,6 +620,8 @@ definitions:
         type: string
       created_at:
         type: integer
+      creator:
+        $ref: '#/definitions/val.UserVal'
       creator_id:
         type: string
       description:
@@ -629,6 +638,8 @@ definitions:
         type: string
       updated_at:
         type: integer
+      workset:
+        $ref: '#/definitions/val.WorksetVal'
       workset_id:
         type: string
     type: object
@@ -766,8 +777,12 @@ definitions:
         type: string
       invitation_code:
         type: string
+      invitee:
+        $ref: '#/definitions/val.UserVal'
       invitee_qid:
         type: string
+      invitor:
+        $ref: '#/definitions/val.UserVal'
       invitor_id:
         type: string
       pending:
@@ -1204,6 +1219,8 @@ definitions:
         type: integer
       name:
         type: string
+      team:
+        $ref: '#/definitions/val.TeamVal'
       team_id:
         type: string
       updated_at:
@@ -1215,7 +1232,7 @@ info:
   title: Poprako-S Refactor API
   version: 0.4.0
 paths:
-  /assignment-invitations:
+  /api/v1/assignment-invitations:
     post:
       consumes:
       - application/json
@@ -1254,7 +1271,7 @@ paths:
       summary: Create Assignment Invitation
       tags:
       - assignment-invitation
-  /assignment-invitations/{invitation_id}:
+  /api/v1/assignment-invitations/{invitation_id}:
     delete:
       description: |-
         Delete assignment invitation by id
@@ -1290,7 +1307,7 @@ paths:
       summary: Delete Assignment Invitation
       tags:
       - assignment-invitation
-  /assignment-invitations/chapters/{chapter_id}:
+  /api/v1/assignment-invitations/chapters/{chapter_id}:
     get:
       description: |-
         List assignment invitations for one chapter
@@ -1338,7 +1355,7 @@ paths:
       summary: List Assignment Invitations
       tags:
       - assignment-invitation
-  /assignment-invitations/join:
+  /api/v1/assignment-invitations/join:
     post:
       consumes:
       - application/json
@@ -1376,7 +1393,7 @@ paths:
       summary: Join Chapter By Invitation
       tags:
       - assignment-invitation
-  /assignments:
+  /api/v1/assignments:
     put:
       consumes:
       - application/json
@@ -1415,7 +1432,7 @@ paths:
       summary: Upsert Assignment
       tags:
       - assignment
-  /assignments/{assignment_id}:
+  /api/v1/assignments/{assignment_id}:
     delete:
       description: |-
         Delete assignment by id
@@ -1451,7 +1468,7 @@ paths:
       summary: Delete Assignment
       tags:
       - assignment
-  /assignments/chapters/{chapter_id}:
+  /api/v1/assignments/chapters/{chapter_id}:
     get:
       description: |-
         List assignments for one chapter
@@ -1463,6 +1480,14 @@ paths:
         name: chapter_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: user, chapter, chapter.comic,
+          chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       - description: pagination offset
         in: query
         name: offset
@@ -1495,12 +1520,20 @@ paths:
       summary: List Assignments By Chapter
       tags:
       - assignment
-  /assignments/mine:
+  /api/v1/assignments/mine:
     get:
       description: |-
         List assignments of current user
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
+      - collectionFormat: csv
+        description: 'include related fields, optional: user, chapter, chapter.comic,
+          chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       - description: pagination offset
         in: query
         name: offset
@@ -1533,7 +1566,7 @@ paths:
       summary: List My Assignments
       tags:
       - assignment
-  /auth/login:
+  /api/v1/auth/login:
     post:
       consumes:
       - application/json
@@ -1560,7 +1593,7 @@ paths:
       summary: User Login
       tags:
       - auth
-  /auth/register:
+  /api/v1/auth/register:
     post:
       consumes:
       - application/json
@@ -1587,7 +1620,7 @@ paths:
       summary: User Registration
       tags:
       - auth
-  /chapters:
+  /api/v1/chapters:
     post:
       consumes:
       - application/json
@@ -1626,7 +1659,7 @@ paths:
       summary: Create Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}:
+  /api/v1/chapters/{chapter_id}:
     delete:
       description: |-
         Hard-delete one chapter
@@ -1673,6 +1706,14 @@ paths:
         name: chapter_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: comic, comic.workset, comic.workset.team,
+          comic.creator, creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       produces:
       - application/json
       responses:
@@ -1744,7 +1785,7 @@ paths:
       summary: Update Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}/export:
+  /api/v1/chapters/{chapter_id}/export:
     get:
       description: |-
         Export one chapter in JSON format
@@ -1784,7 +1825,7 @@ paths:
       summary: Export Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}/export/lp:
+  /api/v1/chapters/{chapter_id}/export/lp:
     get:
       description: |-
         Export one chapter in LabelPlus text format
@@ -1824,7 +1865,7 @@ paths:
       summary: Export Chapter LabelPlus
       tags:
       - chapter
-  /chapters/{chapter_id}/import:
+  /api/v1/chapters/{chapter_id}/import:
     post:
       consumes:
       - application/json
@@ -1872,7 +1913,7 @@ paths:
       summary: Import Chapter
       tags:
       - chapter
-  /chapters/{chapter_id}/pages:
+  /api/v1/chapters/{chapter_id}/pages:
     delete:
       description: |-
         Hard-delete all pages under one chapter
@@ -1951,7 +1992,7 @@ paths:
       summary: List Chapter Pages
       tags:
       - chapter
-  /chapters/{chapter_id}/pages/reserve:
+  /api/v1/chapters/{chapter_id}/pages/reserve:
     post:
       consumes:
       - application/json
@@ -1995,7 +2036,7 @@ paths:
       summary: Reserve Chapter Pages Upload
       tags:
       - chapter
-  /chapters/comics/{comic_id}:
+  /api/v1/chapters/comics/{comic_id}:
     get:
       description: |-
         List chapters for one comic
@@ -2007,6 +2048,14 @@ paths:
         name: comic_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: comic, comic.workset, comic.workset.team,
+          comic.creator, creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       - description: pagination offset
         in: query
         name: offset
@@ -2039,7 +2088,7 @@ paths:
       summary: List Chapters
       tags:
       - chapter
-  /chapters/comics/{comic_id}/pinned:
+  /api/v1/chapters/comics/{comic_id}/pinned:
     get:
       description: |-
         Get pinned chapter for one comic
@@ -2075,7 +2124,7 @@ paths:
       summary: Get Pinned Chapter
       tags:
       - chapter
-  /comics:
+  /api/v1/comics:
     post:
       consumes:
       - application/json
@@ -2114,7 +2163,7 @@ paths:
       summary: Create Comic
       tags:
       - comic
-  /comics/{comic_id}:
+  /api/v1/comics/{comic_id}:
     delete:
       description: |-
         Hard-delete one comic by id
@@ -2161,6 +2210,13 @@ paths:
         name: comic_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: workset, workset.team, creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       produces:
       - application/json
       responses:
@@ -2232,7 +2288,7 @@ paths:
       summary: Update Comic
       tags:
       - comic
-  /comics/{comic_id}/cover:
+  /api/v1/comics/{comic_id}/cover:
     post:
       consumes:
       - application/json
@@ -2276,7 +2332,7 @@ paths:
       summary: Reserve Comic Cover Upload
       tags:
       - comic
-  /comics/{comic_id}/cover/confirm:
+  /api/v1/comics/{comic_id}/cover/confirm:
     post:
       description: |-
         Confirm one comic cover upload after client upload completed
@@ -2312,7 +2368,7 @@ paths:
       summary: Confirm Comic Cover Uploaded
       tags:
       - comic
-  /comics/worksets/{workset_id}:
+  /api/v1/comics/worksets/{workset_id}:
     get:
       description: |-
         List active comics for one workset
@@ -2352,6 +2408,13 @@ paths:
         in: query
         name: publish_phase
         type: integer
+      - collectionFormat: csv
+        description: 'include related fields, optional: workset, workset.team, creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       - description: pagination offset
         in: query
         name: offset
@@ -2384,7 +2447,7 @@ paths:
       summary: List Comics
       tags:
       - comic
-  /member-invitations:
+  /api/v1/member-invitations:
     post:
       consumes:
       - application/json
@@ -2423,7 +2486,7 @@ paths:
       summary: Create Member Invitation
       tags:
       - member-invitation
-  /member-invitations/{invitation_id}:
+  /api/v1/member-invitations/{invitation_id}:
     delete:
       description: |-
         Hard delete one invitation by id
@@ -2502,7 +2565,7 @@ paths:
       summary: Update Member Invitation
       tags:
       - member-invitation
-  /member-invitations/teams/{team_id}:
+  /api/v1/member-invitations/teams/{team_id}:
     get:
       description: |-
         List invitations under one team
@@ -2514,6 +2577,13 @@ paths:
         name: team_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: invitor, invitee'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
       - description: pending filter
         in: query
         name: pending
@@ -2550,7 +2620,7 @@ paths:
       summary: List Member Invitations
       tags:
       - member-invitation
-  /members:
+  /api/v1/members:
     post:
       consumes:
       - application/json
@@ -2589,7 +2659,7 @@ paths:
       summary: Create Member
       tags:
       - member
-  /members/{member_id}:
+  /api/v1/members/{member_id}:
     delete:
       description: |-
         Hard delete one member by id
@@ -2668,7 +2738,7 @@ paths:
       summary: Update Member Role
       tags:
       - member
-  /members/join:
+  /api/v1/members/join:
     post:
       consumes:
       - application/json
@@ -2706,7 +2776,7 @@ paths:
       summary: Join Team By Invitation
       tags:
       - member
-  /members/mine:
+  /api/v1/members/mine:
     get:
       description: |-
         List all memberships of current user
@@ -2751,7 +2821,7 @@ paths:
       summary: List My Members
       tags:
       - member
-  /members/team/{team_id}:
+  /api/v1/members/team/{team_id}:
     get:
       description: |-
         List members under one team
@@ -2802,7 +2872,7 @@ paths:
       summary: List Team Members
       tags:
       - member
-  /pages/{page_id}/image/uploaded:
+  /api/v1/pages/{page_id}/image/uploaded:
     post:
       description: |-
         Confirm one page image upload after client upload completed
@@ -2838,7 +2908,7 @@ paths:
       summary: Confirm Page Image Uploaded
       tags:
       - page
-  /pages/{page_id}/units:
+  /api/v1/pages/{page_id}/units:
     get:
       description: |-
         List units for one page
@@ -2948,7 +3018,7 @@ paths:
       summary: Save Page Units
       tags:
       - unit
-  /sys-mails:
+  /api/v1/sys-mails:
     get:
       description: |-
         List unread system mails for current authorized user with pagination
@@ -2986,7 +3056,7 @@ paths:
       summary: List Unread System Mails
       tags:
       - sys-mail
-  /sys-mails/{sys_mail_id}/read:
+  /api/v1/sys-mails/{sys_mail_id}/read:
     post:
       description: |-
         Mark one system mail as read for current authorized user
@@ -3021,7 +3091,7 @@ paths:
       summary: Mark System Mail Read
       tags:
       - sys-mail
-  /teams:
+  /api/v1/teams:
     get:
       parameters:
       - description: pagination offset
@@ -3090,7 +3160,7 @@ paths:
       summary: Create Team
       tags:
       - team
-  /teams/{team_id}:
+  /api/v1/teams/{team_id}:
     get:
       parameters:
       - description: team id
@@ -3153,7 +3223,7 @@ paths:
       summary: Update Team
       tags:
       - team
-  /teams/{team_id}/avatar:
+  /api/v1/teams/{team_id}/avatar:
     post:
       consumes:
       - application/json
@@ -3193,7 +3263,7 @@ paths:
       summary: Reserve Team Avatar Upload
       tags:
       - team
-  /teams/{team_id}/avatar/confirm:
+  /api/v1/teams/{team_id}/avatar/confirm:
     post:
       parameters:
       - description: team id
@@ -3225,7 +3295,7 @@ paths:
       summary: Confirm Team Avatar Uploaded
       tags:
       - team
-  /teams/mine:
+  /api/v1/teams/mine:
     get:
       parameters:
       - description: pagination offset
@@ -3260,7 +3330,7 @@ paths:
       summary: List My Teams
       tags:
       - team
-  /users/{user_id}:
+  /api/v1/users/{user_id}:
     get:
       description: |-
         Get user info by user id and return a `res.HttpRes` wrapper with `val.UserVal`
@@ -3295,7 +3365,7 @@ paths:
       summary: Get User Info
       tags:
       - user
-  /users/avatar:
+  /api/v1/users/avatar:
     post:
       consumes:
       - application/json
@@ -3329,7 +3399,7 @@ paths:
       summary: Reserve User Avatar Upload
       tags:
       - user
-  /users/avatar/confirm:
+  /api/v1/users/avatar/confirm:
     post:
       description: |-
         Confirm avatar uploaded after client upload completed and return no JSON body
@@ -3348,7 +3418,7 @@ paths:
       summary: Confirm User Avatar Uploaded
       tags:
       - user
-  /users/me:
+  /api/v1/users/me:
     get:
       description: |-
         Get current authorized user info and return a `res.HttpRes` wrapper with `val.UserVal`
@@ -3399,7 +3469,7 @@ paths:
       summary: Update My User Info
       tags:
       - user
-  /worksets:
+  /api/v1/worksets:
     post:
       consumes:
       - application/json
@@ -3438,7 +3508,7 @@ paths:
       summary: Create Workset
       tags:
       - workset
-  /worksets/{workset_id}:
+  /api/v1/worksets/{workset_id}:
     delete:
       description: |-
         Hard-delete a workset by id
@@ -3517,7 +3587,7 @@ paths:
       summary: Update Workset
       tags:
       - workset
-  /worksets/team/{team_id}:
+  /api/v1/worksets/team/{team_id}:
     get:
       description: |-
         List all active worksets for a team

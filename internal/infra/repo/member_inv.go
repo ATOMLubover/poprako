@@ -2,6 +2,7 @@ package repo_infra
 
 import (
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/infra/repo/entity"
@@ -20,14 +21,17 @@ func NewMemberInvRepo(gdb *gorm.DB) repo_iface.MemberInvRepo {
 }
 
 // `GetPendingByInviteeQid` returns the latest invitation by invitee qid
-func (r *memberInvRepoImpl) GetPendingByInviteeQid(qid string) (*aggr.MemberInv, repo_iface.RepoErr) {
+func (r *memberInvRepoImpl) GetPendingByInviteeQid(qid string, inc ...enum.MemberInvIncl) (*aggr.MemberInv, repo_iface.RepoErr) {
 	var row entity.MemberInvRow
 
-	err := r.gdb.
+	query := r.gdb.
 		Table(entity.MEMBER_INV_TABLE).
 		Where("invitee_qid = ? AND pending = true", qid).
-		Order("created_at DESC").
-		First(&row).Error
+		Order("created_at DESC")
+
+	query = withMemberInvIncl(query, inc...)
+
+	err := query.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +40,16 @@ func (r *memberInvRepoImpl) GetPendingByInviteeQid(qid string) (*aggr.MemberInv,
 }
 
 // `GetById` returns one invitation by id.
-func (r *memberInvRepoImpl) GetById(id string) (*aggr.MemberInv, repo_iface.RepoErr) {
+func (r *memberInvRepoImpl) GetById(id string, inc ...enum.MemberInvIncl) (*aggr.MemberInv, repo_iface.RepoErr) {
 	var row entity.MemberInvRow
 
-	err := r.gdb.
+	query := r.gdb.
 		Table(entity.MEMBER_INV_TABLE).
-		Where("id = ?", id).
-		First(&row).Error
+		Where("id = ?", id)
+
+	query = withMemberInvIncl(query, inc...)
+
+	err := query.First(&row).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +58,7 @@ func (r *memberInvRepoImpl) GetById(id string) (*aggr.MemberInv, repo_iface.Repo
 }
 
 // `List` returns invitations by filter options
-func (r *memberInvRepoImpl) List(opt query.ListMemberInvOpt) ([]aggr.MemberInv, repo_iface.RepoErr) {
+func (r *memberInvRepoImpl) List(opt query.ListMemberInvOpt, inc ...enum.MemberInvIncl) ([]aggr.MemberInv, repo_iface.RepoErr) {
 	var rows []entity.MemberInvRow
 
 	qry := r.gdb.
@@ -70,6 +77,8 @@ func (r *memberInvRepoImpl) List(opt query.ListMemberInvOpt) ([]aggr.MemberInv, 
 		qry = qry.Limit(opt.Pagi.Limit)
 	}
 
+	qry = withMemberInvIncl(qry, inc...)
+
 	err := qry.
 		Order("created_at DESC").
 		Find(&rows).Error
@@ -86,6 +95,21 @@ func (r *memberInvRepoImpl) List(opt query.ListMemberInvOpt) ([]aggr.MemberInv, 
 	}
 
 	return items, nil
+}
+
+// `withMemberInvIncl` maps typed include options to preloads.
+func withMemberInvIncl(query *gorm.DB, inc ...enum.MemberInvIncl) *gorm.DB {
+	for _, i := range inc {
+		switch i {
+		case enum.MemberInvInclInvitor:
+			query = query.Preload("Invitor")
+
+		case enum.MemberInvInclInvitee:
+			query = query.Preload("Invitee")
+		}
+	}
+
+	return query
 }
 
 // `Create` inserts a member invitation record

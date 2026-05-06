@@ -22,9 +22,23 @@ func vfyListWorksetArgs(args *val.ListWorksetArgs) app_res.AppRes[app_res.None] 
 
 // `asmWorksetVal` converts a `Workset` aggregate into a `WorksetVal` value object.
 func asmWorksetVal(ws *aggr.Workset) val.WorksetVal {
+	var teamVal *val.TeamVal
+
+	if ws.Team != nil {
+		teamVal = &val.TeamVal{
+			Id:             ws.Team.Id,
+			Name:           ws.Team.Name,
+			Desc:           ws.Team.Desc,
+			AvatarUploaded: ws.Team.AvatarUploaded,
+			CreatedAt:      ws.Team.CreatedAt.UnixMilli(),
+			UpdatedAt:      ws.Team.UpdatedAt.UnixMilli(),
+		}
+	}
+
 	return val.WorksetVal{
 		Id:         ws.Id,
 		TeamId:     ws.TeamId,
+		Team:       teamVal,
 		Index:      ws.Index,
 		Name:       ws.Name,
 		Desc:       ws.Desc,

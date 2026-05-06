@@ -15,6 +15,10 @@ type AssignmentRow struct {
 
 	ChapterId string `gorm:"column:chapter_id"`
 	UserId    string `gorm:"column:user_id"`
+	// `User` is included when `includes` contains `user`.
+	User *UserRow `gorm:"foreignKey:UserId"`
+	// `Chapter` is included when includes contain chapter paths.
+	Chapter *ChapterRow `gorm:"foreignKey:ChapterId"`
 
 	AssignedRawProviderAt *time.Time `gorm:"column:assigned_raw_provider_at"`
 	AssignedTranslatorAt  *time.Time `gorm:"column:assigned_translator_at"`
@@ -39,10 +43,22 @@ func (r *AssignmentRow) ToAssignmentAggr() *aggr.Assignment {
 		return nil
 	}
 
+	var user *aggr.User
+	if r.User != nil {
+		user = r.User.ToUserAggr()
+	}
+
+	var chapter *aggr.Chapter
+	if r.Chapter != nil {
+		chapter = r.Chapter.ToChapterAggr()
+	}
+
 	return &aggr.Assignment{
 		Id:        r.Id,
 		ChapterId: r.ChapterId,
 		UserId:    r.UserId,
+		User:      user,
+		Chapter:   chapter,
 		TimedRoles: aggr.TimedRoles{
 			AssignedRawProviderAt: r.AssignedRawProviderAt,
 			AssignedTranslatorAt:  r.AssignedTranslatorAt,

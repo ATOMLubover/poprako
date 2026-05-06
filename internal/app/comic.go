@@ -23,7 +23,7 @@ type ComicApp interface {
 
 	// `GetById` returns one comic by id
 	// `currUid` must be a member of the owning team
-	GetById(cx context.Context, currUid string, comicId string) app_res.AppRes[val.ComicVal]
+	GetById(cx context.Context, currUid string, args *val.GetComicByIdArgs) app_res.AppRes[val.ComicVal]
 
 	// `ResvCover` reserves signed upload url for one comic cover.
 	ResvCover(

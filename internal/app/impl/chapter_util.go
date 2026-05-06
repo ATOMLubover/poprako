@@ -12,29 +12,53 @@ import (
 )
 
 // `asmChapterVal` converts chapter aggregate to app value object.
-func asmChapterVal(ch *aggr.Chapter) val.ChapterVal {
+func asmChapterVal(chapter *aggr.Chapter) val.ChapterVal {
+	var comicVal *val.ComicVal
+	var creatorVal *val.UserVal
+
+	if chapter.Comic != nil {
+		v := asmComicVal(chapter.Comic)
+
+		comicVal = &v
+	}
+
+	if chapter.Creator != nil {
+		creatorVal = &val.UserVal{
+			Id:             chapter.Creator.Id,
+			Qid:            chapter.Creator.Qid,
+			Nickname:       chapter.Creator.Nickname,
+			AvatarUploaded: chapter.Creator.AvatarUploaded,
+			IsSuperAdmin:   chapter.Creator.IsSuperAdmin,
+			LastActiveAt:   chapter.Creator.LastActiveAt.UnixMilli(),
+			CreatedAt:      chapter.Creator.CreatedAt.UnixMilli(),
+			UpdatedAt:      chapter.Creator.UpdatedAt.UnixMilli(),
+		}
+	}
+
 	return val.ChapterVal{
-		Id:                  ch.Id,
-		ComicId:             ch.ComicId,
-		IsPinned:            ch.IsPinned,
-		Index:               ch.Index,
-		Subtitle:            ch.Subtitle,
-		PageCount:           ch.PageCount,
-		TotalUnitCount:      ch.TotalUnitCount,
-		TranslatedUnitCount: ch.TranslatedUnitCount,
-		ProofreadUnitCount:  ch.ProofreadUnitCount,
-		CreatorId:           ch.CreatorId,
-		UploadedAt:          toUnixMilliPtr(ch.UploadedAt),
-		TransalatingAt:      toUnixMilliPtr(ch.TransalatingAt),
-		TranslatedAt:        toUnixMilliPtr(ch.TranslatedAt),
-		ProofreadingAt:      toUnixMilliPtr(ch.ProofreadingAt),
-		ProofreadAt:         toUnixMilliPtr(ch.ProofreadAt),
-		TypesettingAt:       toUnixMilliPtr(ch.TypesettingAt),
-		TypesetAt:           toUnixMilliPtr(ch.TypesetAt),
-		ReviewedAt:          toUnixMilliPtr(ch.ReviewedAt),
-		PublishedAt:         toUnixMilliPtr(ch.PublishedAt),
-		CreatedAt:           ch.CreatedAt.UnixMilli(),
-		UpdatedAt:           ch.UpdatedAt.UnixMilli(),
+		Id:                  chapter.Id,
+		ComicId:             chapter.ComicId,
+		Comic:               comicVal,
+		IsPinned:            chapter.IsPinned,
+		Index:               chapter.Index,
+		Subtitle:            chapter.Subtitle,
+		PageCount:           chapter.PageCount,
+		TotalUnitCount:      chapter.TotalUnitCount,
+		TranslatedUnitCount: chapter.TranslatedUnitCount,
+		ProofreadUnitCount:  chapter.ProofreadUnitCount,
+		CreatorId:           chapter.CreatorId,
+		Creator:             creatorVal,
+		UploadedAt:          toUnixMilliPtr(chapter.UploadedAt),
+		TransalatingAt:      toUnixMilliPtr(chapter.TransalatingAt),
+		TranslatedAt:        toUnixMilliPtr(chapter.TranslatedAt),
+		ProofreadingAt:      toUnixMilliPtr(chapter.ProofreadingAt),
+		ProofreadAt:         toUnixMilliPtr(chapter.ProofreadAt),
+		TypesettingAt:       toUnixMilliPtr(chapter.TypesettingAt),
+		TypesetAt:           toUnixMilliPtr(chapter.TypesetAt),
+		ReviewedAt:          toUnixMilliPtr(chapter.ReviewedAt),
+		PublishedAt:         toUnixMilliPtr(chapter.PublishedAt),
+		CreatedAt:           chapter.CreatedAt.UnixMilli(),
+		UpdatedAt:           chapter.UpdatedAt.UnixMilli(),
 	}
 }
 

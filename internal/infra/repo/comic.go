@@ -288,6 +288,12 @@ func withComicIncl(q *gorm.DB, inc ...enum.ComicIncl) *gorm.DB {
 		switch i {
 		case enum.ComicInclWorkset:
 			q = q.Preload("Workset")
+
+		case enum.ComicInclWorksetTeam:
+			q = q.Preload("Workset.Team")
+
+		case enum.ComicInclCreator:
+			q = q.Preload("Creator")
 		}
 	}
 

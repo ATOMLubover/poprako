@@ -17,13 +17,13 @@ import (
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Param chapter_id path string true "chapter id"
+// @Param chapter_id query string true "chapter id"
 // @Param body body val.ResvChapterPagesArgs true "reserve chapter pages args"
 // @Success 200 {object} res.HttpRes[val.ResvChapterPagesRes]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapters/{chapter_id}/pages/reserve [post]
+// @Router /api/v1/pages/reserve [post]
 func ResvChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -34,8 +34,15 @@ func ResvChapterPages(st *state.AppState) iris.Handler {
 			return
 		}
 
-		chapterId := cx.Params().Get("chapter_id")
-		if chapterId == "" {
+		var queryArgs struct {
+			ChapterId string `url:"chapter_id"`
+		}
+		if err := cx.ReadQuery(&queryArgs); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if queryArgs.ChapterId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
 			return
 		}
@@ -45,7 +52,8 @@ func ResvChapterPages(st *state.AppState) iris.Handler {
 			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return
 		}
-		args.ChapterId = chapterId
+
+		args.ChapterId = queryArgs.ChapterId
 
 		re := pageApp.ResvChapterPages(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
@@ -65,14 +73,14 @@ func ResvChapterPages(st *state.AppState) iris.Handler {
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
-// @Param chapter_id path string true "chapter id"
+// @Param chapter_id query string true "chapter id"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
 // @Success 200 {object} res.HttpRes[[]val.PageVal]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapters/{chapter_id}/pages [get]
+// @Router /api/v1/pages [get]
 func ListChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -83,26 +91,18 @@ func ListChapterPages(st *state.AppState) iris.Handler {
 			return
 		}
 
-		chapterId := cx.Params().Get("chapter_id")
-		if chapterId == "" {
+		var args val.ListChapterPageArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.ChapterId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
 			return
 		}
 
-		offset, err := cx.URLParamInt("offset")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "offset 参数格式错误")
-			return
-		}
-
-		limit, err := cx.URLParamInt("limit")
-		if err != nil {
-			res.Reject(cx, iris.StatusBadRequest, "limit 参数格式错误")
-			return
-		}
-
-		args := &val.ListChapterPageArgs{ChapterId: chapterId, Offset: offset, Limit: limit}
-		re := pageApp.List(newReqCx(cx), currUid, args)
+		re := pageApp.List(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -125,7 +125,7 @@ func ListChapterPages(st *state.AppState) iris.Handler {
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /pages/{page_id}/image/uploaded [post]
+// @Router /api/v1/pages/{page_id}/image/uploaded [post]
 func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -160,12 +160,12 @@ func MarkPageImageUploaded(st *state.AppState) iris.Handler {
 // @Tags chapter
 // @Security ApiKeyAuth
 // @Produce json
-// @Param chapter_id path string true "chapter id"
+// @Param chapter_id query string true "chapter id"
 // @Success 200 {object} res.HttpRes[any]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
 // @Failure 500 {object} res.HttpRes[any]
-// @Router /chapters/{chapter_id}/pages [delete]
+// @Router /api/v1/pages [delete]
 func DeleteChapterPages(st *state.AppState) iris.Handler {
 	pageApp := st.PageApp
 
@@ -176,13 +176,20 @@ func DeleteChapterPages(st *state.AppState) iris.Handler {
 			return
 		}
 
-		chapterId := cx.Params().Get("chapter_id")
-		if chapterId == "" {
+		var args struct {
+			ChapterId string `url:"chapter_id"`
+		}
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if args.ChapterId == "" {
 			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
 			return
 		}
 
-		re := pageApp.DeleteByChapterId(newReqCx(cx), currUid, chapterId)
+		re := pageApp.DeleteByChapterId(newReqCx(cx), currUid, args.ChapterId)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

@@ -49,20 +49,24 @@ func (a *chapterLogAppImpl) List(cx context.Context, currUid string, args *val.L
 }
 
 // `GetById` enriches logger context and forwards call.
-func (a *chapterLogAppImpl) GetById(cx context.Context, currUid string, chapterId string) app_res.AppRes[val.ChapterVal] {
+func (a *chapterLogAppImpl) GetById(cx context.Context, currUid string, args *val.GetChapterByIdArgs) app_res.AppRes[val.ChapterVal] {
 	if cx == nil {
 		cx = context.Background()
+	}
+
+	if args == nil {
+		return app_res.Reject[val.ChapterVal](app_res.BadRequest, "查询参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx)
 	lgr = lgr.With(
 		zap.String("curr_uid", currUid),
-		zap.String("chapter_id", chapterId),
+		zap.String("chapter_id", args.ChapterId),
 	)
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.GetById(cx, currUid, chapterId)
+	return a.inner.GetById(cx, currUid, args)
 }
 
 // `GetPinned` enriches logger context and forwards call.

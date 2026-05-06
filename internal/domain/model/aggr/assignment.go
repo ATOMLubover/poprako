@@ -5,6 +5,7 @@ import (
 )
 
 // `Assignment` represents one chapter assignment of one user.
+// Relation fields are optional and loaded by typed includes.
 type Assignment struct {
 	TimedRoles
 
@@ -12,6 +13,11 @@ type Assignment struct {
 
 	ChapterId string
 	UserId    string
+
+	// `User` is included only when includes contain `user`.
+	User *User
+	// `Chapter` is included only when includes contain chapter paths.
+	Chapter *Chapter
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

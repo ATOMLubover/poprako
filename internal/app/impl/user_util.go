@@ -39,7 +39,7 @@ func vfyUserUpdArgs(args *val.UserUpdArgs) app_res.AppRes[app_res.None] {
 	}
 
 	if args.Id == "" || args.Name == "" || args.Qid == "" {
-		return app_res.Reject[app_res.None](app_res.BadRequest, "id name qq 不能为空")
+		return app_res.Reject[app_res.None](app_res.BadRequest, "id name qid 不能为空")
 	}
 
 	return app_res.Accept(&app_res.None{})
