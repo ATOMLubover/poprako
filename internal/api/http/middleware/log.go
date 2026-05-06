@@ -13,7 +13,7 @@ import (
 // In production (`EnvProd`) it is a no-op to avoid overhead
 // In all other environments it logs method, path, status and duration at debug level
 func LogLatency(cf *cfg.AppCfg) iris.Handler {
-	if cf.Env == cfg.EnvProd {
+	if cf.Env() == cfg.EnvProd {
 		return func(cx iris.Context) {
 			cx.Next()
 		}

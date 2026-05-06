@@ -6,13 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+// `AppCfg` stores file-based application configuration.
 type AppCfg struct {
-	Env AppEnv `mapstructure:"environment"`
-
 	Db   *DbCfg   `mapstructure:"database"`
 	Http *HttpCfg `mapstructure:"http"`
 }
 
+// `NewAppCfg` loads application config from `app_config.json`.
 func NewAppCfg() *AppCfg {
 	// Load config file.
 	v := viper.New()
@@ -35,4 +35,9 @@ func NewAppCfg() *AppCfg {
 	viper.AutomaticEnv()
 
 	return &cfg
+}
+
+// `Env` returns the runtime environment from process environment variables.
+func (c *AppCfg) Env() AppEnv {
+	return GetAppEnv()
 }

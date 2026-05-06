@@ -1,5 +1,4 @@
 {
-  "environment": "dev",
   "database": {
     "max_open": 24,
     "max_idle": 4,

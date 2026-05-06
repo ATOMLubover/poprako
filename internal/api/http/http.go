@@ -35,7 +35,7 @@ func NewApp(st *state.AppState) *iris.Application {
 	// Enable CORS middleware.
 	// app.UseRouter(middleware.CorsMiddleware())
 
-	if st.Cfg.Env == cfg.EnvDev {
+	if st.Cfg.Env() == cfg.EnvDev {
 		enableSwag(app)
 	}
 

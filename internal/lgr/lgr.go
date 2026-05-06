@@ -17,7 +17,9 @@ func SetGlobal(lgr *zap.Logger) {
 func New(appCfg *cfg.AppCfg) *zap.Logger {
 	var core zapcore.Core
 
-	switch appCfg.Env {
+	appEnv := appCfg.Env()
+
+	switch appEnv {
 	case cfg.EnvDev:
 		core = newDevCore()
 	case cfg.EnvProd:
@@ -35,7 +37,7 @@ func New(appCfg *cfg.AppCfg) *zap.Logger {
 
 	lgr.Info(
 		"Logger initialized",
-		zap.String("environment", string(appCfg.Env)),
+		zap.String("environment", string(appEnv)),
 	)
 
 	return lgr
