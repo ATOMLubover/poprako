@@ -12,7 +12,10 @@ import (
 )
 
 func NewPgGdb(dbCfg *cfg.DbCfg) *gorm.DB {
-	const PG_DB = "db_poprako_s"
+	dbName := viper.GetString("DATABASE_NAME")
+	if dbName == "" {
+		dbName = "db_poprako_s"
+	}
 
 	user := viper.GetString("DATABASE_USER")
 	pwd := viper.GetString("DATABASE_PASSWORD")
@@ -21,7 +24,7 @@ func NewPgGdb(dbCfg *cfg.DbCfg) *gorm.DB {
 
 	dsn := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-		user, pwd, host, port, PG_DB,
+		user, pwd, host, port, dbName,
 	)
 
 	gdb, err := gorm.Open(postgres.Open(dsn))

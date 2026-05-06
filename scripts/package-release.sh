@@ -22,8 +22,8 @@ mkdir -p "$DIST_DIR"
 docker build --platform "${TARGET_PLATFORM}" -f docker/poprako-s-main/Dockerfile -t "${MAIN_IMAGE}:${IMAGE_TAG}" .
 docker build --platform "${TARGET_PLATFORM}" -f docker/poprako-s-database/Dockerfile -t "${DATABASE_IMAGE}:${IMAGE_TAG}" .
 
-docker save "${MAIN_IMAGE}:${IMAGE_TAG}" | gzip > "${DIST_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz"
-docker save "${DATABASE_IMAGE}:${IMAGE_TAG}" | gzip > "${DIST_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz"
+docker save "${MAIN_IMAGE}:${IMAGE_TAG}" | gzip >"${DIST_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz"
+docker save "${DATABASE_IMAGE}:${IMAGE_TAG}" | gzip >"${DIST_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz"
 tar -czf "${DIST_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz" migrations docker/prod-database-migrate.sh docker/compose.prod.yml
 
 ssh "${SERVER_USER}@${SERVER_HOST}" "mkdir -p '${RELEASE_DIR}' '${REMOTE_BIN_DIR}'"
@@ -35,4 +35,5 @@ ssh "${SERVER_USER}@${SERVER_HOST}" "chmod 755 '${REMOTE_BIN_DIR}/remote-switch-
 
 printf '%s\n' "Release ${IMAGE_TAG} uploaded to ${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}"
 printf '%s\n' "Target platform: ${TARGET_PLATFORM}"
-printf '%s\n' "Run on server: IMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh ${REMOTE_BIN_DIR}/remote-switch-release.sh"
+printf '%s\n' "Run on server:\nIMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh ${REMOTE_BIN_DIR}/remote-switch-release.sh"
+

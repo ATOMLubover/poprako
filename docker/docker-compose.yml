@@ -5,12 +5,12 @@ services:
       dockerfile: docker/poprako-s-database/Dockerfile
     environment:
       POSTGRES_DB: db_poprako_s
-      POSTGRES_USER: poprako
+      POSTGRES_USER: poprako_s
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U poprako -d db_poprako_s"]
+      test: ["CMD-SHELL", "pg_isready -U poprako_s -d db_poprako_s"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
       - "8080:8080"
     environment:
       APP_ENV: ${APP_ENV:-prod}
-      DATABASE_USER: ${DATABASE_USER:-poprako}
+      DATABASE_USER: ${DATABASE_USER:-poprako_s}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_HOST: ${DATABASE_HOST:-db}
       DATABASE_PORT: ${DATABASE_PORT:-5432}
