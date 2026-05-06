@@ -12,7 +12,7 @@ type ChapterExportVal struct {
 
 	ComicTitle string `json:"comic_title"`
 
-	Pages []PageExportVal `json:"pages"`
+	Pages []PageExportVal `json:"pages,omitempty"`
 }
 
 // `PageExportVal` is the app-facing export object for one page.
@@ -25,7 +25,7 @@ type PageExportVal struct {
 
 	IsUploaded bool `json:"is_uploaded"`
 
-	Units []UnitExportVal `json:"units"`
+	Units []UnitExportVal `json:"units,omitempty"`
 }
 
 // `UnitExportVal` is the app-facing export object for one unit.
@@ -43,19 +43,19 @@ type UnitExportVal struct {
 
 	IsBubble bool `json:"is_bubble"`
 
-	TranslatedText *string `json:"translated_text"`
+	TranslatedText *string `json:"translated_text,omitempty"`
 
-	TranslatorId *string `json:"translator_id"`
+	TranslatorId *string `json:"translator_id,omitempty"`
 
-	TranslatorComment *string `json:"translator_comment"`
+	TranslatorComment *string `json:"translator_comment,omitempty"`
 
 	IsProofread bool `json:"is_proofread"`
 
-	ProofreadText *string `json:"proofread_text"`
+	ProofreadText *string `json:"proofread_text,omitempty"`
 
-	ProofreaderId *string `json:"proofreader_id"`
+	ProofreaderId *string `json:"proofreader_id,omitempty"`
 
-	ProofreaderComment *string `json:"proofreader_comment"`
+	ProofreaderComment *string `json:"proofreader_comment,omitempty"`
 }
 
 // `ImportChapterArgs` holds import input for one chapter.

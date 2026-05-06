@@ -33,7 +33,7 @@ type ResvChapterPagesArgs struct {
 
 // `ResvChapterPagesRes` holds created pages and their put urls.
 type ResvChapterPagesRes struct {
-	Creations []PageCreationRes `json:"creations"`
+	Creations []PageCreationRes `json:"creations,omitempty"`
 }
 
 // `PageCreationRes` holds one reserved page upload result.

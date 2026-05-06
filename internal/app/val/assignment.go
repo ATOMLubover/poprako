@@ -16,13 +16,13 @@ type AssignmentVal struct {
 
 	RoleMask aggr.RoleMask `json:"role_mask"`
 
-	AssignedRawProviderAt *int64 `json:"assigned_raw_provider_at"`
-	AssignedTranslatorAt  *int64 `json:"assigned_translator_at"`
-	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at"`
-	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at"`
-	AssignedRedrawerAt    *int64 `json:"assigned_redrawer_at"`
-	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at"`
-	AssignedPublisherAt   *int64 `json:"assigned_publisher_at"`
+	AssignedRawProviderAt *int64 `json:"assigned_raw_provider_at,omitempty"`
+	AssignedTranslatorAt  *int64 `json:"assigned_translator_at,omitempty"`
+	AssignedProofreaderAt *int64 `json:"assigned_proofreader_at,omitempty"`
+	AssignedTypesetterAt  *int64 `json:"assigned_typesetter_at,omitempty"`
+	AssignedRedrawerAt    *int64 `json:"assigned_redrawer_at,omitempty"`
+	AssignedReviewerAt    *int64 `json:"assigned_reviewer_at,omitempty"`
+	AssignedPublisherAt   *int64 `json:"assigned_publisher_at,omitempty"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`

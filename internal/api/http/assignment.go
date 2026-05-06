@@ -37,6 +37,7 @@ func ListAssignmentsByChapter(st *state.AppState) iris.Handler {
 		}
 
 		var args val.ListAssignmentByChapterArgs
+
 		if err := cx.ReadQuery(&args); err != nil {
 			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return

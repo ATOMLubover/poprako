@@ -8,7 +8,7 @@ type WorksetVal struct {
 
 	Index int     `json:"index"`
 	Name  string  `json:"name"`
-	Desc  *string `json:"description"`
+	Desc  *string `json:"description,omitempty"`
 
 	ComicCount int `json:"comic_count"`
 

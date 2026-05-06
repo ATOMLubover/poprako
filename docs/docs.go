@@ -16,6 +16,74 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/api/v1/assignment-invitations": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List assignment invitations for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment-invitation"
+                ],
+                "summary": "List Assignment Invitations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "pending filter",
+                        "name": "pending",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentInvVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -49,76 +117,6 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-val_CreateAssignmentInvRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/assignment-invitations/chapters/{chapter_id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List assignment invitations for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assignment-invitation"
-                ],
-                "summary": "List Assignment Invitations",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "chapter id",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "pending filter",
-                        "name": "pending",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination offset",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentInvVal"
                         }
                     },
                     "400": {
@@ -252,6 +250,78 @@ const docTemplate = `{
             }
         },
         "/api/v1/assignments": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List assignments for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment"
+                ],
+                "summary": "List Assignments By Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -285,80 +355,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/assignments/chapters/{chapter_id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List assignments for one chapter\nThe caller must be reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assignment"
-                ],
-                "summary": "List Assignments By Chapter",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "chapter id",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator",
-                        "name": "includes",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination offset",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentVal"
                         }
                     },
                     "400": {
@@ -582,6 +578,78 @@ const docTemplate = `{
             }
         },
         "/api/v1/chapters": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List chapters for one comic\nThe caller must be a member of the target comic team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "List Chapters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "comic id",
+                        "name": "comic_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: comic, comic.workset, comic.workset.team, comic.creator, creator",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_ChapterVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -638,81 +706,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/chapters/comics/{comic_id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List chapters for one comic\nThe caller must be a member of the target comic team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "List Chapters",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "comic id",
-                        "name": "comic_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include related fields, optional: comic, comic.workset, comic.workset.team, comic.creator, creator",
-                        "name": "includes",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination offset",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-array_val_ChapterVal"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/chapters/comics/{comic_id}/pinned": {
+        "/api/v1/chapters/pinned": {
             "get": {
                 "security": [
                     {
@@ -732,7 +726,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "comic id",
                         "name": "comic_id",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -1130,242 +1124,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/chapters/{chapter_id}/pages": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List pages under one chapter with pagination\nThe caller must be a member of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "List Chapter Pages",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "chapter id",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination offset",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-array_val_PageVal"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Hard-delete all pages under one chapter\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "Delete Chapter Pages",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "chapter id",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/chapters/{chapter_id}/pages/reserve": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Reserve signed upload URLs for all pages of one chapter\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "chapter"
-                ],
-                "summary": "Reserve Chapter Pages Upload",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "chapter id",
-                        "name": "chapter_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "reserve chapter pages args",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.ResvChapterPagesArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-val_ResvChapterPagesRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/comics": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create one comic under a workset\nThe caller must be an admin of the target workset team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "comic"
-                ],
-                "summary": "Create Comic",
-                "parameters": [
-                    {
-                        "description": "create comic args",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.CreateComicArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-val_ComicCreatedRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/comics/worksets/{workset_id}": {
             "get": {
                 "security": [
                     {
@@ -1385,7 +1144,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "workset id",
                         "name": "workset_id",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -1458,6 +1217,61 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-array_val_ComicVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create one comic under a workset\nThe caller must be an admin of the target workset team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "Create Comic",
+                "parameters": [
+                    {
+                        "description": "create comic args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.CreateComicArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ComicCreatedRes"
                         }
                     },
                     "400": {
@@ -1778,63 +1592,6 @@ const docTemplate = `{
             }
         },
         "/api/v1/member-invitations": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create one invitation under one team\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "member-invitation"
-                ],
-                "summary": "Create Member Invitation",
-                "parameters": [
-                    {
-                        "description": "create invitation args",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.CreateMemberInvArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-val_CreateMemberInvRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/member-invitations/teams/{team_id}": {
             "get": {
                 "security": [
                     {
@@ -1854,7 +1611,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "team id",
                         "name": "team_id",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
@@ -1891,6 +1648,61 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-array_val_MemberInvVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create one invitation under one team\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member-invitation"
+                ],
+                "summary": "Create Member Invitation",
+                "parameters": [
+                    {
+                        "description": "create invitation args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.CreateMemberInvArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_CreateMemberInvRes"
                         }
                     },
                     "400": {
@@ -2029,6 +1841,78 @@ const docTemplate = `{
             }
         },
         "/api/v1/members": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List members under one team\nThe caller must be a member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "List Team Members",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user, team",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_MemberVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -2209,80 +2093,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/members/team/{team_id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List members under one team\nThe caller must be a member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "member"
-                ],
-                "summary": "List Team Members",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "team id",
-                        "name": "team_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "include related fields, optional: user, team",
-                        "name": "includes",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination offset",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-array_val_MemberVal"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/members/{member_id}": {
             "put": {
                 "security": [
@@ -2397,6 +2207,184 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/pages": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List pages under one chapter with pagination\nThe caller must be a member of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "List Chapter Pages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_PageVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Hard-delete all pages under one chapter\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Delete Chapter Pages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pages/reserve": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Reserve signed upload URLs for all pages of one chapter\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Reserve Chapter Pages Upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "reserve chapter pages args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ResvChapterPagesArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ResvChapterPagesRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/pages/{page_id}/image/uploaded": {
             "post": {
                 "security": [
@@ -2436,132 +2424,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/pages/{page_id}/units": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List units for one page\nThe caller must have any assignment on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "unit"
-                ],
-                "summary": "List Page Units",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "page id",
-                        "name": "page_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-val_ListPageUnitsRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Apply one page unit diff and synchronize page and chapter counters\n\n## Operations\nEach op in ` + "`" + `diff.ops` + "`" + ` is classified automatically by the server:\n- **CREATE**: set ` + "`" + `local_id` + "`" + `, leave ` + "`" + `id` + "`" + ` empty  Must include ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `\n- **SAVE (update/upsert)**: set ` + "`" + `id` + "`" + ` plus \u003e=1 mutable field  Must include all geometry fields (` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `)\n- **DELETE**: set ` + "`" + `id` + "`" + ` only, no mutable fields\nMutable fields: ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `, ` + "`" + `translated_text` + "`" + `, ` + "`" + `translator_comment` + "`" + `, ` + "`" + `last_translator_id` + "`" + `, ` + "`" + `proofread_text` + "`" + `, ` + "`" + `proofreader_comment` + "`" + `, ` + "`" + `last_proofreader_id` + "`" + `\n\n## ` + "`" + `cand_order` + "`" + ` (client-suggested reindex order)\nAn ordered list of unit identifiers to control the final display order after mutations are applied\nUse ` + "`" + `local_id` + "`" + ` for CREATE ops or real ` + "`" + `id` + "`" + ` for SAVE ops\nMust include every ` + "`" + `local_id` + "`" + ` and ` + "`" + `id` + "`" + ` from CREATE/SAVE ops  Must exclude all deleted ids  No duplicates  No empty strings\nUnits not listed in ` + "`" + `cand_order` + "`" + ` are kept near their original neighbours\n\n## Validation rules (return 400 on failure)\n- ` + "`" + `diff.page_id` + "`" + ` must match the path ` + "`" + `page_id` + "`" + `\n- Each op must have ` + "`" + `local_id` + "`" + ` xor ` + "`" + `id` + "`" + ` (not both, not neither)\n- CREATE ops require ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `\n- SAVE ops require all geometry fields plus at least one mutable field\n- The same unit cannot appear in both a CREATE/SAVE op and a DELETE op\n- ` + "`" + `cand_order` + "`" + ` must not contain ids being deleted\n\n## Permission\nThe caller must be translator or proofreader on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "unit"
-                ],
-                "summary": "Save Page Units",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "page id",
-                        "name": "page_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "save page units args",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/val.SavePageUnitsArgs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-val_SavePageUnitsRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-any"
                         }
@@ -3064,6 +2926,132 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/units": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List units for one page\nThe caller must have any assignment on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "unit"
+                ],
+                "summary": "List Page Units",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page id",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ListPageUnitsRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Apply one page unit diff and synchronize page and chapter counters\n\n## Operations\nEach op in ` + "`" + `diff.ops` + "`" + ` is classified automatically by the server:\n- **CREATE**: set ` + "`" + `local_id` + "`" + `, leave ` + "`" + `id` + "`" + ` empty  Must include ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `\n- **SAVE (update/upsert)**: set ` + "`" + `id` + "`" + ` plus \u003e=1 mutable field  Must include all geometry fields (` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `)\n- **DELETE**: set ` + "`" + `id` + "`" + ` only, no mutable fields\nMutable fields: ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `, ` + "`" + `translated_text` + "`" + `, ` + "`" + `translator_comment` + "`" + `, ` + "`" + `last_translator_id` + "`" + `, ` + "`" + `proofread_text` + "`" + `, ` + "`" + `proofreader_comment` + "`" + `, ` + "`" + `last_proofreader_id` + "`" + `\n\n## ` + "`" + `cand_order` + "`" + ` (client-suggested reindex order)\nAn ordered list of unit identifiers to control the final display order after mutations are applied\nUse ` + "`" + `local_id` + "`" + ` for CREATE ops or real ` + "`" + `id` + "`" + ` for SAVE ops\nMust include every ` + "`" + `local_id` + "`" + ` and ` + "`" + `id` + "`" + ` from CREATE/SAVE ops  Must exclude all deleted ids  No duplicates  No empty strings\nUnits not listed in ` + "`" + `cand_order` + "`" + ` are kept near their original neighbours\n\n## Validation rules (return 400 on failure)\n- ` + "`" + `diff.page_id` + "`" + ` must match the query ` + "`" + `page_id` + "`" + `\n- Each op must have ` + "`" + `local_id` + "`" + ` xor ` + "`" + `id` + "`" + ` (not both, not neither)\n- CREATE ops require ` + "`" + `is_bubble` + "`" + `, ` + "`" + `is_proofread` + "`" + `, ` + "`" + `x_coord` + "`" + `, ` + "`" + `y_coord` + "`" + `\n- SAVE ops require all geometry fields plus at least one mutable field\n- The same unit cannot appear in both a CREATE/SAVE op and a DELETE op\n- ` + "`" + `cand_order` + "`" + ` must not contain ids being deleted\n\n## Permission\nThe caller must be translator or proofreader on the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "unit"
+                ],
+                "summary": "Save Page Units",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page id",
+                        "name": "page_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "save page units args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.SavePageUnitsArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_SavePageUnitsRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users/avatar": {
             "post": {
                 "security": [
@@ -3275,6 +3263,68 @@ const docTemplate = `{
             }
         },
         "/api/v1/worksets": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all active worksets for a team\nThe caller must be a member of the specified team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workset"
+                ],
+                "summary": "List Worksets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_WorksetVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -3308,70 +3358,6 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-val_WorksetCreatedRes"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-any"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/worksets/team/{team_id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List all active worksets for a team\nThe caller must be a member of the specified team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "workset"
-                ],
-                "summary": "List Worksets",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "team id",
-                        "name": "team_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination offset",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "pagination limit",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/res.HttpRes-array_val_WorksetVal"
                         }
                     },
                     "400": {

@@ -34,7 +34,7 @@ type ListPageUnitsArgs struct {
 
 // `ListPageUnitsRes` is the app response for one page unit list.
 type ListPageUnitsRes struct {
-	Units []UnitVal `json:"units"`
+	Units []UnitVal `json:"units,omitempty"`
 
 	TotalUnitCount      int `json:"total_unit_count"`
 	TranslatedUnitCount int `json:"translated_unit_count"`
@@ -58,11 +58,11 @@ type UnitDiffVal struct {
 	PageId string `json:"page_id"`
 
 	// `Ops` is a list of unit operations applied before reindexing
-	Ops []UnitOpVal `json:"operations"`
+	Ops []UnitOpVal `json:"operations,omitempty"`
 
 	// `CandOrder` is the client-suggested unit ordering for reindexing
 	// Use `local_id` for create ops or real `id` for save ops
-	CandOrder []string `json:"candidate_order"`
+	CandOrder []string `json:"candidate_order,omitempty"`
 }
 
 // `UnitOpVal` is the transport-safe representation of one unit op

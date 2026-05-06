@@ -22,19 +22,19 @@ type ChapterVal struct {
 	CreatorId string   `json:"creator_id"`
 	Creator   *UserVal `json:"creator,omitempty"`
 
-	UploadedAt *int64 `json:"uploaded_at"`
+	UploadedAt *int64 `json:"uploaded_at,omitempty"`
 
-	TransalatingAt *int64 `json:"transalating_at"`
-	TranslatedAt   *int64 `json:"translated_at"`
+	TransalatingAt *int64 `json:"transalating_at,omitempty"`
+	TranslatedAt   *int64 `json:"translated_at,omitempty"`
 
-	ProofreadingAt *int64 `json:"proofreading_at"`
-	ProofreadAt    *int64 `json:"proofread_at"`
+	ProofreadingAt *int64 `json:"proofreading_at,omitempty"`
+	ProofreadAt    *int64 `json:"proofread_at,omitempty"`
 
-	TypesettingAt *int64 `json:"typesetting_at"`
-	TypesetAt     *int64 `json:"typeset_at"`
+	TypesettingAt *int64 `json:"typesetting_at,omitempty"`
+	TypesetAt     *int64 `json:"typeset_at,omitempty"`
 
-	ReviewedAt  *int64 `json:"reviewed_at"`
-	PublishedAt *int64 `json:"published_at"`
+	ReviewedAt  *int64 `json:"reviewed_at,omitempty"`
+	PublishedAt *int64 `json:"published_at,omitempty"`
 
 	CreatedAt int64 `json:"created_at"`
 	UpdatedAt int64 `json:"updated_at"`

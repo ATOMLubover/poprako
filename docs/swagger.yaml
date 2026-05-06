@@ -1233,6 +1233,53 @@ info:
   version: 0.4.0
 paths:
   /api/v1/assignment-invitations:
+    get:
+      description: |-
+        List assignment invitations for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: query
+        name: chapter_id
+        required: true
+        type: string
+      - description: pending filter
+        in: query
+        name: pending
+        type: boolean
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentInvVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Assignment Invitations
+      tags:
+      - assignment-invitation
     post:
       consumes:
       - application/json
@@ -1307,54 +1354,6 @@ paths:
       summary: Delete Assignment Invitation
       tags:
       - assignment-invitation
-  /api/v1/assignment-invitations/chapters/{chapter_id}:
-    get:
-      description: |-
-        List assignment invitations for one chapter
-        The caller must be reviewer of the target chapter
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: chapter id
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      - description: pending filter
-        in: query
-        name: pending
-        type: boolean
-      - description: pagination offset
-        in: query
-        name: offset
-        type: integer
-      - description: pagination limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-array_val_AssignmentInvVal'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: List Assignment Invitations
-      tags:
-      - assignment-invitation
   /api/v1/assignment-invitations/join:
     post:
       consumes:
@@ -1394,6 +1393,57 @@ paths:
       tags:
       - assignment-invitation
   /api/v1/assignments:
+    get:
+      description: |-
+        List assignments for one chapter
+        The caller must be reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: query
+        name: chapter_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: user, chapter, chapter.comic,
+          chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Assignments By Chapter
+      tags:
+      - assignment
     put:
       consumes:
       - application/json
@@ -1466,58 +1516,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Delete Assignment
-      tags:
-      - assignment
-  /api/v1/assignments/chapters/{chapter_id}:
-    get:
-      description: |-
-        List assignments for one chapter
-        The caller must be reviewer of the target chapter
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: chapter id
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      - collectionFormat: csv
-        description: 'include related fields, optional: user, chapter, chapter.comic,
-          chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator'
-        in: query
-        items:
-          type: string
-        name: includes
-        type: array
-      - description: pagination offset
-        in: query
-        name: offset
-        type: integer
-      - description: pagination limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: List Assignments By Chapter
       tags:
       - assignment
   /api/v1/assignments/mine:
@@ -1621,6 +1619,57 @@ paths:
       tags:
       - auth
   /api/v1/chapters:
+    get:
+      description: |-
+        List chapters for one comic
+        The caller must be a member of the target comic team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: query
+        name: comic_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: comic, comic.workset, comic.workset.team,
+          comic.creator, creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_ChapterVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Chapters
+      tags:
+      - chapter
     post:
       consumes:
       - application/json
@@ -1913,182 +1962,7 @@ paths:
       summary: Import Chapter
       tags:
       - chapter
-  /api/v1/chapters/{chapter_id}/pages:
-    delete:
-      description: |-
-        Hard-delete all pages under one chapter
-        The caller must be an admin of the owning team
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: chapter id
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete Chapter Pages
-      tags:
-      - chapter
-    get:
-      description: |-
-        List pages under one chapter with pagination
-        The caller must be a member of the owning team
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: chapter id
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      - description: pagination offset
-        in: query
-        name: offset
-        type: integer
-      - description: pagination limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-array_val_PageVal'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: List Chapter Pages
-      tags:
-      - chapter
-  /api/v1/chapters/{chapter_id}/pages/reserve:
-    post:
-      consumes:
-      - application/json
-      description: |-
-        Reserve signed upload URLs for all pages of one chapter
-        The caller must be an admin of the owning team
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: chapter id
-        in: path
-        name: chapter_id
-        required: true
-        type: string
-      - description: reserve chapter pages args
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/val.ResvChapterPagesArgs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-val_ResvChapterPagesRes'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: Reserve Chapter Pages Upload
-      tags:
-      - chapter
-  /api/v1/chapters/comics/{comic_id}:
-    get:
-      description: |-
-        List chapters for one comic
-        The caller must be a member of the target comic team
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: comic id
-        in: path
-        name: comic_id
-        required: true
-        type: string
-      - collectionFormat: csv
-        description: 'include related fields, optional: comic, comic.workset, comic.workset.team,
-          comic.creator, creator'
-        in: query
-        items:
-          type: string
-        name: includes
-        type: array
-      - description: pagination offset
-        in: query
-        name: offset
-        type: integer
-      - description: pagination limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-array_val_ChapterVal'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: List Chapters
-      tags:
-      - chapter
-  /api/v1/chapters/comics/{comic_id}/pinned:
+  /api/v1/chapters/pinned:
     get:
       description: |-
         Get pinned chapter for one comic
@@ -2096,7 +1970,7 @@ paths:
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
       - description: comic id
-        in: path
+        in: query
         name: comic_id
         required: true
         type: string
@@ -2125,6 +1999,84 @@ paths:
       tags:
       - chapter
   /api/v1/comics:
+    get:
+      description: |-
+        List active comics for one workset
+        The caller must be a member of the target workset team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: workset id
+        in: query
+        name: workset_id
+        required: true
+        type: string
+      - description: fuzzy title
+        in: query
+        name: fuzzy_title
+        type: string
+      - description: upload phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: upload_phase
+        type: integer
+      - description: translate phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: translate_phase
+        type: integer
+      - description: proofread phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: proofread_phase
+        type: integer
+      - description: typeset phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: typeset_phase
+        type: integer
+      - description: review phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: review_phase
+        type: integer
+      - description: publish phase 0 pending 1 ongoing 2 completed
+        in: query
+        name: publish_phase
+        type: integer
+      - collectionFormat: csv
+        description: 'include related fields, optional: workset, workset.team, creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_ComicVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Comics
+      tags:
+      - comic
     post:
       consumes:
       - application/json
@@ -2368,53 +2320,29 @@ paths:
       summary: Confirm Comic Cover Uploaded
       tags:
       - comic
-  /api/v1/comics/worksets/{workset_id}:
+  /api/v1/member-invitations:
     get:
       description: |-
-        List active comics for one workset
-        The caller must be a member of the target workset team
+        List invitations under one team
+        The caller must be member of the target team
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: workset id
-        in: path
-        name: workset_id
+      - description: team id
+        in: query
+        name: team_id
         required: true
         type: string
-      - description: fuzzy title
-        in: query
-        name: fuzzy_title
-        type: string
-      - description: upload phase 0 pending 1 ongoing 2 completed
-        in: query
-        name: upload_phase
-        type: integer
-      - description: translate phase 0 pending 1 ongoing 2 completed
-        in: query
-        name: translate_phase
-        type: integer
-      - description: proofread phase 0 pending 1 ongoing 2 completed
-        in: query
-        name: proofread_phase
-        type: integer
-      - description: typeset phase 0 pending 1 ongoing 2 completed
-        in: query
-        name: typeset_phase
-        type: integer
-      - description: review phase 0 pending 1 ongoing 2 completed
-        in: query
-        name: review_phase
-        type: integer
-      - description: publish phase 0 pending 1 ongoing 2 completed
-        in: query
-        name: publish_phase
-        type: integer
       - collectionFormat: csv
-        description: 'include related fields, optional: workset, workset.team, creator'
+        description: 'include related fields, optional: invitor, invitee'
         in: query
         items:
           type: string
         name: includes
         type: array
+      - description: pending filter
+        in: query
+        name: pending
+        type: boolean
       - description: pagination offset
         in: query
         name: offset
@@ -2429,7 +2357,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/res.HttpRes-array_val_ComicVal'
+            $ref: '#/definitions/res.HttpRes-array_val_MemberInvVal'
         "400":
           description: Bad Request
           schema:
@@ -2444,10 +2372,9 @@ paths:
             $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: List Comics
+      summary: List Member Invitations
       tags:
-      - comic
-  /api/v1/member-invitations:
+      - member-invitation
     post:
       consumes:
       - application/json
@@ -2565,29 +2492,25 @@ paths:
       summary: Update Member Invitation
       tags:
       - member-invitation
-  /api/v1/member-invitations/teams/{team_id}:
+  /api/v1/members:
     get:
       description: |-
-        List invitations under one team
-        The caller must be member of the target team
+        List members under one team
+        The caller must be a member of the target team
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
       - description: team id
-        in: path
+        in: query
         name: team_id
         required: true
         type: string
       - collectionFormat: csv
-        description: 'include related fields, optional: invitor, invitee'
+        description: 'include related fields, optional: user, team'
         in: query
         items:
           type: string
         name: includes
         type: array
-      - description: pending filter
-        in: query
-        name: pending
-        type: boolean
       - description: pagination offset
         in: query
         name: offset
@@ -2602,7 +2525,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/res.HttpRes-array_val_MemberInvVal'
+            $ref: '#/definitions/res.HttpRes-array_val_MemberVal'
         "400":
           description: Bad Request
           schema:
@@ -2617,10 +2540,9 @@ paths:
             $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: List Member Invitations
+      summary: List Team Members
       tags:
-      - member-invitation
-  /api/v1/members:
+      - member
     post:
       consumes:
       - application/json
@@ -2821,40 +2743,25 @@ paths:
       summary: List My Members
       tags:
       - member
-  /api/v1/members/team/{team_id}:
-    get:
+  /api/v1/pages:
+    delete:
       description: |-
-        List members under one team
-        The caller must be a member of the target team
+        Hard-delete all pages under one chapter
+        The caller must be an admin of the owning team
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: team id
-        in: path
-        name: team_id
+      - description: chapter id
+        in: query
+        name: chapter_id
         required: true
         type: string
-      - collectionFormat: csv
-        description: 'include related fields, optional: user, team'
-        in: query
-        items:
-          type: string
-        name: includes
-        type: array
-      - description: pagination offset
-        in: query
-        name: offset
-        type: integer
-      - description: pagination limit
-        in: query
-        name: limit
-        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/res.HttpRes-array_val_MemberVal'
+            $ref: '#/definitions/res.HttpRes-any'
         "400":
           description: Bad Request
           schema:
@@ -2869,9 +2776,52 @@ paths:
             $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: List Team Members
+      summary: Delete Chapter Pages
       tags:
-      - member
+      - chapter
+    get:
+      description: |-
+        List pages under one chapter with pagination
+        The caller must be a member of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: query
+        name: chapter_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_PageVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Chapter Pages
+      tags:
+      - chapter
   /api/v1/pages/{page_id}/image/uploaded:
     post:
       description: |-
@@ -2908,95 +2858,33 @@ paths:
       summary: Confirm Page Image Uploaded
       tags:
       - page
-  /api/v1/pages/{page_id}/units:
-    get:
-      description: |-
-        List units for one page
-        The caller must have any assignment on the target chapter
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: page id
-        in: path
-        name: page_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-val_ListPageUnitsRes'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: List Page Units
-      tags:
-      - unit
+  /api/v1/pages/reserve:
     post:
       consumes:
       - application/json
       description: |-
-        Apply one page unit diff and synchronize page and chapter counters
-
-        ## Operations
-        Each op in `diff.ops` is classified automatically by the server:
-        - **CREATE**: set `local_id`, leave `id` empty  Must include `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
-        - **SAVE (update/upsert)**: set `id` plus >=1 mutable field  Must include all geometry fields (`is_bubble`, `is_proofread`, `x_coord`, `y_coord`)
-        - **DELETE**: set `id` only, no mutable fields
-        Mutable fields: `is_bubble`, `is_proofread`, `x_coord`, `y_coord`, `translated_text`, `translator_comment`, `last_translator_id`, `proofread_text`, `proofreader_comment`, `last_proofreader_id`
-
-        ## `cand_order` (client-suggested reindex order)
-        An ordered list of unit identifiers to control the final display order after mutations are applied
-        Use `local_id` for CREATE ops or real `id` for SAVE ops
-        Must include every `local_id` and `id` from CREATE/SAVE ops  Must exclude all deleted ids  No duplicates  No empty strings
-        Units not listed in `cand_order` are kept near their original neighbours
-
-        ## Validation rules (return 400 on failure)
-        - `diff.page_id` must match the path `page_id`
-        - Each op must have `local_id` xor `id` (not both, not neither)
-        - CREATE ops require `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
-        - SAVE ops require all geometry fields plus at least one mutable field
-        - The same unit cannot appear in both a CREATE/SAVE op and a DELETE op
-        - `cand_order` must not contain ids being deleted
-
-        ## Permission
-        The caller must be translator or proofreader on the target chapter
+        Reserve signed upload URLs for all pages of one chapter
+        The caller must be an admin of the owning team
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
-      - description: page id
-        in: path
-        name: page_id
+      - description: chapter id
+        in: query
+        name: chapter_id
         required: true
         type: string
-      - description: save page units args
+      - description: reserve chapter pages args
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/val.SavePageUnitsArgs'
+          $ref: '#/definitions/val.ResvChapterPagesArgs'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/res.HttpRes-val_SavePageUnitsRes'
+            $ref: '#/definitions/res.HttpRes-val_ResvChapterPagesRes'
         "400":
           description: Bad Request
           schema:
@@ -3005,19 +2893,15 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/res.HttpRes-any'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/res.HttpRes-any'
       security:
       - ApiKeyAuth: []
-      summary: Save Page Units
+      summary: Reserve Chapter Pages Upload
       tags:
-      - unit
+      - chapter
   /api/v1/sys-mails:
     get:
       description: |-
@@ -3330,6 +3214,116 @@ paths:
       summary: List My Teams
       tags:
       - team
+  /api/v1/units:
+    get:
+      description: |-
+        List units for one page
+        The caller must have any assignment on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: query
+        name: page_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ListPageUnitsRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Page Units
+      tags:
+      - unit
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Apply one page unit diff and synchronize page and chapter counters
+
+        ## Operations
+        Each op in `diff.ops` is classified automatically by the server:
+        - **CREATE**: set `local_id`, leave `id` empty  Must include `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
+        - **SAVE (update/upsert)**: set `id` plus >=1 mutable field  Must include all geometry fields (`is_bubble`, `is_proofread`, `x_coord`, `y_coord`)
+        - **DELETE**: set `id` only, no mutable fields
+        Mutable fields: `is_bubble`, `is_proofread`, `x_coord`, `y_coord`, `translated_text`, `translator_comment`, `last_translator_id`, `proofread_text`, `proofreader_comment`, `last_proofreader_id`
+
+        ## `cand_order` (client-suggested reindex order)
+        An ordered list of unit identifiers to control the final display order after mutations are applied
+        Use `local_id` for CREATE ops or real `id` for SAVE ops
+        Must include every `local_id` and `id` from CREATE/SAVE ops  Must exclude all deleted ids  No duplicates  No empty strings
+        Units not listed in `cand_order` are kept near their original neighbours
+
+        ## Validation rules (return 400 on failure)
+        - `diff.page_id` must match the query `page_id`
+        - Each op must have `local_id` xor `id` (not both, not neither)
+        - CREATE ops require `is_bubble`, `is_proofread`, `x_coord`, `y_coord`
+        - SAVE ops require all geometry fields plus at least one mutable field
+        - The same unit cannot appear in both a CREATE/SAVE op and a DELETE op
+        - `cand_order` must not contain ids being deleted
+
+        ## Permission
+        The caller must be translator or proofreader on the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: query
+        name: page_id
+        required: true
+        type: string
+      - description: save page units args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.SavePageUnitsArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_SavePageUnitsRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Save Page Units
+      tags:
+      - unit
   /api/v1/users/{user_id}:
     get:
       description: |-
@@ -3470,6 +3464,49 @@ paths:
       tags:
       - user
   /api/v1/worksets:
+    get:
+      description: |-
+        List all active worksets for a team
+        The caller must be a member of the specified team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: query
+        name: team_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_WorksetVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Worksets
+      tags:
+      - workset
     post:
       consumes:
       - application/json
@@ -3585,50 +3622,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update Workset
-      tags:
-      - workset
-  /api/v1/worksets/team/{team_id}:
-    get:
-      description: |-
-        List all active worksets for a team
-        The caller must be a member of the specified team
-        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
-      parameters:
-      - description: team id
-        in: path
-        name: team_id
-        required: true
-        type: string
-      - description: pagination offset
-        in: query
-        name: offset
-        type: integer
-      - description: pagination limit
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/res.HttpRes-array_val_WorksetVal'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/res.HttpRes-any'
-      security:
-      - ApiKeyAuth: []
-      summary: List Worksets
       tags:
       - workset
 securityDefinitions:
