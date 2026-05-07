@@ -36,6 +36,7 @@ Workflow file: `.github/workflows/deploy-prod.yml`
 For manual deployment outside CI, use:
 
 - `scripts/package-release.sh` to build, export, package, and upload the release bundle.
+- `scripts/upload-shared-env.sh` to normalize local `.env` and upload `${DEPLOY_ROOT}/shared/.env`.
 - `scripts/remote-switch-release.sh` on the server to load images, run migrations, and switch the app container.
 
 Build and package on runner:
@@ -47,9 +48,9 @@ Build and package on runner:
 Deploy to server:
 
 - upload bundles via SSH key auth (`SSH_PRIVATE_KEY`)
+- upload normalized runtime env to `shared/.env`
 - `docker load` both images
 - extract migration bundle into `shared/`
-- write `shared/.env`
 - run `docker compose up -d --wait prod-postgres`
 - run `docker compose run --rm prod-db-migrate`
 - run `docker compose up -d --force-recreate prod-main-server`

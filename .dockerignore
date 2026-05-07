@@ -1,0 +1,10 @@
+.git
+.github
+.agents
+.env
+dist
+output
+bin
+build
+logs
+**/.DS_Store

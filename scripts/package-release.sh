@@ -14,6 +14,7 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
 RELEASE_DIR="${DEPLOY_ROOT}/releases/${IMAGE_TAG}"
 REMOTE_BIN_DIR="${DEPLOY_ROOT}/shared/bin"
+UPLOAD_ENV_SCRIPT="${SCRIPT_DIR}/upload-shared-env.sh"
 
 cd "$ROOT_DIR"
 
@@ -31,9 +32,13 @@ scp "${DIST_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz" "${SERVER_USER}@${SERVER_HOS
 scp "${DIST_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz" "${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}/"
 scp "${DIST_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz" "${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}/"
 scp "${SCRIPT_DIR}/remote-switch-release.sh" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_BIN_DIR}/"
+scp "${UPLOAD_ENV_SCRIPT}" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_BIN_DIR}/"
 ssh "${SERVER_USER}@${SERVER_HOST}" "chmod 755 '${REMOTE_BIN_DIR}/remote-switch-release.sh'"
+ssh "${SERVER_USER}@${SERVER_HOST}" "chmod 755 '${REMOTE_BIN_DIR}/upload-shared-env.sh'"
+
+"${UPLOAD_ENV_SCRIPT}"
 
 printf '%s\n' "Release ${IMAGE_TAG} uploaded to ${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}"
 printf '%s\n' "Target platform: ${TARGET_PLATFORM}"
+printf '%s\n' "Runtime env uploaded to ${SERVER_USER}@${SERVER_HOST}:${DEPLOY_ROOT}/shared/.env"
 printf '%s\n' "Run on server:\nIMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh ${REMOTE_BIN_DIR}/remote-switch-release.sh"
-

@@ -37,6 +37,10 @@ export IMAGE_TAG=$(git rev-parse --short=12 HEAD)
 export TARGET_PLATFORM=linux/amd64
 ```
 
+确保仓库根目录 `.env` 已填好生产运行所需变量。`package-release` 现在会读取本地 `.env`，规范化后自动上传到服务器 `${DEPLOY_ROOT}/shared/.env`。
+
+生产 env 模板可参考：`docker/.env.prod.sample`
+
 然后执行任一方式：
 
 ```sh
@@ -55,11 +59,12 @@ just package-release
 - 导出两个镜像到 `dist/`
 - 打包迁移文件与生产 compose 文件
 - 上传发布包到 `${DEPLOY_ROOT}/releases/${IMAGE_TAG}`
+- 上传并规范化服务器运行时 env 到 `${DEPLOY_ROOT}/shared/.env`
 - 上传服务端切换脚本到 `${DEPLOY_ROOT}/shared/bin/remote-switch-release.sh`
 
 ### 服务端切换到新版本
 
-在服务器上预先准备好 `${DEPLOY_ROOT}/shared/.env`，然后执行：
+完成打包上传后，直接执行：
 
 ```sh
 IMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh /opt/poprako-s/shared/bin/remote-switch-release.sh
@@ -125,17 +130,26 @@ tar -xzf ${RELEASE_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz -C ${SHARED_DIR
 
 4. 在远程创建运行时 env（至少包含以下变量）：
 
+如果你使用 `just package-release` 或 `sh scripts/package-release.sh`，这一步通常不需要手动做；脚本会基于本地 `.env` 自动上传。
+
 ```
 IMAGE_TAG=${IMAGE_TAG}
+APP_ENV=prod
 POSTGRES_PASSWORD=your_database_password
-DATABASE_USER=poprako
+DATABASE_USER=poprako_s
+DATABASE_NAME=db_poprako_s
 DATABASE_PASSWORD=your_database_password
 DATABASE_HOST=prod-postgres
 DATABASE_PORT=5432
 JWT_SECRET=your_jwt_secret
 JWT_EXPIRATION_HOURS=336
-OSS_PLATFORM=...（可选）
-# 如果使用 R2/阿里云类 OSS，填入对应的环境变量
+OSS_PLATFORM=r2
+R2_ACCOUNT_ID=your_r2_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_BUCKET_NAME=your_r2_bucket_name
+R2_REGION=auto
+R2_CUSTOM_DOMAIN=your_r2_custom_domain
 ```
 
 将上面内容写入 ${SHARED_DIR}/.env 并设置仅 owner 可读（chmod 600）。

@@ -41,6 +41,9 @@ build:
 package-release:
     sh scripts/package-release.sh
 
+upload-shared-env:
+    sh scripts/upload-shared-env.sh
+
 switch-release:
     sh scripts/remote-switch-release.sh
 

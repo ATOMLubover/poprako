@@ -39,6 +39,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      APP_ENV: ${APP_ENV:-prod}
       DATABASE_USER: ${DATABASE_USER:-poprako_s}
       DATABASE_NAME: ${DATABASE_NAME:-db_poprako_s}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
