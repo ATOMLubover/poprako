@@ -295,28 +295,39 @@ type poprakoImportUnit struct {
 	IsLocal        bool    `json:"is_local"`
 }
 
-// validateLabelPlusHeader validates LabelPlus file header block.
+// `validateLabelPlusHeader` validates the LabelPlus file header block.
+//
+// Header format: version line, "-", group names (one per line), "-", user comment line.
+// Group count and names are dynamic (not hardcoded), matching real LabelPlus behaviour.
 func validateLabelPlusHeader(scanner *bufio.Scanner) error {
-	expectedLines := []string{"1,0", "-", "框内", "框外", "-"}
-
-	for i := range expectedLines {
-		expected := expectedLines[i]
-
-		if !scanner.Scan() {
-			return fmt.Errorf("LabelPlus 头部不完整 第 %d 行缺失", i+1)
-		}
-
-		if scanner.Text() != expected {
-			return fmt.Errorf("LabelPlus 头部非法 第 %d 行应为 %s", i+1, expected)
-		}
+	// Validate version line: must start with a digit.
+	if !scanner.Scan() {
+		return fmt.Errorf("LabelPlus 头部不完整 缺少版本行")
+	}
+	if v := scanner.Text(); len(v) == 0 || v[0] < '0' || v[0] > '9' {
+		return fmt.Errorf("LabelPlus 头部非法 版本行格式错误")
 	}
 
+	// Validate first separator.
+	if !scanner.Scan() || scanner.Text() != "-" {
+		return fmt.Errorf("LabelPlus 头部非法 缺少第一个分隔符 -")
+	}
+
+	// Read group names until the second separator.
+	foundSep := false
+	for scanner.Scan() {
+		if scanner.Text() == "-" {
+			foundSep = true
+			break
+		}
+	}
+	if !foundSep {
+		return fmt.Errorf("LabelPlus 头部不完整 缺少第二个分隔符")
+	}
+
+	// Consume user comment line.
 	if !scanner.Scan() {
 		return fmt.Errorf("LabelPlus 头部不完整 缺少导出备注")
-	}
-
-	if !scanner.Scan() {
-		return fmt.Errorf("LabelPlus 头部不完整 缺少备注后的空行")
 	}
 
 	return nil
