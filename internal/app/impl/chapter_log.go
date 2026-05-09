@@ -128,6 +128,24 @@ func (a *chapterLogAppImpl) Update(cx context.Context, currUid string, args *val
 	return a.inner.Update(cx, currUid, args)
 }
 
+// `Join` enriches logger context and forwards call.
+func (a *chapterLogAppImpl) Join(cx context.Context, currUid string, args val.JoinChapterArgs) app_res.AppRes[val.AssignmentVal] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	lgr := app_util.TakeLgr(cx)
+	lgr = lgr.With(
+		zap.String("curr_uid", currUid),
+		zap.String("chapter_id", args.ChapterId),
+		zap.Uint32("role_mask", uint32(args.RoleMask)),
+	)
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.Join(cx, currUid, args)
+}
+
 // `Delete` enriches logger context and forwards call.
 func (a *chapterLogAppImpl) Delete(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	if cx == nil {

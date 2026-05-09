@@ -22,6 +22,9 @@ type PageRepo interface {
 	// `MarkImageUploaded` marks one page image as uploaded.
 	MarkImageUploaded(id string) RepoErr
 
+	// `ResvImage` overwrites page image reservation key and resets upload status.
+	ResvImage(id string, imageKey string) RepoErr
+
 	// `SetUnitCounts` overwrites unit count fields of one page.
 	SetUnitCounts(id string, total int, translated int, proofread int) RepoErr
 

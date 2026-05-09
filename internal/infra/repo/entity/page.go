@@ -122,6 +122,23 @@ type PageImageUploadedUpdRow struct {
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 }
 
+// `PageResvImageUpdRow` is the write model for page image reservation.
+type PageResvImageUpdRow struct {
+	// `ImageKey` is the newly reserved page image key.
+	ImageKey *string `gorm:"column:image_key"`
+
+	// `ImageUploaded` resets upload status for new reservation.
+	ImageUploaded bool `gorm:"column:image_uploaded"`
+
+	// `UpdatedAt` is the update timestamp.
+	UpdatedAt time.Time `gorm:"column:updated_at"`
+}
+
+// `TableName` returns the table name for `PageResvImageUpdRow`.
+func (*PageResvImageUpdRow) TableName() string {
+	return PAGE_TABLE
+}
+
 // `TableName` returns the table name for `PageImageUploadedUpdRow`.
 func (*PageImageUploadedUpdRow) TableName() string {
 	return PAGE_TABLE

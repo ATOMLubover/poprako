@@ -278,6 +278,56 @@ func UpdateChapter(st *state.AppState) iris.Handler {
 	}
 }
 
+// `JoinChapter` godoc
+// @Summary Join Chapter
+// @Description Join one chapter by role-mask union with current assignment
+// @Description Requested chapter roles must be subset of current user's team roles
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags chapter
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param chapter_id path string true "chapter id"
+// @Param body body val.JoinChapterArgs true "join chapter args"
+// @Success 200 {object} res.HttpRes[val.AssignmentVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /api/v1/chapters/{chapter_id}/join [post]
+func JoinChapter(st *state.AppState) iris.Handler {
+	chapterApp := st.ChapterApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		chapterId := cx.Params().Get("chapter_id")
+		if chapterId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 chapter_id 参数")
+			return
+		}
+
+		var args val.JoinChapterArgs
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		args.ChapterId = chapterId
+
+		re := chapterApp.Join(newReqCx(cx), currUid, args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
 // `DeleteChapter` godoc
 // @Summary Delete Chapter
 // @Description Hard-delete one chapter

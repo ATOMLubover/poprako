@@ -150,6 +150,19 @@ func vfyDeleteChapterId(chapterId string) app_res.AppRes[app_res.None] {
 	return app_res.Accept(&app_res.None{})
 }
 
+// `vfyJoinChapterArgs` validates chapter join arguments.
+func vfyJoinChapterArgs(args val.JoinChapterArgs) app_res.AppRes[app_res.None] {
+	if args.ChapterId == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "chapter_id 不能为空")
+	}
+
+	if args.RoleMask == 0 {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "role_mask 不能为空")
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
 // `isWorkflowTransitionValid` checks transition value in closed set.
 func isWorkflowTransitionValid(t enum.WorkflowTransition) bool {
 	switch t {

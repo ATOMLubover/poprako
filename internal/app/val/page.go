@@ -36,6 +36,20 @@ type ResvChapterPagesRes struct {
 	Creations []PageCreationRes `json:"creations,omitempty"`
 }
 
+// `ResvChapterPageArgs` holds input for reserving one chapter page.
+type ResvChapterPageArgs struct {
+	PageId string `json:"page_id"`
+
+	FileExt string `json:"file_extension"`
+}
+
+// `ResvChapterPageRes` holds created pages and their put urls.
+type ResvChapterPageRes struct {
+	PageId string `json:"page_id"`
+
+	PutUrl string `json:"put_url"`
+}
+
 // `PageCreationRes` holds one reserved page upload result.
 type PageCreationRes struct {
 	PageId string `json:"page_id"`

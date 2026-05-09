@@ -53,6 +53,24 @@ func vfyResvChapterPagesArgs(args *val.ResvChapterPagesArgs) app_res.AppRes[app_
 	return app_res.Accept(&app_res.None{})
 }
 
+// `vfyResvChapterPageArgs` validates single-page reservation arguments.
+func vfyResvChapterPageArgs(args *val.ResvChapterPageArgs) app_res.AppRes[app_res.None] {
+	if args == nil {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "预留参数不能为空")
+	}
+
+	if args.PageId == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "page_id 不能为空")
+	}
+
+	args.FileExt = strings.TrimSpace(args.FileExt)
+	if args.FileExt == "" {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "file_extension 不能为空")
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
 // `vfyListChapterPageArgs` validates page list arguments.
 func vfyListChapterPageArgs(args *val.ListChapterPageArgs) app_res.AppRes[app_res.None] {
 	if args == nil {

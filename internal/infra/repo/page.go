@@ -113,6 +113,21 @@ func (r *pageRepoImpl) MarkImageUploaded(id string) repo_iface.RepoErr {
 	return r.gdb.Table(entity.PAGE_TABLE).Where("id = ?", id).Select("image_uploaded", "updated_at").Updates(upRow).Error
 }
 
+// `ResvImage` overwrites page image reservation key and resets upload status.
+func (r *pageRepoImpl) ResvImage(id string, imageKey string) repo_iface.RepoErr {
+	upRow := &entity.PageResvImageUpdRow{
+		ImageKey:      &imageKey,
+		ImageUploaded: false,
+		UpdatedAt:     time.Now(),
+	}
+
+	return r.gdb.
+		Table(entity.PAGE_TABLE).
+		Where("id = ?", id).
+		Select("image_key", "image_uploaded", "updated_at").
+		Updates(upRow).Error
+}
+
 // `SetUnitCounts` overwrites unit count fields of one page.
 func (r *pageRepoImpl) SetUnitCounts(id string, total int, translated int, proofread int) repo_iface.RepoErr {
 	updRow := &entity.PageUnitCountsUpdRow{

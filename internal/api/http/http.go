@@ -115,6 +115,7 @@ func NewApp(st *state.AppState) *iris.Application {
 				chapter.Get("/{chapter_id}/export", ExportChapter(st))
 				chapter.Get("/{chapter_id}/export/lp", ExportChapterLp(st))
 				chapter.Get("/{chapter_id}", GetChapterById(st))
+				chapter.Post("/{chapter_id}/join", JoinChapter(st))
 				chapter.Post("/{chapter_id}/import", ImportChapter(st))
 				chapter.Post("", CreateChapter(st))
 				chapter.Put("/{chapter_id}", UpdateChapter(st))
@@ -125,6 +126,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			{
 				page.Get("", ListChapterPages(st))
 				page.Post("/reserve", ResvChapterPages(st))
+				page.Post("/{page_id}/reserve", ResvChapterPage(st))
 				page.Delete("", DeleteChapterPages(st))
 				page.Post("/{page_id}/image/uploaded", MarkPageImageUploaded(st))
 			}

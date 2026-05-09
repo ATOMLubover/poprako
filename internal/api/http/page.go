@@ -65,6 +65,56 @@ func ResvChapterPages(st *state.AppState) iris.Handler {
 	}
 }
 
+// `ResvChapterPage` godoc
+// @Summary Reserve Chapter Page Upload
+// @Description Reserve signed upload URL for one existing chapter page
+// @Description The caller must be raw provider or reviewer of the target chapter
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags page
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param page_id path string true "page id"
+// @Param body body val.ResvChapterPageArgs true "reserve chapter page args"
+// @Success 200 {object} res.HttpRes[val.ResvChapterPageRes]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /api/v1/pages/{page_id}/reserve [post]
+func ResvChapterPage(st *state.AppState) iris.Handler {
+	pageApp := st.PageApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		pageId := cx.Params().Get("page_id")
+		if pageId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 page_id 参数")
+			return
+		}
+
+		var args val.ResvChapterPageArgs
+		if err := cx.ReadJSON(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		args.PageId = pageId
+
+		re := pageApp.ResvChapterPage(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
 // `ListChapterPages` godoc
 // @Summary List Chapter Pages
 // @Description List pages under one chapter with pagination

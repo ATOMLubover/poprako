@@ -1,6 +1,9 @@
 package val
 
-import "poprako-s/internal/domain/model/enum"
+import (
+	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
+)
 
 // `ChapterVal` is the app-facing chapter value object.
 type ChapterVal struct {
@@ -87,4 +90,13 @@ type ChapterUpdArgs struct {
 
 	// `WorkflowTransition` drives workflow timestamp mutation.
 	WorkflowTransition *enum.WorkflowTransition `json:"workflow_transition"`
+}
+
+// `JoinChapterArgs` holds input for chapter joining.
+type JoinChapterArgs struct {
+	// `ChapterId` identifies target chapter.
+	ChapterId string `json:"chapter_id"`
+
+	// `RoleMask` specifies assignment roles to be added.
+	RoleMask aggr.RoleMask `json:"role_mask"`
 }

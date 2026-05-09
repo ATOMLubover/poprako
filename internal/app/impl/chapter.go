@@ -374,6 +374,72 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 	return re
 }
 
+// `Join` adds current user to chapter assignment by role-mask union.
+func (a *chapterAppImpl) Join(cx context.Context, currUid string, args val.JoinChapterArgs) app_res.AppRes[val.AssignmentVal] {
+	lgr := app_util.TakeLgr(cx)
+
+	if re := vfyJoinChapterArgs(args); re.IsReject() {
+		return app_res.Reject[val.AssignmentVal](re.Code(), re.Msg())
+	}
+
+	ev := make([]event_iface.Event, 0)
+
+	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.AssignmentVal]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.AssignmentVal], error) {
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
+		chapterRepo := prov.ChapterRepo()
+		assignmentRepo := prov.AssignmentRepo()
+
+		if re := a.assignmentSvc.CanTakeAssignmentRoles(currUid, args.ChapterId, args.RoleMask, memberRepo, chapterRepo, comicRepo, worksetRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.AssignmentVal](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+		}
+
+		currAssignment, err := assignmentRepo.GetByChapterUserId(args.ChapterId, currUid)
+		if err != nil {
+			if !repo_infra.IsNotFound(err) {
+				return app_res.Reject[val.AssignmentVal](app_res.ServerError, "加入章节失败"), err
+			}
+
+			cre := a.assignmentSvc.NewAssignmentCre(args.ChapterId, currUid, args.RoleMask)
+			created, err := assignmentRepo.Create(cre)
+			if err != nil {
+				return app_res.Reject[val.AssignmentVal](app_res.ServerError, "加入章节失败"), err
+			}
+
+			ev = append(ev, event.NewAssignmentCreatedEv(currUid, args.ChapterId))
+
+			assignmentVal := asmAssignmentVal(created)
+
+			return app_res.Accept(&assignmentVal), nil
+		}
+
+		mergedMask := currAssignment.ToRoleMask() | args.RoleMask
+		put := a.assignmentSvc.NewAssignmentPut(currAssignment, mergedMask)
+		if err := assignmentRepo.Put(put); err != nil {
+			return app_res.Reject[val.AssignmentVal](app_res.ServerError, "加入章节失败"), err
+		}
+
+		updated, err := assignmentRepo.GetById(currAssignment.Id)
+		if err != nil {
+			return app_res.Reject[val.AssignmentVal](app_res.ServerError, "加入章节失败"), err
+		}
+
+		assignmentVal := asmAssignmentVal(updated)
+
+		return app_res.Accept(&assignmentVal), nil
+	})
+	if err != nil {
+		lgr.Error("[chapterAppImpl.Join] failed to run join chapter transaction", zap.Error(err))
+
+		return re
+	}
+
+	a.evBus.Pub(context.Background(), ev)
+
+	return re
+}
+
 // `Delete` hard-deletes one chapter.
 func (a *chapterAppImpl) Delete(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)
@@ -447,6 +513,30 @@ func (a *chapterAppImpl) Delete(cx context.Context, currUid string, chapterId st
 
 		if err := chapterRepo.Delete(chapterId); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+		}
+
+		// Promote one remaining chapter to pinned when the deleted chapter was pinned.
+		if chapter.IsPinned {
+			remainingChapters, err := chapterRepo.List(&query.ListChapterOpt{
+				ComicId: &chapter.ComicId,
+				Pagi: query.PagiOpt{
+					Limit: 1,
+				},
+			})
+			if err != nil {
+				return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+			}
+
+			if len(remainingChapters) > 0 {
+				isPinned := true
+
+				if err := chapterRepo.Update(&aggr.ChapterUpd{
+					Id:       remainingChapters[0].Id,
+					IsPinned: &isPinned,
+				}); err != nil {
+					return app_res.Reject[app_res.None](app_res.ServerError, "删除章节失败"), err
+				}
+			}
 		}
 
 		if err := comicRepo.UpdateChapterCount(chapter.ComicId, -1); err != nil {

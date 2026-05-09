@@ -6,6 +6,7 @@ import "poprako-s/internal/domain/model/enum"
 // such as `Member`, `MemberInv` or `Assignment`.
 type WithRoles interface {
 	HasAnyRole(r ...enum.Role) bool
+	HasEveryRole(r ...enum.Role) bool
 	ToRoleMask() RoleMask
 	ToRoleArr() []enum.Role
 	FromRoleMask(m RoleMask)

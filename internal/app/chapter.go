@@ -3,7 +3,7 @@ package app_iface
 import (
 	"context"
 
-	"poprako-s/internal/app/res"
+	app_res "poprako-s/internal/app/res"
 	"poprako-s/internal/app/val"
 )
 
@@ -25,10 +25,9 @@ type ChapterApp interface {
 	// `Update` updates mutable chapter fields.
 	Update(cx context.Context, currUid string, args *val.ChapterUpdArgs) app_res.AppRes[app_res.None]
 
+	// `Join` adds current user to chapter's assignment list with specified roles.
+	Join(cx context.Context, currUid string, args val.JoinChapterArgs) app_res.AppRes[val.AssignmentVal]
+
 	// `Delete` hard-deletes one chapter.
-	Delete(
-		cx context.Context,
-		currUid string,
-		chapterId string,
-	) app_res.AppRes[app_res.None]
+	Delete(cx context.Context, currUid string, chapterId string) app_res.AppRes[app_res.None]
 }

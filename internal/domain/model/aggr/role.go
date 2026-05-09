@@ -6,7 +6,7 @@ import (
 	"poprako-s/internal/domain/model/enum"
 )
 
-// `RoleMask` is a bitmask that encodes a set of roles as a single uint32 value
+// `RoleMask` is a bitmask that encodes a set of roles as one single uint32 value
 type RoleMask uint32
 
 // `HasAnyRole` reports whether the mask contains at least one of the given roles
@@ -18,6 +18,17 @@ func (m RoleMask) HasAnyRole(r ...enum.Role) bool {
 	}
 
 	return false
+}
+
+// `HasEveryRole` reports whether the mask contains all of the given roles
+func (m RoleMask) HasEveryRole(r ...enum.Role) bool {
+	for _, role := range r {
+		if m&RoleMask(role) == 0 {
+			return false
+		}
+	}
+
+	return true
 }
 
 // `ToRoleArr` expands the mask into a slice of individual roles in ascending bit order

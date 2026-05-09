@@ -12,6 +12,10 @@ type PageApp interface {
 	// `ResvChapterPages` reserves upload slots for chapter pages.
 	ResvChapterPages(cx context.Context, currUid string, args *val.ResvChapterPagesArgs) app_res.AppRes[val.ResvChapterPagesRes]
 
+	// `ResvChapterPage` reserves upload slot for one chapter page,
+	// It is only used when **re-uploading** one page, and it will invalidate previous reservation if exists.
+	ResvChapterPage(cx context.Context, currUid string, args *val.ResvChapterPageArgs) app_res.AppRes[val.ResvChapterPageRes]
+
 	// `List` returns pages under one chapter.
 	List(cx context.Context, currUid string, args *val.ListChapterPageArgs) app_res.AppRes[[]val.PageVal]
 

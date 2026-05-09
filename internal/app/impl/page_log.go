@@ -43,6 +43,23 @@ func (a *pageLogAppImpl) ResvChapterPages(cx context.Context, currUid string, ar
 	return a.inner.ResvChapterPages(cx, currUid, args)
 }
 
+// `ResvChapterPage` enriches logger context then forwards the call.
+func (a *pageLogAppImpl) ResvChapterPage(cx context.Context, currUid string, args *val.ResvChapterPageArgs) app_res.AppRes[val.ResvChapterPageRes] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	if args == nil {
+		return app_res.Reject[val.ResvChapterPageRes](app_res.BadRequest, "预留参数不能为空")
+	}
+
+	lgr := app_util.TakeLgr(cx)
+	lgr = lgr.With(zap.String("curr_uid", currUid), zap.String("page_id", args.PageId))
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.ResvChapterPage(cx, currUid, args)
+}
+
 // `List` enriches logger context then forwards the call.
 func (a *pageLogAppImpl) List(cx context.Context, currUid string, args *val.ListChapterPageArgs) app_res.AppRes[[]val.PageVal] {
 	if cx == nil {

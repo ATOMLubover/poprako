@@ -196,6 +196,78 @@ func (a *pageAppImpl) ResvChapterPages(cx context.Context, currUid string, args 
 	return app_res.Accept(&val.ResvChapterPagesRes{Creations: creations})
 }
 
+// `ResvChapterPage` reserves upload slot for one chapter page.
+func (a *pageAppImpl) ResvChapterPage(cx context.Context, currUid string, args *val.ResvChapterPageArgs) app_res.AppRes[val.ResvChapterPageRes] {
+	lgr := app_util.TakeLgr(cx)
+
+	// Validate the incoming reservation request before touching storage.
+	if re := vfyResvChapterPageArgs(args); re.IsReject() {
+		return app_res.Reject[val.ResvChapterPageRes](re.Code(), re.Msg())
+	}
+
+	imageKey := ""
+
+	// Overwrite one page image reservation and enqueue OSS messages atomically.
+	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.ResvChapterPageRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.ResvChapterPageRes], error) {
+		pageRepo := prov.PageRepo()
+		assignmentRepo := prov.AssignmentRepo()
+		ossMsgRepo := prov.OssMsgRepo()
+
+		page, err := pageRepo.GetById(args.PageId)
+		if err != nil {
+			if repo_infra.IsNotFound(err) {
+				return app_res.Reject[val.ResvChapterPageRes](app_res.BadRequest, "页面不存在"), app_res.DefErr()
+			}
+
+			return app_res.Reject[val.ResvChapterPageRes](app_res.ServerError, "预留页面失败"), err
+		}
+
+		if re := a.pageSvc.CanResvPages(currUid, page.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.ResvChapterPageRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+		}
+
+		oldKey := ""
+		if page.ImageKey != nil {
+			oldKey = *page.ImageKey
+		}
+
+		txnImageKey := a.pageSvc.GenImageKey(page.ChapterId, page.Id, args.FileExt)
+
+		if err := pageRepo.ResvImage(page.Id, txnImageKey); err != nil {
+			return app_res.Reject[val.ResvChapterPageRes](app_res.ServerError, "预留页面失败"), err
+		}
+
+		if oldKey != "" && oldKey != txnImageKey {
+			if err := a.ossMsgSvc.SavePendingDel(ossMsgRepo, enum.OssResPageImage, page.Id, []string{oldKey}); err != nil {
+				return app_res.Reject[val.ResvChapterPageRes](app_res.ServerError, "预留页面失败"), err
+			}
+		}
+
+		if err := a.ossMsgSvc.SavePendingCre(ossMsgRepo, enum.OssResPageImage, page.Id, []string{txnImageKey}); err != nil {
+			return app_res.Reject[val.ResvChapterPageRes](app_res.ServerError, "预留页面失败"), err
+		}
+
+		imageKey = txnImageKey
+
+		return app_res.Accept(&val.ResvChapterPageRes{}), nil
+	})
+	if err != nil {
+		lgr.Error("[pageAppImpl.ResvChapterPage] failed to reserve chapter page", zap.Error(err))
+
+		return re
+	}
+
+	// Generate signed upload url only after transaction commits successfully.
+	putUrl, err := a.ossSigner.GenPutUrl(imageKey)
+	if err != nil {
+		lgr.Error("[pageAppImpl.ResvChapterPage] failed to generate page upload url", zap.String("page_id", args.PageId), zap.Error(err))
+
+		return app_res.Reject[val.ResvChapterPageRes](app_res.ServerError, "生成页面上传地址失败")
+	}
+
+	return app_res.Accept(&val.ResvChapterPageRes{PageId: args.PageId, PutUrl: putUrl})
+}
+
 // `List` returns pages under one chapter.
 func (a *pageAppImpl) List(cx context.Context, currUid string, args *val.ListChapterPageArgs) app_res.AppRes[[]val.PageVal] {
 	lgr := app_util.TakeLgr(cx)
