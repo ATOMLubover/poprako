@@ -319,10 +319,6 @@ func validateLabelPlusHeader(scanner *bufio.Scanner) error {
 		return fmt.Errorf("LabelPlus 头部不完整 缺少备注后的空行")
 	}
 
-	if scanner.Text() != "" {
-		return fmt.Errorf("LabelPlus 头部非法 备注后必须有空行")
-	}
-
 	return nil
 }
 

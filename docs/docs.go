@@ -1124,6 +1124,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/chapters/{chapter_id}/join": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Join one chapter by role-mask union with current assignment\nRequested chapter roles must be subset of current user's team roles\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chapter"
+                ],
+                "summary": "Join Chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "chapter id",
+                        "name": "chapter_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "join chapter args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.JoinChapterArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_AssignmentVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/comics": {
             "get": {
                 "security": [
@@ -2414,6 +2478,70 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pages/{page_id}/reserve": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Reserve signed upload URL for one existing chapter page\nThe caller must be raw provider or reviewer of the target chapter\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "page"
+                ],
+                "summary": "Reserve Chapter Page Upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page id",
+                        "name": "page_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "reserve chapter page args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.ResvChapterPageArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_ResvChapterPageRes"
                         }
                     },
                     "400": {
@@ -3738,6 +3866,27 @@ const docTemplate = `{
                 }
             }
         },
+        "res.HttpRes-val_AssignmentVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.AssignmentVal"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
         "res.HttpRes-val_ChapterCreatedRes": {
             "type": "object",
             "properties": {
@@ -3939,6 +4088,27 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/val.ListPageUnitsRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_ResvChapterPageRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.ResvChapterPageRes"
                         }
                     ]
                 },
@@ -4631,6 +4801,19 @@ const docTemplate = `{
                 }
             }
         },
+        "val.JoinChapterArgs": {
+            "type": "object",
+            "properties": {
+                "chapter_id": {
+                    "description": "` + "`" + `ChapterId` + "`" + ` identifies target chapter.",
+                    "type": "string"
+                },
+                "role_mask": {
+                    "description": "` + "`" + `RoleMask` + "`" + ` specifies assignment roles to be added.",
+                    "type": "integer"
+                }
+            }
+        },
         "val.JoinTeamArgs": {
             "type": "object",
             "properties": {
@@ -4811,6 +4994,28 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                }
+            }
+        },
+        "val.ResvChapterPageArgs": {
+            "type": "object",
+            "properties": {
+                "file_extension": {
+                    "type": "string"
+                },
+                "page_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.ResvChapterPageRes": {
+            "type": "object",
+            "properties": {
+                "page_id": {
+                    "type": "string"
+                },
+                "put_url": {
+                    "type": "string"
                 }
             }
         },

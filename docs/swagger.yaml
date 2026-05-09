@@ -172,6 +172,19 @@ definitions:
         description: '`Msg` carries a human-readable error message; empty on success'
         type: string
     type: object
+  res.HttpRes-val_AssignmentVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.AssignmentVal'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
   res.HttpRes-val_ChapterCreatedRes:
     properties:
       code:
@@ -297,6 +310,19 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/val.ListPageUnitsRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_ResvChapterPageRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.ResvChapterPageRes'
         description: '`Data` holds the response payload; nil when no body is returned'
       message:
         description: '`Msg` carries a human-readable error message; empty on success'
@@ -744,6 +770,15 @@ definitions:
       invitation_code:
         type: string
     type: object
+  val.JoinChapterArgs:
+    properties:
+      chapter_id:
+        description: '`ChapterId` identifies target chapter.'
+        type: string
+      role_mask:
+        description: '`RoleMask` specifies assignment roles to be added.'
+        type: integer
+    type: object
   val.JoinTeamArgs:
     properties:
       invitation_code:
@@ -862,6 +897,20 @@ definitions:
         type: integer
       updated_at:
         type: integer
+    type: object
+  val.ResvChapterPageArgs:
+    properties:
+      file_extension:
+        type: string
+      page_id:
+        type: string
+    type: object
+  val.ResvChapterPageRes:
+    properties:
+      page_id:
+        type: string
+      put_url:
+        type: string
     type: object
   val.ResvChapterPagesArgs:
     properties:
@@ -1962,6 +2011,50 @@ paths:
       summary: Import Chapter
       tags:
       - chapter
+  /api/v1/chapters/{chapter_id}/join:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Join one chapter by role-mask union with current assignment
+        Requested chapter roles must be subset of current user's team roles
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: chapter id
+        in: path
+        name: chapter_id
+        required: true
+        type: string
+      - description: join chapter args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.JoinChapterArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Join Chapter
+      tags:
+      - chapter
   /api/v1/chapters/pinned:
     get:
       description: |-
@@ -2856,6 +2949,50 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Confirm Page Image Uploaded
+      tags:
+      - page
+  /api/v1/pages/{page_id}/reserve:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Reserve signed upload URL for one existing chapter page
+        The caller must be raw provider or reviewer of the target chapter
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: page id
+        in: path
+        name: page_id
+        required: true
+        type: string
+      - description: reserve chapter page args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.ResvChapterPageArgs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_ResvChapterPageRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Reserve Chapter Page Upload
       tags:
       - page
   /api/v1/pages/reserve:

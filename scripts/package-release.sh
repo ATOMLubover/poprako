@@ -41,4 +41,5 @@ ssh "${SERVER_USER}@${SERVER_HOST}" "chmod 755 '${REMOTE_BIN_DIR}/upload-shared-
 printf '%s\n' "Release ${IMAGE_TAG} uploaded to ${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}"
 printf '%s\n' "Target platform: ${TARGET_PLATFORM}"
 printf '%s\n' "Runtime env uploaded to ${SERVER_USER}@${SERVER_HOST}:${DEPLOY_ROOT}/shared/.env"
-printf '%s\n' "Run on server:\nIMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh ${REMOTE_BIN_DIR}/remote-switch-release.sh"
+printf '%s\n' "Run on server:"
+printf '%s\n' "IMAGE_TAG=${IMAGE_TAG} DEPLOY_ROOT=${DEPLOY_ROOT} sh ${REMOTE_BIN_DIR}/remote-switch-release.sh"
