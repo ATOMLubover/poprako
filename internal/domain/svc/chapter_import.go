@@ -157,7 +157,7 @@ func (ChapterImportSvc) ParseLabelPlus(content string) ([]ChapterImportPage, err
 			mainText := normalizeStringToPtr(u.text)
 
 			units[j] = ChapterImportUnit{
-				Index:              u.index,
+				Index:              u.index - 1,
 				X:                  normalizeCoord(u.x),
 				Y:                  normalizeCoord(u.y),
 				IsBubble:           u.isBubble,
