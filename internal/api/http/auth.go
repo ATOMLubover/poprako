@@ -50,6 +50,25 @@ func LoginUser(st *state.AppState) iris.Handler {
 	}
 }
 
+// `LogoutUser` godoc
+// @Summary User Logout
+// @Description Invalidate the auth cookie to log out the current user and return 200 OK
+// @Tags auth
+// @Success 200
+// @Router /api/v1/auth/logout [post]
+func LogoutUser() iris.Handler {
+	return func(cx iris.Context) {
+		cx.SetCookie(&http.Cookie{
+			Name:   middleware.AuthCookieName,
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1, // delete the cookie
+		})
+
+		res.Accept[string](cx, iris.StatusOK, "退出登录成功")
+	}
+}
+
 // `RegUser` godoc
 // @Summary User Registration
 // @Description Register by invitation code and return a `res.HttpRes` wrapper with `val.UserRegRes`
