@@ -1640,6 +1640,16 @@ paths:
       summary: User Login
       tags:
       - auth
+  /api/v1/auth/logout:
+    post:
+      description: Invalidate the auth cookie to log out the current user and return
+        200 OK
+      responses:
+        "200":
+          description: OK
+      summary: User Logout
+      tags:
+      - auth
   /api/v1/auth/register:
     post:
       consumes:

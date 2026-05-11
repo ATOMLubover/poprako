@@ -45,6 +45,7 @@ func NewApp(st *state.AppState) *iris.Application {
 		{
 			auth.Post("/login", LoginUser(st))
 			auth.Post("/register", RegUser(st))
+			auth.Post("/logout", LogoutUser())
 		}
 
 		// NOTE: all routes below require authorization.
