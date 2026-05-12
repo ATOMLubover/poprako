@@ -38,15 +38,16 @@ these base rules for their respective packages.
 main.go
 └── internal/
     ├── app/            # Application layer: use-case orchestration, VO validation
-    │   ├── event_handler/  # Domain event handlers
-    │   └── val/            # Input value objects (args/VO types per use-case)
+    │   ├── impl/           # Use-case implementations (one file per aggregate)
+    │   ├── val/            # Input value objects (args/VO types per use-case)
+    │   └── res/            # Shared result / enum types
     ├── cfg/            # Config structs (auth, etc.)
     ├── domain/
     │   ├── event/      # Event interface + EventSource interface
     │   ├── ext/        # External service abstractions (oss/)
     │   ├── model/      # Domain models (plain Go structs, also contain business logic)
     │   ├── repo/       # Repository interfaces (one file per aggregate)
-    │   └── service/    # Domain services (stateless, business rule validation)
+    │   └── svc/        # Domain services (stateless, business rule validation)
     └── infra/
         ├── event/      # EventBus concrete impl (+ mock/)
         ├── ext/        # External service concrete impls (oss/)
@@ -130,11 +131,9 @@ Each phase has `<phase>_at` (completed) and/or `<phase>ing_at` (started) columns
 
 ## Testing
 
-- Unit tests live in `internal/app/*_test.go` (one per app-layer file).
+- Unit tests live in `internal/domain/svc/*_test.go` (domain service tests).
 - Tests use mock repos from `internal/infra/repo/mock/` and mock event bus from `internal/infra/event/mock/`.
 - Integration / infra tests are **not yet implemented** (no test DB setup).
-- Test helper constructors are in `constructors_test.go` and `test_helpers_test.go`.
-- See `/memories/repo/testing.md` for repo-level test notes.
 
 ---
 
@@ -146,7 +145,7 @@ Each phase has `<phase>_at` (completed) and/or `<phase>ing_at` (started) columns
 | `internal/domain/model/chapter.go`  | Chapter state machine + event emission                  |
 | `internal/infra/repo/chapter.go`    | Pinned transaction logic                                |
 | `internal/infra/repo/comic.go`      | `applyComicWorkflowFilter` helper + replica field usage |
-| `internal/app/event_handler/`       | Handlers for chapter lifecycle events (side-effects)    |
+| `internal/app/impl/`                | All use-case implementations                            |
 | `docs/plans/impl-repo-impl.md`      | Detailed implementation plan reference                  |
 
 ---
@@ -157,16 +156,14 @@ Located in `migrations/`. Follow the pattern `YYYYMMDDHHMMSS_<description>.{up,d
 
 ---
 
-## Refactor Hard Conventions
+## Code Conventions
 
-The following rules are mandatory for the `refactor/` implementation:
-
-- For current-user identifiers in app/http signatures and local variables, use `currUid` naming. Do not use `currUserId`.
-- If an aggregate has relation fields (for example `Workset.Team`), the corresponding repo contract and infra implementation must support typed `includes` via `enum.XxxIncl` and preload mapping.
-- Nullable DB columns must stay nullable through domain and infra mappings. Do not coerce nullable fields into non-null defaults during assemble/convert.
-- `Put`-style update payloads must overwrite target fields fully. For nullable fields, `nil` means write SQL `NULL` (not "skip update").
-- In app transaction flows, follow the `user` app pattern: determine reject code via local state and normal error flow. Do not invent sentinel business errors such as `errNotAdmin`.
-- Naming semantics are fixed: `Delete` means hard delete, `Remove` means soft delete.
-- Common abbreviations are mandatory in Go identifiers. For example: use `Desc`/`desc` instead of `Description`/`description`. SQL column names and SQL literals are excluded.
-- In app signatures, when business inputs beyond `cx` and `currUid` are more than one field, they must be wrapped into `val` args structs.
-- All list interfaces must carry pagination explicitly.
+- For current-user identifiers in app/http signatures and local variables, use `currUid` naming.
+- If an aggregate has relation fields (e.g., `Workset.Team`), the corresponding repo contract must support typed `includes` via preload mapping.
+- Nullable DB columns must stay nullable through domain and infra mappings. Do not coerce nullable fields into non-null defaults.
+- `Put`-style update payloads overwrite target fields fully. For nullable fields, `nil` means write SQL `NULL`.
+- In app transaction flows, determine reject codes via local state and normal error flow — no sentinel business errors.
+- Naming semantics: `Delete` = hard delete, `Remove` = soft delete.
+- Common abbreviations are mandatory in Go identifiers (e.g., `Desc`/`desc` instead of `Description`/`description`). SQL column names and literals are excluded.
+- App signatures with more than one business input beyond `cx` and `currUid` must wrap them in `val` args structs.
+- All list interfaces carry pagination explicitly.

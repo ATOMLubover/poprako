@@ -10,6 +10,10 @@ type PageRepo interface {
 	// `GetById` returns one page by id.
 	GetById(id string) (*aggr.Page, RepoErr)
 
+	// `FindFirstPageByChapters` returns the first page for each chapter id.
+	// The returned slice has the same length and order as `chapterIds`, with nil for not found.
+	FindFirstPageByChapters(chapterIds []string) ([]*aggr.Page, RepoErr)
+
 	// `List` returns pages matching query options.
 	List(opt *query.ListPageOpt) ([]*aggr.Page, RepoErr)
 

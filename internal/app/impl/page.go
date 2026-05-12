@@ -440,6 +440,16 @@ func (a *pageAppImpl) DeleteByChapterId(cx context.Context, currUid string, chap
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 		}
 
+		// Clear chapter unit counters together with page removal so stale page history does not remain aggregated on the chapter.
+		if err := chapterRepo.AdjustUnitCounts(
+			chapterId,
+			-chapter.TotalUnitCount,
+			-chapter.TranslatedUnitCount,
+			-chapter.ProofreadUnitCount,
+		); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
+		}
+
 		if err := comicRepo.TouchLastActive(chapter.ComicId); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "删除页面失败"), err
 		}

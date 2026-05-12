@@ -67,6 +67,7 @@ func (a *comicLogAppImpl) Create(cx context.Context, currUid string, args *val.C
 		zap.String("workset_id", args.WorksetId),
 		zap.String("title", args.Title),
 		zap.String("author", args.Author),
+		zap.String("first_chapter_title", args.FirstChapterTitle),
 	)
 
 	cx = app_util.SaveLgr(cx, lgr)

@@ -73,6 +73,10 @@ type CreateComicArgs struct {
 	Author string `json:"author"`
 	// `Desc` is optional description
 	Desc *string `json:"description"`
+
+	// `FirstChapterTitle` is the title for the first chapter to be created together with the comic
+	// If empty, a default chapter titled "CH.0" will be created
+	FirstChapterTitle string `json:"first_chapter_title,omitempty"`
 }
 
 // `ComicCreatedRes` is returned after successful comic creation

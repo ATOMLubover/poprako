@@ -4703,6 +4703,10 @@
                     "description": "`Desc` is optional description",
                     "type": "string"
                 },
+                "first_chapter_title": {
+                    "description": "`FirstChapterTitle` is the title for the first chapter to be created together with the comic\nIf empty, a default chapter titled \"CH.0\" will be created",
+                    "type": "string"
+                },
                 "title": {
                     "description": "`Title` is the comic title",
                     "type": "string"

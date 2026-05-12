@@ -31,6 +31,8 @@ type comicAppImpl struct {
 	memberRepo  repo_iface.MemberRepo
 	worksetRepo repo_iface.WorksetRepo
 	comicRepo   repo_iface.ComicRepo
+	chapterRepo repo_iface.ChapterRepo
+	pageRepo    repo_iface.PageRepo
 	ossSigner   oss_iface.Signer
 
 	evBus   event_iface.EvBus
@@ -43,6 +45,8 @@ func NewComicApp(
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
+	chapterRepo repo_iface.ChapterRepo,
+	pageRepo repo_iface.PageRepo,
 	ossSigner oss_iface.Signer,
 	comicSvc svc.ComicSvc,
 	chapterSvc svc.ChapterSvc,
@@ -54,6 +58,8 @@ func NewComicApp(
 		memberRepo == nil ||
 		worksetRepo == nil ||
 		comicRepo == nil ||
+		chapterRepo == nil ||
+		pageRepo == nil ||
 		ossSigner == nil ||
 		evBus == nil ||
 		errClsf == nil {
@@ -63,6 +69,8 @@ func NewComicApp(
 			zap.Bool("memberRepo", memberRepo == nil),
 			zap.Bool("worksetRepo", worksetRepo == nil),
 			zap.Bool("comicRepo", comicRepo == nil),
+			zap.Bool("chapterRepo", chapterRepo == nil),
+			zap.Bool("pageRepo", pageRepo == nil),
 			zap.Bool("ossSigner", ossSigner == nil),
 			zap.Bool("evBus", evBus == nil),
 			zap.Bool("errClsf", errClsf == nil),
@@ -77,6 +85,8 @@ func NewComicApp(
 		memberRepo:    memberRepo,
 		worksetRepo:   worksetRepo,
 		comicRepo:     comicRepo,
+		chapterRepo:   chapterRepo,
+		pageRepo:      pageRepo,
 		ossSigner:     ossSigner,
 		evBus:         evBus,
 		errClsf:       errClsf,
@@ -148,8 +158,49 @@ func (a *comicAppImpl) List(cx context.Context, currUid string, args *val.ListCo
 	}
 
 	comicVals := make([]val.ComicVal, len(comics))
+	coverFallbackComicIds := make([]string, 0, len(comics))
 	for i, comic := range comics {
 		comicVals[i] = asmComicVal(comic)
+
+		if comic.CoverUploaded && comic.CoverKey != nil && *comic.CoverKey != "" {
+			coverUrl, err := a.ossSigner.GenGetUrl(*comic.CoverKey)
+			if err != nil {
+				lgr.Error("[comicAppImpl.List] failed to generate comic cover url", zap.String("comicId", comic.Id), zap.Error(err))
+			} else {
+				comicVals[i].CoverUrl = coverUrl
+			}
+
+			continue
+		}
+
+		coverFallbackComicIds = append(coverFallbackComicIds, comic.Id)
+	}
+
+	coverFallbackUrls, err := resolveComicFallbackCoverUrls(
+		coverFallbackComicIds,
+		a.chapterRepo,
+		a.pageRepo,
+		a.ossSigner,
+		lgr,
+	)
+	if err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
+
+		lgr.Error(
+			"[comicAppImpl.List] failed to resolve comic fallback covers",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[[]val.ComicVal](errCode, "获取漫画列表失败")
+	}
+
+	for i, comic := range comics {
+		if comicVals[i].CoverUrl != "" {
+			continue
+		}
+
+		comicVals[i].CoverUrl = coverFallbackUrls[comic.Id]
 	}
 
 	return app_res.Accept(&comicVals)
@@ -208,7 +259,11 @@ func (a *comicAppImpl) Create(cx context.Context, currUid string, args *val.Crea
 			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
 		}
 
-		chapterCre := a.chapterSvc.NewChapterCre(comic.Id, chapterIndex, nil, currUid)
+		var firstChTitle *string
+		if args.FirstChapterTitle != "" {
+			firstChTitle = &args.FirstChapterTitle
+		}
+		chapterCre := a.chapterSvc.NewChapterCre(comic.Id, chapterIndex, firstChTitle, currUid)
 		chapter, err := prov.ChapterRepo().Create(chapterCre)
 		if err != nil {
 			return app_res.Reject[val.ComicCreatedRes](app_res.ServerError, "创建漫画失败"), err
@@ -322,15 +377,26 @@ func (a *comicAppImpl) GetById(cx context.Context, currUid string, args *val.Get
 	}
 
 	comicVal := asmComicVal(comic)
+	coverUrl, err := resolveComicCoverUrl(
+		comic,
+		a.ossSigner,
+		a.chapterRepo,
+		a.pageRepo,
+		lgr,
+	)
+	if err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
 
-	if comic.CoverUploaded && comic.CoverKey != nil && *comic.CoverKey != "" {
-		coverUrl, err := a.ossSigner.GenGetUrl(*comic.CoverKey)
-		if err != nil {
-			lgr.Error("[comicAppImpl.GetById] failed to generate comic cover url", zap.Error(err))
-		} else {
-			comicVal.CoverUrl = coverUrl
-		}
+		lgr.Error(
+			"[comicAppImpl.GetById] failed to resolve comic cover url",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[val.ComicVal](errCode, "获取漫画失败")
 	}
+
+	comicVal.CoverUrl = coverUrl
 
 	return app_res.Accept(&comicVal)
 }

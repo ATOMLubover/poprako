@@ -12,7 +12,12 @@ type ChapterRepo interface {
 	GetById(id string, inc ...enum.ChapterIncl) (*aggr.Chapter, RepoErr)
 
 	// `FindPinnedByComicId` retrieves pinned chapter of one comic.
+	// It will not fails if pinned chapter does not exist, returning nil in that case.
 	FindPinnedByComicId(comicId string, inc ...enum.ChapterIncl) (*aggr.Chapter, RepoErr)
+
+	// `FindPinnedByComics` retrieves pinned chapters of many comics.
+	// The returned slice has the same length and order as `comicIds`, with nil for not found.
+	FindPinnedByComics(comicIds []string) ([]*aggr.Chapter, RepoErr)
 
 	// `List` returns chapters matching query options.
 	List(opt *query.ListChapterOpt, inc ...enum.ChapterIncl) ([]*aggr.Chapter, RepoErr)

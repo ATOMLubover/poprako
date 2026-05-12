@@ -165,7 +165,7 @@ func main() {
 	)
 	comicApp := app_impl.NewComicLogApp(
 		app_impl.NewComicApp(
-			txnCtrl, memberRepo, worksetRepo, comicRepo,
+			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo,
 			ossClient,
 			comicSvc, chapterSvc, assignmentSvc,
 			evBus, errClsf,

@@ -61,6 +61,37 @@ func (r *chapterRepoImpl) FindPinnedByComicId(comicId string, inc ...enum.Chapte
 	return row.ToChapterAggr(), nil
 }
 
+// `FindPinnedByComics` retrieves pinned chapters for many comics.
+func (r *chapterRepoImpl) FindPinnedByComics(comicIds []string) ([]*aggr.Chapter, repo_iface.RepoErr) {
+	if len(comicIds) == 0 {
+		return nil, nil
+	}
+
+	var rows []entity.ChapterRow
+
+	err := r.gdb.
+		Table(entity.CHAPTER_TABLE).
+		Where("comic_id IN ? AND pinned = TRUE", comicIds).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	chapterByComicId := make(map[string]*aggr.Chapter, len(rows))
+	for i := range rows {
+		ch := rows[i].ToChapterAggr()
+
+		chapterByComicId[ch.ComicId] = ch
+	}
+
+	re := make([]*aggr.Chapter, len(comicIds))
+	for i := range comicIds {
+		re[i] = chapterByComicId[comicIds[i]]
+	}
+
+	return re, nil
+}
+
 // `List` lists chapters matching options.
 func (r *chapterRepoImpl) List(opt *query.ListChapterOpt, inc ...enum.ChapterIncl) ([]*aggr.Chapter, repo_iface.RepoErr) {
 	var rows []entity.ChapterRow

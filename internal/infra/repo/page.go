@@ -34,6 +34,39 @@ func (r *pageRepoImpl) GetById(id string) (*aggr.Page, repo_iface.RepoErr) {
 	return row.ToPageAggr(), nil
 }
 
+// `FindFirstPageByChapters` returns the first page for each chapter id.
+func (r *pageRepoImpl) FindFirstPageByChapters(chapterIds []string) ([]*aggr.Page, repo_iface.RepoErr) {
+	if len(chapterIds) == 0 {
+		return nil, nil
+	}
+
+	var rows []entity.PageRow
+
+	err := r.gdb.
+		Table(entity.PAGE_TABLE+" p").
+		Select("p.*").
+		Where("p.chapter_id IN ?", chapterIds).
+		Where("p.index = (SELECT MIN(p2.index) FROM "+entity.PAGE_TABLE+" p2 WHERE p2.chapter_id = p.chapter_id)").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	pageByChapterId := make(map[string]*aggr.Page, len(rows))
+	for i := range rows {
+		pg := rows[i].ToPageAggr()
+
+		pageByChapterId[pg.ChapterId] = pg
+	}
+
+	re := make([]*aggr.Page, len(chapterIds))
+	for i := range chapterIds {
+		re[i] = pageByChapterId[chapterIds[i]]
+	}
+
+	return re, nil
+}
+
 // `List` returns pages matching query options.
 func (r *pageRepoImpl) List(opt *query.ListPageOpt) ([]*aggr.Page, repo_iface.RepoErr) {
 	var rows []entity.PageRow
