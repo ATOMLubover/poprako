@@ -364,7 +364,9 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
+		pageRepo := prov.PageRepo()
 		assignmentRepo := prov.AssignmentRepo()
+		ossMsgRepo := prov.OssMsgRepo()
 
 		chapter, err := chapterRepo.GetById(args.Id)
 		if err != nil {
@@ -395,6 +397,7 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 
 		if args.WorkflowTransition != nil {
 			wasPublished := chapter.PublishedAt != nil
+			wasUploaded := chapter.UploadedAt != nil
 
 			if err := chapter.TransiteWorkflow(*args.WorkflowTransition); err != nil {
 				return app_res.Reject[app_res.None](app_res.BadRequest, "无效的工作流状态转换"), app_res.DefErr()
@@ -409,6 +412,39 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 				assignedUserIds := collectAssignedUserIds(assignments)
 
 				ev = append(ev, event.NewChapterPublishedEv(chapter.Id, assignedUserIds))
+			}
+
+			// Enqueue OSS delete messages for all page images when upload completes,
+			// then clear keys so the client cannot resolve stale signed URLs.
+			if !wasUploaded && chapter.UploadedAt != nil {
+				limit := chapter.PageCount
+				if limit <= 0 {
+					limit = 10000
+				}
+
+				pages, listErr := pageRepo.List(&query.ListPageOpt{
+					ChapterId: &chapter.Id,
+					Pagi:      query.PagiOpt{Limit: limit},
+				})
+				if listErr != nil {
+					return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), listErr
+				}
+
+				ossMsgSvc := svc.NewOssMsgSvc()
+
+				for i := range pages {
+					if pages[i].ImageKey == nil || *pages[i].ImageKey == "" {
+						continue
+					}
+
+					if err := ossMsgSvc.SavePendingDel(ossMsgRepo, enum.OssResPageImage, pages[i].Id, []string{*pages[i].ImageKey}); err != nil {
+						return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), err
+					}
+				}
+
+				if err := pageRepo.ClearImagesByChapterId(chapter.Id); err != nil {
+					return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), err
+				}
 			}
 		}
 

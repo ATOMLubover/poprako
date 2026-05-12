@@ -55,7 +55,10 @@ func (a *unitLogAppImpl) SaveByPage(cx context.Context, currUid string, args *va
 
 	lgr := app_util.TakeLgr(cx)
 	lgr = lgr.With(zap.String("curr_uid", currUid), zap.String("page_id", args.PageId))
+
 	cx = app_util.SaveLgr(cx, lgr)
+
+	lgr.Debug("[unitLogAppImpl.SaveByPage] Saving page units")
 
 	return a.inner.SaveByPage(cx, currUid, args)
 }

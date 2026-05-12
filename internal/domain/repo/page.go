@@ -34,4 +34,8 @@ type PageRepo interface {
 
 	// `DeleteByChapterId` hard-deletes all pages under one chapter.
 	DeleteByChapterId(chapterId string) RepoErr
+
+	// `ClearImagesByChapterId` nulls `image_key` and resets `image_uploaded` to false
+	// for all pages under one chapter, without deleting the page rows themselves.
+	ClearImagesByChapterId(chapterId string) RepoErr
 }

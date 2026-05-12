@@ -122,7 +122,7 @@ type SavePageUnitsArgs struct {
 // `SavePageUnitsRes` holds synchronized unit counts after save
 // `TotalUnitCount` is the total number of units on the page after applying the diff
 // `TranslatedUnitCount` is the number of units with non-empty `translated_text`
-// `ProofreadUnitCount` is the number of units with non-empty `proofread_text`
+// `ProofreadUnitCount` is the number of units marked as proofread
 type SavePageUnitsRes struct {
 	TotalUnitCount      int `json:"total_unit_count"`
 	TranslatedUnitCount int `json:"translated_unit_count"`

@@ -181,3 +181,16 @@ func (r *pageRepoImpl) SetUnitCounts(id string, total int, translated int, proof
 func (r *pageRepoImpl) DeleteByChapterId(chapterId string) repo_iface.RepoErr {
 	return r.gdb.Table(entity.PAGE_TABLE).Where("chapter_id = ?", chapterId).Delete(nil).Error
 }
+
+// `ClearImagesByChapterId` nulls `image_key` and resets `image_uploaded` to false
+// for all pages under one chapter without removing the page rows.
+func (r *pageRepoImpl) ClearImagesByChapterId(chapterId string) repo_iface.RepoErr {
+	return r.gdb.
+		Table(entity.PAGE_TABLE).
+		Where("chapter_id = ?", chapterId).
+		Updates(map[string]any{
+			"image_key":      nil,
+			"image_uploaded": false,
+			"updated_at":     time.Now(),
+		}).Error
+}

@@ -26,6 +26,27 @@ type Unit struct {
 	UpdatedAt time.Time
 }
 
+// `hasUnitText` reports whether one optional unit text field stores meaningful content.
+func hasUnitText(text *string) bool {
+	return text != nil && *text != ""
+}
+
+// `IsTranslated` reports whether the unit stores translated content.
+// Proofread text also counts because it is still translated text content.
+func (u *Unit) IsTranslated() bool {
+	return hasUnitText(u.TranslatedText) || hasUnitText(u.ProofreadText)
+}
+
+// `IsProofreaded` reports whether the unit has reached proofread state.
+func (u *Unit) IsProofreaded() bool {
+	return u.IsProofread
+}
+
+type UnitTranProfState struct {
+	Translated bool
+	Proofread  bool
+}
+
 type UnitDiff struct {
 	PageId    string
 	Ops       []UnitOp

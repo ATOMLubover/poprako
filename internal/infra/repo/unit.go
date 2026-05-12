@@ -83,8 +83,8 @@ func (r *unitRepoImpl) CountByPage(pageId string) (int, int, int, repo_iface.Rep
 	err := r.gdb.Raw(`
 		SELECT
 			COUNT(*) AS total,
-			COUNT(CASE WHEN translated_text IS NOT NULL THEN 1 END) AS translated,
-			COUNT(CASE WHEN proofread_text IS NOT NULL THEN 1 END) AS proofread
+			COUNT(CASE WHEN NULLIF(translated_text, '') IS NOT NULL THEN 1 END) AS translated,
+			COUNT(CASE WHEN is_proofread THEN 1 END) AS proofread
 		FROM t_unit
 		WHERE page_id = ?
 	`, pageId).Scan(&row).Error
