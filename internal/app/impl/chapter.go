@@ -7,6 +7,7 @@ import (
 	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
+	oss_iface "poprako-s/internal/domain/ext/oss"
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/event"
@@ -30,7 +31,9 @@ type chapterAppImpl struct {
 	worksetRepo    repo_iface.WorksetRepo
 	comicRepo      repo_iface.ComicRepo
 	chapterRepo    repo_iface.ChapterRepo
+	pageRepo       repo_iface.PageRepo
 	assignmentRepo repo_iface.AssignmentRepo
+	ossSigner      oss_iface.Signer
 
 	evBus event_iface.EvBus
 
@@ -44,9 +47,11 @@ func NewChapterApp(
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
 	chapterRepo repo_iface.ChapterRepo,
+	pageRepo repo_iface.PageRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
 	chapterSvc svc.ChapterSvc,
 	assignmentSvc svc.AssignmentSvc,
+	ossSigner oss_iface.Signer,
 	evBus event_iface.EvBus,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.ChapterApp {
@@ -55,7 +60,9 @@ func NewChapterApp(
 		worksetRepo == nil ||
 		comicRepo == nil ||
 		chapterRepo == nil ||
+		pageRepo == nil ||
 		assignmentRepo == nil ||
+		ossSigner == nil ||
 		evBus == nil ||
 		errClsf == nil {
 		zap.L().Panic(
@@ -65,7 +72,9 @@ func NewChapterApp(
 			zap.Bool("worksetRepo", worksetRepo == nil),
 			zap.Bool("comicRepo", comicRepo == nil),
 			zap.Bool("chapterRepo", chapterRepo == nil),
+			zap.Bool("pageRepo", pageRepo == nil),
 			zap.Bool("assignmentRepo", assignmentRepo == nil),
+			zap.Bool("ossSigner", ossSigner == nil),
 			zap.Bool("evBus", evBus == nil),
 			zap.Bool("errClsf", errClsf == nil),
 		)
@@ -79,7 +88,9 @@ func NewChapterApp(
 		worksetRepo:    worksetRepo,
 		comicRepo:      comicRepo,
 		chapterRepo:    chapterRepo,
+		pageRepo:       pageRepo,
 		assignmentRepo: assignmentRepo,
+		ossSigner:      ossSigner,
 		evBus:          evBus,
 		errClsf:        errClsf,
 	}
@@ -145,6 +156,23 @@ func (a *chapterAppImpl) List(cx context.Context, currUid string, args *val.List
 		chapterVals[i] = asmChapterVal(chapter)
 	}
 
+	if err := tryFillCoverForChapters(
+		chapterVals,
+		a.ossSigner,
+		memoizeComicCoverKeyGetter(mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr)),
+		lgr,
+	); err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
+
+		lgr.Error(
+			"[chapterAppImpl.List] failed to fill chapter comic covers",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[[]val.ChapterVal](errCode, "获取章节列表失败")
+	}
+
 	return app_res.Accept(&chapterVals)
 }
 
@@ -183,6 +211,22 @@ func (a *chapterAppImpl) GetById(cx context.Context, currUid string, args *val.G
 	}
 
 	chapterVal := asmChapterVal(chapter)
+	if err := tryFillCoverOnChapter(
+		&chapterVal,
+		a.ossSigner,
+		mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr),
+		lgr,
+	); err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
+
+		lgr.Error(
+			"[chapterAppImpl.GetById] failed to fill chapter comic cover",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[val.ChapterVal](errCode, "获取章节失败")
+	}
 
 	return app_res.Accept(&chapterVal)
 }
@@ -215,6 +259,22 @@ func (a *chapterAppImpl) GetPinned(cx context.Context, currUid string, comicId s
 	}
 
 	chapterVal := asmChapterVal(chapter)
+	if err := tryFillCoverOnChapter(
+		&chapterVal,
+		a.ossSigner,
+		mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr),
+		lgr,
+	); err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
+
+		lgr.Error(
+			"[chapterAppImpl.GetPinned] failed to fill chapter comic cover",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[val.ChapterVal](errCode, "获取置顶章节失败")
+	}
 
 	return app_res.Accept(&chapterVal)
 }
@@ -410,6 +470,14 @@ func (a *chapterAppImpl) Join(cx context.Context, currUid string, args val.JoinC
 			ev = append(ev, event.NewAssignmentCreatedEv(currUid, args.ChapterId))
 
 			assignmentVal := asmAssignmentVal(created)
+			if err := tryFillCoverOnAssignment(
+				&assignmentVal,
+				a.ossSigner,
+				mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr),
+				lgr,
+			); err != nil {
+				return app_res.Reject[val.AssignmentVal](mapComicFallbackErrCode(err, a.errClsf), "加入章节失败"), err
+			}
 
 			return app_res.Accept(&assignmentVal), nil
 		}
@@ -426,6 +494,14 @@ func (a *chapterAppImpl) Join(cx context.Context, currUid string, args val.JoinC
 		}
 
 		assignmentVal := asmAssignmentVal(updated)
+		if err := tryFillCoverOnAssignment(
+			&assignmentVal,
+			a.ossSigner,
+			mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr),
+			lgr,
+		); err != nil {
+			return app_res.Reject[val.AssignmentVal](mapComicFallbackErrCode(err, a.errClsf), "加入章节失败"), err
+		}
 
 		return app_res.Accept(&assignmentVal), nil
 	})

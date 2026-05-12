@@ -17,6 +17,7 @@ type ComicVal struct {
 	Author        string  `json:"author"`
 	Desc          *string `json:"description,omitempty"`
 	IsCompleted   bool    `json:"is_completed"`
+	CoverKey      *string `json:"-"`
 	CoverUrl      string  `json:"cover_url"`
 	CoverUploaded bool    `json:"cover_uploaded"`
 

@@ -46,7 +46,7 @@ func (r *pageRepoImpl) FindFirstPageByChapters(chapterIds []string) ([]*aggr.Pag
 		Table(entity.PAGE_TABLE+" p").
 		Select("p.*").
 		Where("p.chapter_id IN ?", chapterIds).
-		Where("p.index = (SELECT MIN(p2.index) FROM "+entity.PAGE_TABLE+" p2 WHERE p2.chapter_id = p.chapter_id)").
+		Where("p.index = (SELECT MIN(p2.index) FROM " + entity.PAGE_TABLE + " p2 WHERE p2.chapter_id = p.chapter_id)").
 		Find(&rows).Error
 	if err != nil {
 		return nil, err

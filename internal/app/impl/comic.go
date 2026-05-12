@@ -162,25 +162,15 @@ func (a *comicAppImpl) List(cx context.Context, currUid string, args *val.ListCo
 	for i, comic := range comics {
 		comicVals[i] = asmComicVal(comic)
 
-		if comic.CoverUploaded && comic.CoverKey != nil && *comic.CoverKey != "" {
-			coverUrl, err := a.ossSigner.GenGetUrl(*comic.CoverKey)
-			if err != nil {
-				lgr.Error("[comicAppImpl.List] failed to generate comic cover url", zap.String("comicId", comic.Id), zap.Error(err))
-			} else {
-				comicVals[i].CoverUrl = coverUrl
-			}
-
-			continue
+		if !comic.CoverUploaded {
+			coverFallbackComicIds = append(coverFallbackComicIds, comic.Id)
 		}
-
-		coverFallbackComicIds = append(coverFallbackComicIds, comic.Id)
 	}
 
-	coverFallbackUrls, err := resolveComicFallbackCoverUrls(
+	coverFallbackKeys, err := loadPinnedFirstPageImageKeys(
 		coverFallbackComicIds,
 		a.chapterRepo,
 		a.pageRepo,
-		a.ossSigner,
 		lgr,
 	)
 	if err != nil {
@@ -195,12 +185,21 @@ func (a *comicAppImpl) List(cx context.Context, currUid string, args *val.ListCo
 		return app_res.Reject[[]val.ComicVal](errCode, "获取漫画列表失败")
 	}
 
-	for i, comic := range comics {
-		if comicVals[i].CoverUrl != "" {
-			continue
-		}
+	if err := tryFillCoverForComics(
+		comicVals,
+		a.ossSigner,
+		mkComicCoverKeyGetterFromMap(coverFallbackKeys),
+		lgr,
+	); err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
 
-		comicVals[i].CoverUrl = coverFallbackUrls[comic.Id]
+		lgr.Error(
+			"[comicAppImpl.List] failed to fill comic covers",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[[]val.ComicVal](errCode, "获取漫画列表失败")
 	}
 
 	return app_res.Accept(&comicVals)
@@ -377,26 +376,22 @@ func (a *comicAppImpl) GetById(cx context.Context, currUid string, args *val.Get
 	}
 
 	comicVal := asmComicVal(comic)
-	coverUrl, err := resolveComicCoverUrl(
-		comic,
+	if err := tryFillCoverOnComic(
+		&comicVal,
 		a.ossSigner,
-		a.chapterRepo,
-		a.pageRepo,
+		mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr),
 		lgr,
-	)
-	if err != nil {
+	); err != nil {
 		errCode := mapComicFallbackErrCode(err, a.errClsf)
 
 		lgr.Error(
-			"[comicAppImpl.GetById] failed to resolve comic cover url",
+			"[comicAppImpl.GetById] failed to fill comic cover",
 			zap.Error(err),
 			zap.Int("errCode", int(errCode)),
 		)
 
 		return app_res.Reject[val.ComicVal](errCode, "获取漫画失败")
 	}
-
-	comicVal.CoverUrl = coverUrl
 
 	return app_res.Accept(&comicVal)
 }

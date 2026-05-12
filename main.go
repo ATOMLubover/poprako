@@ -173,8 +173,9 @@ func main() {
 	)
 	chapterApp := app_impl.NewChapterLogApp(
 		app_impl.NewChapterApp(
-			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
+			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo,
 			chapterSvc, assignmentSvc,
+			ossClient,
 			evBus, errClsf,
 		),
 	)
@@ -211,8 +212,9 @@ func main() {
 	)
 	assignmentApp := app_impl.NewAssignmentLogApp(
 		app_impl.NewAssignmentApp(
-			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, assignmentRepo,
+			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo,
 			assignmentSvc,
+			ossClient,
 			evBus, errClsf,
 		),
 	)

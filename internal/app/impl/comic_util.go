@@ -14,6 +14,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// `comicCoverKeyGetter` resolves fallback image key for one comic id.
+type comicCoverKeyGetter func(comicId string) (*string, repo_iface.RepoErr)
+
 // `asmComicVal` converts a `Comic` aggregate to app-facing `ComicVal`
 func asmComicVal(comic *aggr.Comic) val.ComicVal {
 	var worksetVal *val.WorksetVal
@@ -47,6 +50,7 @@ func asmComicVal(comic *aggr.Comic) val.ComicVal {
 		Author:        comic.Author,
 		Desc:          comic.Desc,
 		IsCompleted:   comic.IsCompleted,
+		CoverKey:      comic.CoverKey,
 		CoverUploaded: comic.CoverUploaded,
 		ChapterCount:  comic.ChapterCount,
 		CreatorId:     comic.CreatorId,
@@ -57,78 +61,144 @@ func asmComicVal(comic *aggr.Comic) val.ComicVal {
 	}
 }
 
-// `resolveComicCoverUrl` resolves one cover url with comic-cover and pinned-page fallback.
-func resolveComicCoverUrl(
-	comic *aggr.Comic,
+// `tryFillCoverOnComic` fills one `ComicVal` cover url in place.
+func tryFillCoverOnComic(
+	comicVal *val.ComicVal,
 	signer oss_iface.Signer,
-	chapterRepo repo_iface.ChapterRepo,
-	pageRepo repo_iface.PageRepo,
+	getFallbackKey comicCoverKeyGetter,
 	lgr *zap.Logger,
-) (string, repo_iface.RepoErr) {
-	// Prefer the uploaded comic cover key when available.
-	if comic.CoverUploaded && comic.CoverKey != nil && *comic.CoverKey != "" {
-		coverUrl, err := signer.GenGetUrl(*comic.CoverKey)
-		if err != nil {
-			lgr.Error("[resolveComicCoverUrl] failed to generate comic cover url", zap.String("comicId", comic.Id), zap.Error(err))
+) repo_iface.RepoErr {
+	if comicVal == nil {
+		return nil
+	}
 
-			return "", nil
+	// Prefer the uploaded comic cover key when available.
+	if comicVal.CoverUploaded && comicVal.CoverKey != nil && *comicVal.CoverKey != "" {
+		coverUrl, err := signer.GenGetUrl(*comicVal.CoverKey)
+		if err != nil {
+			lgr.Error("[tryFillCoverOnComic] failed to generate comic cover url", zap.String("comicId", comicVal.Id), zap.Error(err))
+
+			return nil
 		}
 
-		return coverUrl, nil
+		comicVal.CoverUrl = coverUrl
+
+		return nil
 	}
 
-	// Find pinned chapter for fallback source.
-	pinnedChapter, err := chapterRepo.FindPinnedByComicId(comic.Id)
+	if comicVal.CoverUploaded || getFallbackKey == nil {
+		return nil
+	}
+
+	// Resolve fallback image key only when comic cover is not uploaded.
+	imageKey, err := getFallbackKey(comicVal.Id)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	if pinnedChapter == nil {
-		lgr.Warn("[resolveComicCoverUrl] pinned chapter not found", zap.String("comicId", comic.Id))
-
-		return "", nil
+	if imageKey == nil || *imageKey == "" {
+		return nil
 	}
 
-	// Read the first page under pinned chapter as fallback candidate.
-	firstPages, err := pageRepo.FindFirstPageByChapters([]string{pinnedChapter.Id})
+	// Generate get url for fallback image key.
+	coverUrl, err := signer.GenGetUrl(*imageKey)
 	if err != nil {
-		return "", err
+		lgr.Error("[tryFillCoverOnComic] failed to generate fallback page image url", zap.String("comicId", comicVal.Id), zap.Error(err))
+
+		return nil
 	}
 
-	if len(firstPages) == 0 || firstPages[0] == nil {
-		lgr.Warn("[resolveComicCoverUrl] pinned chapter has no pages", zap.String("chapterId", pinnedChapter.Id))
+	comicVal.CoverUrl = coverUrl
+	comicVal.CoverUploaded = true
 
-		return "", nil
-	}
-
-	firstPage := firstPages[0]
-	if !firstPage.ImageUploaded || firstPage.ImageKey == nil || *firstPage.ImageKey == "" {
-		lgr.Warn("[resolveComicCoverUrl] pinned first page image not uploaded", zap.String("pageId", firstPage.Id))
-
-		return "", nil
-	}
-
-	// Generate get url for pinned first page image.
-	coverUrl, err := signer.GenGetUrl(*firstPage.ImageKey)
-	if err != nil {
-		lgr.Error("[resolveComicCoverUrl] failed to generate fallback page image url", zap.String("pageId", firstPage.Id), zap.Error(err))
-
-		return "", nil
-	}
-
-	return coverUrl, nil
+	return nil
 }
 
-// `resolveComicFallbackCoverUrls` resolves fallback urls for many comics by batch queries.
-func resolveComicFallbackCoverUrls(
+// `tryFillCoverForComics` fills many `ComicVal` cover urls in place.
+func tryFillCoverForComics(
+	comicVals []val.ComicVal,
+	signer oss_iface.Signer,
+	getFallbackKey comicCoverKeyGetter,
+	lgr *zap.Logger,
+) repo_iface.RepoErr {
+	for i := range comicVals {
+		if err := tryFillCoverOnComic(&comicVals[i], signer, getFallbackKey, lgr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// `tryFillCoverOnChapter` fills nested `ComicVal` cover for one `ChapterVal`.
+func tryFillCoverOnChapter(
+	chapterVal *val.ChapterVal,
+	signer oss_iface.Signer,
+	getFallbackKey comicCoverKeyGetter,
+	lgr *zap.Logger,
+) repo_iface.RepoErr {
+	if chapterVal == nil || chapterVal.Comic == nil {
+		return nil
+	}
+
+	return tryFillCoverOnComic(chapterVal.Comic, signer, getFallbackKey, lgr)
+}
+
+// `tryFillCoverForChapters` fills nested `ComicVal` cover for many `ChapterVal`.
+func tryFillCoverForChapters(
+	chapterVals []val.ChapterVal,
+	signer oss_iface.Signer,
+	getFallbackKey comicCoverKeyGetter,
+	lgr *zap.Logger,
+) repo_iface.RepoErr {
+	for i := range chapterVals {
+		if err := tryFillCoverOnChapter(&chapterVals[i], signer, getFallbackKey, lgr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// `tryFillCoverOnAssignment` fills nested `ComicVal` cover for one `AssignmentVal`.
+func tryFillCoverOnAssignment(
+	assignmentVal *val.AssignmentVal,
+	signer oss_iface.Signer,
+	getFallbackKey comicCoverKeyGetter,
+	lgr *zap.Logger,
+) repo_iface.RepoErr {
+	if assignmentVal == nil || assignmentVal.Chapter == nil {
+		return nil
+	}
+
+	return tryFillCoverOnChapter(assignmentVal.Chapter, signer, getFallbackKey, lgr)
+}
+
+// `tryFillCoverForAssignments` fills nested `ComicVal` cover for many `AssignmentVal`.
+func tryFillCoverForAssignments(
+	assignmentVals []val.AssignmentVal,
+	signer oss_iface.Signer,
+	getFallbackKey comicCoverKeyGetter,
+	lgr *zap.Logger,
+) repo_iface.RepoErr {
+	for i := range assignmentVals {
+		if err := tryFillCoverOnAssignment(&assignmentVals[i], signer, getFallbackKey, lgr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// `loadPinnedFirstPageImageKeys` batch-loads fallback image keys for many comics.
+func loadPinnedFirstPageImageKeys(
 	comicIds []string,
 	chapterRepo repo_iface.ChapterRepo,
 	pageRepo repo_iface.PageRepo,
-	signer oss_iface.Signer,
 	lgr *zap.Logger,
-) (map[string]string, repo_iface.RepoErr) {
+) (map[string]*string, repo_iface.RepoErr) {
 	if len(comicIds) == 0 {
-		return map[string]string{}, nil
+		return map[string]*string{}, nil
 	}
 
 	// Batch load pinned chapters aligned to `comicIds`.
@@ -141,7 +211,7 @@ func resolveComicFallbackCoverUrls(
 	chapterByComicId := make(map[string]*aggr.Chapter, len(pinnedChapters))
 	for i := range pinnedChapters {
 		if pinnedChapters[i] == nil {
-			lgr.Warn("[resolveComicFallbackCoverUrls] pinned chapter not found", zap.String("comicId", comicIds[i]))
+			lgr.Warn("[loadPinnedFirstPageImageKeys] pinned chapter not found", zap.String("comicId", comicIds[i]))
 
 			continue
 		}
@@ -151,7 +221,7 @@ func resolveComicFallbackCoverUrls(
 	}
 
 	if len(chapterIds) == 0 {
-		return map[string]string{}, nil
+		return map[string]*string{}, nil
 	}
 
 	// Batch load first pages aligned to `chapterIds`.
@@ -165,7 +235,7 @@ func resolveComicFallbackCoverUrls(
 		pageByChapterId[chapterIds[i]] = firstPages[i]
 	}
 
-	coverUrls := make(map[string]string, len(comicIds))
+	imageKeys := make(map[string]*string, len(comicIds))
 	for i := range comicIds {
 		pinnedChapter := chapterByComicId[comicIds[i]]
 		if pinnedChapter == nil {
@@ -174,28 +244,92 @@ func resolveComicFallbackCoverUrls(
 
 		firstPage := pageByChapterId[pinnedChapter.Id]
 		if firstPage == nil {
-			lgr.Warn("[resolveComicFallbackCoverUrls] pinned chapter has no pages", zap.String("chapterId", pinnedChapter.Id))
+			lgr.Warn("[loadPinnedFirstPageImageKeys] pinned chapter has no pages", zap.String("chapterId", pinnedChapter.Id))
 
 			continue
 		}
 
 		if !firstPage.ImageUploaded || firstPage.ImageKey == nil || *firstPage.ImageKey == "" {
-			lgr.Warn("[resolveComicFallbackCoverUrls] pinned first page image not uploaded", zap.String("pageId", firstPage.Id))
+			lgr.Warn("[loadPinnedFirstPageImageKeys] pinned first page image not uploaded", zap.String("pageId", firstPage.Id))
 
 			continue
 		}
 
-		coverUrl, err := signer.GenGetUrl(*firstPage.ImageKey)
-		if err != nil {
-			lgr.Error("[resolveComicFallbackCoverUrls] failed to generate fallback page image url", zap.String("pageId", firstPage.Id), zap.Error(err))
-
-			continue
-		}
-
-		coverUrls[comicIds[i]] = coverUrl
+		imageKeys[comicIds[i]] = firstPage.ImageKey
 	}
 
-	return coverUrls, nil
+	return imageKeys, nil
+}
+
+// `mkComicCoverKeyGetterFromMap` creates fallback-key getter from preloaded keys.
+func mkComicCoverKeyGetterFromMap(imageKeys map[string]*string) comicCoverKeyGetter {
+	return func(comicId string) (*string, repo_iface.RepoErr) {
+		return imageKeys[comicId], nil
+	}
+}
+
+// `mkPinnedFirstPageImageKeyGetter` creates lazy fallback-key getter by comic id.
+func mkPinnedFirstPageImageKeyGetter(
+	chapterRepo repo_iface.ChapterRepo,
+	pageRepo repo_iface.PageRepo,
+	lgr *zap.Logger,
+) comicCoverKeyGetter {
+	return func(comicId string) (*string, repo_iface.RepoErr) {
+		// Find pinned chapter for fallback source.
+		pinnedChapter, err := chapterRepo.FindPinnedByComicId(comicId)
+		if err != nil {
+			return nil, err
+		}
+
+		if pinnedChapter == nil {
+			lgr.Warn("[mkPinnedFirstPageImageKeyGetter] pinned chapter not found", zap.String("comicId", comicId))
+
+			return nil, nil
+		}
+
+		// Read the first page under pinned chapter as fallback candidate.
+		firstPages, err := pageRepo.FindFirstPageByChapters([]string{pinnedChapter.Id})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(firstPages) == 0 || firstPages[0] == nil {
+			lgr.Warn("[mkPinnedFirstPageImageKeyGetter] pinned chapter has no pages", zap.String("chapterId", pinnedChapter.Id))
+
+			return nil, nil
+		}
+
+		firstPage := firstPages[0]
+		if !firstPage.ImageUploaded || firstPage.ImageKey == nil || *firstPage.ImageKey == "" {
+			lgr.Warn("[mkPinnedFirstPageImageKeyGetter] pinned first page image not uploaded", zap.String("pageId", firstPage.Id))
+
+			return nil, nil
+		}
+
+		return firstPage.ImageKey, nil
+	}
+}
+
+// `memoizeComicCoverKeyGetter` caches fallback-key lookups by comic id per request.
+func memoizeComicCoverKeyGetter(getter comicCoverKeyGetter) comicCoverKeyGetter {
+	cache := map[string]*string{}
+	loaded := map[string]bool{}
+
+	return func(comicId string) (*string, repo_iface.RepoErr) {
+		if loaded[comicId] {
+			return cache[comicId], nil
+		}
+
+		imageKey, err := getter(comicId)
+		if err != nil {
+			return nil, err
+		}
+
+		cache[comicId] = imageKey
+		loaded[comicId] = true
+
+		return imageKey, nil
+	}
 }
 
 // `mapComicFallbackErrCode` maps fallback-query repo errors to app-level error code.

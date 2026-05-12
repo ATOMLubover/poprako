@@ -7,6 +7,7 @@ import (
 	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
+	oss_iface "poprako-s/internal/domain/ext/oss"
 	"poprako-s/internal/domain/model/event"
 	repo_iface "poprako-s/internal/domain/repo"
 	"poprako-s/internal/domain/svc"
@@ -26,7 +27,9 @@ type assignmentAppImpl struct {
 	worksetRepo    repo_iface.WorksetRepo
 	comicRepo      repo_iface.ComicRepo
 	chapterRepo    repo_iface.ChapterRepo
+	pageRepo       repo_iface.PageRepo
 	assignmentRepo repo_iface.AssignmentRepo
+	ossSigner      oss_iface.Signer
 
 	evBus event_iface.EvBus
 
@@ -40,12 +43,14 @@ func NewAssignmentApp(
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
 	chapterRepo repo_iface.ChapterRepo,
+	pageRepo repo_iface.PageRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
 	assignmentSvc svc.AssignmentSvc,
+	ossSigner oss_iface.Signer,
 	evBus event_iface.EvBus,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.AssignmentApp {
-	if txnCtrl == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || assignmentRepo == nil || evBus == nil || errClsf == nil {
+	if txnCtrl == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || pageRepo == nil || assignmentRepo == nil || ossSigner == nil || evBus == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewAssignmentApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
@@ -53,7 +58,9 @@ func NewAssignmentApp(
 			zap.Bool("worksetRepo", worksetRepo == nil),
 			zap.Bool("comicRepo", comicRepo == nil),
 			zap.Bool("chapterRepo", chapterRepo == nil),
+			zap.Bool("pageRepo", pageRepo == nil),
 			zap.Bool("assignmentRepo", assignmentRepo == nil),
+			zap.Bool("ossSigner", ossSigner == nil),
 			zap.Bool("evBus", evBus == nil),
 			zap.Bool("errClsf", errClsf == nil),
 		)
@@ -66,7 +73,9 @@ func NewAssignmentApp(
 		worksetRepo:    worksetRepo,
 		comicRepo:      comicRepo,
 		chapterRepo:    chapterRepo,
+		pageRepo:       pageRepo,
 		assignmentRepo: assignmentRepo,
+		ossSigner:      ossSigner,
 		evBus:          evBus,
 		errClsf:        errClsf,
 	}
@@ -111,6 +120,23 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 		assignmentVals[i] = asmAssignmentVal(item)
 	}
 
+	if err := tryFillCoverForAssignments(
+		assignmentVals,
+		a.ossSigner,
+		memoizeComicCoverKeyGetter(mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr)),
+		lgr,
+	); err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
+
+		lgr.Error(
+			"[assignmentAppImpl.ListByChapter] failed to fill assignment comic covers",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[[]val.AssignmentVal](errCode, "获取分配列表失败")
+	}
+
 	return app_res.Accept(&assignmentVals)
 }
 
@@ -137,6 +163,23 @@ func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args 
 	assignmentVals := make([]val.AssignmentVal, len(items))
 	for i, item := range items {
 		assignmentVals[i] = asmAssignmentVal(item)
+	}
+
+	if err := tryFillCoverForAssignments(
+		assignmentVals,
+		a.ossSigner,
+		memoizeComicCoverKeyGetter(mkPinnedFirstPageImageKeyGetter(a.chapterRepo, a.pageRepo, lgr)),
+		lgr,
+	); err != nil {
+		errCode := mapComicFallbackErrCode(err, a.errClsf)
+
+		lgr.Error(
+			"[assignmentAppImpl.ListByUser] failed to fill assignment comic covers",
+			zap.Error(err),
+			zap.Int("errCode", int(errCode)),
+		)
+
+		return app_res.Reject[[]val.AssignmentVal](errCode, "获取分配列表失败")
 	}
 
 	return app_res.Accept(&assignmentVals)
