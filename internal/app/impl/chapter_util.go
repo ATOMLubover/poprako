@@ -184,24 +184,36 @@ func isWorkflowTransitionValid(t enum.WorkflowTransition) bool {
 // `mkChapterUpd` builds chapter update payload from args and chapter state.
 func mkChapterUpd(args *val.ChapterUpdArgs, ch *aggr.Chapter) *aggr.ChapterUpd {
 	upd := &aggr.ChapterUpd{
-		Id:       args.Id,
-		Subtitle: args.Subtitle,
-		IsPinned: args.IsPinned,
+		Id:                 args.Id,
+		Subtitle:           args.Subtitle,
+		IsPinned:           args.IsPinned,
+		WorkflowTransition: args.WorkflowTransition,
 	}
 
 	if args.WorkflowTransition == nil {
 		return upd
 	}
 
-	upd.UploadedAt = toTimePtrPtr(ch.UploadedAt)
-	upd.TransalatingAt = toTimePtrPtr(ch.TransalatingAt)
-	upd.TranslatedAt = toTimePtrPtr(ch.TranslatedAt)
-	upd.ProofreadingAt = toTimePtrPtr(ch.ProofreadingAt)
-	upd.ProofreadAt = toTimePtrPtr(ch.ProofreadAt)
-	upd.TypesettingAt = toTimePtrPtr(ch.TypesettingAt)
-	upd.TypesetAt = toTimePtrPtr(ch.TypesetAt)
-	upd.ReviewedAt = toTimePtrPtr(ch.ReviewedAt)
-	upd.PublishedAt = toTimePtrPtr(ch.PublishedAt)
+	switch *args.WorkflowTransition {
+	case enum.WorkflowUploadComplete:
+		upd.UploadedAt = toTimePtrPtr(ch.UploadedAt)
+	case enum.WorkflowTranslateStart:
+		upd.TransalatingAt = toTimePtrPtr(ch.TransalatingAt)
+	case enum.WorkflowTranslateComplete:
+		upd.TranslatedAt = toTimePtrPtr(ch.TranslatedAt)
+	case enum.WorkflowProofreadStart:
+		upd.ProofreadingAt = toTimePtrPtr(ch.ProofreadingAt)
+	case enum.WorkflowProofreadComplete:
+		upd.ProofreadAt = toTimePtrPtr(ch.ProofreadAt)
+	case enum.WorkflowTypesetStart:
+		upd.TypesettingAt = toTimePtrPtr(ch.TypesettingAt)
+	case enum.WorkflowTypesetComplete:
+		upd.TypesetAt = toTimePtrPtr(ch.TypesetAt)
+	case enum.WorkflowReviewComplete:
+		upd.ReviewedAt = toTimePtrPtr(ch.ReviewedAt)
+	case enum.WorkflowPublishComplete:
+		upd.PublishedAt = toTimePtrPtr(ch.PublishedAt)
+	}
 
 	return upd
 }

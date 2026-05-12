@@ -19,6 +19,8 @@ const (
 	pgErrDeadlock    = "40P01"
 )
 
+var errConditionalUpdateFailed = errors.New("conditional update failed")
+
 // `IsDupKey` reports whether `err` is a duplicate-key conflict.
 func IsDupKey(err repo_iface.RepoErr) bool {
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -48,6 +50,11 @@ func IsConflict(err repo_iface.RepoErr) bool {
 	}
 
 	return false
+}
+
+// `IsConditionalUpdateFailed` reports whether a guarded update precondition was not met.
+func IsConditionalUpdateFailed(err repo_iface.RepoErr) bool {
+	return errors.Is(err, errConditionalUpdateFailed)
 }
 
 // `IsCanceled` reports whether `err` is caused by explicit cancellation.

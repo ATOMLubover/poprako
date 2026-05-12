@@ -229,6 +229,8 @@ type ChapterUpd struct {
 	Subtitle *string
 	// `IsPinned` optionally updates pinned status.
 	IsPinned *bool
+	// `WorkflowTransition` identifies the workflow transition driving this update.
+	WorkflowTransition *enum.WorkflowTransition
 
 	// `UploadedAt` is the upload completion timestamp update.
 	UploadedAt **time.Time

@@ -257,11 +257,43 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 
 	selectCols = append(selectCols, "updated_at")
 
-	return r.gdb.
+	q := r.gdb.
 		Table(entity.CHAPTER_TABLE).
-		Where("id = ?", upd.Id).
-		Select(selectCols).
-		Updates(updRow).Error
+		Where("id = ?", upd.Id)
+
+	if upd.WorkflowTransition != nil {
+		switch *upd.WorkflowTransition {
+		case enum.WorkflowUploadComplete:
+			q = q.Where("uploaded_at IS NULL")
+		case enum.WorkflowTranslateStart:
+			q = q.Where("transalating_at IS NULL").Where("translated_at IS NULL")
+		case enum.WorkflowTranslateComplete:
+			q = q.Where("transalating_at IS NOT NULL").Where("translated_at IS NULL")
+		case enum.WorkflowProofreadStart:
+			q = q.Where("proofreading_at IS NULL").Where("proofread_at IS NULL")
+		case enum.WorkflowProofreadComplete:
+			q = q.Where("proofreading_at IS NOT NULL").Where("proofread_at IS NULL")
+		case enum.WorkflowTypesetStart:
+			q = q.Where("typesetting_at IS NULL").Where("typeset_at IS NULL")
+		case enum.WorkflowTypesetComplete:
+			q = q.Where("typesetting_at IS NOT NULL").Where("typeset_at IS NULL")
+		case enum.WorkflowReviewComplete:
+			q = q.Where("reviewed_at IS NULL")
+		case enum.WorkflowPublishComplete:
+			q = q.Where("published_at IS NULL")
+		}
+	}
+
+	tx := q.Select(selectCols).Updates(updRow)
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	if upd.WorkflowTransition != nil && tx.RowsAffected == 0 {
+		return errConditionalUpdateFailed
+	}
+
+	return nil
 }
 
 // `SetPageCount` overwrites the page count of one chapter.
