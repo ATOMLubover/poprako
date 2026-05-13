@@ -3,6 +3,7 @@ package app_impl
 import (
 	"context"
 	"fmt"
+	"time"
 
 	app_iface "poprako-s/internal/app"
 	app_res "poprako-s/internal/app/res"
@@ -108,8 +109,6 @@ func (a *userAppImpl) Login(cx context.Context, args *val.UserLoginArgs) app_res
 		)
 		return app_res.Reject[val.UserLoginRes](app_res.BadRequest, "用户不存在或密码错误")
 	}
-
-	a.evBus.Pub(context.Background(), creds.PullEv())
 
 	tk, err := a.tknParser.GenToken(&aggr.UserToken{
 		UserId: creds.Id,
@@ -378,6 +377,21 @@ func (a *userAppImpl) MarkAvatarUploaded(cx context.Context, uid string) app_res
 		)
 
 		return re
+	}
+
+	return app_res.Accept(&app_res.None{})
+}
+
+func (a *userAppImpl) TouchLastActive(cx context.Context, id string) app_res.AppRes[app_res.None] {
+	lgr := app_util.TakeLgr(cx)
+
+	if err := a.userRepo.Refresh(id, time.Now()); err != nil {
+		lgr.Error(
+			"[userAppImpl.TouchLastActive] failed to refresh user last active time",
+			zap.String("user_id", id),
+			zap.Error(err),
+		)
+		return app_res.Reject[app_res.None](app_res.ServerError, "更新用户活跃时间失败")
 	}
 
 	return app_res.Accept(&app_res.None{})

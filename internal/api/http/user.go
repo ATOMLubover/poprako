@@ -67,6 +67,8 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 			return
 		}
 
+		userApp.TouchLastActive(newReqCx(cx), uid)
+
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }

@@ -20,6 +20,7 @@ type UserApp interface {
 
 	ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes]
 	MarkAvatarUploaded(cx context.Context, currUid string) app_res.AppRes[app_res.None]
+	TouchLastActive(cx context.Context, id string) app_res.AppRes[app_res.None]
 
 	// Delete(cx context.Context, id string) app_res.AppRes[app_res.None]
 }

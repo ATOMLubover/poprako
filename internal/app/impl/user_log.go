@@ -152,6 +152,24 @@ func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatar
 	return a.inner.ResvAvatar(cx, args)
 }
 
+// `TouchLastActive` enriches logger context and forwards the call.
+func (a *userLogAppImpl) TouchLastActive(cx context.Context, id string) app_res.AppRes[app_res.None] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	lgr := app_util.TakeLgr(cx)
+	if lgr == nil {
+		lgr = zap.L()
+	}
+
+	lgr = lgr.With(zap.String("id", id))
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.TouchLastActive(cx, id)
+}
+
 // `MarkAvatarUploaded` enriches logger context and forwards the call.
 func (a *userLogAppImpl) MarkAvatarUploaded(cx context.Context, currUid string) app_res.AppRes[app_res.None] {
 	// Ensure `cx` is always non-nil for downstream calls.

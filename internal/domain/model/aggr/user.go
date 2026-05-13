@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"poprako-s/internal/domain/model/event"
 	event_iface "poprako-s/internal/event"
 
 	"golang.org/x/crypto/bcrypt"
@@ -49,25 +48,18 @@ func (u *User) GenAvatarKey(ext string) string {
 
 // `UserCreds` holds the minimal credential data needed for password-based authentication
 type UserCreds struct {
-	// Embedded for domain events:
-	// - UserLoginEv: update LastActiveAt
-	event_iface.EvBase
-
 	Id      string
 	PwdHash string
 }
 
-// `VfyPwd` verifies the raw password against the stored hash and emits a login event on success
+// `VfyPwd` verifies the raw password against the stored hash
 func (c *UserCreds) VfyPwd(pwd string) error {
-	// Compare password hash and raw password.
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(c.PwdHash),
 		[]byte(pwd),
 	); err != nil {
 		return fmt.Errorf("[UserCreds.VfyPwd] unmatched password: %w", err)
 	}
-
-	c.PushEv(event.NewUserLoginEv(c.Id))
 
 	return nil
 }

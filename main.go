@@ -109,7 +109,6 @@ func main() {
 	defer evBus.Close()
 
 	evBus.Sub(event_infra.NewNotifyInvitorHandler(teamRepo, sysMailRepo))
-	evBus.Sub(event_infra.NewUpdateUserActiveHandler(userRepo))
 
 	evBus.Run()
 

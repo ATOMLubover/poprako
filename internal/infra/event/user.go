@@ -3,7 +3,6 @@ package event_infra
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/event"
@@ -13,42 +12,6 @@ import (
 
 	"go.uber.org/zap"
 )
-
-type UpdateUserActiveHandler struct {
-	userRepo repo_iface.UserRepo
-}
-
-func NewUpdateUserActiveHandler(userRepo repo_iface.UserRepo) *UpdateUserActiveHandler {
-	return &UpdateUserActiveHandler{userRepo: userRepo}
-}
-
-func (h *UpdateUserActiveHandler) EvTyp() event_iface.EvTyp {
-	return event.EvUserLogin
-}
-
-func (h *UpdateUserActiveHandler) Handle(_ context.Context, ev event_iface.Event) {
-	payload, ok := ev.Payload().(*event.UserLoginEv)
-	if !ok || payload == nil {
-		zap.L().Error(
-			"[UpdateUserActiveHandler.Handle] invalid event payload for UpdateUserActiveHandler",
-			zap.Any("payload", ev.Payload()),
-		)
-
-		return
-	}
-
-	now := time.Now()
-
-	if err := h.userRepo.Refresh(payload.UserId, now); err != nil {
-		zap.L().Error(
-			"[UpdateUserActiveHandler.Handle] failed to update user active time",
-			zap.String("user_id", payload.UserId),
-			zap.Error(err),
-		)
-
-		return
-	}
-}
 
 type NotifyInvitorHandler struct {
 	teamRepo    repo_iface.TeamRepo
@@ -94,7 +57,7 @@ func (h *NotifyInvitorHandler) Handle(_ context.Context, ev event_iface.Event) {
 	}
 
 	cont := fmt.Sprintf(
-		"你的邀请码已被使用，<%s> 已加入汉化组 <%s>",
+		"你的邀请码已被使用，「%s」已加入汉化组「%s」",
 		payload.InviteeQid,
 		team.Name,
 	)
