@@ -96,7 +96,7 @@ Each phase has `<phase>_at` (completed) and/or `<phase>ing_at` (started) columns
 
 ### 2. Comic Replica Fields (`pinned_*`)
 
-- `comic_table` mirrors the pinned chapter's workflow timestamps as `pinned_uploaded_at`, `pinned_transalating_at`, `pinned_translated_at`, etc. (10 columns total, plus `has_pinned_chapter` bool).
+- `comic_table` mirrors the pinned chapter's workflow timestamps as `pinned_uploaded_at`, `pinned_translating_at`, `pinned_translated_at`, etc. (10 columns total, plus `has_pinned_chapter` bool).
 - These are **read-only for query filtering** inside `ComicRepo.List / Count`.
 - They are **written only by event handlers** (`ChapterPublishedHandler`, etc.) — **never inside repo Create/Update directly**.
 

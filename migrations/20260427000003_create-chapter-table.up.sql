@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS "t_chapter" (
     "proofread_unit_count"  INTEGER     NOT NULL DEFAULT 0,
 
     "uploaded_at"           TIMESTAMPTZ,
-    "transalating_at"       TIMESTAMPTZ,
+    "translating_at"       TIMESTAMPTZ,
     "translated_at"         TIMESTAMPTZ,
     "proofreading_at"       TIMESTAMPTZ,
     "proofread_at"          TIMESTAMPTZ,

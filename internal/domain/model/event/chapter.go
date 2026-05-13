@@ -1,16 +1,18 @@
 package event
 
-import event_iface "poprako-s/internal/event"
+import (
+	"poprako-s/internal/domain/model/enum"
+	event_iface "poprako-s/internal/event"
+)
 
 // `ChapterPublishedEv` represents chapter-published domain event payload.
 type ChapterPublishedEv struct {
-	ChapterId       string
-	AssignedUserIds []string
+	ChapterId string
 }
 
 // `NewChapterPublishedEv` creates chapter-published event.
-func NewChapterPublishedEv(chapterId string, assignedUserIds []string) event_iface.Event {
-	return &ChapterPublishedEv{ChapterId: chapterId, AssignedUserIds: assignedUserIds}
+func NewChapterPublishedEv(chapterId string) event_iface.Event {
+	return &ChapterPublishedEv{ChapterId: chapterId}
 }
 
 // `EvTyp` returns event type identifier.
@@ -20,6 +22,30 @@ func (e *ChapterPublishedEv) EvTyp() event_iface.EvTyp {
 
 // `Payload` returns typed payload.
 func (e *ChapterPublishedEv) Payload() any {
+	return e
+}
+
+// `ChapterWorkflowCompletedEv` represents chapter workflow-completed domain event payload.
+type ChapterWorkflowCompletedEv struct {
+	ChapterId           string
+	CompletedTransition enum.WorkflowTransition
+}
+
+// `NewChapterWorkflowCompletedEv` creates chapter workflow-completed event.
+func NewChapterWorkflowCompletedEv(chapterId string, completedTransition enum.WorkflowTransition) event_iface.Event {
+	return &ChapterWorkflowCompletedEv{
+		ChapterId:           chapterId,
+		CompletedTransition: completedTransition,
+	}
+}
+
+// `EvTyp` returns event type identifier.
+func (e *ChapterWorkflowCompletedEv) EvTyp() event_iface.EvTyp {
+	return EvChapterWorkflowCompleted
+}
+
+// `Payload` returns typed payload.
+func (e *ChapterWorkflowCompletedEv) Payload() any {
 	return e
 }
 

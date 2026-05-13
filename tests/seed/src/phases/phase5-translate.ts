@@ -26,7 +26,7 @@ export async function phase5Translate(state: SeedState): Promise<void> {
 
   await api<null>(
     "POST",
-    `/pages/${pageID}/units`,
+    "/units",
     {
       page_id: pageID,
       difference: {
@@ -52,14 +52,15 @@ export async function phase5Translate(state: SeedState): Promise<void> {
         candidate_order: [insertID1, insertID2],
       },
     },
-    { token: state.translatorToken },
+    { token: state.translatorToken, query: { page_id: pageID } },
   );
 
   logOk("Units inserted (2 bubbles)");
 
   // ── 5.2 Re-fetch units (mandatory round-trip) ─────────────────────────────
-  const unitList = await apiGet<{ units: UnitInfo[] }>(`/pages/${pageID}/units`, {
+  const unitList = await apiGet<{ units: UnitInfo[] }>("/units", {
     token: state.translatorToken,
+    query: { page_id: pageID },
   });
   const units = unitList.units;
 
@@ -78,7 +79,7 @@ export async function phase5Translate(state: SeedState): Promise<void> {
   // ── 5.3 Patch first unit — add translator comment ─────────────────────────
   await api<null>(
     "POST",
-    `/pages/${pageID}/units`,
+    "/units",
     {
       page_id: pageID,
       difference: {
@@ -97,7 +98,7 @@ export async function phase5Translate(state: SeedState): Promise<void> {
         candidate_order: units.map((u) => u.id),
       },
     },
-    { token: state.translatorToken },
+    { token: state.translatorToken, query: { page_id: pageID } },
   );
 
   logOk("Unit patched with translator comment", { unit_id: firstUnit.id });

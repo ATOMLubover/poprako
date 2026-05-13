@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"poprako-s/internal/domain/model/enum"
+	"poprako-s/internal/domain/model/event"
+	event_iface "poprako-s/internal/event"
 )
 
 // `Chapter` represents one chapter inside a comic
@@ -14,6 +16,11 @@ import (
 // Relation fields are include-driven
 // Time pointers keep nullable database semantics
 type Chapter struct {
+	// Embedded for domain events:
+	// - `ChapterPublishedEv`: one chapter reaches publish-complete state
+	// - `ChapterWorkflowCompletedEv`: one workflow-complete transition with next phase succeeds
+	event_iface.EvBase
+
 	// `Id` is chapter identifier
 	Id string
 
@@ -52,8 +59,8 @@ type Chapter struct {
 	// Workflow timestamps.
 	UploadedAt *time.Time
 
-	TransalatingAt *time.Time
-	TranslatedAt   *time.Time
+	TranslatingAt *time.Time
+	TranslatedAt  *time.Time
 
 	ProofreadingAt *time.Time
 	ProofreadAt    *time.Time
@@ -123,9 +130,11 @@ func (c *Chapter) TransiteWorkflow(t enum.WorkflowTransition) error {
 			return err
 		}
 
+		c.PushEv(event.NewChapterWorkflowCompletedEv(c.Id, t))
+
 	case enum.WorkflowTranslateStart:
 		if err := markStarted(
-			&c.TransalatingAt,
+			&c.TranslatingAt,
 			c.TranslatedAt,
 			"翻译进度已经处于进行中",
 			"翻译进度已经标记为完成",
@@ -135,13 +144,15 @@ func (c *Chapter) TransiteWorkflow(t enum.WorkflowTransition) error {
 
 	case enum.WorkflowTranslateComplete:
 		if err := markCompleted(
-			c.TransalatingAt,
+			c.TranslatingAt,
 			&c.TranslatedAt,
 			"翻译进度尚未开始",
 			"翻译进度已经标记为完成",
 		); err != nil {
 			return err
 		}
+
+		c.PushEv(event.NewChapterWorkflowCompletedEv(c.Id, t))
 
 	case enum.WorkflowProofreadStart:
 		if err := markStarted(
@@ -163,6 +174,8 @@ func (c *Chapter) TransiteWorkflow(t enum.WorkflowTransition) error {
 			return err
 		}
 
+		c.PushEv(event.NewChapterWorkflowCompletedEv(c.Id, t))
+
 	case enum.WorkflowTypesetStart:
 		if err := markStarted(
 			&c.TypesettingAt,
@@ -183,15 +196,21 @@ func (c *Chapter) TransiteWorkflow(t enum.WorkflowTransition) error {
 			return err
 		}
 
+		c.PushEv(event.NewChapterWorkflowCompletedEv(c.Id, t))
+
 	case enum.WorkflowReviewComplete:
 		if err := markOnce(&c.ReviewedAt, "监修进度已经标记为完成"); err != nil {
 			return err
 		}
 
+		c.PushEv(event.NewChapterWorkflowCompletedEv(c.Id, t))
+
 	case enum.WorkflowPublishComplete:
 		if err := markOnce(&c.PublishedAt, "发布进度已经标记为完成"); err != nil {
 			return err
 		}
+
+		c.PushEv(event.NewChapterPublishedEv(c.Id))
 
 	default:
 		return fmt.Errorf("unknown workflow transition: %s", t)
@@ -234,8 +253,8 @@ type ChapterUpd struct {
 
 	// `UploadedAt` is the upload completion timestamp update.
 	UploadedAt **time.Time
-	// `TransalatingAt` is the translate-start timestamp update.
-	TransalatingAt **time.Time
+	// `TranslatingAt` is the translate-start timestamp update.
+	TranslatingAt **time.Time
 	// `TranslatedAt` is the translate-complete timestamp update.
 	TranslatedAt **time.Time
 	// `ProofreadingAt` is the proofread-start timestamp update.

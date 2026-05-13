@@ -72,7 +72,7 @@ func (r *comicRepoImpl) List(opt *query.ListComicOpt, inc ...enum.ComicIncl) ([]
 		q = withPinnedChapterJoin(q)
 
 		q = applyComicWorkflowFilter(q, opt.UploadPhase, "uploaded_at", "")
-		q = applyComicWorkflowFilter(q, opt.TranslatePhase, "transalating_at", "translated_at")
+		q = applyComicWorkflowFilter(q, opt.TranslatePhase, "translating_at", "translated_at")
 		q = applyComicWorkflowFilter(q, opt.ProofreadPhase, "proofreading_at", "proofread_at")
 		q = applyComicWorkflowFilter(q, opt.TypesetPhase, "typesetting_at", "typeset_at")
 		q = applyComicWorkflowFilter(q, opt.ReviewPhase, "reviewed_at", "")
@@ -130,7 +130,7 @@ func (r *comicRepoImpl) Count(opt *query.ListComicOpt) (int64, repo_iface.RepoEr
 		q = withPinnedChapterJoin(q)
 
 		q = applyComicWorkflowFilter(q, opt.UploadPhase, "uploaded_at", "")
-		q = applyComicWorkflowFilter(q, opt.TranslatePhase, "transalating_at", "translated_at")
+		q = applyComicWorkflowFilter(q, opt.TranslatePhase, "translating_at", "translated_at")
 		q = applyComicWorkflowFilter(q, opt.ProofreadPhase, "proofreading_at", "proofread_at")
 		q = applyComicWorkflowFilter(q, opt.TypesetPhase, "typesetting_at", "typeset_at")
 		q = applyComicWorkflowFilter(q, opt.ReviewPhase, "reviewed_at", "")

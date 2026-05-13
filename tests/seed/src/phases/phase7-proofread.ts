@@ -16,8 +16,9 @@ export async function phase7Proofread(state: SeedState): Promise<void> {
 
   // ── 7.1 Re-fetch units as proofreader ─────────────────────────────────────
   // Must use proofreader's token and must re-fetch (not reuse phase-5 result).
-  const unitList = await apiGet<{ units: UnitInfo[] }>(`/pages/${pageID}/units`, {
+  const unitList = await apiGet<{ units: UnitInfo[] }>("/units", {
     token: state.proofreaderToken,
+    query: { page_id: pageID },
   });
   const units = unitList.units;
 
@@ -46,7 +47,7 @@ export async function phase7Proofread(state: SeedState): Promise<void> {
 
   await api<null>(
     "POST",
-    `/pages/${pageID}/units`,
+    "/units",
     {
       page_id: pageID,
       difference: {
@@ -55,7 +56,7 @@ export async function phase7Proofread(state: SeedState): Promise<void> {
         candidate_order: units.map((u) => u.id),
       },
     },
-    { token: state.proofreaderToken },
+    { token: state.proofreaderToken, query: { page_id: pageID } },
   );
 
   logOk(`Patched ${patchOps.length} units as proofread`);

@@ -1,6 +1,8 @@
 package repo_infra
 
 import (
+	"time"
+
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/query"
 	repo_iface "poprako-s/internal/domain/repo"
@@ -26,6 +28,42 @@ func (r *sysMailRepoImpl) Send(cre *aggr.SysMailCre) repo_iface.RepoErr {
 	err := r.gdb.
 		Table(creRow.TableName()).
 		Create(creRow).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// `SendBatch` creates multiple system mail records in one batch.
+func (r *sysMailRepoImpl) SendBatch(cres []*aggr.SysMailCre) repo_iface.RepoErr {
+	if len(cres) == 0 {
+		return nil
+	}
+
+	rows := make([]*entity.SysMailCreRow, 0, len(cres))
+
+	for i := range cres {
+		if cres[i] == nil {
+			continue
+		}
+
+		rows = append(rows, &entity.SysMailCreRow{
+			Id:        cres[i].Id,
+			RcvId:     cres[i].RcvId,
+			Title:     cres[i].Title,
+			Content:   cres[i].Content,
+			CreatedAt: time.Now(),
+		})
+	}
+
+	if len(rows) == 0 {
+		return nil
+	}
+
+	err := r.gdb.
+		Table(entity.SYS_MAIL_TABLE).
+		Create(rows).Error
 	if err != nil {
 		return err
 	}

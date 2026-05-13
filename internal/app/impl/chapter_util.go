@@ -49,7 +49,7 @@ func asmChapterVal(chapter *aggr.Chapter) val.ChapterVal {
 		CreatorId:           chapter.CreatorId,
 		Creator:             creatorVal,
 		UploadedAt:          toUnixMilliPtr(chapter.UploadedAt),
-		TransalatingAt:      toUnixMilliPtr(chapter.TransalatingAt),
+		TranslatingAt:       toUnixMilliPtr(chapter.TranslatingAt),
 		TranslatedAt:        toUnixMilliPtr(chapter.TranslatedAt),
 		ProofreadingAt:      toUnixMilliPtr(chapter.ProofreadingAt),
 		ProofreadAt:         toUnixMilliPtr(chapter.ProofreadAt),
@@ -198,7 +198,7 @@ func mkChapterUpd(args *val.ChapterUpdArgs, ch *aggr.Chapter) *aggr.ChapterUpd {
 	case enum.WorkflowUploadComplete:
 		upd.UploadedAt = toTimePtrPtr(ch.UploadedAt)
 	case enum.WorkflowTranslateStart:
-		upd.TransalatingAt = toTimePtrPtr(ch.TransalatingAt)
+		upd.TranslatingAt = toTimePtrPtr(ch.TranslatingAt)
 	case enum.WorkflowTranslateComplete:
 		upd.TranslatedAt = toTimePtrPtr(ch.TranslatedAt)
 	case enum.WorkflowProofreadStart:

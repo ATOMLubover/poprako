@@ -4556,13 +4556,13 @@ const docTemplate = `{
                 "total_unit_count": {
                     "type": "integer"
                 },
-                "transalating_at": {
-                    "type": "integer"
-                },
                 "translated_at": {
                     "type": "integer"
                 },
                 "translated_unit_count": {
+                    "type": "integer"
+                },
+                "translating_at": {
                     "type": "integer"
                 },
                 "typeset_at": {

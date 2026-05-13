@@ -10,6 +10,9 @@ type SysMailRepo interface {
 	// `Send` creates a new system mail record for the given mail creation aggregate.
 	Send(cre *aggr.SysMailCre) RepoErr
 
+	// `SendBatch` creates multiple system mail records in one batch.
+	SendBatch(cres []*aggr.SysMailCre) RepoErr
+
 	// `ListUnreadByRcvId` returns unread system mails by receiver and pagination options.
 	ListUnreadByRcvId(rcvId string, pagi query.PagiOpt) ([]aggr.SysMail, RepoErr)
 

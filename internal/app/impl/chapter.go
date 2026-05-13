@@ -404,15 +404,9 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 				return app_res.Reject[app_res.None](app_res.BadRequest, "无效的工作流状态转换"), app_res.DefErr()
 			}
 
+			ev = append(ev, chapter.PullEv()...)
+
 			if !wasPublished && chapter.PublishedAt != nil {
-				assignments, listErr := listAllAssignments(assignmentRepo, chapter.Id)
-				if listErr != nil {
-					return app_res.Reject[app_res.None](app_res.ServerError, "更新章节失败"), listErr
-				}
-
-				assignedUserIds := collectAssignedUserIds(assignments)
-
-				ev = append(ev, event.NewChapterPublishedEv(chapter.Id, assignedUserIds))
 				clearPublishedImages = true
 			}
 		}

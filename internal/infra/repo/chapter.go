@@ -211,9 +211,9 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 		selectCols = append(selectCols, "uploaded_at")
 	}
 
-	if upd.TransalatingAt != nil {
-		updRow.TransalatingAt = *upd.TransalatingAt
-		selectCols = append(selectCols, "transalating_at")
+	if upd.TranslatingAt != nil {
+		updRow.TranslatingAt = *upd.TranslatingAt
+		selectCols = append(selectCols, "translating_at")
 	}
 
 	if upd.TranslatedAt != nil {
@@ -266,9 +266,9 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 		case enum.WorkflowUploadComplete:
 			q = q.Where("uploaded_at IS NULL")
 		case enum.WorkflowTranslateStart:
-			q = q.Where("transalating_at IS NULL").Where("translated_at IS NULL")
+			q = q.Where("translating_at IS NULL").Where("translated_at IS NULL")
 		case enum.WorkflowTranslateComplete:
-			q = q.Where("transalating_at IS NOT NULL").Where("translated_at IS NULL")
+			q = q.Where("translating_at IS NOT NULL").Where("translated_at IS NULL")
 		case enum.WorkflowProofreadStart:
 			q = q.Where("proofreading_at IS NULL").Where("proofread_at IS NULL")
 		case enum.WorkflowProofreadComplete:

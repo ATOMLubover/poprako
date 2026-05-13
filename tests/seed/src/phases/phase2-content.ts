@@ -89,12 +89,12 @@ export async function phase2Content(state: SeedState): Promise<void> {
   // the backend during chapter creation, so this call succeeds immediately.
   const pagesRes = await api<ReserveChapterPagesRes>(
     "POST",
-    `/chapters/${state.chapterID}/pages/reserve`,
+    "/pages/reserve",
     {
       page_count: PAGE_COUNT,
       file_extension: "png",
     },
-    { token: state.adminToken },
+    { token: state.adminToken, query: { chapter_id: state.chapterID } },
   );
 
   state.pageIDs = pagesRes.creations.map((c) => c.page_id);

@@ -36,8 +36,8 @@ type ChapterRow struct {
 	// Workflow timestamps.
 	UploadedAt *time.Time `gorm:"column:uploaded_at"`
 
-	TransalatingAt *time.Time `gorm:"column:transalating_at"`
-	TranslatedAt   *time.Time `gorm:"column:translated_at"`
+	TranslatingAt *time.Time `gorm:"column:translating_at"`
+	TranslatedAt  *time.Time `gorm:"column:translated_at"`
 
 	ProofreadingAt *time.Time `gorm:"column:proofreading_at"`
 	ProofreadAt    *time.Time `gorm:"column:proofread_at"`
@@ -92,7 +92,7 @@ func (r *ChapterRow) ToChapterAggr() *aggr.Chapter {
 		TranslatedUnitCount: r.TranslatedUnitCount,
 		ProofreadUnitCount:  r.ProofreadUnitCount,
 		UploadedAt:          r.UploadedAt,
-		TransalatingAt:      r.TransalatingAt,
+		TranslatingAt:       r.TranslatingAt,
 		TranslatedAt:        r.TranslatedAt,
 		ProofreadingAt:      r.ProofreadingAt,
 		ProofreadAt:         r.ProofreadAt,
@@ -154,8 +154,8 @@ type ChapterUpdRow struct {
 	// `UploadedAt` is the upload completion timestamp.
 	UploadedAt *time.Time `gorm:"column:uploaded_at"`
 
-	// `TransalatingAt` is the translate-start timestamp.
-	TransalatingAt *time.Time `gorm:"column:transalating_at"`
+	// `TranslatingAt` is the translate-start timestamp.
+	TranslatingAt *time.Time `gorm:"column:translating_at"`
 	// `TranslatedAt` is the translate-complete timestamp.
 	TranslatedAt *time.Time `gorm:"column:translated_at"`
 

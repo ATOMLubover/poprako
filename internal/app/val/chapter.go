@@ -27,8 +27,8 @@ type ChapterVal struct {
 
 	UploadedAt *int64 `json:"uploaded_at,omitempty"`
 
-	TransalatingAt *int64 `json:"transalating_at,omitempty"`
-	TranslatedAt   *int64 `json:"translated_at,omitempty"`
+	TranslatingAt *int64 `json:"translating_at,omitempty"`
+	TranslatedAt  *int64 `json:"translated_at,omitempty"`
 
 	ProofreadingAt *int64 `json:"proofreading_at,omitempty"`
 	ProofreadAt    *int64 `json:"proofread_at,omitempty"`
