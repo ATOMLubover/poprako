@@ -46,18 +46,12 @@ func (r *MemberInvRow) ToMemberInvAggr() *aggr.MemberInv {
 		invitor = r.Invitor.ToUserAggr()
 	}
 
-	var invitee *aggr.User
-	if r.Invitee != nil {
-		invitee = r.Invitee.ToUserAggr()
-	}
-
 	return &aggr.MemberInv{
 		Id:         r.Id,
 		InvitorId:  r.InvitorId,
 		Invitor:    invitor,
 		TeamId:     r.TeamId,
 		InviteeQid: r.InviteeQid,
-		Invitee:    invitee,
 		InvCode:    r.InvCode,
 		Pending:    r.Pending,
 		RoleMask:   aggr.RoleMask(r.RoleMask),

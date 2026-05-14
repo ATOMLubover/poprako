@@ -14,7 +14,6 @@ type MemberInv struct {
 
 	// NOTE: as invitee may not be registered, we use `InviteeQid` instead of `InviteeId`.
 	InviteeQid string
-	Invitee    *User
 
 	InvCode string
 	Pending bool

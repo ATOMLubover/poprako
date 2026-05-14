@@ -32,6 +32,7 @@ type chapterPortAppImpl struct {
 	pageRepo       repo_iface.PageRepo
 	unitRepo       repo_iface.UnitRepo
 	assignmentRepo repo_iface.AssignmentRepo
+	memberRepo     repo_iface.MemberRepo
 
 	ossSigner oss_iface.Signer
 	errClsf   repo_iface.ErrClsf
@@ -52,13 +53,14 @@ func NewChapterPortApp(
 	pageRepo repo_iface.PageRepo,
 	unitRepo repo_iface.UnitRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
+	memberRepo repo_iface.MemberRepo,
 	unitSvc svc.UnitSvc,
 	exportSvc svc.ChapterExportSvc,
 	importSvc svc.ChapterImportSvc,
 	ossSigner oss_iface.Signer,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.ChapterPortApp {
-	if txnCtrl == nil || chapterRepo == nil || comicRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || ossSigner == nil || errClsf == nil {
+	if txnCtrl == nil || chapterRepo == nil || comicRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || memberRepo == nil || ossSigner == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewChapterPortApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
@@ -67,6 +69,7 @@ func NewChapterPortApp(
 			zap.Bool("pageRepo", pageRepo == nil),
 			zap.Bool("unitRepo", unitRepo == nil),
 			zap.Bool("assignmentRepo", assignmentRepo == nil),
+			zap.Bool("memberRepo", memberRepo == nil),
 			zap.Bool("ossSigner", ossSigner == nil),
 			zap.Bool("errClsf", errClsf == nil),
 		)
@@ -82,6 +85,7 @@ func NewChapterPortApp(
 		pageRepo:       pageRepo,
 		unitRepo:       unitRepo,
 		assignmentRepo: assignmentRepo,
+		memberRepo:     memberRepo,
 		ossSigner:      ossSigner,
 		errClsf:        errClsf,
 	}
@@ -95,7 +99,7 @@ func (a *chapterPortAppImpl) Export(cx context.Context, currUid string, chapterI
 		return app_res.Reject[val.ChapterExportVal](re.Code(), re.Msg())
 	}
 
-	if re := a.unitSvc.CanListPageUnits(currUid, chapterId, a.assignmentRepo, a.errClsf); re.IsReject() {
+	if re := a.unitSvc.CanListPageUnits(currUid, chapterId, a.assignmentRepo, a.memberRepo, a.chapterRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[val.ChapterExportVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
@@ -119,7 +123,7 @@ func (a *chapterPortAppImpl) ExportLp(cx context.Context, currUid string, chapte
 		return app_res.Reject[string](re.Code(), re.Msg())
 	}
 
-	if re := a.unitSvc.CanListPageUnits(currUid, chapterId, a.assignmentRepo, a.errClsf); re.IsReject() {
+	if re := a.unitSvc.CanListPageUnits(currUid, chapterId, a.assignmentRepo, a.memberRepo, a.chapterRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[string](app_res.ErrCode(re.Code()), re.Msg())
 	}
 

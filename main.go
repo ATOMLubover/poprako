@@ -181,7 +181,7 @@ func main() {
 	)
 	chapterPortApp := app_impl.NewChapterPortLogApp(
 		app_impl.NewChapterPortApp(
-			txnCtrl, chapterRepo, comicRepo, pageRepo, unitRepo, assignmentRepo,
+			txnCtrl, chapterRepo, comicRepo, pageRepo, unitRepo, assignmentRepo, memberRepo,
 			unitSvc, exportSvc, importSvc,
 			ossClient, errClsf,
 		),
@@ -195,7 +195,7 @@ func main() {
 	)
 	unitApp := app_impl.NewUnitLogApp(
 		app_impl.NewUnitApp(
-			txnCtrl, comicRepo, chapterRepo, pageRepo, unitRepo, assignmentRepo,
+			txnCtrl, comicRepo, chapterRepo, pageRepo, unitRepo, assignmentRepo, memberRepo,
 			unitSvc,
 			errClsf,
 		),

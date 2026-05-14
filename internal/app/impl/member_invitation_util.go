@@ -23,27 +23,12 @@ func asmMemberInvVal(inv *aggr.MemberInv) val.MemberInvVal {
 		}
 	}
 
-	var inviteeVal *val.UserVal
-	if inv.Invitee != nil {
-		inviteeVal = &val.UserVal{
-			Id:             inv.Invitee.Id,
-			Qid:            inv.Invitee.Qid,
-			Nickname:       inv.Invitee.Nickname,
-			AvatarUploaded: inv.Invitee.AvatarUploaded,
-			IsSuperAdmin:   inv.Invitee.IsSuperAdmin,
-			LastActiveAt:   inv.Invitee.LastActiveAt.UnixMilli(),
-			CreatedAt:      inv.Invitee.CreatedAt.UnixMilli(),
-			UpdatedAt:      inv.Invitee.UpdatedAt.UnixMilli(),
-		}
-	}
-
 	return val.MemberInvVal{
 		Id:         inv.Id,
 		InvitorId:  inv.InvitorId,
 		Invitor:    invitorVal,
 		TeamId:     inv.TeamId,
 		InviteeQid: inv.InviteeQid,
-		Invitee:    inviteeVal,
 		InvCode:    inv.InvCode,
 		Pending:    inv.Pending,
 		RoleMask:   inv.RoleMask,

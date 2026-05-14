@@ -15,17 +15,42 @@ import (
 // `UnitSvc` contains stateless domain logic for unit operations.
 type UnitSvc struct{}
 
-// `CanListPageUnits` validates chapter assignment permission for unit listing.
-func (UnitSvc) CanListPageUnits(currUid string, chapterId string, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
-	// Validate whether caller has any assignment on the chapter.
-	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+// `CanListPageUnits` validates permission for unit listing by chapter or chapter exporting.
+// Team members are always allowed. Fallback to chapter assignment if not a team member.
+func (UnitSvc) CanListPageUnits(
+	currUid string,
+	chapterId string,
+	assignmentRepo repo_iface.AssignmentRepo,
+	memberRepo repo_iface.MemberRepo,
+	chapterRepo repo_iface.ChapterRepo,
+	clsf repo_iface.ErrClsf,
+) svc_res.SvcRes {
+	// Load chapter with team chain to resolve the owning team.
+	chapter, err := chapterRepo.GetById(chapterId, enum.ChapterInclComicWorksetTeam)
 	if err != nil {
-		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅当前章节参与者可查看 unit", "权限校验失败", "权限校验服务暂不可用", "权限校验失败")
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅团队成员或章节参与者可查看 unit", "权限校验失败", "权限校验服务暂不可用", "权限校验失败")
 	}
 
-	// Reject users who are not assigned on the chapter.
+	// Check team membership first.
+	if chapter.Comic != nil && chapter.Comic.Workset != nil {
+		isMember, err := memberRepo.ExistByUserTeamId(currUid, chapter.Comic.Workset.TeamId)
+		if err != nil {
+			return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅团队成员或章节参与者可查看 unit", "权限校验失败", "权限校验服务暂不可用", "权限校验失败")
+		}
+
+		if isMember {
+			return svc_res.Accept()
+		}
+	}
+
+	// Fall back to chapter assignment.
+	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅团队成员或章节参与者可查看 unit", "权限校验失败", "权限校验服务暂不可用", "权限校验失败")
+	}
+
 	if assignment == nil {
-		return svc_res.Reject(svc_res.Forbidden, "仅当前章节参与者可查看 unit")
+		return svc_res.Reject(svc_res.Forbidden, "仅团队成员或章节参与者可查看 unit")
 	}
 
 	return svc_res.Accept()

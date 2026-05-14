@@ -31,6 +31,8 @@ type unitAppImpl struct {
 	unitRepo repo_iface.UnitRepo
 	// `assignmentRepo` reads assignment information for permission checks.
 	assignmentRepo repo_iface.AssignmentRepo
+	// `memberRepo` reads membership information for team-scoped permission checks.
+	memberRepo repo_iface.MemberRepo
 
 	// `errClsf` classifies repository errors for permission services.
 	errClsf repo_iface.ErrClsf
@@ -44,10 +46,11 @@ func NewUnitApp(
 	pageRepo repo_iface.PageRepo,
 	unitRepo repo_iface.UnitRepo,
 	assignmentRepo repo_iface.AssignmentRepo,
+	memberRepo repo_iface.MemberRepo,
 	unitSvc svc.UnitSvc,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.UnitApp {
-	if txnCtrl == nil || comicRepo == nil || chapterRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || errClsf == nil {
+	if txnCtrl == nil || comicRepo == nil || chapterRepo == nil || pageRepo == nil || unitRepo == nil || assignmentRepo == nil || memberRepo == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewUnitApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
@@ -56,6 +59,7 @@ func NewUnitApp(
 			zap.Bool("pageRepo", pageRepo == nil),
 			zap.Bool("unitRepo", unitRepo == nil),
 			zap.Bool("assignmentRepo", assignmentRepo == nil),
+			zap.Bool("memberRepo", memberRepo == nil),
 			zap.Bool("errClsf", errClsf == nil),
 		)
 	}
@@ -68,6 +72,7 @@ func NewUnitApp(
 		pageRepo:       pageRepo,
 		unitRepo:       unitRepo,
 		assignmentRepo: assignmentRepo,
+		memberRepo:     memberRepo,
 		errClsf:        errClsf,
 	}
 }
@@ -93,8 +98,8 @@ func (a *unitAppImpl) ListByPage(cx context.Context, currUid string, args *val.L
 		return app_res.Reject[val.ListPageUnitsRes](app_res.ServerError, "获取 unit 列表失败")
 	}
 
-	// Require chapter assignment to list page units.
-	if re := a.unitSvc.CanListPageUnits(currUid, page.ChapterId, a.assignmentRepo, a.errClsf); re.IsReject() {
+	// Check team membership first, fall back to chapter assignment.
+	if re := a.unitSvc.CanListPageUnits(currUid, page.ChapterId, a.assignmentRepo, a.memberRepo, a.chapterRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[val.ListPageUnitsRes](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
