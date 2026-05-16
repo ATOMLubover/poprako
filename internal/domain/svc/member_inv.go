@@ -93,6 +93,45 @@ func (MemberInvSvc) VfyUpdateRoleMask(roleMask aggr.RoleMask) error {
 	return nil
 }
 
+// `VfyInviteeNotMember` validates the invitee is not already a member of the target team.
+func (MemberInvSvc) VfyInviteeNotMember(inviteeQid string, teamId string, userRepo repo_iface.UserRepo, memberRepo repo_iface.MemberRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	// Resolve the invitee qid to a user id.
+	inviteeUser, err := userRepo.GetByQid(inviteeQid)
+	if err != nil {
+		if clsf.IsNotFound(err) {
+			return svc_res.Accept()
+		}
+
+		zap.L().Error(
+			"[MemberInvSvc.VfyInviteeNotMember] failed to get invitee user",
+			zap.String("inviteeQid", inviteeQid),
+			zap.String("teamId", teamId),
+			zap.Error(err),
+		)
+
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "用户不存在", "校验失败", "校验服务暂不可用", "校验失败")
+	}
+
+	// Verify the invitee is not already a member.
+	ok, err := memberRepo.ExistByUserTeamId(inviteeUser.Id, teamId)
+	if err != nil {
+		zap.L().Error(
+			"[MemberInvSvc.VfyInviteeNotMember] failed to check existing member",
+			zap.String("inviteeId", inviteeUser.Id),
+			zap.String("teamId", teamId),
+			zap.Error(err),
+		)
+
+		return classifyRepoErr(err, clsf, svc_res.BadRequest, "该用户已经是团队成员", "校验失败", "校验服务暂不可用", "校验失败")
+	}
+
+	if ok {
+		return svc_res.Reject(svc_res.Conflict, "该用户已经是团队成员")
+	}
+
+	return svc_res.Accept()
+}
+
 func genMemberInvCode() string {
 	id := util.GenId("member_inv_code")
 

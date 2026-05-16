@@ -30,6 +30,33 @@ func (AssignmentSvc) CanReviewAssignment(currUid string, chapterId string, assig
 	return svc_res.Accept()
 }
 
+// `CanSelfReduceAssignment` allows a user to reduce or remove their own assignment roles.
+// Self-assignment (adding new roles to oneself) is rejected — that requires a reviewer.
+func (AssignmentSvc) CanSelfReduceAssignment(currUid string, targetUserId string, chapterId string, newMask aggr.RoleMask, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	if currUid != targetUserId {
+		return svc_res.Reject(svc_res.Forbidden, "仅可对自己的分配执行此操作")
+	}
+
+	curr, err := assignmentRepo.GetByChapterUserId(chapterId, targetUserId)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅可缩减或退出自己的分配", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if curr == nil {
+		if newMask == 0 {
+			return svc_res.Accept()
+		}
+		return svc_res.Reject(svc_res.Forbidden, "仅章节监修可分配新角色")
+	}
+
+	currMask := curr.ToRoleMask()
+	if newMask&^currMask != 0 {
+		return svc_res.Reject(svc_res.Forbidden, "仅可缩减或退出自己的分配，不可新增角色")
+	}
+
+	return svc_res.Accept()
+}
+
 // `CanListByChapter` validates whether caller can list assignments under one chapter.
 // Legacy-compatible rule: allow either team member access or chapter-assignment fallback access.
 func (s AssignmentSvc) CanListByChapter(

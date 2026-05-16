@@ -132,10 +132,15 @@ func (a *assignmentInvAppImpl) Create(cx context.Context, currUid string, args *
 	}
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.CreateAssignmentInvRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.CreateAssignmentInvRes], error) {
+		userRepo := prov.UserRepo()
 		assignmentRepo := prov.AssignmentRepo()
 		assignmentInvRepo := prov.AssignmentInvRepo()
 
 		if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.CreateAssignmentInvRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+		}
+
+		if re := a.assignmentInvSvc.VfyInviteeNotAssigned(args.InviteeQid, args.ChapterId, userRepo, assignmentRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[val.CreateAssignmentInvRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 

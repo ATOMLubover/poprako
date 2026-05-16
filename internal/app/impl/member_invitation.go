@@ -114,10 +114,15 @@ func (a *memberInvAppImpl) Create(cx context.Context, currUid string, args *val.
 	}
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.CreateMemberInvRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.CreateMemberInvRes], error) {
+		userRepo := prov.UserRepo()
 		memberRepo := prov.MemberRepo()
 		memberInvRepo := prov.MemberInvRepo()
 
 		if re := a.memberInvSvc.CanAdminMemberInv(currUid, args.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[val.CreateMemberInvRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+		}
+
+		if re := a.memberInvSvc.VfyInviteeNotMember(args.InviteeQid, args.TeamId, userRepo, memberRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[val.CreateMemberInvRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
