@@ -9,6 +9,7 @@ import (
 	"poprako-s/internal/infra/repo/entity"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // `pageRepoImpl` is the GORM-backed implementation of `PageRepo`.
@@ -27,6 +28,23 @@ func (r *pageRepoImpl) GetById(id string) (*aggr.Page, repo_iface.RepoErr) {
 	var row entity.PageRow
 
 	err := r.gdb.Table(entity.PAGE_TABLE).Where("id = ?", id).First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return row.ToPageAggr(), nil
+}
+
+// `GetByIdEx` retrieves one page by primary key with a row-level
+// exclusive lock. Must be called inside a transaction.
+func (r *pageRepoImpl) GetByIdEx(id string) (*aggr.Page, repo_iface.RepoErr) {
+	var row entity.PageRow
+
+	err := r.gdb.
+		Table(entity.PAGE_TABLE).
+		Where("id = ?", id).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		First(&row).Error
 	if err != nil {
 		return nil, err
 	}

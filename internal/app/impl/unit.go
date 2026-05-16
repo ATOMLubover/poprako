@@ -142,7 +142,7 @@ func (a *unitAppImpl) SaveByPage(cx context.Context, currUid string, args *val.S
 		unitRepo := prov.UnitRepo()
 		assignmentRepo := prov.AssignmentRepo()
 
-		page, err := pageRepo.GetById(args.PageId)
+		page, err := pageRepo.GetByIdEx(args.PageId)
 		if err != nil {
 			if repo_infra.IsNotFound(err) {
 				return app_res.Reject[val.SavePageUnitsRes](app_res.BadRequest, "页面不存在"), app_res.DefErr()
