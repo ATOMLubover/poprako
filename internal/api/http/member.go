@@ -283,6 +283,7 @@ func JoinTeamByInvitation(st *state.AppState) iris.Handler {
 		}
 
 		var args val.JoinTeamArgs
+
 		if err := cx.ReadJSON(&args); err != nil {
 			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
 			return

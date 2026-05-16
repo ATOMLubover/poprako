@@ -110,10 +110,20 @@ func (r *userRepoImpl) Update(upd *aggr.UserUpd) repo_iface.RepoErr {
 
 // `Refresh` updates the `last_active_at` timestamp for the given user id
 func (r *userRepoImpl) Refresh(id string, activeAt time.Time) repo_iface.RepoErr {
-	return r.gdb.
+	updRe := r.gdb.
 		Table(entity.USER_TABLE).
 		Where("id = ?", id).
-		Update("last_active_at", activeAt).Error
+		Updates(map[string]any{
+			"last_active_at": activeAt,
+			"updated_at":     time.Now(),
+		})
+	if updRe.Error != nil {
+		return updRe.Error
+	}
+	if updRe.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // `PrefillAvatarKey` writes the OSS object key for the user avatar before the upload begins
