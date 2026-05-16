@@ -2,6 +2,7 @@ package svc
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -59,19 +60,18 @@ func (ChapterExportSvc) MakeLabelPlus(pages []*aggr.Page, unitsByPage map[string
 	return sb.String()
 }
 
-// lpImageName derives LabelPlus image file name from a page.
+// lpImageName derives the standardised LabelPlus image relative path from a page.
+// Returns `images/{index:03d}.{ext}` so the official LP parser can locate
+// image files by zero-padded index.
 func lpImageName(page *aggr.Page) string {
-	if page.ImageKey == nil || *page.ImageKey == "" {
-		return fmt.Sprintf("page_%d.jpg", page.Index)
+	ext := ".jpg"
+	if page.ImageKey != nil && *page.ImageKey != "" {
+		if e := filepath.Ext(*page.ImageKey); e != "" {
+			ext = e
+		}
 	}
 
-	parts := strings.Split(*page.ImageKey, "/")
-	name := parts[len(parts)-1]
-	if name == "" {
-		return fmt.Sprintf("page_%d.jpg", page.Index)
-	}
-
-	return name
+	return fmt.Sprintf("images/%03d%s", page.Index, ext)
 }
 
 // lpSelectText selects export main text by proofread-first order.
