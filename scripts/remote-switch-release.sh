@@ -4,7 +4,6 @@ set -eu
 IMAGE_TAG=${IMAGE_TAG:?IMAGE_TAG is required}
 DEPLOY_ROOT=${DEPLOY_ROOT:-/opt/poprako-s}
 MAIN_IMAGE=${MAIN_IMAGE:-poprako-s-main}
-DATABASE_IMAGE=${DATABASE_IMAGE:-poprako-s-database}
 
 RELEASE_DIR="${DEPLOY_ROOT}/releases/${IMAGE_TAG}"
 SHARED_DIR="${DEPLOY_ROOT}/shared"
@@ -12,7 +11,6 @@ ENV_FILE="${SHARED_DIR}/.env"
 COMPOSE_FILE="${SHARED_DIR}/docker/compose.prod.yml"
 MIGRATION_BUNDLE="${RELEASE_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz"
 MAIN_BUNDLE="${RELEASE_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz"
-DATABASE_BUNDLE="${RELEASE_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz"
 
 require_env_key() {
     key=$1
@@ -33,11 +31,6 @@ require_env_key() {
     exit 1
 }
 
-[ -f "$DATABASE_BUNDLE" ] || {
-    echo "Missing ${DATABASE_BUNDLE}" >&2
-    exit 1
-}
-
 [ -f "$MIGRATION_BUNDLE" ] || {
     echo "Missing ${MIGRATION_BUNDLE}" >&2
     exit 1
@@ -45,7 +38,6 @@ require_env_key() {
 
 mkdir -p "$SHARED_DIR"
 
-docker load -i "$DATABASE_BUNDLE"
 docker load -i "$MAIN_BUNDLE"
 tar -xzf "$MIGRATION_BUNDLE" -C "$SHARED_DIR"
 

@@ -73,4 +73,3 @@ func (TeamSvc) NewTeamCre(name string, desc string) (*aggr.TeamCre, error) {
 		Desc: desc,
 	}, nil
 }
-

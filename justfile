@@ -66,9 +66,6 @@ psql:
 build-main image-tag="latest" target-platform="linux/amd64":
     docker build --platform ${target-platform} -f docker/poprako-s-main/Dockerfile -t poprako-s-main:${image-tag} .
 
-build-database image-tag="latest" target-platform="linux/amd64":
-    docker build --platform ${target-platform} -f docker/poprako-s-database/Dockerfile -t poprako-s-database:${image-tag} .
-    
 save-main image-tag="latest":
     mkdir -p dist
     docker save poprako-s-main:${image-tag} | gzip > dist/poprako-s-main-${image-tag}.tar.gz

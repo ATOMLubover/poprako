@@ -6,7 +6,6 @@ DEPLOY_ROOT=${DEPLOY_ROOT:-/opt/poprako-s}
 SERVER_USER=${SERVER_USER:?SERVER_USER is required}
 SERVER_HOST=${SERVER_HOST:?SERVER_HOST is required}
 MAIN_IMAGE=${MAIN_IMAGE:-poprako-s-main}
-DATABASE_IMAGE=${DATABASE_IMAGE:-poprako-s-database}
 DIST_DIR=${DIST_DIR:-dist}
 TARGET_PLATFORM=${TARGET_PLATFORM:-linux/amd64}
 
@@ -21,15 +20,12 @@ cd "$ROOT_DIR"
 mkdir -p "$DIST_DIR"
 
 docker build --platform "${TARGET_PLATFORM}" -f docker/poprako-s-main/Dockerfile -t "${MAIN_IMAGE}:${IMAGE_TAG}" .
-docker build --platform "${TARGET_PLATFORM}" -f docker/poprako-s-database/Dockerfile -t "${DATABASE_IMAGE}:${IMAGE_TAG}" .
 
 docker save "${MAIN_IMAGE}:${IMAGE_TAG}" | gzip >"${DIST_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz"
-docker save "${DATABASE_IMAGE}:${IMAGE_TAG}" | gzip >"${DIST_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz"
 tar -czf "${DIST_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz" migrations docker/prod-database-migrate.sh docker/compose.prod.yml
 
 ssh "${SERVER_USER}@${SERVER_HOST}" "mkdir -p '${RELEASE_DIR}' '${REMOTE_BIN_DIR}'"
 scp "${DIST_DIR}/${MAIN_IMAGE}-${IMAGE_TAG}.tar.gz" "${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}/"
-scp "${DIST_DIR}/${DATABASE_IMAGE}-${IMAGE_TAG}.tar.gz" "${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}/"
 scp "${DIST_DIR}/poprako-s-migrations-${IMAGE_TAG}.tar.gz" "${SERVER_USER}@${SERVER_HOST}:${RELEASE_DIR}/"
 scp "${SCRIPT_DIR}/remote-switch-release.sh" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_BIN_DIR}/"
 scp "${UPLOAD_ENV_SCRIPT}" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_BIN_DIR}/"

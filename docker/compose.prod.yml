@@ -1,6 +1,6 @@
 services:
   prod-postgres:
-    image: poprako-s-database:${IMAGE_TAG}
+    image: postgres:18-alpine
     container_name: prod-postgres
     restart: unless-stopped
     environment:
@@ -16,7 +16,7 @@ services:
       retries: 5
 
   prod-db-migrate:
-    image: poprako-s-database:${IMAGE_TAG}
+    image: postgres:18-alpine
     container_name: prod-db-migrate
     depends_on:
       prod-postgres:
