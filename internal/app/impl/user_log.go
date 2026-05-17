@@ -127,7 +127,7 @@ func (a *userLogAppImpl) Update(cx context.Context, args *val.UserUpdArgs) app_r
 }
 
 // `ResvAvatar` validates args, enriches logger context, and forwards the call.
-func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes] {
+func (a *userLogAppImpl) ResvAvatar(cx context.Context, currUid string, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes] {
 	// Ensure `cx` is always non-nil for downstream calls.
 	if cx == nil {
 		cx = context.Background()
@@ -145,11 +145,11 @@ func (a *userLogAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatar
 	}
 
 	// Attach stable input fields and save logger back to context.
-	lgr = lgr.With(zap.String("args.user_id", args.UserId), zap.String("args.file_ext", args.FileExt))
+	lgr = lgr.With(zap.String("curr_uid", currUid), zap.String("args.user_id", args.UserId), zap.String("args.file_ext", args.FileExt))
 
 	cx = app_util.SaveLgr(cx, lgr)
 
-	return a.inner.ResvAvatar(cx, args)
+	return a.inner.ResvAvatar(cx, currUid, args)
 }
 
 // `TouchLastActive` enriches logger context and forwards the call.

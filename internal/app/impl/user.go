@@ -2,7 +2,6 @@ package app_impl
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	app_iface "poprako-s/internal/app"
@@ -279,10 +278,14 @@ func (a *userAppImpl) Update(cx context.Context, args *val.UserUpdArgs) app_res.
 // func (a *userAppImpl) UpdateInfo(cx context.Context, args *val.UserUpdateArgs) app_res.AppRes[app_res.None] {
 // }
 
-func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes] {
+func (a *userAppImpl) ResvAvatar(cx context.Context, currUid string, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes] {
 	lgr := app_util.TakeLgr(cx)
 
-	key := fmt.Sprintf("user_avatar/%s.%s", args.UserId, args.FileExt)
+	if currUid != args.UserId {
+		return app_res.Reject[val.ResvUserAvatarRes](app_res.Forbidden, "无权操作其他用户的头像")
+	}
+
+	var key string
 
 	if re, err := repo_iface.RunWithTxn[app_res.AppRes[val.ResvUserAvatarRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.ResvUserAvatarRes], error) {
 		userRepo := prov.UserRepo()
@@ -297,6 +300,7 @@ func (a *userAppImpl) ResvAvatar(cx context.Context, args *val.ResvUserAvatarArg
 			return app_res.Reject[val.ResvUserAvatarRes](app_res.ServerError, "生成头像上传信息失败"), err
 		}
 
+		key = user.GenAvatarKey(args.FileExt)
 		oldKey := user.AvatarKey
 
 		if err := userRepo.PrefillAvatarKey(args.UserId, key); err != nil {

@@ -145,7 +145,7 @@ func (a *pageAppImpl) ResvChapterPages(cx context.Context, currUid string, args 
 		batch := make([]*aggr.PageCre, 0, args.PageCount)
 		for i := 0; i < args.PageCount; i++ {
 			cre := a.pageSvc.NewPageCre(chapter.Id, i, nil)
-			imageKey := a.pageSvc.GenImageKey(chapter.Id, cre.Id, args.FileExt)
+			imageKey := cre.GenImageKey(args.FileExt)
 			cre.ImageKey = &imageKey
 
 			batch = append(batch, cre)
@@ -231,7 +231,7 @@ func (a *pageAppImpl) ResvChapterPage(cx context.Context, currUid string, args *
 			oldKey = *page.ImageKey
 		}
 
-		txnImageKey := a.pageSvc.GenImageKey(page.ChapterId, page.Id, args.FileExt)
+		txnImageKey := page.GenImageKey(args.FileExt)
 
 		if err := pageRepo.ResvImage(page.Id, txnImageKey); err != nil {
 			return app_res.Reject[val.ResvChapterPageRes](app_res.ServerError, "预留页面失败"), err

@@ -74,7 +74,3 @@ func (TeamSvc) NewTeamCre(name string, desc string) (*aggr.TeamCre, error) {
 	}, nil
 }
 
-// `GenAvatarKey` generates one team avatar object key by team id and extension.
-func (TeamSvc) GenAvatarKey(teamId string, fileExt string) string {
-	return "team_avatar/" + teamId + "." + fileExt
-}

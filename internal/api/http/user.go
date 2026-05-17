@@ -81,23 +81,37 @@ func GetMyUserInfo(st *state.AppState) iris.Handler {
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
+// @Param user_id path string true "user id"
 // @Param body body val.ResvUserAvatarArgs true "reserve avatar args"
 // @Success 200 {object} res.HttpRes[val.ResvUserAvatarRes]
 // @Failure 400 {object} res.HttpRes[any]
 // @Failure 401 {object} res.HttpRes[any]
-// @Router /api/v1/users/avatar [post]
+// @Router /api/v1/users/{user_id}/avatar [post]
 func ResvUserAvatar(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
 	return func(cx iris.Context) {
-		var args val.ResvUserAvatarArgs
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
 
+		userId := cx.Params().Get("user_id")
+		if userId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 user_id 参数")
+			return
+		}
+
+		var args val.ResvUserAvatarArgs
 		if err := cx.ReadJSON(&args); err != nil {
 			res.Reject(cx, iris.StatusBadRequest, "请求参数错误")
 			return
 		}
 
-		re := userApp.ResvAvatar(newReqCx(cx), &args)
+		args.UserId = userId
+
+		re := userApp.ResvAvatar(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return
@@ -114,20 +128,32 @@ func ResvUserAvatar(st *state.AppState) iris.Handler {
 // @Tags user
 // @Security ApiKeyAuth
 // @Produce json
+// @Param user_id path string true "user id"
 // @Success 200
 // @Failure 401 {object} res.HttpRes[any]
-// @Router /api/v1/users/avatar/confirm [post]
+// @Router /api/v1/users/{user_id}/avatar/confirm [post]
 func MarkUserAvatarUploaded(st *state.AppState) iris.Handler {
 	userApp := st.UserApp
 
 	return func(cx iris.Context) {
-		uid, ok := takeCurrUid(cx)
+		currUid, ok := takeCurrUid(cx)
 		if !ok {
 			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
 			return
 		}
 
-		re := userApp.MarkAvatarUploaded(newReqCx(cx), uid)
+		userId := cx.Params().Get("user_id")
+		if userId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 user_id 参数")
+			return
+		}
+
+		if currUid != userId {
+			res.Reject(cx, iris.StatusForbidden, "无权操作其他用户的头像")
+			return
+		}
+
+		re := userApp.MarkAvatarUploaded(newReqCx(cx), currUid)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())
 			return

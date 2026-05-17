@@ -1,6 +1,9 @@
 package aggr
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // `Team` represents a translation team that owns worksets and members
 type Team struct {
@@ -30,4 +33,9 @@ type TeamUpd struct {
 
 	Name string
 	Desc string
+}
+
+// `GenAvatarKey` returns the OSS object key for the team avatar with the given file extension.
+func (t *Team) GenAvatarKey(ext string) string {
+	return fmt.Sprintf("team_avatar/%s.%s", t.Id, ext)
 }

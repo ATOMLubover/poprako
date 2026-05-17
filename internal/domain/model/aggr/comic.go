@@ -1,6 +1,9 @@
 package aggr
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // `Comic` represents one manga title inside a workset
 // Relation fields are optional and loaded by typed includes
@@ -84,4 +87,9 @@ type ComicUpd struct {
 	Author string
 	// `Desc` is the new description and nil writes SQL NULL
 	Desc *string
+}
+
+// `GenCoverKey` returns the OSS object key for the comic cover with the given file extension.
+func (c *Comic) GenCoverKey(ext string) string {
+	return fmt.Sprintf("comic_cover/%s.%s", c.Id, ext)
 }

@@ -1,6 +1,9 @@
 package aggr
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // `Page` represents one page inside a chapter.
 type Page struct {
@@ -35,6 +38,11 @@ type Page struct {
 	UpdatedAt time.Time
 }
 
+// `GenImageKey` returns the OSS object key for the page image with the given file extension.
+func (p *Page) GenImageKey(ext string) string {
+	return fmt.Sprintf("chapter_%s/page_%s.%s", p.ChapterId, p.Id, ext)
+}
+
 // `PageCre` holds the create payload for page insert.
 type PageCre struct {
 	// `Id` is the generated page identifier.
@@ -48,4 +56,9 @@ type PageCre struct {
 
 	// `ImageKey` is the reserved OSS object key.
 	ImageKey *string
+}
+
+// `GenImageKey` returns the OSS object key for the page image with the given file extension.
+func (c *PageCre) GenImageKey(ext string) string {
+	return fmt.Sprintf("chapter_%s/page_%s.%s", c.ChapterId, c.Id, ext)
 }

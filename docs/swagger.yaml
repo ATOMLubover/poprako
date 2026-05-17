@@ -3511,7 +3511,7 @@ paths:
       summary: Get User Info
       tags:
       - user
-  /api/v1/users/avatar:
+  /api/v1/users/{user_id}/avatar:
     post:
       consumes:
       - application/json
@@ -3519,6 +3519,11 @@ paths:
         Reserve a signed upload url for user avatar and return a `res.HttpRes` wrapper with `val.ResvUserAvatarRes`
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
       parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: string
       - description: reserve avatar args
         in: body
         name: body
@@ -3545,11 +3550,17 @@ paths:
       summary: Reserve User Avatar Upload
       tags:
       - user
-  /api/v1/users/avatar/confirm:
+  /api/v1/users/{user_id}/avatar/confirm:
     post:
       description: |-
         Confirm avatar uploaded after client upload completed and return no JSON body
         Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: string
       produces:
       - application/json
       responses:

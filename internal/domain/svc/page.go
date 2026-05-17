@@ -117,7 +117,3 @@ func (PageSvc) NewPageCre(chapterId string, index int, imageKey *string) *aggr.P
 	}
 }
 
-// `GenImageKey` generates one page image OSS key.
-func (PageSvc) GenImageKey(chapterId string, pageId string, fileExt string) string {
-	return "chapter_" + chapterId + "/page_" + pageId + "." + fileExt
-}

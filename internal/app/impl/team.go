@@ -242,7 +242,7 @@ func (a *teamAppImpl) ResvAvatar(cx context.Context, currUid string, args *val.R
 		return app_res.Reject[val.ResvTeamAvatarRes](app_res.BadRequest, "team_id 和 file_extension 不能为空")
 	}
 
-	key := a.teamSvc.GenAvatarKey(args.TeamId, args.FileExt)
+	var key string
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.ResvTeamAvatarRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.ResvTeamAvatarRes], error) {
 		memberRepo := prov.MemberRepo()
@@ -262,6 +262,7 @@ func (a *teamAppImpl) ResvAvatar(cx context.Context, currUid string, args *val.R
 			return app_res.Reject[val.ResvTeamAvatarRes](app_res.ServerError, "生成团队头像上传信息失败"), err
 		}
 
+		key = team.GenAvatarKey(args.FileExt)
 		oldKey := team.AvatarKey
 
 		if err := teamRepo.PrefillAvatarKey(args.TeamId, key); err != nil {

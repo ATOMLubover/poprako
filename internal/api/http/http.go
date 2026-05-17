@@ -57,8 +57,8 @@ func NewApp(st *state.AppState) *iris.Application {
 				user.Get("/me", GetMyUserInfo(st))
 				user.Put("/me", UpdateMyUserInfo(st))
 
-				user.Post("/avatar", ResvUserAvatar(st))
-				user.Post("/avatar/confirm", MarkUserAvatarUploaded(st))
+				user.Post("/{user_id}/avatar", ResvUserAvatar(st))
+				user.Post("/{user_id}/avatar/confirm", MarkUserAvatarUploaded(st))
 			}
 
 			team := authorized.Party("/teams")

@@ -123,6 +123,7 @@ func (r *userRepoImpl) Refresh(id string, activeAt time.Time) repo_iface.RepoErr
 	if updRe.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
+
 	return nil
 }
 

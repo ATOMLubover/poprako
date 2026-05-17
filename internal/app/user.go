@@ -18,7 +18,7 @@ type UserApp interface {
 	// `Update` updates user profile by put semantics.
 	Update(cx context.Context, args *val.UserUpdArgs) app_res.AppRes[app_res.None]
 
-	ResvAvatar(cx context.Context, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes]
+	ResvAvatar(cx context.Context, currUid string, args *val.ResvUserAvatarArgs) app_res.AppRes[val.ResvUserAvatarRes]
 	MarkAvatarUploaded(cx context.Context, currUid string) app_res.AppRes[app_res.None]
 	TouchLastActive(cx context.Context, id string) app_res.AppRes[app_res.None]
 

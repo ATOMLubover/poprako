@@ -404,7 +404,7 @@ func (a *comicAppImpl) ResvCover(cx context.Context, currUid string, args *val.R
 		return app_res.Reject[val.ResvComicCoverRes](re.Code(), re.Msg())
 	}
 
-	newKey := "comic_cover/" + args.ComicId + "." + args.FileExt
+	var newKey string
 
 	if re, err := repo_iface.RunWithTxn[app_res.AppRes[val.ResvComicCoverRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.ResvComicCoverRes], error) {
 		memberRepo := prov.MemberRepo()
@@ -426,6 +426,8 @@ func (a *comicAppImpl) ResvCover(cx context.Context, currUid string, args *val.R
 		if re := a.comicSvc.CanAdminComic(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
 			return app_res.Reject[val.ResvComicCoverRes](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
+
+		newKey = comic.GenCoverKey(args.FileExt)
 
 		oldKey := ""
 		if comic.CoverKey != nil {
