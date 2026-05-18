@@ -857,6 +857,8 @@ definitions:
         $ref: '#/definitions/val.UserVal'
       user_id:
         type: string
+      user_nickname:
+        type: string
     type: object
   val.PageCreationRes:
     properties:
@@ -2619,6 +2621,14 @@ paths:
           type: string
         name: includes
         type: array
+      - description: fuzzy keyword for member user nickname
+        in: query
+        name: user_nickname_keyword
+        type: string
+      - description: single role mask value, at most one bit set
+        in: query
+        name: role
+        type: integer
       - description: pagination offset
         in: query
         name: offset

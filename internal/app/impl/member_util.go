@@ -47,17 +47,19 @@ func asmMemberVal(member *aggr.Member, signer oss_iface.Signer) (*val.MemberVal,
 }
 
 // `mkListMemberOptByTeam` creates member list query option by team.
-func mkListMemberOptByTeam(teamId string, userNicknameKeyword string, includes []enum.MemberIncl, offset int, limit int) *query.ListMemberOpt {
-	trimmedNicknameKeyword := strings.TrimSpace(userNicknameKeyword)
-
+func mkListMemberOptByTeam(teamId string, userNicknameKeyword *string, role *aggr.RoleMask, includes []enum.MemberIncl, offset int, limit int) *query.ListMemberOpt {
 	var keywordOpt *string
-	if trimmedNicknameKeyword != "" {
-		keywordOpt = &trimmedNicknameKeyword
+	if userNicknameKeyword != nil {
+		trimmedKeyword := strings.TrimSpace(*userNicknameKeyword)
+		if trimmedKeyword != "" {
+			keywordOpt = &trimmedKeyword
+		}
 	}
 
 	return &query.ListMemberOpt{
 		TeamId:              &teamId,
 		UserNicknameKeyword: keywordOpt,
+		Role:                role,
 		Pagi: query.PagiOpt{
 			Offset: offset,
 			Limit:  limit,

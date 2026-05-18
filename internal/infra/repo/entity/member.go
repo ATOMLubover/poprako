@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
+	"poprako-s/internal/domain/model/enum"
 )
 
 const MEMBER_TABLE = "t_member"
@@ -156,4 +157,16 @@ func NewMemberRoleUpdRowFromAggr(upd *aggr.MemberRoleUpd) *memberRoleUpdRow {
 
 func (*memberRoleUpdRow) TableName() string {
 	return MEMBER_TABLE
+}
+
+// `MemberRoleToColumn` maps every `enum.Role` to the corresponding `t_member` column name.
+var MemberRoleToColumn = map[aggr.RoleMask]string{
+	aggr.RoleMask(enum.RoleRawProvider): "assigned_raw_provider_at",
+	aggr.RoleMask(enum.RoleTranslator):  "assigned_translator_at",
+	aggr.RoleMask(enum.RoleProofreader): "assigned_proofreader_at",
+	aggr.RoleMask(enum.RoleTypesetter):  "assigned_typesetter_at",
+	aggr.RoleMask(enum.RoleRedrawer):    "assigned_redrawer_at",
+	aggr.RoleMask(enum.RoleReviewer):    "assigned_reviewer_at",
+	aggr.RoleMask(enum.RolePublisher):   "assigned_publisher_at",
+	aggr.RoleMask(enum.RoleAdmin):       "assigned_admin_at",
 }

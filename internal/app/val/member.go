@@ -39,7 +39,9 @@ type CreateMemberRes struct {
 type ListMemberByTeamArgs struct {
 	TeamId string `url:"team_id"`
 	// `UserNicknameKeyword` is fuzzy keyword on `user_nickname`.
-	UserNicknameKeyword string `url:"user_nickname_keyword"`
+	UserNicknameKeyword *string `url:"user_nickname_keyword"`
+	// `Role` filters members that hold the given **single** role.
+	Role *aggr.RoleMask `url:"role"`
 
 	Includes []enum.MemberIncl `url:"includes"`
 

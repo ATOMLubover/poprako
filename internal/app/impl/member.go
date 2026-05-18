@@ -125,11 +125,18 @@ func (a *memberAppImpl) ListByTeam(cx context.Context, currUid string, args *val
 		return app_res.Reject[[]val.MemberVal](re.Code(), re.Msg())
 	}
 
+	if args.Role != nil {
+		m := *args.Role
+		if m == 0 || m&(m-1) != 0 {
+			return app_res.Reject[[]val.MemberVal](app_res.BadRequest, "role 必须为单一角色值")
+		}
+	}
+
 	if re := a.memberSvc.CanListMember(currUid, args.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
 		return app_res.Reject[[]val.MemberVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
-	members, err := a.memberRepo.List(mkListMemberOptByTeam(args.TeamId, args.UserNicknameKeyword, args.Includes, args.Offset, args.Limit), args.Includes...)
+	members, err := a.memberRepo.List(mkListMemberOptByTeam(args.TeamId, args.UserNicknameKeyword, args.Role, args.Includes, args.Offset, args.Limit), args.Includes...)
 	if err != nil {
 		lgr.Error("[memberAppImpl.ListByTeam] failed to list members", zap.Error(err))
 

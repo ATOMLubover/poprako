@@ -89,6 +89,12 @@ func (r *memberRepoImpl) List(opt *query.ListMemberOpt, inc ...enum.MemberIncl) 
 				query = query.Where(entity.MemberUserNicknameCol+" ILIKE ?", "%"+keyword+"%")
 			}
 		}
+		if opt.Role != nil {
+			col, ok := entity.MemberRoleToColumn[*opt.Role]
+			if ok {
+				query = query.Where(col + " IS NOT NULL")
+			}
+		}
 
 		if opt.Pagi.Offset > 0 {
 			query = query.Offset(opt.Pagi.Offset)
@@ -156,7 +162,7 @@ func (r *memberRepoImpl) UpdateUserNickname(userId string, userNickname string) 
 		Where("user_id = ?", userId).
 		Updates(map[string]any{
 			entity.MemberUserNicknameCol: userNickname,
-			"updated_at":               now,
+			"updated_at":                 now,
 		})
 	if updRe.Error != nil {
 		return updRe.Error

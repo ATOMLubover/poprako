@@ -1952,6 +1952,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "fuzzy keyword for member user nickname",
+                        "name": "user_nickname_keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "single role mask value, at most one bit set",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "description": "pagination offset",
                         "name": "offset",
@@ -4958,6 +4970,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/val.UserVal"
                 },
                 "user_id": {
+                    "type": "string"
+                },
+                "user_nickname": {
                     "type": "string"
                 }
             }
