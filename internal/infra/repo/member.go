@@ -1,6 +1,9 @@
 package repo_infra
 
 import (
+	"strings"
+	"time"
+
 	"poprako-s/internal/domain/model/aggr"
 	"poprako-s/internal/domain/model/enum"
 	"poprako-s/internal/domain/model/query"
@@ -73,11 +76,26 @@ func (r *memberRepoImpl) List(opt *query.ListMemberOpt, inc ...enum.MemberIncl) 
 	query := r.gdb.
 		Table(entity.MEMBER_TABLE)
 
-	if opt.UserId != nil {
-		query = query.Where("user_id = ?", *opt.UserId)
-	}
-	if opt.TeamId != nil {
-		query = query.Where("team_id = ?", *opt.TeamId)
+	if opt != nil {
+		if opt.UserId != nil {
+			query = query.Where("user_id = ?", *opt.UserId)
+		}
+		if opt.TeamId != nil {
+			query = query.Where("team_id = ?", *opt.TeamId)
+		}
+		if opt.UserNicknameKeyword != nil {
+			keyword := strings.TrimSpace(*opt.UserNicknameKeyword)
+			if keyword != "" {
+				query = query.Where(entity.MemberUserNicknameCol+" ILIKE ?", "%"+keyword+"%")
+			}
+		}
+
+		if opt.Pagi.Offset > 0 {
+			query = query.Offset(opt.Pagi.Offset)
+		}
+		if opt.Pagi.Limit > 0 {
+			query = query.Limit(opt.Pagi.Limit)
+		}
 	}
 
 	for _, i := range inc {
@@ -127,6 +145,24 @@ func (r *memberRepoImpl) Create(cre *aggr.MemberCre) (*aggr.Member, repo_iface.R
 	}
 
 	return r.GetById(creRow.Id)
+}
+
+// `UpdateUserNickname` updates all member rows of one user with latest nickname.
+func (r *memberRepoImpl) UpdateUserNickname(userId string, userNickname string) repo_iface.RepoErr {
+	now := time.Now()
+
+	updRe := r.gdb.
+		Table(entity.MEMBER_TABLE).
+		Where("user_id = ?", userId).
+		Updates(map[string]any{
+			entity.MemberUserNicknameCol: userNickname,
+			"updated_at":               now,
+		})
+	if updRe.Error != nil {
+		return updRe.Error
+	}
+
+	return nil
 }
 
 func (r *memberRepoImpl) UpdateRoles(upd *aggr.MemberRoleUpd) repo_iface.RepoErr {

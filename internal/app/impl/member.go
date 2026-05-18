@@ -71,6 +71,7 @@ func (a *memberAppImpl) Create(cx context.Context, currUid string, args *val.Cre
 	}
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[val.CreateMemberRes]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[val.CreateMemberRes], error) {
+		userRepo := prov.UserRepo()
 		memberRepo := prov.MemberRepo()
 
 		if re := a.memberSvc.CanCreateMember(currUid, prov.UserRepo(), a.errClsf); re.IsReject() {
@@ -86,7 +87,16 @@ func (a *memberAppImpl) Create(cx context.Context, currUid string, args *val.Cre
 			return app_res.Reject[val.CreateMemberRes](app_res.Conflict, "该用户已经加入该团队"), app_res.DefErr()
 		}
 
-		memberCre := a.memberSvc.NewMemberCre(args.UserId, args.TeamId, args.RoleMask)
+		user, err := userRepo.GetById(args.UserId)
+		if err != nil {
+			if repo_infra.IsNotFound(err) {
+				return app_res.Reject[val.CreateMemberRes](app_res.BadRequest, "用户不存在"), app_res.DefErr()
+			}
+
+			return app_res.Reject[val.CreateMemberRes](app_res.ServerError, "创建成员失败"), err
+		}
+
+		memberCre := a.memberSvc.NewMemberCre(args.UserId, user.Nickname, args.TeamId, args.RoleMask)
 		member, err := memberRepo.Create(memberCre)
 		if err != nil {
 			return app_res.Reject[val.CreateMemberRes](app_res.ServerError, "创建成员失败"), err
@@ -119,7 +129,7 @@ func (a *memberAppImpl) ListByTeam(cx context.Context, currUid string, args *val
 		return app_res.Reject[[]val.MemberVal](app_res.ErrCode(re.Code()), re.Msg())
 	}
 
-	members, err := a.memberRepo.List(mkListMemberOptByTeam(args.TeamId, args.Includes, args.Offset, args.Limit), args.Includes...)
+	members, err := a.memberRepo.List(mkListMemberOptByTeam(args.TeamId, args.UserNicknameKeyword, args.Includes, args.Offset, args.Limit), args.Includes...)
 	if err != nil {
 		lgr.Error("[memberAppImpl.ListByTeam] failed to list members", zap.Error(err))
 
@@ -297,7 +307,7 @@ func (a *memberAppImpl) JoinTeam(cx context.Context, currUid string, args *val.J
 			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 		}
 
-		memberCre := a.memberSvc.NewMemberCre(currUid, targetInv.TeamId, targetInv.RoleMask)
+		memberCre := a.memberSvc.NewMemberCre(currUid, currUser.Nickname, targetInv.TeamId, targetInv.RoleMask)
 		if _, err := memberRepo.Create(memberCre); err != nil {
 			return app_res.Reject[app_res.None](app_res.ServerError, "加入团队失败"), err
 		}

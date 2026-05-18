@@ -8,6 +8,8 @@ type ListMemberOpt struct {
 	// the query will return the member that matches both criteria.
 	UserId *string
 	TeamId *string
+	// `UserNicknameKeyword` applies fuzzy search on `user_nickname`.
+	UserNicknameKeyword *string
 
 	Pagi PagiOpt
 

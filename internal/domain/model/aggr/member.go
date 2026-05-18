@@ -14,6 +14,8 @@ type Member struct {
 	Id string
 
 	UserId string
+	// `UserNickname` is the redundant nickname copied from `t_user.nickname`.
+	UserNickname string
 	// `User` is only filled when `includes` option includes `user`.
 	User *User
 
@@ -30,7 +32,9 @@ type MemberCre struct {
 	Id string
 
 	UserId string
-	TeamId string
+	// `UserNickname` is used to fill `t_member.user_nickname` during insert.
+	UserNickname string
+	TeamId       string
 
 	RoleMask RoleMask
 }

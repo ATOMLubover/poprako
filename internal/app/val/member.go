@@ -9,8 +9,9 @@ import (
 type MemberVal struct {
 	Id string `json:"id"`
 
-	UserId string `json:"user_id"`
-	TeamId string `json:"team_id"`
+	UserId       string `json:"user_id"`
+	UserNickname string `json:"user_nickname"`
+	TeamId       string `json:"team_id"`
 
 	RoleMask aggr.RoleMask `json:"role_mask"`
 
@@ -37,6 +38,8 @@ type CreateMemberRes struct {
 // `ListMemberByTeamArgs` carries list args for members under one team.
 type ListMemberByTeamArgs struct {
 	TeamId string `url:"team_id"`
+	// `UserNicknameKeyword` is fuzzy keyword on `user_nickname`.
+	UserNicknameKeyword string `url:"user_nickname_keyword"`
 
 	Includes []enum.MemberIncl `url:"includes"`
 

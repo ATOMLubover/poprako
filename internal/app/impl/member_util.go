@@ -1,6 +1,8 @@
 package app_impl
 
 import (
+	"strings"
+
 	app_res "poprako-s/internal/app/res"
 	app_util "poprako-s/internal/app/util"
 	"poprako-s/internal/app/val"
@@ -14,12 +16,13 @@ import (
 // `asmMemberVal` converts one member aggregate into app value object.
 func asmMemberVal(member *aggr.Member, signer oss_iface.Signer) (*val.MemberVal, error) {
 	memberVal := &val.MemberVal{
-		Id:        member.Id,
-		UserId:    member.UserId,
-		TeamId:    member.TeamId,
-		RoleMask:  member.ToRoleMask(),
-		CreatedAt: member.CreatedAt.UnixMilli(),
-		UpdatedAt: member.UpdatedAt.UnixMilli(),
+		Id:           member.Id,
+		UserId:       member.UserId,
+		UserNickname: member.UserNickname,
+		TeamId:       member.TeamId,
+		RoleMask:     member.ToRoleMask(),
+		CreatedAt:    member.CreatedAt.UnixMilli(),
+		UpdatedAt:    member.UpdatedAt.UnixMilli(),
 	}
 
 	if member.User != nil {
@@ -44,9 +47,17 @@ func asmMemberVal(member *aggr.Member, signer oss_iface.Signer) (*val.MemberVal,
 }
 
 // `mkListMemberOptByTeam` creates member list query option by team.
-func mkListMemberOptByTeam(teamId string, includes []enum.MemberIncl, offset int, limit int) *query.ListMemberOpt {
+func mkListMemberOptByTeam(teamId string, userNicknameKeyword string, includes []enum.MemberIncl, offset int, limit int) *query.ListMemberOpt {
+	trimmedNicknameKeyword := strings.TrimSpace(userNicknameKeyword)
+
+	var keywordOpt *string
+	if trimmedNicknameKeyword != "" {
+		keywordOpt = &trimmedNicknameKeyword
+	}
+
 	return &query.ListMemberOpt{
-		TeamId: &teamId,
+		TeamId:              &teamId,
+		UserNicknameKeyword: keywordOpt,
 		Pagi: query.PagiOpt{
 			Offset: offset,
 			Limit:  limit,

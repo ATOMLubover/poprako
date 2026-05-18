@@ -172,7 +172,7 @@ func (a *userAppImpl) Register(cx context.Context, args *val.UserRegArgs) app_re
 
 		ev = append(ev, userReg.PullEv()...)
 
-		memberCre := a.memberSvc.NewMemberCre(user.Id, inv.TeamId, inv.RoleMask)
+		memberCre := a.memberSvc.NewMemberCre(user.Id, user.Nickname, inv.TeamId, inv.RoleMask)
 
 		_, err = memberRepo.Create(memberCre)
 		if err != nil {
@@ -258,21 +258,35 @@ func (a *userAppImpl) Update(cx context.Context, args *val.UserUpdArgs) app_res.
 		return app_res.Reject[app_res.None](re.Code(), re.Msg())
 	}
 
-	if err := a.userRepo.Update(&aggr.UserUpd{Id: args.Id, Qid: args.Qid, Name: args.Name}); err != nil {
-		if repo_infra.IsNotFound(err) {
-			return app_res.Reject[app_res.None](app_res.BadRequest, "用户不存在")
+	re, err := repo_iface.RunWithTxn[app_res.AppRes[app_res.None]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[app_res.None], error) {
+		userRepo := prov.UserRepo()
+		memberRepo := prov.MemberRepo()
+
+		if err := userRepo.Update(&aggr.UserUpd{Id: args.Id, Qid: args.Qid, Name: args.Name}); err != nil {
+			if repo_infra.IsNotFound(err) {
+				return app_res.Reject[app_res.None](app_res.BadRequest, "用户不存在"), app_res.DefErr()
+			}
+
+			if repo_infra.IsDupKey(err) {
+				return app_res.Reject[app_res.None](app_res.Conflict, "qid 或昵称已被使用"), app_res.DefErr()
+			}
+
+			return app_res.Reject[app_res.None](app_res.ServerError, "更新用户信息失败"), err
 		}
 
-		if repo_infra.IsDupKey(err) {
-			return app_res.Reject[app_res.None](app_res.Conflict, "qid 或昵称已被使用")
+		if err := memberRepo.UpdateUserNickname(args.Id, args.Name); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "更新用户信息失败"), err
 		}
 
-		lgr.Error("[userAppImpl.Update] failed to update user", zap.Error(err))
+		return app_res.Accept(&app_res.None{}), nil
+	})
+	if err != nil {
+		lgr.Error("[userAppImpl.Update] failed to run transaction", zap.Error(err))
 
-		return app_res.Reject[app_res.None](app_res.ServerError, "更新用户信息失败")
+		return re
 	}
 
-	return app_res.Accept(&app_res.None{})
+	return re
 }
 
 // func (a *userAppImpl) UpdateInfo(cx context.Context, args *val.UserUpdateArgs) app_res.AppRes[app_res.None] {

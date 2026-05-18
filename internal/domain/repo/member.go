@@ -15,6 +15,7 @@ type MemberRepo interface {
 	Create(cre *aggr.MemberCre) (*aggr.Member, RepoErr)
 
 	UpdateRoles(upd *aggr.MemberRoleUpd) RepoErr
+	UpdateUserNickname(userId string, userNickname string) RepoErr
 
 	// `Delete` executes a **hard** delete on given member id.
 	Delete(id string) RepoErr

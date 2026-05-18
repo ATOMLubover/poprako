@@ -60,6 +60,7 @@ func CreateMember(st *state.AppState) iris.Handler {
 // @Produce json
 // @Param team_id query string true "team id"
 // @Param includes query []string false "include related fields, optional: user, team"
+// @Param user_nickname_keyword query string false "fuzzy keyword for member user nickname"
 // @Param offset query int false "pagination offset"
 // @Param limit query int false "pagination limit"
 // @Success 200 {object} res.HttpRes[[]val.MemberVal]

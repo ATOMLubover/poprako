@@ -8,11 +8,15 @@ import (
 
 const MEMBER_TABLE = "t_member"
 
+// `MemberUserNicknameCol` is the `user_nickname` column name in `t_member`.
+const MemberUserNicknameCol = "user_nickname"
+
 type MemberRow struct {
 	Id string `gorm:"column:id;primaryKey"`
 
-	UserId string   `gorm:"column:user_id"`
-	User   *UserRow `gorm:"foreignKey:UserId"`
+	UserId       string   `gorm:"column:user_id"`
+	UserNickname string   `gorm:"column:user_nickname"`
+	User         *UserRow `gorm:"foreignKey:UserId"`
 
 	TeamId string   `gorm:"column:team_id"`
 	Team   *TeamRow `gorm:"foreignKey:TeamId"`
@@ -51,21 +55,23 @@ func (r *MemberRow) ToMemberAggr() *aggr.Member {
 			AssignedPublisherAt:   r.AssignedPublisherAt,
 			AssignedAdminAt:       r.AssignedAdminAt,
 		},
-		Id:        r.Id,
-		UserId:    r.UserId,
-		User:      r.User.ToUserAggr(),
-		TeamId:    r.TeamId,
-		Team:      r.Team.ToTeamAggr(),
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
+		Id:           r.Id,
+		UserId:       r.UserId,
+		UserNickname: r.UserNickname,
+		User:         r.User.ToUserAggr(),
+		TeamId:       r.TeamId,
+		Team:         r.Team.ToTeamAggr(),
+		CreatedAt:    r.CreatedAt,
+		UpdatedAt:    r.UpdatedAt,
 	}
 }
 
 type MemberCreRow struct {
 	Id string `gorm:"column:id;primaryKey"`
 
-	UserId string `gorm:"column:user_id"`
-	TeamId string `gorm:"column:team_id"`
+	UserId       string `gorm:"column:user_id"`
+	UserNickname string `gorm:"column:user_nickname"`
+	TeamId       string `gorm:"column:team_id"`
 
 	AssignedRawProviderAt *time.Time `gorm:"column:assigned_raw_provider_at"`
 	AssignedTranslatorAt  *time.Time `gorm:"column:assigned_translator_at"`
@@ -89,8 +95,9 @@ func NewMemberCreRowFromAggr(cre *aggr.MemberCre) *MemberCreRow {
 	return &MemberCreRow{
 		Id: cre.Id,
 
-		UserId: cre.UserId,
-		TeamId: cre.TeamId,
+		UserId:       cre.UserId,
+		UserNickname: cre.UserNickname,
+		TeamId:       cre.TeamId,
 
 		AssignedRawProviderAt: roles.AssignedRawProviderAt,
 		AssignedTranslatorAt:  roles.AssignedTranslatorAt,
