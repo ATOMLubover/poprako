@@ -29,7 +29,7 @@ func Auth() iris.Handler {
 		authCookie := cx.GetCookie("authorization")
 
 		if authHeader == "" && authCookie == "" {
-			res.Reject(cx, 401, "缺少授权信息")
+			res.Reject(cx, 401, "缺少授权信息，请尝试重新登录")
 			return
 		}
 
@@ -47,7 +47,7 @@ func Auth() iris.Handler {
 
 		utk, err := parser.ParseToken(token_iface.SignedToken(tk))
 		if err != nil {
-			res.Reject(cx, 401, "无效的授权信息")
+			res.Reject(cx, 401, "无效的授权信息，请尝试重新登录")
 			return
 		}
 
