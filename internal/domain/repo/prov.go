@@ -7,6 +7,8 @@ type Prov interface {
 	UserRepo() UserRepo
 	TeamRepo() TeamRepo
 	MemberRepo() MemberRepo
+	AnnouncementRepo() AnnouncementRepo
+	CommentRepo() CommentRepo
 	MemberInvRepo() MemberInvRepo
 	WorksetRepo() WorksetRepo
 	ComicRepo() ComicRepo

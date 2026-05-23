@@ -91,6 +91,18 @@ func NewApp(st *state.AppState) *iris.Application {
 				memberInvitation.Delete("/{invitation_id}", DeleteMemberInvitation(st))
 			}
 
+			announcement := authorized.Party("/announcements")
+			{
+				announcement.Get("", ListAnnouncements(st))
+				announcement.Post("", CreateAnnouncement(st))
+			}
+
+			comment := authorized.Party("/comments")
+			{
+				comment.Get("", ListComments(st))
+				comment.Post("", CreateComment(st))
+			}
+
 			workset := authorized.Party("/worksets")
 			{
 				workset.Get("", ListWorksets(st))

@@ -32,6 +32,20 @@ definitions:
         description: '`Msg` carries a human-readable error message; empty on success'
         type: string
     type: object
+  res.HttpRes-array_val_AnnouncementVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.AnnouncementVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
   res.HttpRes-array_val_AssignmentInvVal:
     properties:
       code:
@@ -83,6 +97,20 @@ definitions:
         description: '`Data` holds the response payload; nil when no body is returned'
         items:
           $ref: '#/definitions/val.ComicVal'
+        type: array
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-array_val_CommentVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        description: '`Data` holds the response payload; nil when no body is returned'
+        items:
+          $ref: '#/definitions/val.CommentVal'
         type: array
       message:
         description: '`Msg` carries a human-readable error message; empty on success'
@@ -172,6 +200,19 @@ definitions:
         description: '`Msg` carries a human-readable error message; empty on success'
         type: string
     type: object
+  res.HttpRes-val_AnnouncementCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.AnnouncementCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
   res.HttpRes-val_AssignmentVal:
     properties:
       code:
@@ -250,6 +291,19 @@ definitions:
         description: '`Msg` carries a human-readable error message; empty on success'
         type: string
     type: object
+  res.HttpRes-val_CommentCreatedRes:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.CommentCreatedRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
   res.HttpRes-val_CreateAssignmentInvRes:
     properties:
       code:
@@ -310,6 +364,19 @@ definitions:
       data:
         allOf:
         - $ref: '#/definitions/val.ListPageUnitsRes'
+        description: '`Data` holds the response payload; nil when no body is returned'
+      message:
+        description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  res.HttpRes-val_MemberVal:
+    properties:
+      code:
+        description: '`Code` is the HTTP status code mirrored in JSON for client convenience'
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/val.MemberVal'
         description: '`Data` holds the response payload; nil when no body is returned'
       message:
         description: '`Msg` carries a human-readable error message; empty on success'
@@ -469,6 +536,28 @@ definitions:
         description: '`Data` holds the response payload; nil when no body is returned'
       message:
         description: '`Msg` carries a human-readable error message; empty on success'
+        type: string
+    type: object
+  val.AnnouncementCreatedRes:
+    properties:
+      id:
+        type: string
+    type: object
+  val.AnnouncementVal:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      team_id:
+        type: string
+      title:
+        type: string
+      user:
+        $ref: '#/definitions/val.UserVal'
+      user_id:
         type: string
     type: object
   val.AssignmentInvVal:
@@ -669,6 +758,35 @@ definitions:
       workset_id:
         type: string
     type: object
+  val.CommentCreatedRes:
+    properties:
+      id:
+        type: string
+    type: object
+  val.CommentVal:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: string
+      team_id:
+        type: string
+      user:
+        $ref: '#/definitions/val.UserVal'
+      user_id:
+        type: string
+    type: object
+  val.CreateAnnouncementArgs:
+    properties:
+      content:
+        type: string
+      team_id:
+        type: string
+      title:
+        type: string
+    type: object
   val.CreateAssignmentInvArgs:
     properties:
       chapter_id:
@@ -712,6 +830,13 @@ definitions:
         type: string
       workset_id:
         description: '`WorksetId` is the owning workset id'
+        type: string
+    type: object
+  val.CreateCommentArgs:
+    properties:
+      content:
+        type: string
+      team_id:
         type: string
     type: object
   val.CreateMemberArgs:
@@ -1288,6 +1413,88 @@ info:
   title: Poprako-S Refactor API
   version: 0.4.0
 paths:
+  /api/v1/announcements:
+    get:
+      description: |-
+        List announcements under one team
+        The caller must be member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: query
+        name: team_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AnnouncementVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Team Announcements
+      tags:
+      - announcement
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create one announcement under one team
+        The caller must be team admin
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create announcement args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateAnnouncementArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_AnnouncementCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Team Announcement
+      tags:
+      - announcement
   /api/v1/assignment-invitations:
     get:
       description: |-
@@ -2430,6 +2637,88 @@ paths:
       summary: Confirm Comic Cover Uploaded
       tags:
       - comic
+  /api/v1/comments:
+    get:
+      description: |-
+        List comments under one team
+        The caller must be member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: team id
+        in: query
+        name: team_id
+        required: true
+        type: string
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_CommentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List Team Comments
+      tags:
+      - comment
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create one team board comment
+        The caller must be team member
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: create comment args
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/val.CreateCommentArgs'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_CommentCreatedRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Team Comment
+      tags:
+      - comment
   /api/v1/member-invitations:
     get:
       description: |-
@@ -2776,6 +3065,58 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update Member Role
+      tags:
+      - member
+  /api/v1/members/detail:
+    get:
+      description: |-
+        Get one member record by `user_id` and `team_id`
+        The caller must be a member of the target team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: user id
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: team id
+        in: query
+        name: team_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: user'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-val_MemberVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Get Member By User And Team
       tags:
       - member
   /api/v1/members/join:

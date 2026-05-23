@@ -18,6 +18,7 @@ import { phase5Translate } from "./src/phases/phase5-translate";
 import { phase6WorkflowProofread } from "./src/phases/phase6-workflow-proofread";
 import { phase7Proofread } from "./src/phases/phase7-proofread";
 import { phase8Finalize } from "./src/phases/phase8-finalize";
+import { phase9TeamBoard } from "./src/phases/phase9-team-board";
 import type { SeedState } from "./src/types";
 
 const RESET = "\x1b[0m";
@@ -62,6 +63,7 @@ async function run(): Promise<void> {
     { name: "Phase 6 — Workflow Proofread", fn: phase6WorkflowProofread },
     { name: "Phase 7 — Proofread", fn: phase7Proofread },
     { name: "Phase 8 — Finalize", fn: phase8Finalize },
+    { name: "Phase 9 — Team Board", fn: phase9TeamBoard },
   ];
 
   for (const { name, fn } of phases) {

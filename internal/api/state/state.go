@@ -22,6 +22,12 @@ type AppState struct {
 	// `MemberInvApp` handles member invitation use-cases.
 	MemberInvApp app_iface.MemberInvApp
 
+	// `AnnouncementApp` handles team announcement use-cases.
+	AnnouncementApp app_iface.AnnouncementApp
+
+	// `CommentApp` handles team comment use-cases.
+	CommentApp app_iface.CommentApp
+
 	// `WorksetApp` handles workset-related use-cases.
 	WorksetApp app_iface.WorksetApp
 
@@ -57,6 +63,8 @@ func NewAppState(
 	teamApp app_iface.TeamApp,
 	memberApp app_iface.MemberApp,
 	memberInvApp app_iface.MemberInvApp,
+	announcementApp app_iface.AnnouncementApp,
+	commentApp app_iface.CommentApp,
 	worksetApp app_iface.WorksetApp,
 	comicApp app_iface.ComicApp,
 	chapterApp app_iface.ChapterApp,
@@ -73,6 +81,8 @@ func NewAppState(
 		TeamApp:          teamApp,
 		MemberApp:        memberApp,
 		MemberInvApp:     memberInvApp,
+		AnnouncementApp:  announcementApp,
+		CommentApp:       commentApp,
 		WorksetApp:       worksetApp,
 		ComicApp:         comicApp,
 		ChapterApp:       chapterApp,

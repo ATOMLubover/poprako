@@ -203,8 +203,12 @@ func (a *assignmentAppImpl) Upsert(cx context.Context, currUid string, args *val
 		assignmentRepo := prov.AssignmentRepo()
 
 		if currUid == args.UserId {
-			if re := a.assignmentSvc.CanSelfReduceAssignment(currUid, args.UserId, args.ChapterId, args.RoleMask, assignmentRepo, a.errClsf); re.IsReject() {
-				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+			// 若操作者是监修(reviewer)，则拥有对章节分配的完全管理权（含自身）。
+			// 非监修只能缩减或退出自己的分配。
+			if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {
+				if re := a.assignmentSvc.CanSelfReduceAssignment(currUid, args.UserId, args.ChapterId, args.RoleMask, assignmentRepo, a.errClsf); re.IsReject() {
+					return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+				}
 			}
 		} else {
 			if re := a.assignmentSvc.CanReviewAssignment(currUid, args.ChapterId, assignmentRepo, a.errClsf); re.IsReject() {

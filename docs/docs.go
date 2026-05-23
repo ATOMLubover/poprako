@@ -15,6 +15,125 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/announcements": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List announcements under one team\nThe caller must be member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "announcement"
+                ],
+                "summary": "List Team Announcements",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_AnnouncementVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create one announcement under one team\nThe caller must be team admin\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "announcement"
+                ],
+                "summary": "Create Team Announcement",
+                "parameters": [
+                    {
+                        "description": "create announcement args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.CreateAnnouncementArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_AnnouncementCreatedRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/assignment-invitations": {
             "get": {
                 "security": [
@@ -1669,6 +1788,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/comments": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List comments under one team\nThe caller must be member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment"
+                ],
+                "summary": "List Team Comments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_CommentVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create one team board comment\nThe caller must be team member\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment"
+                ],
+                "summary": "Create Team Comment",
+                "parameters": [
+                    {
+                        "description": "create comment args",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/val.CreateCommentArgs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_CommentCreatedRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/member-invitations": {
             "get": {
                 "security": [
@@ -2046,6 +2284,81 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/members/detail": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get one member record by ` + "`" + `user_id` + "`" + ` and ` + "`" + `team_id` + "`" + `\nThe caller must be a member of the target team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "member"
+                ],
+                "summary": "Get Member By User And Team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "team id",
+                        "name": "team_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user",
+                        "name": "includes",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-val_MemberVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/res.HttpRes-any"
                         }
@@ -3708,6 +4021,26 @@ const docTemplate = `{
                 }
             }
         },
+        "res.HttpRes-array_val_AnnouncementVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.AnnouncementVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
         "res.HttpRes-array_val_AssignmentInvVal": {
             "type": "object",
             "properties": {
@@ -3780,6 +4113,26 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/val.ComicVal"
+                    }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-array_val_CommentVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/val.CommentVal"
                     }
                 },
                 "message": {
@@ -3901,6 +4254,27 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/val.WorksetVal"
                     }
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_AnnouncementCreatedRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.AnnouncementCreatedRes"
+                        }
+                    ]
                 },
                 "message": {
                     "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
@@ -4034,6 +4408,27 @@ const docTemplate = `{
                 }
             }
         },
+        "res.HttpRes-val_CommentCreatedRes": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.CommentCreatedRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
         "res.HttpRes-val_CreateAssignmentInvRes": {
             "type": "object",
             "properties": {
@@ -4130,6 +4525,27 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/val.ListPageUnitsRes"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "res.HttpRes-val_MemberVal": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "` + "`" + `Code` + "`" + ` is the HTTP status code mirrored in JSON for client convenience",
+                    "type": "integer"
+                },
+                "data": {
+                    "description": "` + "`" + `Data` + "`" + ` holds the response payload; nil when no body is returned",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/val.MemberVal"
                         }
                     ]
                 },
@@ -4387,6 +4803,40 @@ const docTemplate = `{
                 },
                 "message": {
                     "description": "` + "`" + `Msg` + "`" + ` carries a human-readable error message; empty on success",
+                    "type": "string"
+                }
+            }
+        },
+        "val.AnnouncementCreatedRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.AnnouncementVal": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/val.UserVal"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -4690,6 +5140,51 @@ const docTemplate = `{
                 }
             }
         },
+        "val.CommentCreatedRes": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.CommentVal": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/val.UserVal"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "val.CreateAnnouncementArgs": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "val.CreateAssignmentInvArgs": {
             "type": "object",
             "properties": {
@@ -4749,6 +5244,17 @@ const docTemplate = `{
                 },
                 "workset_id": {
                     "description": "` + "`" + `WorksetId` + "`" + ` is the owning workset id",
+                    "type": "string"
+                }
+            }
+        },
+        "val.CreateCommentArgs": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "team_id": {
                     "type": "string"
                 }
             }

@@ -68,6 +68,8 @@ func main() {
 	teamRepo := repo_infra.NewTeamRepo(gdb)
 	memberInvRepo := repo_infra.NewMemberInvRepo(gdb)
 	memberRepo := repo_infra.NewMemberRepo(gdb)
+	announcementRepo := repo_infra.NewAnnouncementRepo(gdb)
+	commentRepo := repo_infra.NewCommentRepo(gdb)
 	ossMsgRepo := repo_infra.NewOssMsgRepo(gdb)
 	worksetRepo := repo_infra.NewWorksetRepo(gdb)
 	comicRepo := repo_infra.NewComicRepo(gdb)
@@ -84,6 +86,8 @@ func main() {
 	teamSvc := svc.NewTeamSvc()
 	memberSvc := svc.NewMemberSvc()
 	memberInvSvc := svc.NewMemberInvSvc()
+	announcementSvc := svc.NewAnnouncementSvc()
+	commentSvc := svc.NewCommentSvc()
 	ossMsgSvc := svc.NewOssMsgSvc()
 	worksetSvc := svc.NewWorksetSvc()
 	comicSvc := svc.NewComicSvc()
@@ -152,6 +156,24 @@ func main() {
 			memberRepo,
 			memberInvRepo,
 			memberInvSvc,
+			errClsf,
+		),
+	)
+	announcementApp := app_impl.NewAnnouncementLogApp(
+		app_impl.NewAnnouncementApp(
+			txnCtrl,
+			memberRepo,
+			announcementRepo,
+			announcementSvc,
+			errClsf,
+		),
+	)
+	commentApp := app_impl.NewCommentLogApp(
+		app_impl.NewCommentApp(
+			txnCtrl,
+			memberRepo,
+			commentRepo,
+			commentSvc,
 			errClsf,
 		),
 	)
@@ -225,6 +247,8 @@ func main() {
 		teamApp,
 		memberApp,
 		memberInvApp,
+		announcementApp,
+		commentApp,
 		worksetApp,
 		comicApp,
 		chapterApp,

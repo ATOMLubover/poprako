@@ -22,6 +22,41 @@ export interface TeamInfo {
   description: string;
 }
 
+// ─── Team announcement / comment ─────────────────────────────────────────────
+
+export interface EmbeddedUserInfo {
+  id: string;
+  qid: string;
+  nickname: string;
+}
+
+export interface AnnouncementVal {
+  id: string;
+  team_id: string;
+  user_id: string;
+  user: EmbeddedUserInfo | null;
+  title: string;
+  content: string;
+  created_at: number;
+}
+
+export interface AnnouncementCreatedRes {
+  id: string;
+}
+
+export interface CommentVal {
+  id: string;
+  team_id: string;
+  user_id: string;
+  user: EmbeddedUserInfo | null;
+  content: string;
+  created_at: number;
+}
+
+export interface CommentCreatedRes {
+  id: string;
+}
+
 // ─── Member ──────────────────────────────────────────────────────────────────
 
 export interface CreateMemberRes {

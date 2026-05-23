@@ -26,6 +26,14 @@ func (p *provImpl) MemberRepo() repo_iface.MemberRepo {
 	return NewMemberRepo(p.gdb)
 }
 
+func (p *provImpl) AnnouncementRepo() repo_iface.AnnouncementRepo {
+	return NewAnnouncementRepo(p.gdb)
+}
+
+func (p *provImpl) CommentRepo() repo_iface.CommentRepo {
+	return NewCommentRepo(p.gdb)
+}
+
 func (p *provImpl) MemberInvRepo() repo_iface.MemberInvRepo {
 	return NewMemberInvRepo(p.gdb)
 }
