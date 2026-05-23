@@ -24,6 +24,11 @@ type MemberApp interface {
 	// `Delete` deletes one member by id.
 	Delete(cx context.Context, currUid string, memberId string) app_res.AppRes[app_res.None]
 
+	// `GetByUserTeamId` retrieves one member record by `userId` and `teamId`,
+	// with optional includes (e.g. `MemberInclUser` to preload user info).
+	// The `currUid` must be a member of the target team.
+	GetByUserTeamId(cx context.Context, currUid string, args *val.GetMemberByUserTeamIdArgs) app_res.AppRes[val.MemberVal]
+
 	// `JoinTeam` creates one membership by invitation code.
 	JoinTeam(cx context.Context, currUid string, args *val.JoinTeamArgs) app_res.AppRes[app_res.None]
 }

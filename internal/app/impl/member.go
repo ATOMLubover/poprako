@@ -192,6 +192,52 @@ func (a *memberAppImpl) ListMine(cx context.Context, currUid string, args *val.L
 	return app_res.Accept(&memberVals)
 }
 
+// `GetByUserTeamId` retrieves one member record by `userId` and `teamId`.
+// The `currUid` must be a member of the target team.
+func (a *memberAppImpl) GetByUserTeamId(cx context.Context, currUid string, args *val.GetMemberByUserTeamIdArgs) app_res.AppRes[val.MemberVal] {
+	lgr := app_util.TakeLgr(cx)
+
+	// Validate required input fields.
+	if args == nil || args.UserId == "" || args.TeamId == "" {
+		return app_res.Reject[val.MemberVal](app_res.BadRequest, "user_id 和 team_id 不能为空")
+	}
+
+	// Ensure `currUid` belongs to the target team.
+	if re := a.memberSvc.CanListMember(currUid, args.TeamId, a.memberRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[val.MemberVal](app_res.ErrCode(re.Code()), re.Msg())
+	}
+
+	// Look up the target member by `userId` and `teamId`.
+	member, err := a.memberRepo.GetByUserTeamId(args.UserId, args.TeamId, args.Includes...)
+	if err != nil {
+		lgr.Error(
+			"[memberAppImpl.GetByUserTeamId] failed to get member by user and team",
+			zap.String("userId", args.UserId),
+			zap.String("teamId", args.TeamId),
+			zap.Error(err),
+		)
+
+		if repo_infra.IsNotFound(err) {
+			return app_res.Reject[val.MemberVal](app_res.NotFound, "成员不存在")
+		}
+
+		return app_res.Reject[val.MemberVal](app_res.ServerError, "获取成员信息失败")
+	}
+
+	// Assemble the app-facing value object.
+	memberVal, err := asmMemberVal(member, a.ossSigner)
+	if err != nil {
+		lgr.Error(
+			"[memberAppImpl.GetByUserTeamId] failed to assemble member value",
+			zap.Error(err),
+		)
+
+		return app_res.Reject[val.MemberVal](app_res.ServerError, "获取成员信息失败")
+	}
+
+	return app_res.Accept(memberVal)
+}
+
 // `UpdateRole` updates one member role mask by put semantics.
 func (a *memberAppImpl) UpdateRole(cx context.Context, currUid string, args *val.MemberRoleUpdArgs) app_res.AppRes[app_res.None] {
 	lgr := app_util.TakeLgr(cx)

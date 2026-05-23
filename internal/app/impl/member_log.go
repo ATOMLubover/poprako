@@ -106,6 +106,23 @@ func (a *memberLogAppImpl) Delete(cx context.Context, currUid string, memberId s
 	return a.inner.Delete(cx, currUid, memberId)
 }
 
+// `GetByUserTeamId` enriches logger context and forwards call.
+func (a *memberLogAppImpl) GetByUserTeamId(cx context.Context, currUid string, args *val.GetMemberByUserTeamIdArgs) app_res.AppRes[val.MemberVal] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	if args == nil {
+		return app_res.Reject[val.MemberVal](app_res.BadRequest, "查询参数不能为空")
+	}
+
+	lgr := app_util.TakeLgr(cx).With(zap.String("curr_uid", currUid), zap.String("user_id", args.UserId), zap.String("team_id", args.TeamId))
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.GetByUserTeamId(cx, currUid, args)
+}
+
 // `JoinTeam` enriches logger context and forwards call.
 func (a *memberLogAppImpl) JoinTeam(cx context.Context, currUid string, args *val.JoinTeamArgs) app_res.AppRes[app_res.None] {
 	if cx == nil {

@@ -5,4 +5,6 @@
 - [x] 权限管理
 - [x] 计算 chapter、comic、workset 的 index 基于已有字段
 - [x] 为所有带有 OSS 伴生资源的资源均应用软删除，以防止 OSS 资源泄露
-- [ ] join new team.
+- [x] join new team.
+- [ ] 简单小留言板
+- [ ] cover index of user table

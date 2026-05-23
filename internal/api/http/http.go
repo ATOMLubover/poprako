@@ -76,6 +76,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			{
 				member.Post("", CreateMember(st))
 				member.Get("", ListTeamMembers(st))
+				member.Get("/detail", GetMemberByUserTeam(st))
 				member.Get("/mine", ListMyMembers(st))
 				member.Put("/{member_id}", UpdateMemberRole(st))
 				member.Delete("/{member_id}", DeleteMember(st))

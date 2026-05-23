@@ -64,6 +64,14 @@ type MemberRoleUpdArgs struct {
 	RoleMask aggr.RoleMask `json:"role_mask"`
 }
 
+// `GetMemberByUserTeamIdArgs` carries get args for a single member by `userId` and `teamId`.
+type GetMemberByUserTeamIdArgs struct {
+	UserId string `url:"user_id"`
+	TeamId string `url:"team_id"`
+
+	Includes []enum.MemberIncl `url:"includes"`
+}
+
 // `JoinTeamArgs` carries invitation code for joining one team.
 type JoinTeamArgs struct {
 	InvCode string `json:"invitation_code"`

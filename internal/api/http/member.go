@@ -260,6 +260,66 @@ func DeleteMember(st *state.AppState) iris.Handler {
 	}
 }
 
+// `GetMemberByUserTeam` godoc
+// @Summary Get Member By User And Team
+// @Description Get one member record by `user_id` and `team_id`
+// @Description The caller must be a member of the target team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags member
+// @Security ApiKeyAuth
+// @Produce json
+// @Param user_id query string true "user id"
+// @Param team_id query string true "team id"
+// @Param includes query []string false "include related fields, optional: user"
+// @Success 200 {object} res.HttpRes[val.MemberVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 404 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /api/v1/members/detail [get]
+func GetMemberByUserTeam(st *state.AppState) iris.Handler {
+	memberApp := st.MemberApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		var args val.GetMemberByUserTeamIdArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		// Validate required query params.
+		if args.UserId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 user_id 参数")
+			return
+		}
+
+		if args.TeamId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 team_id 参数")
+			return
+		}
+
+		// Validate includes.
+		if !parseMemberIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
+			return
+		}
+
+		re := memberApp.GetByUserTeamId(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
 // `JoinTeamByInvitation` godoc
 // @Summary Join Team By Invitation
 // @Description Join one team by member invitation code
