@@ -12,7 +12,7 @@ type AssignmentApp interface {
 	// `ListByChapter` lists assignments under one chapter.
 	ListByChapter(cx context.Context, currUid string, args *val.ListAssignmentByChapterArgs) app_res.AppRes[[]val.AssignmentVal]
 
-	// `ListByUser` lists all assignments of current user.
+	// `ListByUser` lists assignments of one user.
 	ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal]
 
 	// `Upsert` executes put-semantics upsert for assignment roles.

@@ -99,6 +99,64 @@ func ListMyAssignments(st *state.AppState) iris.Handler {
 			return
 		}
 
+		args.UserId = currUid
+
+		re := app.ListByUser(newReqCx(cx), currUid, &args)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}
+
+// `ListUserAssignments` godoc
+// @Summary List User Assignments
+// @Description List assignments of one user
+// @Description The caller must be super admin or the target user himself
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags assignment
+// @Security ApiKeyAuth
+// @Produce json
+// @Param user_id path string true "user id"
+// @Param includes query []string false "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator"
+// @Param offset query int false "pagination offset"
+// @Param limit query int false "pagination limit"
+// @Success 200 {object} res.HttpRes[[]val.AssignmentVal]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /api/v1/assignments/users/{user_id} [get]
+func ListUserAssignments(st *state.AppState) iris.Handler {
+	app := st.AssignmentApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		userId := cx.Params().Get("user_id")
+		if userId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 user_id 参数")
+			return
+		}
+
+		var args val.ListAssignmentByUserArgs
+		if err := cx.ReadQuery(&args); err != nil {
+			res.Reject(cx, iris.StatusBadRequest, "请求参数解析失败")
+			return
+		}
+
+		if !parseAssignmentIncludes(args.Includes) {
+			res.Reject(cx, iris.StatusBadRequest, "includes 参数格式错误")
+			return
+		}
+
+		args.UserId = userId
+
 		re := app.ListByUser(newReqCx(cx), currUid, &args)
 		if re.IsReject() {
 			res.Reject(cx, int(re.Code()), re.Msg())

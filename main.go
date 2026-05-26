@@ -234,7 +234,7 @@ func main() {
 	)
 	assignmentApp := app_impl.NewAssignmentLogApp(
 		app_impl.NewAssignmentApp(
-			txnCtrl, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo,
+			txnCtrl, userRepo, memberRepo, worksetRepo, comicRepo, chapterRepo, pageRepo, assignmentRepo,
 			assignmentSvc,
 			ossClient,
 			evBus, errClsf,

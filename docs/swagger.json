@@ -556,6 +556,80 @@
                 }
             }
         },
+        "/api/v1/assignments/users/{user_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List assignments of one user\nThe caller must be super admin or the target user himself\nAuth: `authorization` cookie is preferred over `Authorization` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assignment"
+                ],
+                "summary": "List User Assignments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "include related fields, optional: user, chapter, chapter.comic, chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator",
+                        "name": "includes",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pagination limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-array_val_AssignmentVal"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/assignments/{assignment_id}": {
             "delete": {
                 "security": [

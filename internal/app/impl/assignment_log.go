@@ -54,11 +54,12 @@ func (a *assignmentLogAppImpl) ListByUser(cx context.Context, currUid string, ar
 	}
 
 	if args == nil {
-		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "分页参数不能为空")
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "user_id 和分页参数不能为空")
 	}
 
 	lgr := app_util.TakeLgr(cx).With(
 		zap.String("curr_uid", currUid),
+		zap.String("user_id", args.UserId),
 		zap.Int("offset", args.Offset),
 		zap.Int("limit", args.Limit),
 	)

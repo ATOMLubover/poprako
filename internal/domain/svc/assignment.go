@@ -18,6 +18,24 @@ func NewAssignmentSvc() AssignmentSvc {
 	return AssignmentSvc{}
 }
 
+// `CanListByUser` validates whether caller can list assignments of one target user.
+func (AssignmentSvc) CanListByUser(currUid string, targetUserId string, userRepo repo_iface.UserRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	if currUid == targetUserId {
+		return svc_res.Accept()
+	}
+
+	currUser, err := userRepo.GetById(currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅超级管理员或本人可查看该用户的分配列表", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if currUser == nil || !currUser.IsSuperAdmin {
+		return svc_res.Reject(svc_res.Forbidden, "仅超级管理员或本人可查看该用户的分配列表")
+	}
+
+	return svc_res.Accept()
+}
+
 func (AssignmentSvc) CanReviewAssignment(currUid string, chapterId string, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
 	currAssignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
 	if err != nil {

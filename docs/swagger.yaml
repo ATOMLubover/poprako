@@ -1827,6 +1827,58 @@ paths:
       summary: List My Assignments
       tags:
       - assignment
+  /api/v1/assignments/users/{user_id}:
+    get:
+      description: |-
+        List assignments of one user
+        The caller must be super admin or the target user himself
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: 'include related fields, optional: user, chapter, chapter.comic,
+          chapter.comic.workset, chapter.comic.workset.team, chapter.creator, chapter.comic.creator'
+        in: query
+        items:
+          type: string
+        name: includes
+        type: array
+      - description: pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: pagination limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-array_val_AssignmentVal'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: List User Assignments
+      tags:
+      - assignment
   /api/v1/auth/login:
     post:
       consumes:

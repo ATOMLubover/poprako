@@ -38,8 +38,10 @@ type ListAssignmentByChapterArgs struct {
 	Limit  int `url:"limit"`
 }
 
-// `ListAssignmentByUserArgs` carries my list args for assignment.
+// `ListAssignmentByUserArgs` carries list args for assignments of one user.
 type ListAssignmentByUserArgs struct {
+	UserId string `url:"user_id"`
+
 	Includes []enum.AssignmentIncl `url:"includes"`
 
 	Offset int `url:"offset"`

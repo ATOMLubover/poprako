@@ -23,6 +23,7 @@ type assignmentAppImpl struct {
 
 	assignmentSvc svc.AssignmentSvc
 
+	userRepo       repo_iface.UserRepo
 	memberRepo     repo_iface.MemberRepo
 	worksetRepo    repo_iface.WorksetRepo
 	comicRepo      repo_iface.ComicRepo
@@ -39,6 +40,7 @@ type assignmentAppImpl struct {
 // `NewAssignmentApp` creates one `AssignmentApp` implementation.
 func NewAssignmentApp(
 	txnCtrl repo_iface.TxnCtrl,
+	userRepo repo_iface.UserRepo,
 	memberRepo repo_iface.MemberRepo,
 	worksetRepo repo_iface.WorksetRepo,
 	comicRepo repo_iface.ComicRepo,
@@ -50,10 +52,11 @@ func NewAssignmentApp(
 	evBus event_iface.EvBus,
 	errClsf repo_iface.ErrClsf,
 ) app_iface.AssignmentApp {
-	if txnCtrl == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || pageRepo == nil || assignmentRepo == nil || ossSigner == nil || evBus == nil || errClsf == nil {
+	if txnCtrl == nil || userRepo == nil || memberRepo == nil || worksetRepo == nil || comicRepo == nil || chapterRepo == nil || pageRepo == nil || assignmentRepo == nil || ossSigner == nil || evBus == nil || errClsf == nil {
 		zap.L().Panic(
 			"[NewAssignmentApp] nil dependency",
 			zap.Bool("txnCtrl", txnCtrl == nil),
+			zap.Bool("userRepo", userRepo == nil),
 			zap.Bool("memberRepo", memberRepo == nil),
 			zap.Bool("worksetRepo", worksetRepo == nil),
 			zap.Bool("comicRepo", comicRepo == nil),
@@ -69,6 +72,7 @@ func NewAssignmentApp(
 	return &assignmentAppImpl{
 		txnCtrl:        txnCtrl,
 		assignmentSvc:  assignmentSvc,
+		userRepo:       userRepo,
 		memberRepo:     memberRepo,
 		worksetRepo:    worksetRepo,
 		comicRepo:      comicRepo,
@@ -140,31 +144,41 @@ func (a *assignmentAppImpl) ListByChapter(cx context.Context, currUid string, ar
 	return app_res.Accept(&assignmentVals)
 }
 
+// `ListByUser` lists assignments of one user for self or super admin.
 func (a *assignmentAppImpl) ListByUser(cx context.Context, currUid string, args *val.ListAssignmentByUserArgs) app_res.AppRes[[]val.AssignmentVal] {
 	lgr := app_util.TakeLgr(cx)
 
-	if args == nil {
-		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "分页参数不能为空")
+	// Validate required target user and pagination arguments.
+	if args == nil || args.UserId == "" {
+		return app_res.Reject[[]val.AssignmentVal](app_res.BadRequest, "user_id 和分页参数不能为空")
 	}
 
 	if re := vfyAssignmentListArgs(args.Offset, &args.Limit); re.IsReject() {
 		return app_res.Reject[[]val.AssignmentVal](re.Code(), re.Msg())
 	}
 
+	// Ensure caller can view assignments of the target user.
+	if re := a.assignmentSvc.CanListByUser(currUid, args.UserId, a.userRepo, a.errClsf); re.IsReject() {
+		return app_res.Reject[[]val.AssignmentVal](app_res.ErrCode(re.Code()), re.Msg())
+	}
+
+	// Load newest assignments of the target user.
 	items, err := a.assignmentRepo.List(
-		mkListAssignmentOptByUser(currUid, args.Includes, args.Offset, args.Limit),
+		mkListAssignmentOptByUser(args.UserId, args.Includes, args.Offset, args.Limit),
 		mkAssignmentRepoIncl(args.Includes)...,
 	)
 	if err != nil {
-		lgr.Error("[assignmentAppImpl.ListMy] failed to list assignments", zap.Error(err))
+		lgr.Error("[assignmentAppImpl.ListByUser] failed to list assignments", zap.Error(err))
 		return app_res.Reject[[]val.AssignmentVal](app_res.ServerError, "获取分配列表失败")
 	}
 
+	// Map repo aggregates into app-facing values.
 	assignmentVals := make([]val.AssignmentVal, len(items))
 	for i, item := range items {
 		assignmentVals[i] = asmAssignmentVal(item)
 	}
 
+	// Fill comic cover URLs when related chapter data is included.
 	if err := tryFillCoverForAssignments(
 		assignmentVals,
 		a.ossSigner,

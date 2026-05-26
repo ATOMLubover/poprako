@@ -168,6 +168,7 @@ func NewApp(st *state.AppState) *iris.Application {
 			assignment := authorized.Party("/assignments")
 			{
 				assignment.Get("", ListAssignmentsByChapter(st))
+				assignment.Get("/users/{user_id}", ListUserAssignments(st))
 				assignment.Get("/mine", ListMyAssignments(st))
 				assignment.Put("", UpsertAssignment(st))
 				assignment.Delete("/{assignment_id}", DeleteAssignment(st))
