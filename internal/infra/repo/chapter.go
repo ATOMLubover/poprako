@@ -2,7 +2,7 @@ package repo_infra
 
 import (
 	"errors"
-	"strconv"
+	"fmt"
 	"time"
 
 	"poprako-s/internal/domain/model/aggr"
@@ -151,7 +151,7 @@ func (r *chapterRepoImpl) Create(cre *aggr.ChapterCre) (*aggr.Chapter, repo_ifac
 	if cre.Subtitle != nil && *cre.Subtitle != "" {
 		subtitle = *cre.Subtitle
 	} else {
-		subtitle = "Ch." + fmtInt(cre.Index)
+		subtitle = fmt.Sprintf("第%d话", cre.Index+1)
 	}
 
 	row := entity.NewChapterCreRowFromAggr(cre, subtitle)
@@ -353,9 +353,4 @@ func withChapterIncl(q *gorm.DB, inc ...enum.ChapterIncl) *gorm.DB {
 	}
 
 	return q
-}
-
-// `fmtInt` formats index without importing `strconv` in multiple places.
-func fmtInt(n int) string {
-	return strconv.FormatInt(int64(n), 10)
 }

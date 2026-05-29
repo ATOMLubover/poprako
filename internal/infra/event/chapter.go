@@ -102,15 +102,15 @@ func (h *NotifyNextPhaseHandler) Handle(cx context.Context, ev event_iface.Event
 	mailTitle := fmt.Sprintf(
 		"你参加的漫画『%s』#%d 章节有进度更新",
 		shortTitle,
-		chapter.Index,
+		chapter.Index+1,
 	)
 	mailContent := fmt.Sprintf(
-		"「%s」-「%s」漫画 %d『%s』#%d 章节「%s」已完成。",
+		"「%s」-「%s」漫画 #%d『%s』#%d 章节「%s」已完成。",
 		chapter.Comic.Workset.Team.Name,
 		chapter.Comic.Workset.Name,
-		chapter.Comic.Index,
+		chapter.Comic.Index+1,
 		shortTitle,
-		chapter.Index,
+		chapter.Index+1,
 		workflowCn,
 	)
 

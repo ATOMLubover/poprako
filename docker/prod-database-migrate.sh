@@ -3,7 +3,6 @@ set -eu
 
 MIGRATIONS_DIR="${MIGRATIONS_DIR:-/migrations}"
 TRACK_TABLE="${MIGRATION_TRACK_TABLE:-schema_migration_table}"
-BASELINE_TABLE="${MIGRATION_BASELINE_TABLE:-public.t_assignment_invitation}"
 
 set -- "$MIGRATIONS_DIR"/*.up.sql
 if [ ! -e "$1" ]; then
@@ -25,10 +24,10 @@ CREATE TABLE IF NOT EXISTS public.${TRACK_TABLE} (
 );
 SQL
 
-table_count="$(psql -tAqc "SELECT count(*) FROM public.${TRACK_TABLE}")"
-baseline_exists="$(psql -tAqc "SELECT to_regclass('${BASELINE_TABLE}')")"
+track_count="$(psql -tAqc "SELECT count(*) FROM public.${TRACK_TABLE}")"
+public_table_count="$(psql -tAqc "SELECT count(*) FROM pg_tables WHERE schemaname='public'")"
 
-if [ "$table_count" = "0" ] && [ "$baseline_exists" = "$BASELINE_TABLE" ]; then
+if [ "$track_count" = "0" ] && [ "$public_table_count" != "0" ]; then
     echo "Detected pre-existing schema. Baseline current migrations as applied."
     for f in $(printf '%s\n' "$MIGRATIONS_DIR"/*.up.sql | sort); do
         version="$(basename "$f")"

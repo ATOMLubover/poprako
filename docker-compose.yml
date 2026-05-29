@@ -137,3 +137,8 @@ services:
 volumes:
   postgres_data:
   prod_db_data:
+
+networks:
+  default:
+    name: poprako-net
+    external: true

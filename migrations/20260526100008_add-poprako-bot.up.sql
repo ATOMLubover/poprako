@@ -18,10 +18,12 @@ INSERT INTO "t_member" (
     "id",
     "user_id",
     "team_id",
+    "user_nickname",
     "assigned_admin_at"
 ) VALUES (
     'member-00000000-0000-0000-0000-000000000002',
     'user-00000000-0000-0000-0000-000000000002',
     'team-00000000-0000-0000-0000-000000000001',
+    '白杨子Bot',
     NOW()
 ) ON CONFLICT (id) DO NOTHING;

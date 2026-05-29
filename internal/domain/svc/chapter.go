@@ -131,5 +131,5 @@ func (ChapterSvc) NewChapterCre(
 
 // `DefSubtitle` returns default subtitle for chapter index.
 func (ChapterSvc) DefSubtitle(index int) string {
-	return fmt.Sprintf("Ch.%d", index)
+	return fmt.Sprintf("第%d话", index+1)
 }
