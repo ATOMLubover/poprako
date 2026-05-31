@@ -114,6 +114,25 @@ func (ChapterSvc) CanTransiteWorkflow(currUid string, chapterId string, t enum.W
 	return svc_res.Accept()
 }
 
+// `CanUpdateChapter` validates that the current user has `RoleReviewer`
+// assignment on the given chapter, which is required for metadata-only updates.
+func (ChapterSvc) CanUpdateChapter(currUid string, chapterId string, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅该章节监修可更新章节信息", "获取章节分配信息失败", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if assignment == nil {
+		return svc_res.Reject(svc_res.Forbidden, "仅该章节监修可更新章节信息")
+	}
+
+	if !assignment.HasAnyRole(enum.RoleReviewer) {
+		return svc_res.Reject(svc_res.Forbidden, "仅该章节监修可更新章节信息")
+	}
+
+	return svc_res.Accept()
+}
+
 // `CanRevertWorkflow` validates that the current user's chapter-level assignment
 // authorises the requested revert transition
 // Publish-complete cannot be reverted by anyone

@@ -4065,7 +4065,15 @@ const docTemplate = `{
                 "typeset_start",
                 "typeset_complete",
                 "review_complete",
-                "publish_complete"
+                "publish_complete",
+                "upload_revert",
+                "translate_start_revert",
+                "translate_revert",
+                "proofread_start_revert",
+                "proofread_revert",
+                "typeset_start_revert",
+                "typeset_revert",
+                "review_revert"
             ],
             "x-enum-varnames": [
                 "WorkflowUploadComplete",
@@ -4076,7 +4084,15 @@ const docTemplate = `{
                 "WorkflowTypesetStart",
                 "WorkflowTypesetComplete",
                 "WorkflowReviewComplete",
-                "WorkflowPublishComplete"
+                "WorkflowPublishComplete",
+                "WorkflowUploadRevert",
+                "WorkflowTranslateStartRevert",
+                "WorkflowTranslateRevert",
+                "WorkflowProofreadStartRevert",
+                "WorkflowProofreadRevert",
+                "WorkflowTypesetStartRevert",
+                "WorkflowTypesetRevert",
+                "WorkflowReviewRevert"
             ]
         },
         "res.HttpRes-any": {
@@ -5043,12 +5059,20 @@ const docTemplate = `{
                     "description": "` + "`" + `IsPinned` + "`" + ` optionally updates pinned status.",
                     "type": "boolean"
                 },
+                "revert_transition": {
+                    "description": "` + "`" + `RevertTransition` + "`" + ` drives a revert of one workflow timestamp back to NULL\nMutually exclusive with ` + "`" + `WorkflowTransition` + "`" + `\nPublish-complete cannot be reverted",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/enum.WorkflowTransition"
+                        }
+                    ]
+                },
                 "subtitle": {
                     "description": "` + "`" + `Subtitle` + "`" + ` is optional subtitle update.",
                     "type": "string"
                 },
                 "workflow_transition": {
-                    "description": "` + "`" + `WorkflowTransition` + "`" + ` drives workflow timestamp mutation.",
+                    "description": "` + "`" + `WorkflowTransition` + "`" + ` drives forward workflow timestamp mutation",
                     "allOf": [
                         {
                             "$ref": "#/definitions/enum.WorkflowTransition"

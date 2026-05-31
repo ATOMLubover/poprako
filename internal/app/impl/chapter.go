@@ -360,8 +360,6 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 	ev := make([]event_iface.Event, 0)
 
 	re, err := repo_iface.RunWithTxn[app_res.AppRes[app_res.None]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[app_res.None], error) {
-		memberRepo := prov.MemberRepo()
-		worksetRepo := prov.WorksetRepo()
 		comicRepo := prov.ComicRepo()
 		chapterRepo := prov.ChapterRepo()
 		pageRepo := prov.PageRepo()
@@ -369,16 +367,6 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 		ossMsgRepo := prov.OssMsgRepo()
 
 		chapter, err := chapterRepo.GetById(args.Id)
-		if err != nil {
-			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
-		}
-
-		comic, err := comicRepo.GetById(chapter.ComicId)
-		if err != nil {
-			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
-		}
-
-		workset, err := worksetRepo.GetById(comic.WorksetId)
 		if err != nil {
 			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可更新章节"), app_res.DefErr()
 		}
@@ -394,8 +382,8 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 			}
 		} else {
-			// Metadata-only update requires team admin permission.
-			if re := a.chapterSvc.CanAdminChapter(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			// Metadata-only update requires chapter-level `RoleReviewer`.
+			if re := a.chapterSvc.CanUpdateChapter(currUid, args.Id, assignmentRepo, a.errClsf); re.IsReject() {
 				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 			}
 		}

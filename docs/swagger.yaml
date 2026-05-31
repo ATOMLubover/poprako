@@ -10,6 +10,14 @@ definitions:
     - typeset_complete
     - review_complete
     - publish_complete
+    - upload_revert
+    - translate_start_revert
+    - translate_revert
+    - proofread_start_revert
+    - proofread_revert
+    - typeset_start_revert
+    - typeset_revert
+    - review_revert
     type: string
     x-enum-varnames:
     - WorkflowUploadComplete
@@ -21,6 +29,14 @@ definitions:
     - WorkflowTypesetComplete
     - WorkflowReviewComplete
     - WorkflowPublishComplete
+    - WorkflowUploadRevert
+    - WorkflowTranslateStartRevert
+    - WorkflowTranslateRevert
+    - WorkflowProofreadStartRevert
+    - WorkflowProofreadRevert
+    - WorkflowTypesetStartRevert
+    - WorkflowTypesetRevert
+    - WorkflowReviewRevert
   res.HttpRes-any:
     properties:
       code:
@@ -645,13 +661,20 @@ definitions:
       is_pinned:
         description: '`IsPinned` optionally updates pinned status.'
         type: boolean
+      revert_transition:
+        allOf:
+        - $ref: '#/definitions/enum.WorkflowTransition'
+        description: |-
+          `RevertTransition` drives a revert of one workflow timestamp back to NULL
+          Mutually exclusive with `WorkflowTransition`
+          Publish-complete cannot be reverted
       subtitle:
         description: '`Subtitle` is optional subtitle update.'
         type: string
       workflow_transition:
         allOf:
         - $ref: '#/definitions/enum.WorkflowTransition'
-        description: '`WorkflowTransition` drives workflow timestamp mutation.'
+        description: '`WorkflowTransition` drives forward workflow timestamp mutation'
     type: object
   val.ChapterVal:
     properties:
