@@ -79,6 +79,7 @@ type GetChapterByIdArgs struct {
 }
 
 // `ChapterUpdArgs` holds mutable chapter fields.
+// `WorkflowTransition` and `RevertTransition` are mutually exclusive; set at most one
 type ChapterUpdArgs struct {
 	// `Id` identifies target chapter.
 	Id string `json:"id"`
@@ -88,8 +89,12 @@ type ChapterUpdArgs struct {
 	// `IsPinned` optionally updates pinned status.
 	IsPinned *bool `json:"is_pinned"`
 
-	// `WorkflowTransition` drives workflow timestamp mutation.
+	// `WorkflowTransition` drives forward workflow timestamp mutation
 	WorkflowTransition *enum.WorkflowTransition `json:"workflow_transition"`
+	// `RevertTransition` drives a revert of one workflow timestamp back to NULL
+	// Mutually exclusive with `WorkflowTransition`
+	// Publish-complete cannot be reverted
+	RevertTransition *enum.WorkflowTransition `json:"revert_transition"`
 }
 
 // `JoinChapterArgs` holds input for chapter joining.

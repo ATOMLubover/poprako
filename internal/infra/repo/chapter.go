@@ -289,6 +289,7 @@ func (r *chapterRepoImpl) Update(upd *aggr.ChapterUpd) repo_iface.RepoErr {
 		return tx.Error
 	}
 
+	// Revert transitions are no-op when the field is already NULL; skip the rows-affected check
 	if upd.WorkflowTransition != nil && tx.RowsAffected == 0 {
 		return errConditionalUpdateFailed
 	}

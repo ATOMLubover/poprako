@@ -123,9 +123,20 @@ func vfyUpdateChapterArgs(args *val.ChapterUpdArgs) app_res.AppRes[app_res.None]
 		args.Subtitle = &subtitle
 	}
 
+	// `WorkflowTransition` and `RevertTransition` are mutually exclusive
+	if args.WorkflowTransition != nil && args.RevertTransition != nil {
+		return app_res.Reject[app_res.None](app_res.BadRequest, "workflow_transition 和 revert_transition 不能同时设置")
+	}
+
 	if args.WorkflowTransition != nil {
 		if !isWorkflowTransitionValid(*args.WorkflowTransition) {
 			return app_res.Reject[app_res.None](app_res.BadRequest, "workflow_transition 参数不合法")
+		}
+	}
+
+	if args.RevertTransition != nil {
+		if !isWorkflowRevertTransitionValid(*args.RevertTransition) {
+			return app_res.Reject[app_res.None](app_res.BadRequest, "revert_transition 参数不合法")
 		}
 	}
 
@@ -163,6 +174,23 @@ func vfyJoinChapterArgs(args val.JoinChapterArgs) app_res.AppRes[app_res.None] {
 	return app_res.Accept(&app_res.None{})
 }
 
+// `isWorkflowRevertTransitionValid` checks revert transition value in closed set
+func isWorkflowRevertTransitionValid(t enum.WorkflowTransition) bool {
+	switch t {
+	case enum.WorkflowUploadRevert,
+		enum.WorkflowTranslateStartRevert,
+		enum.WorkflowTranslateRevert,
+		enum.WorkflowProofreadStartRevert,
+		enum.WorkflowProofreadRevert,
+		enum.WorkflowTypesetStartRevert,
+		enum.WorkflowTypesetRevert,
+		enum.WorkflowReviewRevert:
+		return true
+	default:
+		return false
+	}
+}
+
 // `isWorkflowTransitionValid` checks transition value in closed set.
 func isWorkflowTransitionValid(t enum.WorkflowTransition) bool {
 	switch t {
@@ -182,37 +210,62 @@ func isWorkflowTransitionValid(t enum.WorkflowTransition) bool {
 }
 
 // `mkChapterUpd` builds chapter update payload from args and chapter state.
+// When `args.WorkflowTransition` is set, the corresponding timestamp field is populated
+// from the mutated aggregate. When `args.RevertTransition` is set, the corresponding
+// timestamp field is populated with the (now-nil) aggregate value, writing NULL to the DB
 func mkChapterUpd(args *val.ChapterUpdArgs, ch *aggr.Chapter) *aggr.ChapterUpd {
 	upd := &aggr.ChapterUpd{
 		Id:                 args.Id,
 		Subtitle:           args.Subtitle,
 		IsPinned:           args.IsPinned,
 		WorkflowTransition: args.WorkflowTransition,
+		RevertTransition:   args.RevertTransition,
 	}
 
-	if args.WorkflowTransition == nil {
+	if args.WorkflowTransition != nil {
+		switch *args.WorkflowTransition {
+		case enum.WorkflowUploadComplete:
+			upd.UploadedAt = toTimePtrPtr(ch.UploadedAt)
+		case enum.WorkflowTranslateStart:
+			upd.TranslatingAt = toTimePtrPtr(ch.TranslatingAt)
+		case enum.WorkflowTranslateComplete:
+			upd.TranslatedAt = toTimePtrPtr(ch.TranslatedAt)
+		case enum.WorkflowProofreadStart:
+			upd.ProofreadingAt = toTimePtrPtr(ch.ProofreadingAt)
+		case enum.WorkflowProofreadComplete:
+			upd.ProofreadAt = toTimePtrPtr(ch.ProofreadAt)
+		case enum.WorkflowTypesetStart:
+			upd.TypesettingAt = toTimePtrPtr(ch.TypesettingAt)
+		case enum.WorkflowTypesetComplete:
+			upd.TypesetAt = toTimePtrPtr(ch.TypesetAt)
+		case enum.WorkflowReviewComplete:
+			upd.ReviewedAt = toTimePtrPtr(ch.ReviewedAt)
+		case enum.WorkflowPublishComplete:
+			upd.PublishedAt = toTimePtrPtr(ch.PublishedAt)
+		}
+
 		return upd
 	}
 
-	switch *args.WorkflowTransition {
-	case enum.WorkflowUploadComplete:
-		upd.UploadedAt = toTimePtrPtr(ch.UploadedAt)
-	case enum.WorkflowTranslateStart:
-		upd.TranslatingAt = toTimePtrPtr(ch.TranslatingAt)
-	case enum.WorkflowTranslateComplete:
-		upd.TranslatedAt = toTimePtrPtr(ch.TranslatedAt)
-	case enum.WorkflowProofreadStart:
-		upd.ProofreadingAt = toTimePtrPtr(ch.ProofreadingAt)
-	case enum.WorkflowProofreadComplete:
-		upd.ProofreadAt = toTimePtrPtr(ch.ProofreadAt)
-	case enum.WorkflowTypesetStart:
-		upd.TypesettingAt = toTimePtrPtr(ch.TypesettingAt)
-	case enum.WorkflowTypesetComplete:
-		upd.TypesetAt = toTimePtrPtr(ch.TypesetAt)
-	case enum.WorkflowReviewComplete:
-		upd.ReviewedAt = toTimePtrPtr(ch.ReviewedAt)
-	case enum.WorkflowPublishComplete:
-		upd.PublishedAt = toTimePtrPtr(ch.PublishedAt)
+	if args.RevertTransition != nil {
+		switch *args.RevertTransition {
+		case enum.WorkflowUploadRevert:
+			upd.UploadedAt = toTimePtrPtr(ch.UploadedAt)
+		case enum.WorkflowTranslateStartRevert:
+			upd.TranslatingAt = toTimePtrPtr(ch.TranslatingAt)
+		case enum.WorkflowTranslateRevert:
+			upd.TranslatedAt = toTimePtrPtr(ch.TranslatedAt)
+		case enum.WorkflowProofreadStartRevert:
+			upd.ProofreadingAt = toTimePtrPtr(ch.ProofreadingAt)
+		case enum.WorkflowProofreadRevert:
+			upd.ProofreadAt = toTimePtrPtr(ch.ProofreadAt)
+		case enum.WorkflowTypesetStartRevert:
+			upd.TypesettingAt = toTimePtrPtr(ch.TypesettingAt)
+		case enum.WorkflowTypesetRevert:
+			upd.TypesetAt = toTimePtrPtr(ch.TypesetAt)
+		case enum.WorkflowReviewRevert:
+			upd.ReviewedAt = toTimePtrPtr(ch.ReviewedAt)
+		}
 	}
 
 	return upd

@@ -59,9 +59,10 @@ func (ChapterSvc) CanAdminChapter(currUid string, teamId string, memberRepo repo
 }
 
 // `CanTransiteWorkflow` validates that the current user's chapter-level assignment
-// authorises the requested workflow transition.
-// `RoleReviewer` can execute any transition.
-// Other roles can only execute their corresponding transitions (see `CanTransiteWorkflow` doc in `docs/perm-list.md`).
+// authorises the requested forward workflow transition
+// `RoleReviewer` can execute any transition
+// Other roles can only execute their corresponding transitions (see `CanTransiteWorkflow` doc in `docs/perm-list.md`)
+// For revert transitions, use `CanRevertWorkflow` instead
 func (ChapterSvc) CanTransiteWorkflow(currUid string, chapterId string, t enum.WorkflowTransition, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
 	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
 	if err != nil {
@@ -108,6 +109,66 @@ func (ChapterSvc) CanTransiteWorkflow(currUid string, chapterId string, t enum.W
 		if !assignment.HasAnyRole(enum.RolePublisher) {
 			return svc_res.Reject(svc_res.Forbidden, "只有发布可以标记发布完成")
 		}
+	}
+
+	return svc_res.Accept()
+}
+
+// `CanRevertWorkflow` validates that the current user's chapter-level assignment
+// authorises the requested revert transition
+// Publish-complete cannot be reverted by anyone
+// `RoleReviewer` can revert any revertible transition
+// `RoleProofreader` can additionally revert translate-start and translate-complete
+// Other roles can only revert their own phase transitions
+// Permission matrix:
+//   - `upload_revert`:          `RoleRawProvider`, `RoleReviewer`
+//   - `translate_start_revert`: `RoleTranslator`, `RoleProofreader`, `RoleReviewer`
+//   - `translate_revert`:       `RoleTranslator`, `RoleProofreader`, `RoleReviewer`
+//   - `proofread_start_revert`: `RoleProofreader`, `RoleReviewer`
+//   - `proofread_revert`:       `RoleProofreader`, `RoleReviewer`
+//   - `typeset_start_revert`:   `RoleTypesetter`, `RoleReviewer`
+//   - `typeset_revert`:         `RoleTypesetter`, `RoleReviewer`
+//   - `review_revert`:          `RoleReviewer`
+func (ChapterSvc) CanRevertWorkflow(currUid string, chapterId string, t enum.WorkflowTransition, assignmentRepo repo_iface.AssignmentRepo, clsf repo_iface.ErrClsf) svc_res.SvcRes {
+	assignment, err := assignmentRepo.GetByChapterUserId(chapterId, currUid)
+	if err != nil {
+		return classifyRepoErr(err, clsf, svc_res.Forbidden, "仅章节成员可回退工作流", "权限校验超时", "权限校验服务暂不可用", "权限校验失败")
+	}
+
+	if assignment == nil {
+		return svc_res.Reject(svc_res.Forbidden, "仅章节成员可回退工作流")
+	}
+
+	// `RoleReviewer` can revert any transition
+	if assignment.HasAnyRole(enum.RoleReviewer) {
+		return svc_res.Accept()
+	}
+
+	// Map revert transition to required chapter-level role
+	switch t {
+	case enum.WorkflowUploadRevert:
+		if !assignment.HasAnyRole(enum.RoleRawProvider) {
+			return svc_res.Reject(svc_res.Forbidden, "只有图源可以回退上传完成")
+		}
+
+	case enum.WorkflowTranslateStartRevert, enum.WorkflowTranslateRevert:
+		if !assignment.HasAnyRole(enum.RoleTranslator, enum.RoleProofreader) {
+			return svc_res.Reject(svc_res.Forbidden, "只有翻译或校对可以回退翻译进度")
+		}
+
+	case enum.WorkflowProofreadStartRevert, enum.WorkflowProofreadRevert:
+		if !assignment.HasAnyRole(enum.RoleProofreader) {
+			return svc_res.Reject(svc_res.Forbidden, "只有校对可以回退校对进度")
+		}
+
+	case enum.WorkflowTypesetStartRevert, enum.WorkflowTypesetRevert:
+		if !assignment.HasAnyRole(enum.RoleTypesetter) {
+			return svc_res.Reject(svc_res.Forbidden, "只有嵌字可以回退嵌字进度")
+		}
+
+	case enum.WorkflowReviewRevert:
+		// Already handled above — only `RoleReviewer` reaches here and was already accepted
+		return svc_res.Reject(svc_res.Forbidden, "只有监修可以回退监修进度")
 	}
 
 	return svc_res.Accept()

@@ -9,3 +9,4 @@
 - [x] 简单小留言板
 - [ ] cover index in user table
 - [ ] comic.is_completed.
+- [ ] revert workflow.

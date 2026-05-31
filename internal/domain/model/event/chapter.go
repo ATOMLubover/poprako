@@ -49,6 +49,30 @@ func (e *ChapterWorkflowCompletedEv) Payload() any {
 	return e
 }
 
+// `ChapterWorkflowRevertedEv` represents chapter workflow-reverted domain event payload
+type ChapterWorkflowRevertedEv struct {
+	ChapterId          string
+	RevertedTransition enum.WorkflowTransition
+}
+
+// `NewChapterWorkflowRevertedEv` creates chapter workflow-reverted event
+func NewChapterWorkflowRevertedEv(chapterId string, revertedTransition enum.WorkflowTransition) event_iface.Event {
+	return &ChapterWorkflowRevertedEv{
+		ChapterId:          chapterId,
+		RevertedTransition: revertedTransition,
+	}
+}
+
+// `EvTyp` returns event type identifier
+func (e *ChapterWorkflowRevertedEv) EvTyp() event_iface.EvTyp {
+	return EvChapterWorkflowReverted
+}
+
+// `Payload` returns typed payload
+func (e *ChapterWorkflowRevertedEv) Payload() any {
+	return e
+}
+
 // `ChapterRemovedEv` represents chapter-removed domain event payload.
 type ChapterRemovedEv struct {
 	ChapterId       string

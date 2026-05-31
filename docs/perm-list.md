@@ -6,13 +6,13 @@
 
 | 角色 | 位  | 常量                | 域         | 备注                                           |
 | ---- | --- | ------------------- | ---------- | ---------------------------------------------- |
-| 图源 | 0   | `RoleRawProvider`   | Team+Chap  | 可推 `upload_complete`                         |
-| 翻译 | 1   | `RoleTranslator`    | Team+Chap  | 可推 `translate_start\|complete`               |
-| 校对 | 2   | `RoleProofreader`   | Team+Chap  | 可推 `proofread_start\|complete`               |
-| 嵌字 | 3   | `RoleTypesetter`    | Team+Chap  | 可推 `typeset_start\|complete`                 |
-| 美工 | 4   | `RoleRedrawer`      | Team+Chap  |                                                |
-| 监修 | 5   | `RoleReviewer`      | Team+Chap  | 章级:创建/更新/删除分配, 可推**任意** workflow |
-| 发布 | 6   | `RolePublisher`     | Team+Chap  | 可推 `publish_complete`                        |
+| 图源 | 0   | `RoleRawProvider`   | Team+Chap  | 可推 `upload_complete`；可回退 `upload_revert`                                                                       |
+| 翻译 | 1   | `RoleTranslator`    | Team+Chap  | 可推 `translate_start\|complete`；可回退 `translate_start_revert\|translate_revert`                                 |
+| 校对 | 2   | `RoleProofreader`   | Team+Chap  | 可推 `proofread_start\|complete`；可回退 `proofread_start_revert\|proofread_revert` + translate 系列               |
+| 嵌字 | 3   | `RoleTypesetter`    | Team+Chap  | 可推 `typeset_start\|complete`；可回退 `typeset_start_revert\|typeset_revert`                                       |
+| 美工 | 4   | `RoleRedrawer`      | Team+Chap  |                                                                                                                      |
+| 监修 | 5   | `RoleReviewer`      | Team+Chap  | 章级:创建/更新/删除分配, 可推**任意** workflow；可回退**任意** workflow（`publish_revert` 不存在，发布不可回退）    |
+| 发布 | 6   | `RolePublisher`     | Team+Chap  | 可推 `publish_complete`；发布不可回退                                                                               |
 | 管理 | 7   | `RoleAdmin`         | **仅Team** | 章分配不支持; 管作品集/漫画/章CRUD             |
 | 超管 | —   | `User.IsSuperAdmin` | 全局       | bool字段, 创建/删除汉化组                      |
 
@@ -27,6 +27,7 @@
 | Chapter | List/GetPinned/GetById | 团队成员 | `ChapterSvc.CanListChapter` |
 | Chapter | Create/Upd/Delete | Team Admin | `ChapterSvc.CanAdminChapter` |
 | Chapter | Workflow 推进 | 章级角色（Reviewer 全通） | `ChapterSvc.CanTransiteWorkflow` |
+| Chapter | Workflow 回退 | 章级角色（见下表）；Publish 不可回退 | `ChapterSvc.CanRevertWorkflow` |
 | Page | ListByChapter | 团队成员；若团队成员校验失败，允许章节 assignment 回退访问（legacy 兼容） | `PageSvc.CanListByChapter` |
 | Page | ResvChapterPages | 仅图源或监修 | `PageSvc.CanResvPages` |
 | Page | MarkImageUploaded | 仅图源 | `PageSvc.CanMarkImageUploaded` |

@@ -14,6 +14,8 @@ const (
 	EvChapterPublished event_iface.EvTyp = "event:chapter_published"
 	// `EvChapterWorkflowCompleted` is emitted after one chapter workflow-complete transition succeeds
 	EvChapterWorkflowCompleted event_iface.EvTyp = "event:chapter_workflow_completed"
+	// `EvChapterWorkflowReverted` is emitted after one chapter workflow timestamp is cleared by a revert
+	EvChapterWorkflowReverted event_iface.EvTyp = "event:chapter_workflow_reverted"
 	// `EvChapterRemoved` is emitted after one chapter is removed
 	EvChapterRemoved event_iface.EvTyp = "event:chapter_removed"
 )

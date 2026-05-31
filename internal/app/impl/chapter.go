@@ -388,6 +388,11 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 			if re := a.chapterSvc.CanTransiteWorkflow(currUid, args.Id, *args.WorkflowTransition, assignmentRepo, a.errClsf); re.IsReject() {
 				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
 			}
+		} else if args.RevertTransition != nil {
+			// Revert transition requires chapter-level role permission scoped to revert rules
+			if re := a.chapterSvc.CanRevertWorkflow(currUid, args.Id, *args.RevertTransition, assignmentRepo, a.errClsf); re.IsReject() {
+				return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+			}
 		} else {
 			// Metadata-only update requires team admin permission.
 			if re := a.chapterSvc.CanAdminChapter(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
@@ -409,6 +414,14 @@ func (a *chapterAppImpl) Update(cx context.Context, currUid string, args *val.Ch
 			if !wasPublished && chapter.PublishedAt != nil {
 				clearPublishedImages = true
 			}
+		}
+
+		if args.RevertTransition != nil {
+			if err := chapter.RevertWorkflow(*args.RevertTransition); err != nil {
+				return app_res.Reject[app_res.None](app_res.BadRequest, "无效的工作流回退转换"), app_res.DefErr()
+			}
+
+			ev = append(ev, chapter.PullEv()...)
 		}
 
 		upd := mkChapterUpd(args, chapter)
