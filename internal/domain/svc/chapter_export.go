@@ -71,7 +71,7 @@ func lpImageName(page *aggr.Page) string {
 		}
 	}
 
-	return fmt.Sprintf("images/%03d%s", page.Index, ext)
+	return fmt.Sprintf("%03d%s", page.Index, ext)
 }
 
 // lpSelectText selects export main text by proofread-first order.
