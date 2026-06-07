@@ -46,4 +46,12 @@ type ComicApp interface {
 		currUid string,
 		comicId string,
 	) app_res.AppRes[app_res.None]
+
+	// `MarkCompleted` marks one comic as completed and clears all child chapter page images.
+	// `currUid` must be an admin of the owning team.
+	MarkCompleted(
+		cx context.Context,
+		currUid string,
+		comicId string,
+	) app_res.AppRes[app_res.None]
 }

@@ -610,3 +610,73 @@ func (a *comicAppImpl) Delete(cx context.Context, currUid string, comicId string
 
 	return re
 }
+
+// `MarkCompleted` marks one comic as completed and clears all child chapter page images.
+func (a *comicAppImpl) MarkCompleted(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
+	lgr := app_util.TakeLgr(cx)
+
+	if re := vfyComicId(comicId); re.IsReject() {
+		return app_res.Reject[app_res.None](re.Code(), re.Msg())
+	}
+
+	re, err := repo_iface.RunWithTxn[app_res.AppRes[app_res.None]](a.txnCtrl, func(prov repo_iface.Prov) (app_res.AppRes[app_res.None], error) {
+		// Load all repo dependencies required by the cascade clear flow.
+		memberRepo := prov.MemberRepo()
+		worksetRepo := prov.WorksetRepo()
+		comicRepo := prov.ComicRepo()
+		chapterRepo := prov.ChapterRepo()
+		pageRepo := prov.PageRepo()
+		ossMsgRepo := prov.OssMsgRepo()
+		ossMsgSvc := svc.NewOssMsgSvc()
+
+		// Load the target comic and verify admin permission first.
+		comic, err := comicRepo.GetById(comicId)
+		if err != nil {
+			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可标记漫画为已完成"), app_res.DefErr()
+		}
+
+		workset, err := worksetRepo.GetById(comic.WorksetId)
+		if err != nil {
+			return app_res.Reject[app_res.None](app_res.Forbidden, "仅汉化组管理员可标记漫画为已完成"), app_res.DefErr()
+		}
+
+		if re := a.comicSvc.CanAdminComic(currUid, workset.TeamId, memberRepo, a.errClsf); re.IsReject() {
+			return app_res.Reject[app_res.None](app_res.ErrCode(re.Code()), re.Msg()), app_res.DefErr()
+		}
+
+		// Load all chapters explicitly so the cascade flow is complete for any valid cardinality.
+		chapters, err := listAllChapters(chapterRepo, comic.Id)
+		if err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "标记漫画为已完成失败"), err
+		}
+
+		// Clear page images for every chapter without deleting any rows.
+		for i := range chapters {
+			if err := clearChapterImagesCascade(
+				chapters[i].Id,
+				pageRepo,
+				ossMsgRepo,
+				ossMsgSvc,
+			); err != nil {
+				return app_res.Reject[app_res.None](app_res.ServerError, "标记漫画为已完成失败"), err
+			}
+		}
+
+		// Set `is_completed` to true after all page images have been cleared.
+		if err := comicRepo.MarkCompleted(comicId); err != nil {
+			return app_res.Reject[app_res.None](app_res.ServerError, "标记漫画为已完成失败"), err
+		}
+
+		return app_res.Accept(&app_res.None{}), nil
+	})
+	if err != nil {
+		lgr.Error(
+			"[comicAppImpl.MarkCompleted] failed to run mark completed transaction",
+			zap.Error(err),
+		)
+
+		return re
+	}
+
+	return re
+}

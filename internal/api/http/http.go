@@ -120,6 +120,7 @@ func NewApp(st *state.AppState) *iris.Application {
 				comic.Post("/{comic_id}/cover", ResvComicCover(st))
 				comic.Post("/{comic_id}/cover/confirm", MarkComicCoverUploaded(st))
 				comic.Delete("/{comic_id}", DeleteComic(st))
+				comic.Post("/{comic_id}/completed", MarkComicCompleted(st))
 			}
 
 			chapter := authorized.Party("/chapters")

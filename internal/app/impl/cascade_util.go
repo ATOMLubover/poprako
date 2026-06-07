@@ -157,6 +157,29 @@ func savePageImageDeleteMsgs(
 	return nil
 }
 
+// `clearChapterImagesCascade` enqueues OSS delete messages for all page images
+// under one chapter and clears their local metadata, without deleting any rows.
+func clearChapterImagesCascade(
+	chapterId string,
+	pageRepo repo_iface.PageRepo,
+	ossMsgRepo repo_iface.OssMsgRepo,
+	ossMsgSvc svc.OssMsgSvc,
+) error {
+	// Load all pages before clearing so OSS cleanup stays complete.
+	pages, err := listAllPages(pageRepo, chapterId)
+	if err != nil {
+		return err
+	}
+
+	// Enqueue remote page-image cleanup before clearing local metadata.
+	if err := savePageImageDeleteMsgs(ossMsgSvc, ossMsgRepo, pages); err != nil {
+		return err
+	}
+
+	// Clear local image metadata without deleting page rows.
+	return pageRepo.ClearImagesByChapterId(chapterId)
+}
+
 // `deleteChapterCascade` removes one chapter and all descendant rows atomically.
 func deleteChapterCascade(
 	chapter *aggr.Chapter,

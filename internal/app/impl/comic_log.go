@@ -177,3 +177,21 @@ func (a *comicLogAppImpl) Delete(cx context.Context, currUid string, comicId str
 
 	return a.inner.Delete(cx, currUid, comicId)
 }
+
+// `MarkCompleted` enriches logger context and forwards call.
+func (a *comicLogAppImpl) MarkCompleted(cx context.Context, currUid string, comicId string) app_res.AppRes[app_res.None] {
+	if cx == nil {
+		cx = context.Background()
+	}
+
+	lgr := app_util.TakeLgr(cx)
+
+	lgr = lgr.With(
+		zap.String("curr_uid", currUid),
+		zap.String("comic_id", comicId),
+	)
+
+	cx = app_util.SaveLgr(cx, lgr)
+
+	return a.inner.MarkCompleted(cx, currUid, comicId)
+}

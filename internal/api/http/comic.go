@@ -410,3 +410,43 @@ func DeleteComic(st *state.AppState) iris.Handler {
 		res.Accept(cx, iris.StatusOK, re.Data())
 	}
 }
+
+// `MarkComicCompleted` godoc
+// @Summary Mark Comic Completed
+// @Description Mark one comic as completed and clear all child chapter page images
+// @Description The caller must be an admin of the owning team
+// @Description Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+// @Tags comic
+// @Security ApiKeyAuth
+// @Produce json
+// @Param comic_id path string true "comic id"
+// @Success 200 {object} res.HttpRes[any]
+// @Failure 400 {object} res.HttpRes[any]
+// @Failure 401 {object} res.HttpRes[any]
+// @Failure 500 {object} res.HttpRes[any]
+// @Router /api/v1/comics/{comic_id}/completed [post]
+func MarkComicCompleted(st *state.AppState) iris.Handler {
+	comicApp := st.ComicApp
+
+	return func(cx iris.Context) {
+		currUid, ok := takeCurrUid(cx)
+		if !ok {
+			res.Reject(cx, iris.StatusUnauthorized, "未授权的访问")
+			return
+		}
+
+		comicId := cx.Params().Get("comic_id")
+		if comicId == "" {
+			res.Reject(cx, iris.StatusBadRequest, "缺少 comic_id 参数")
+			return
+		}
+
+		re := comicApp.MarkCompleted(newReqCx(cx), currUid, comicId)
+		if re.IsReject() {
+			res.Reject(cx, int(re.Code()), re.Msg())
+			return
+		}
+
+		res.Accept(cx, iris.StatusOK, re.Data())
+	}
+}

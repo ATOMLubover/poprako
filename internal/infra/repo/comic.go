@@ -282,6 +282,19 @@ func (r *comicRepoImpl) Delete(id string) repo_iface.RepoErr {
 		Delete(&entity.ComicRow{}).Error
 }
 
+// `MarkCompleted` sets `is_completed` to true for one comic.
+func (r *comicRepoImpl) MarkCompleted(id string) repo_iface.RepoErr {
+	now := time.Now()
+
+	return r.gdb.
+		Table(entity.COMIC_TABLE).
+		Where("t_comic.id = ?", id).
+		Updates(map[string]any{
+			"is_completed": true,
+			"updated_at":   now,
+		}).Error
+}
+
 // `withComicIncl` maps typed include options to preload actions
 func withComicIncl(q *gorm.DB, inc ...enum.ComicIncl) *gorm.DB {
 	for _, i := range inc {

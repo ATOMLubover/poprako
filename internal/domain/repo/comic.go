@@ -44,4 +44,7 @@ type ComicRepo interface {
 
 	// `Delete` hard-deletes one comic row by id.
 	Delete(id string) RepoErr
+
+	// `MarkCompleted` sets `is_completed` to true for one comic.
+	MarkCompleted(id string) RepoErr
 }
