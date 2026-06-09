@@ -113,8 +113,7 @@ func main() {
 	defer evBus.Close()
 
 	evBus.Sub(event_infra.NewNotifyInvitorHandler(teamRepo, sysMailRepo))
-	evBus.Sub(event_infra.NewNotifyNextPhaseHandler(chapterRepo, assignmentRepo, sysMailRepo))
-	evBus.Sub(event_infra.NewNotifyReviewerOnProgressHandler(chapterRepo, assignmentRepo, sysMailRepo))
+	evBus.Sub(event_infra.NewNotifyChapterProgressHandler(chapterRepo, assignmentRepo, sysMailRepo))
 	evBus.Sub(event_infra.NewNotifyReviewerOnPublishHandler(chapterRepo, assignmentRepo, sysMailRepo))
 
 	evBus.Run()

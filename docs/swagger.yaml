@@ -2632,6 +2632,42 @@ paths:
       summary: Update Comic
       tags:
       - comic
+  /api/v1/comics/{comic_id}/completed:
+    post:
+      description: |-
+        Mark one comic as completed and clear all child chapter page images
+        The caller must be an admin of the owning team
+        Auth: `authorization` cookie is preferred over `Authorization` header when both are present
+      parameters:
+      - description: comic id
+        in: path
+        name: comic_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.HttpRes-any'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark Comic Completed
+      tags:
+      - comic
   /api/v1/comics/{comic_id}/cover:
     post:
       consumes:

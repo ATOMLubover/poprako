@@ -1746,6 +1746,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/comics/{comic_id}/completed": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Mark one comic as completed and clear all child chapter page images\nThe caller must be an admin of the owning team\nAuth: ` + "`" + `authorization` + "`" + ` cookie is preferred over ` + "`" + `Authorization` + "`" + ` header when both are present",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comic"
+                ],
+                "summary": "Mark Comic Completed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "comic id",
+                        "name": "comic_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/res.HttpRes-any"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/comics/{comic_id}/cover": {
             "post": {
                 "security": [

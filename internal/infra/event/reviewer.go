@@ -15,67 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// `NotifyReviewerOnProgressHandler` sends workflow progress sys-mail to all
-// reviewer assignees of a chapter after each workflow-complete transition,
-// except `WorkflowTypesetComplete` which is already covered by `NotifyNextPhaseHandler`.
-type NotifyReviewerOnProgressHandler struct {
-	chapterRepo    repo_iface.ChapterRepo
-	assignmentRepo repo_iface.AssignmentRepo
-	sysMailRepo    repo_iface.SysMailRepo
-}
-
-// `NewNotifyReviewerOnProgressHandler` creates one `NotifyReviewerOnProgressHandler`.
-func NewNotifyReviewerOnProgressHandler(
-	chapterRepo repo_iface.ChapterRepo,
-	assignmentRepo repo_iface.AssignmentRepo,
-	sysMailRepo repo_iface.SysMailRepo,
-) *NotifyReviewerOnProgressHandler {
-	return &NotifyReviewerOnProgressHandler{
-		chapterRepo:    chapterRepo,
-		assignmentRepo: assignmentRepo,
-		sysMailRepo:    sysMailRepo,
-	}
-}
-
-// `EvTyp` returns the target event type of `NotifyReviewerOnProgressHandler`.
-func (h *NotifyReviewerOnProgressHandler) EvTyp() event_iface.EvTyp {
-	return event_impl.EvChapterWorkflowCompleted
-}
-
-// `Handle` sends workflow progress sys-mails to all reviewer assignees.
-// Skips `WorkflowTypesetComplete` to avoid duplicating the notification
-// already sent by `NotifyNextPhaseHandler` for that transition.
-func (h *NotifyReviewerOnProgressHandler) Handle(cx context.Context, ev event_iface.Event) {
-	_ = cx
-
-	// Parse payload and validate event type.
-	payload, ok := ev.Payload().(*event_impl.ChapterWorkflowCompletedEv)
-	if !ok || payload == nil {
-		zap.L().Error(
-			"[NotifyReviewerOnProgressHandler.Handle] invalid event payload",
-			zap.Any("payload", ev.Payload()),
-		)
-
-		return
-	}
-
-	// Resolve chinese workflow label; returns false for transitions to skip.
-	label, ok := resolveReviewerProgressLabel(payload.CompletedTransition)
-	if !ok {
-		return
-	}
-
-	// Delegate to shared helper.
-	sendReviewerMails(
-		"[NotifyReviewerOnProgressHandler.Handle]",
-		payload.ChapterId,
-		label,
-		h.chapterRepo,
-		h.assignmentRepo,
-		h.sysMailRepo,
-	)
-}
-
 // `NotifyReviewerOnPublishHandler` sends a publish sys-mail to all reviewer
 // assignees of a chapter when a `ChapterPublishedEv` fires.
 type NotifyReviewerOnPublishHandler struct {
@@ -126,34 +65,6 @@ func (h *NotifyReviewerOnPublishHandler) Handle(cx context.Context, ev event_ifa
 		h.assignmentRepo,
 		h.sysMailRepo,
 	)
-}
-
-// `resolveReviewerProgressLabel` maps a completed workflow transition to a
-// chinese label used in the reviewer notification mail. Returns `("", false)`
-// for `WorkflowTypesetComplete` (already handled by `NotifyNextPhaseHandler`)
-// and for any unknown transition.
-func resolveReviewerProgressLabel(t enum.WorkflowTransition) (string, bool) {
-	switch t {
-	case enum.WorkflowUploadComplete:
-		return "上传", true
-
-	case enum.WorkflowTranslateComplete:
-		return "翻译", true
-
-	case enum.WorkflowProofreadComplete:
-		return "校对", true
-
-	case enum.WorkflowTypesetComplete:
-		// `NotifyNextPhaseHandler` already notifies reviewers for typeset-complete;
-		// skip here to avoid sending a duplicate mail.
-		return "", false
-
-	case enum.WorkflowReviewComplete:
-		return "监修", true
-
-	default:
-		return "", false
-	}
 }
 
 // `sendReviewerMails` queries the chapter and its `RoleReviewer` assignees,
